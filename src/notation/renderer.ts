@@ -2,6 +2,7 @@ import {
   Beam,
   Dot,
   Formatter,
+  Metrics,
   Renderer,
   Stave,
   StaveNote,
@@ -9,7 +10,6 @@ import {
   Voice,
 } from 'vexflow';
 import {
-  BEAT_WIDTH,
   Clef,
   MEASURE_CANVAS_HEIGHT,
   MeasureData,
@@ -109,11 +109,17 @@ export class MeasureRenderer {
     const formatter = new Formatter();
     formatter.joinVoices([voice]).format([voice], data.width);
 
-    // Enforce strict spatial linearity: note positions proportional to metric beat
+    // Enforce strict spatial linearity: note positions proportional to metric beat.
+    // In VexFlow 5, note.getAbsoluteX() adds stave.getNoteStartX() + Metrics.get('Stave.padding')
+    // to the tickContext X coordinate. We subtract this internal stave padding so that
+    // note.getAbsoluteX() lands precisely at targetLinearX.
+    const stavePadding = (stave.getNoteStartX ? stave.getNoteStartX() : 0) + Metrics.get('Stave.padding', 0);
+    const beatWidth = data.beatWidth;
+
     for (let i = 0; i < staveNotes.length; i++) {
       const noteData = data.notes[i];
-      const targetLinearX = NOTE_START_OFFSET + noteData.beatOffset * BEAT_WIDTH;
-      staveNotes[i].getTickContext().setX(targetLinearX);
+      const targetLinearX = NOTE_START_OFFSET + noteData.beatOffset * beatWidth;
+      staveNotes[i].getTickContext().setX(targetLinearX - stavePadding);
     }
 
     // Re-format beams after exact manual note positioning

@@ -5,7 +5,7 @@ import {
   NoteData,
   SubdivisionOptions,
   TimeSignature,
-  BEAT_WIDTH,
+  computeBeatWidth,
 } from './types';
 
 // Diatonic scales (C Major / A Minor baseline) per clef (standard staff lines +/- 2 ledger lines)
@@ -70,7 +70,8 @@ export class MusicGenerator {
   public generateMeasure(measureIndex: number, settings: AppSettings, startBeat: number): MeasureData {
     const { timeSignature, clef, subdivisions, rests, intervals } = settings;
     const { beatsPerMeasure, beatValue } = this.getMeterConfig(timeSignature);
-    const measureWidth = beatsPerMeasure * BEAT_WIDTH;
+    const beatWidth = computeBeatWidth(subdivisions, timeSignature);
+    const measureWidth = beatsPerMeasure * beatWidth;
 
     const rawRhythms = this.partitionRhythm(timeSignature, beatsPerMeasure, subdivisions, rests);
     const notes: NoteData[] = [];
@@ -99,6 +100,7 @@ export class MusicGenerator {
       timeSignature,
       beatsPerMeasure,
       beatValue,
+      beatWidth,
       width: measureWidth,
       startBeat,
     };
@@ -313,12 +315,21 @@ export class MusicGenerator {
       ];
     }
 
-    // 3 eighth notes
-    const restIdx = allowRests && Math.random() < 0.2 ? Math.floor(Math.random() * 3) : -1;
-    return [
-      { duration: '8', beatDuration: 1, isRest: restIdx === 0 },
-      { duration: '8', beatDuration: 1, isRest: restIdx === 1 },
-      { duration: '8', beatDuration: 1, isRest: restIdx === 2 },
-    ];
+    // 3 eighth notes (with potential sixteenth-note subdivisions)
+    const result: Array<{ duration: string; beatDuration: number; isRest: boolean; isTuplet?: boolean; tupletGroup?: number }> = [];
+    for (let beat = 0; beat < 3; beat++) {
+      if (subdiv.sixteenth && Math.random() < 0.4) {
+        // Two 16th notes fill 1 eighth-note beat
+        const restIdx = allowRests && Math.random() < 0.15 ? Math.floor(Math.random() * 2) : -1;
+        result.push(
+          { duration: '16', beatDuration: 0.5, isRest: restIdx === 0 },
+          { duration: '16', beatDuration: 0.5, isRest: restIdx === 1 }
+        );
+      } else {
+        const isRest = allowRests && Math.random() < 0.2;
+        result.push({ duration: '8', beatDuration: 1, isRest });
+      }
+    }
+    return result;
   }
 }
