@@ -26,7 +26,7 @@
     "canvas",
     "web-audio"
   ],
-  "author": "Hand-Lock",
+  "author": "HandLock_",
   "license": "MIT",
   "dependencies": {
     "vexflow": "^5.0.0"
