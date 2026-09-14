@@ -16,7 +16,7 @@
   "packageManager": "pnpm@11.8.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lauseta/solfege-scroller.git"
+    "url": "https://github.com/Hand-Lock/solfege-scroller.git"
   },
   "keywords": [
     "solfege",
@@ -26,7 +26,7 @@
     "canvas",
     "web-audio"
   ],
-  "author": "lauseta",
+  "author": "HandLock_",
   "license": "MIT",
   "dependencies": {
     "vexflow": "^5.0.0"

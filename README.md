@@ -25,7 +25,7 @@
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/lauseta/solfege-scroller.git
+git clone https://github.com/Hand-Lock/solfege-scroller.git
 cd solfege-scroller
 
 # 2. Install dependencies
