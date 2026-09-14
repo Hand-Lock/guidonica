@@ -62,7 +62,13 @@ class SolfegeScrollerApp {
     this.generator = new MusicGenerator();
     this.renderer = new MeasureRenderer();
     this.buffer = new MeasureBuffer(this.generator, this.renderer);
-    this.scroller = new ScrollerView(canvas, this.buffer, this.metronome, this.renderer);
+    this.scroller = new ScrollerView(
+      canvas,
+      this.buffer,
+      this.metronome,
+      this.renderer,
+      () => globalState.settings
+    );
 
     // 3. Setup event wiring and subscriptions
     this.bindEvents();
@@ -106,21 +112,21 @@ class SolfegeScrollerApp {
       this.metronome.setTimeSignature(ts);
       this.renderBeatDots(ts);
       globalState.updateSettings({ timeSignature: ts });
-      this.resetBuffer();
+      this.resetSession();
     });
 
     // Clef
     this.selectClef.addEventListener('change', (e) => {
       const clef = (e.target as HTMLSelectElement).value as Clef;
       globalState.updateSettings({ clef });
-      this.resetBuffer();
+      this.resetSession();
     });
 
     // Intervals
     this.selectIntervals.addEventListener('change', (e) => {
       const intervals = (e.target as HTMLSelectElement).value as AllowedIntervals;
       globalState.updateSettings({ intervals });
-      this.resetBuffer();
+      this.resetSession();
     });
 
     // Subdivisions
@@ -135,7 +141,7 @@ class SolfegeScrollerApp {
           triplets: this.subdivTriplets.checked,
         },
       });
-      this.resetBuffer();
+      this.resetSession();
     };
 
     this.subdivQuarter.addEventListener('change', handleSubdivChange);
@@ -148,7 +154,7 @@ class SolfegeScrollerApp {
     // Rests
     this.toggleRests.addEventListener('change', () => {
       globalState.updateSettings({ rests: this.toggleRests.checked });
-      this.resetBuffer();
+      this.resetSession();
     });
   }
 

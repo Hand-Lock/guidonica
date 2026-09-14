@@ -1,4 +1,4 @@
-import { AppSettings, BEAT_WIDTH, Clef, NOTE_START_OFFSET, STAVE_CANVAS_Y } from '../notation/types';
+import { AppSettings, BEAT_WIDTH, Clef, NOTE_START_OFFSET, STAVE_TOP_LINE_Y } from '../notation/types';
 import { MetronomeEngine } from '../audio/metronome';
 import { MeasureBuffer } from './buffer';
 import { MeasureRenderer } from '../notation/renderer';
@@ -9,6 +9,7 @@ export class ScrollerView {
   private buffer: MeasureBuffer;
   private metronome: MetronomeEngine;
   private renderer: MeasureRenderer;
+  private getSettings: () => AppSettings;
 
   private dpr: number = 1;
   private viewportWidth: number = 0;
@@ -28,7 +29,8 @@ export class ScrollerView {
     canvas: HTMLCanvasElement,
     buffer: MeasureBuffer,
     metronome: MetronomeEngine,
-    renderer: MeasureRenderer
+    renderer: MeasureRenderer,
+    getSettings: () => AppSettings
   ) {
     this.canvas = canvas;
     const context = canvas.getContext('2d', { alpha: false });
@@ -39,6 +41,7 @@ export class ScrollerView {
     this.buffer = buffer;
     this.metronome = metronome;
     this.renderer = renderer;
+    this.getSettings = getSettings;
 
     this.updateDimensions();
     window.addEventListener('resize', this.handleResize);
@@ -77,7 +80,7 @@ export class ScrollerView {
     const centerY = Math.round(this.viewportHeight / 2);
     // 5 lines spaced by 10px span 40px total (lines at 0, 10, 20, 30, 40)
     this.staveTopY = centerY - 20;
-    this.measureDrawY = this.staveTopY - STAVE_CANVAS_Y;
+    this.measureDrawY = this.staveTopY - STAVE_TOP_LINE_Y;
   }
 
   public startLoop(): void {
@@ -105,7 +108,8 @@ export class ScrollerView {
    * Primary high-performance rendering frame:
    * Uses AudioContext.currentTime single source of truth clock and GPU-accelerated blitting.
    */
-  public renderFrame(settings?: AppSettings): void {
+  public renderFrame(overrideSettings?: AppSettings): void {
+    const settings = overrideSettings ?? this.getSettings();
     const ctx = this.ctx;
     const dpr = this.dpr;
     const w = this.viewportWidth;
@@ -125,13 +129,11 @@ export class ScrollerView {
     const currentGlobalBeat = this.metronome.getCurrentGlobalBeat();
 
     // 4. Update ring buffer: pre-render upcoming measures and evict offscreen ones
-    if (settings) {
-      const lookaheadBeats = ((w - this.playheadX) / BEAT_WIDTH) + 6;
-      this.buffer.ensureAhead(currentGlobalBeat, lookaheadBeats, settings, dpr);
+    const lookaheadBeats = ((w - this.playheadX) / BEAT_WIDTH) + 6;
+    this.buffer.ensureAhead(currentGlobalBeat, lookaheadBeats, settings, dpr);
 
-      const minVisibleBeat = currentGlobalBeat - (this.playheadX / BEAT_WIDTH) - 2;
-      this.buffer.evictBefore(minVisibleBeat);
-    }
+    const minVisibleBeat = currentGlobalBeat - (this.playheadX / BEAT_WIDTH) - 2;
+    this.buffer.evictBefore(minVisibleBeat);
 
     // 5. Blit visible measures from ring-buffer
     const measures = this.buffer.getMeasures();
@@ -157,7 +159,7 @@ export class ScrollerView {
     }
 
     // 6. Draw pinned clef at the left margin
-    this.drawPinnedClef(ctx, settings?.clef ?? 'treble');
+    this.drawPinnedClef(ctx, settings.clef);
 
     // 7. Draw fixed playhead guide line in high-contrast red accent
     this.drawPlayhead(ctx, h);
