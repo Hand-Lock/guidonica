@@ -34,6 +34,7 @@ class SolfegeScrollerApp {
   private intervalSixth: HTMLInputElement;
   private intervalSeventh: HTMLInputElement;
   private intervalOctave: HTMLInputElement;
+  private intervalNinthPlus: HTMLInputElement;
 
   private subdivQuarter: HTMLInputElement;
   private subdivEighth: HTMLInputElement;
@@ -64,6 +65,7 @@ class SolfegeScrollerApp {
     this.intervalSixth = document.getElementById('interval-sixth') as HTMLInputElement;
     this.intervalSeventh = document.getElementById('interval-seventh') as HTMLInputElement;
     this.intervalOctave = document.getElementById('interval-octave') as HTMLInputElement;
+    this.intervalNinthPlus = document.getElementById('interval-ninth-plus') as HTMLInputElement;
 
     this.subdivQuarter = document.getElementById('subdiv-quarter') as HTMLInputElement;
     this.subdivEighth = document.getElementById('subdiv-eighth') as HTMLInputElement;
@@ -153,6 +155,7 @@ class SolfegeScrollerApp {
           sixth: this.intervalSixth.checked,
           seventh: this.intervalSeventh.checked,
           octave: this.intervalOctave.checked,
+          ninthPlus: this.intervalNinthPlus.checked,
         },
       });
       this.resetSession();
@@ -166,6 +169,7 @@ class SolfegeScrollerApp {
     this.intervalSixth.addEventListener('change', handleIntervalChange);
     this.intervalSeventh.addEventListener('change', handleIntervalChange);
     this.intervalOctave.addEventListener('change', handleIntervalChange);
+    this.intervalNinthPlus.addEventListener('change', handleIntervalChange);
 
     // Subdivisions
     const handleSubdivChange = (): void => {

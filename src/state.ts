@@ -38,6 +38,7 @@ export class AppState {
           sixth: false,
           seventh: false,
           octave: false,
+          ninthPlus: false,
         },
       },
       playbackState: 'stopped',

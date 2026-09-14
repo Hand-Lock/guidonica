@@ -162,58 +162,92 @@ export class MusicGenerator {
     const currentIdx = this.lastPitchIndex.get(clef) ?? Math.floor(rangeLen / 2);
 
     // Collect all allowed diatonic steps from user-selected toggle checkboxes
-    const candidateSteps: number[] = [];
-    if (intervals.unison) candidateSteps.push(0);
-    if (intervals.second) candidateSteps.push(1);
-    if (intervals.third) candidateSteps.push(2);
-    if (intervals.fourth) candidateSteps.push(3);
-    if (intervals.fifth) candidateSteps.push(4);
-    if (intervals.sixth) candidateSteps.push(5);
-    if (intervals.seventh) candidateSteps.push(6);
-    if (intervals.octave) candidateSteps.push(7);
+    type IntervalChoice = number | '9+';
+    const candidateChoices: IntervalChoice[] = [];
+    if (intervals.unison) candidateChoices.push(0);
+    if (intervals.second) candidateChoices.push(1);
+    if (intervals.third) candidateChoices.push(2);
+    if (intervals.fourth) candidateChoices.push(3);
+    if (intervals.fifth) candidateChoices.push(4);
+    if (intervals.sixth) candidateChoices.push(5);
+    if (intervals.seventh) candidateChoices.push(6);
+    if (intervals.octave) candidateChoices.push(7);
+    if (intervals.ninthPlus) candidateChoices.push('9+');
 
     // Fallback if all checkboxes are unchecked: default to seconds and thirds to avoid mono-interval exercises
-    const activeSteps = candidateSteps.length > 0 ? candidateSteps : [1, 2];
+    const activeChoices = candidateChoices.length > 0 ? candidateChoices : [1, 2];
 
     // Pick an interval step size from the active set
-    let chosenStep: number;
-    if (activeSteps.includes(0) && this.consecutiveUnisons >= 2 && activeSteps.some((s) => s > 0)) {
+    let chosen: IntervalChoice;
+    if (activeChoices.includes(0) && this.consecutiveUnisons >= 2 && activeChoices.some((c) => c !== 0)) {
       // Avoid excessive repeated notes (> 2) when moving intervals are available
-      const nonZeroSteps = activeSteps.filter((s) => s > 0);
-      chosenStep = nonZeroSteps[Math.floor(Math.random() * nonZeroSteps.length)];
+      const nonZeroChoices = activeChoices.filter((c) => c !== 0);
+      chosen = nonZeroChoices[Math.floor(Math.random() * nonZeroChoices.length)];
     } else {
-      chosenStep = activeSteps[Math.floor(Math.random() * activeSteps.length)];
+      chosen = activeChoices[Math.floor(Math.random() * activeChoices.length)];
     }
 
-    if (chosenStep === 0) {
+    if (chosen === 0) {
       this.consecutiveUnisons++;
       return range[currentIdx];
     }
 
     this.consecutiveUnisons = 0;
 
-    const canGoUp = currentIdx + chosenStep < rangeLen;
-    const canGoDown = currentIdx - chosenStep >= 0;
-
+    let chosenStep: number;
     let direction: number;
-    if (canGoUp && canGoDown) {
-      // Both directions fit within the 3-ledger-line clef range.
-      // Apply boundary bias towards staff center when approaching range limits:
-      const margin = 4;
-      if (currentIdx >= rangeLen - margin) {
-        // High register: 85% descend
-        direction = Math.random() < 0.85 ? -1 : 1;
-      } else if (currentIdx <= margin) {
-        // Low register: 85% ascend
-        direction = Math.random() < 0.85 ? 1 : -1;
+
+    if (chosen === '9+') {
+      // Ninth and plus: compound leaps (diatonic step >= 8)
+      const canGoUp = currentIdx + 8 < rangeLen;
+      const canGoDown = currentIdx - 8 >= 0;
+
+      if (canGoUp && canGoDown) {
+        const margin = 4;
+        if (currentIdx >= rangeLen - margin) {
+          direction = -1;
+        } else if (currentIdx <= margin) {
+          direction = 1;
+        } else {
+          direction = Math.random() < 0.5 ? 1 : -1;
+        }
+      } else if (canGoUp) {
+        direction = 1;
       } else {
-        // Middle staff register: 50/50
-        direction = Math.random() < 0.5 ? 1 : -1;
+        direction = -1;
       }
-    } else if (canGoUp) {
-      direction = 1;
+
+      const maxStep = direction === 1 ? rangeLen - 1 - currentIdx : currentIdx;
+      // Compound intervals: 9th (8 steps), 10th (9 steps), 11th (10 steps), 12th (11 steps)
+      const compoundCandidates = [8, 9, 10, 11].filter((s) => s <= maxStep);
+      chosenStep =
+        compoundCandidates.length > 0
+          ? compoundCandidates[Math.floor(Math.random() * compoundCandidates.length)]
+          : 8;
     } else {
-      direction = -1;
+      chosenStep = chosen;
+      const canGoUp = currentIdx + chosenStep < rangeLen;
+      const canGoDown = currentIdx - chosenStep >= 0;
+
+      if (canGoUp && canGoDown) {
+        // Both directions fit within the 3-ledger-line clef range.
+        // Apply boundary bias towards staff center when approaching range limits:
+        const margin = 4;
+        if (currentIdx >= rangeLen - margin) {
+          // High register: 85% descend
+          direction = Math.random() < 0.85 ? -1 : 1;
+        } else if (currentIdx <= margin) {
+          // Low register: 85% ascend
+          direction = Math.random() < 0.85 ? 1 : -1;
+        } else {
+          // Middle staff register: 50/50
+          direction = Math.random() < 0.5 ? 1 : -1;
+        }
+      } else if (canGoUp) {
+        direction = 1;
+      } else {
+        direction = -1;
+      }
     }
 
     const nextIdx = Math.max(0, Math.min(rangeLen - 1, currentIdx + direction * chosenStep));

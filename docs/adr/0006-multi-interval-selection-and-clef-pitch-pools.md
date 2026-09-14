@@ -26,11 +26,12 @@ Prior to this architectural revision, two pedagogical limitations existed in the
     sixth: boolean;   // 6th (5 diatonic steps)
     seventh: boolean; // 7th (6 diatonic steps)
     octave: boolean;  // 8ve (7 diatonic steps / octave leap)
+    ninthPlus: boolean; // 9+ (8+ diatonic steps / compound intervals: 9ths, 10ths, 11ths, etc.)
   }
   ```
 - **UI Architecture**:
-  - Replaced `<select id="select-intervals">` with `<fieldset class="control-group intervals-group">` containing an 8-item checkbox grid (`.intervals-grid` in 4 columns × 2 rows).
-  - Matches the visual styling and height of `.subdivisions-group`.
+  - Replaced `<select id="select-intervals">` with `<fieldset class="control-group intervals-group">` containing a 9-item checkbox grid (`.intervals-grid` in 5 columns × 2 rows).
+  - Matches the visual styling and 2-row height of `.subdivisions-group`.
 - **Default State**:
   - `second: true`, `third: true`, all others `false`. This immediately eliminates mono-interval exercises on initial load, generating authentic sight-reading melodies combining steps and skips.
 - **Safe Fallback**:
@@ -38,14 +39,14 @@ Prior to this architectural revision, two pedagogical limitations existed in the
 
 ### 2. Melodic Random-Walk Algorithm with Exact Interval Preservation
 - In `MusicGenerator.sampleNextPitch(clef, intervals)`:
-  1. Active diatonic steps are collected from active checkboxes (`[0, 1, 2, 3, 4, 5, 6, 7]`).
+  1. Active diatonic choices are collected from active checkboxes (`[0, 1, 2, 3, 4, 5, 6, 7, '9+']`).
   2. A repetition guard prevents excessive consecutive unisons (`consecutiveUnisons >= 2`) when moving intervals are enabled.
-  3. Direction (ascending vs. descending) is evaluated against the clef boundaries:
+  3. For standard intervals (1 through 7 steps) and compound leaps (`'9+'` selecting $\ge 8$ diatonic steps, such as 9ths, 10ths, 11ths): direction (ascending vs. descending) is evaluated against the clef boundaries:
      $$\text{canGoUp} = (\text{currentIdx} + \text{step} < \text{rangeLen})$$
      $$\text{canGoDown} = (\text{currentIdx} - \text{step} \ge 0)$$
-  4. Because every clef's note pool spans 23 diatonic notes and the maximum interval step is 7 (octave), at least one direction is **always** valid from any position in the range ($\text{canGoUp} \lor \text{canGoDown} \equiv \text{true}$).
+  4. Because every clef's note pool spans 23 diatonic notes, at least one direction is **always** valid from any position in the range ($\max(\text{currentIdx}, 22 - \text{currentIdx}) \ge 11 \ge 8$).
   5. If both directions are feasible, boundary bias is applied when approaching edges ($\ge \text{rangeLen} - 4$ biases 85% downward; $\le 4$ biases 85% upward).
-  6. If only one direction fits, the generator strictly uses that direction. This eliminates clamp-wrapping distortion and guarantees that every generated interval step is 100% mathematically exact (an octave is always an octave, a third is always a third).
+  6. If only one direction fits, the generator strictly uses that direction. This eliminates clamp-wrapping distortion and guarantees that every generated interval step is 100% mathematically exact (an octave is always an octave, a 9+ is always $\ge 8$ steps).
   7. The first note of a session anchors on the clef's default tonic/anchor note (e.g. `c/4` in treble/alto/tenor, `c/3` in bass), establishing a tonal reference for the sight-reader.
 
 ### 3. Clef-Dependent Pitch Pools Spanning ±3 Ledger Lines
