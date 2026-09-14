@@ -31,7 +31,7 @@ solfege-scroller/
 └── src/
     ├── main.ts             # Application bootstrapper and UI event wiring
     ├── state.ts            # Typed session state and parameter interfaces
-    ├── style.css           # Dark-mode minimalist styles and accent color
+    ├── style.css           # Clean light-mode styles and accent colors
     ├── audio/
     │   └── metronome.ts    # Web Audio oscillator synthesis & clock scheduler
     ├── notation/
@@ -64,7 +64,7 @@ solfege-scroller/
 4. **Clean Code & Styling**:
    - 2 spaces for indentation.
    - No extraneous console logging in production modules (`console.log` should be removed before committing).
-   - Minimalist, dark-mode CSS with high contrast for music notation readability and a distinct accent color for the playhead.
+   - Minimalist, light-mode CSS with high contrast for music notation readability and a distinct accent color for the playhead.
 
 ---
 

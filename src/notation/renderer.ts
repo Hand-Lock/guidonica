@@ -33,6 +33,8 @@ export class MeasureRenderer {
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     renderer.resize(data.width, MEASURE_CANVAS_HEIGHT);
     const ctx = renderer.getContext();
+    ctx.setFillStyle('#000000');
+    ctx.setStrokeStyle('#000000');
 
     // Create stave without left barline, but with right barline separating measures
     const stave = new Stave(0, STAVE_CANVAS_Y, data.width, {
@@ -47,8 +49,8 @@ export class MeasureRenderer {
       ],
     });
 
-    stave.setStyle({ strokeStyle: '#4f4f4f', fillStyle: '#4f4f4f' });
-    stave.setDefaultLedgerLineStyle({ strokeStyle: '#707070', fillStyle: '#707070' });
+    stave.setStyle({ strokeStyle: '#64748b', fillStyle: '#64748b' });
+    stave.setDefaultLedgerLineStyle({ strokeStyle: '#64748b', fillStyle: '#64748b' });
 
     // Construct StaveNotes
     const staveNotes: StaveNote[] = [];
@@ -76,7 +78,7 @@ export class MeasureRenderer {
           notesOccupied: 2,
           location: Tuplet.LOCATION_TOP,
         });
-        tuplet.setStyle({ fillStyle: '#cccccc', strokeStyle: '#cccccc' });
+        tuplet.setStyle({ fillStyle: '#334155', strokeStyle: '#334155' });
         tuplets.push(tuplet);
       }
     }
@@ -86,7 +88,7 @@ export class MeasureRenderer {
       beamRests: false,
     });
     for (const beam of beams) {
-      beam.setStyle({ fillStyle: '#ffffff', strokeStyle: '#ffffff' });
+      beam.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
     }
 
     // Voice setup
@@ -147,6 +149,8 @@ export class MeasureRenderer {
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     renderer.resize(width, MEASURE_CANVAS_HEIGHT);
     const ctx = renderer.getContext();
+    ctx.setFillStyle('#000000');
+    ctx.setStrokeStyle('#000000');
 
     // The pinned clef is drawn with hidden lines so it cleanly overlays stationary staff lines
     const stave = new Stave(10, STAVE_CANVAS_Y, width - 10, {
@@ -162,7 +166,10 @@ export class MeasureRenderer {
     });
 
     stave.addClef(clef);
-    stave.setStyle({ strokeStyle: '#00ffcc', fillStyle: '#00ffcc' });
+    stave.setStyle({ strokeStyle: '#000000', fillStyle: '#000000' });
+    for (const mod of stave.getModifiers()) {
+      mod.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+    }
     stave.setContext(ctx).draw();
 
     return canvas;
@@ -192,7 +199,10 @@ export class MeasureRenderer {
       Dot.buildAndAttach([staveNote], { all: true });
     }
 
-    staveNote.setStyle({ fillStyle: '#f0f0f0', strokeStyle: '#f0f0f0' });
+    staveNote.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+    for (const mod of staveNote.getModifiers()) {
+      mod.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+    }
     return staveNote;
   }
 }

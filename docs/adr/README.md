@@ -7,6 +7,7 @@ This directory documents the core architectural decisions, implementation method
 | ADR | Title | Status | Date |
 | --- | ----- | ------ | ---- |
 | [0001](0001-core-architecture-and-rendering-pipeline.md) | Core Architecture, Metric Linearity & Blitting Pipeline | Accepted | 2026-09-14 |
+| [0002](0002-light-theme-standardization.md) | Light Theme Standardization & High-Contrast Canvas Rendering | Accepted | 2026-09-14 |
 
 ---
 
