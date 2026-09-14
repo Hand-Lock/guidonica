@@ -2,6 +2,7 @@
   "name": "solfege-scroller",
   "private": true,
   "version": "0.1.0",
+  "description": "High-performance client-only web tool for sight-reading and solfège practice with continuous procedural notation scrolling",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +10,24 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@11.8.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lauseta/solfege-scroller.git"
+  },
+  "keywords": [
+    "solfege",
+    "sight-reading",
+    "music-notation",
+    "vexflow",
+    "canvas",
+    "web-audio"
+  ],
+  "author": "lauseta",
+  "license": "MIT",
   "dependencies": {
     "vexflow": "^5.0.0"
   },
