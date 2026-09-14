@@ -200,7 +200,7 @@ html, body {
 }
 
 .intervals-grid {
-  grid-template-columns: repeat(4, auto);
+  grid-template-columns: repeat(5, auto);
   gap: 4px 10px;
 }
 

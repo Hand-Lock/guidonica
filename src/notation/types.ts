@@ -11,6 +11,7 @@ export interface IntervalOptions {
   sixth: boolean; // 6th (5 steps)
   seventh: boolean; // 7th (6 steps)
   octave: boolean; // 8ve: octave leap (7 steps)
+  ninthPlus: boolean; // 9+: ninth and plus / compound intervals (8+ steps)
 }
 
 export interface ClefPitchConfig {
