@@ -23,13 +23,8 @@ export class MeasureRenderer {
   /**
    * Renders a single measure onto an offscreen canvas using VexFlow and GPU blitting principles.
    */
-  public renderMeasure(data: MeasureData, dpr: number = window.devicePixelRatio || 1): RenderedMeasure {
+  public renderMeasure(data: MeasureData): RenderedMeasure {
     const canvas = document.createElement('canvas');
-    canvas.width = Math.ceil(data.width * dpr);
-    canvas.height = Math.ceil(MEASURE_CANVAS_HEIGHT * dpr);
-    canvas.style.width = `${data.width}px`;
-    canvas.style.height = `${MEASURE_CANVAS_HEIGHT}px`;
-
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     renderer.resize(data.width, MEASURE_CANVAS_HEIGHT);
     const ctx = renderer.getContext();
@@ -151,14 +146,9 @@ export class MeasureRenderer {
   /**
    * Renders the stationary clef glyph onto an offscreen canvas to pin at the left margin.
    */
-  public renderPinnedClef(clef: Clef, dpr: number = window.devicePixelRatio || 1): HTMLCanvasElement {
+  public renderPinnedClef(clef: Clef): HTMLCanvasElement {
     const width = 80;
     const canvas = document.createElement('canvas');
-    canvas.width = Math.ceil(width * dpr);
-    canvas.height = Math.ceil(MEASURE_CANVAS_HEIGHT * dpr);
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${MEASURE_CANVAS_HEIGHT}px`;
-
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     renderer.resize(width, MEASURE_CANVAS_HEIGHT);
     const ctx = renderer.getContext();
@@ -189,17 +179,8 @@ export class MeasureRenderer {
   }
 
   private createStaveNote(noteData: NoteData, clef: Clef, stave: Stave): StaveNote {
-    let durationString = noteData.duration;
-    let isDotted = false;
-
-    if (durationString.endsWith('d')) {
-      isDotted = true;
-      durationString = durationString.slice(0, -1);
-    }
-
-    if (noteData.isRest) {
-      durationString += 'r';
-    }
+    const isDotted = noteData.duration.endsWith('d');
+    const durationString = noteData.isRest ? `${noteData.duration}r` : noteData.duration;
 
     const staveNote = new StaveNote({
       keys: noteData.keys,

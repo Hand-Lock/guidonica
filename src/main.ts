@@ -15,6 +15,8 @@ class SolfegeScrollerApp {
 
   // DOM Elements
   private btnPlayPause: HTMLButtonElement;
+  private btnLabel: HTMLElement;
+  private btnIcon: HTMLElement;
   private btnReset: HTMLButtonElement;
   private tempoSlider: HTMLInputElement;
   private tempoNumber: HTMLInputElement;
@@ -35,6 +37,7 @@ class SolfegeScrollerApp {
   private intervalSeventh: HTMLInputElement;
   private intervalOctave: HTMLInputElement;
   private intervalNinthPlus: HTMLInputElement;
+  private intervalCheckboxes: HTMLInputElement[];
 
   private subdivQuarter: HTMLInputElement;
   private subdivEighth: HTMLInputElement;
@@ -42,10 +45,13 @@ class SolfegeScrollerApp {
   private subdivWhole: HTMLInputElement;
   private subdivSixteenth: HTMLInputElement;
   private subdivTriplets: HTMLInputElement;
+  private subdivCheckboxes: HTMLInputElement[];
 
   constructor() {
     // 1. Query all UI DOM elements
     this.btnPlayPause = document.getElementById('btn-play-pause') as HTMLButtonElement;
+    this.btnLabel = this.btnPlayPause.querySelector('.btn-label') as HTMLElement;
+    this.btnIcon = this.btnPlayPause.querySelector('.btn-icon') as HTMLElement;
     this.btnReset = document.getElementById('btn-reset') as HTMLButtonElement;
     this.tempoSlider = document.getElementById('tempo-slider') as HTMLInputElement;
     this.tempoNumber = document.getElementById('tempo-number') as HTMLInputElement;
@@ -67,12 +73,33 @@ class SolfegeScrollerApp {
     this.intervalOctave = document.getElementById('interval-octave') as HTMLInputElement;
     this.intervalNinthPlus = document.getElementById('interval-ninth-plus') as HTMLInputElement;
 
+    this.intervalCheckboxes = [
+      this.intervalUnison,
+      this.intervalSecond,
+      this.intervalThird,
+      this.intervalFourth,
+      this.intervalFifth,
+      this.intervalSixth,
+      this.intervalSeventh,
+      this.intervalOctave,
+      this.intervalNinthPlus,
+    ];
+
     this.subdivQuarter = document.getElementById('subdiv-quarter') as HTMLInputElement;
     this.subdivEighth = document.getElementById('subdiv-eighth') as HTMLInputElement;
     this.subdivHalf = document.getElementById('subdiv-half') as HTMLInputElement;
     this.subdivWhole = document.getElementById('subdiv-whole') as HTMLInputElement;
     this.subdivSixteenth = document.getElementById('subdiv-sixteenth') as HTMLInputElement;
     this.subdivTriplets = document.getElementById('subdiv-triplets') as HTMLInputElement;
+
+    this.subdivCheckboxes = [
+      this.subdivQuarter,
+      this.subdivEighth,
+      this.subdivHalf,
+      this.subdivWhole,
+      this.subdivSixteenth,
+      this.subdivTriplets,
+    ];
 
     const canvas = document.getElementById('scroller-canvas') as HTMLCanvasElement;
 
@@ -96,20 +123,26 @@ class SolfegeScrollerApp {
     this.bindAudioEvents();
     this.renderBeatDots(initialSettings.timeSignature);
 
-    // 4. Initial buffer fill and idle frame
-    this.buffer.ensureAhead(0, 16, initialSettings, window.devicePixelRatio || 1);
-    this.scroller.renderFrame(initialSettings);
+    // 4. Initial buffer fill and idle frame (anchored to count-in offset)
+    this.resetBuffer();
 
     // 5. Subscribe to state changes for UI sync
     globalState.subscribe((state) => this.syncUI(state));
   }
 
   private bindEvents(): void {
-    this.btnPlayPause.addEventListener('click', () => this.togglePlayback());
-    this.btnReset.addEventListener('click', () => this.resetSession());
+    this.btnPlayPause.addEventListener('click', () => {
+      this.btnPlayPause.blur();
+      this.togglePlayback();
+    });
+
+    this.btnReset.addEventListener('click', () => {
+      this.btnReset.blur();
+      this.resetSession();
+    });
 
     // Tempo controls
-    const handleTempoChange = (val: number): void => {
+    const applyTempo = (val: number): void => {
       const clamped = Math.max(30, Math.min(240, val));
       this.tempoSlider.value = String(clamped);
       this.tempoNumber.value = String(clamped);
@@ -119,11 +152,22 @@ class SolfegeScrollerApp {
     };
 
     this.tempoSlider.addEventListener('input', (e) => {
-      handleTempoChange(Number((e.target as HTMLInputElement).value));
+      applyTempo(Number((e.target as HTMLInputElement).value));
+    });
+
+    // Live update when typing in number input
+    this.tempoNumber.addEventListener('input', (e) => {
+      const val = Number((e.target as HTMLInputElement).value);
+      if (val >= 30 && val <= 240) {
+        this.tempoSlider.value = String(val);
+        this.bpmDisplay.textContent = String(val);
+        this.metronome.setTempo(val);
+        globalState.updateSettings({ tempo: val });
+      }
     });
 
     this.tempoNumber.addEventListener('change', (e) => {
-      handleTempoChange(Number((e.target as HTMLInputElement).value));
+      applyTempo(Number((e.target as HTMLInputElement).value));
     });
 
     // Time Signature
@@ -143,8 +187,17 @@ class SolfegeScrollerApp {
       this.resetSession();
     });
 
-    // Intervals
-    const handleIntervalChange = (): void => {
+    // Intervals: ensure at least one interval remains checked
+    const handleIntervalChange = (e: Event): void => {
+      const checkedCount = this.intervalCheckboxes.filter((cb) => cb.checked).length;
+      const target = e.target as HTMLInputElement;
+
+      if (checkedCount === 0) {
+        // Prevent unchecking the sole active interval
+        target.checked = true;
+        return;
+      }
+
       globalState.updateSettings({
         intervals: {
           unison: this.intervalUnison.checked,
@@ -161,18 +214,21 @@ class SolfegeScrollerApp {
       this.resetSession();
     };
 
-    this.intervalUnison.addEventListener('change', handleIntervalChange);
-    this.intervalSecond.addEventListener('change', handleIntervalChange);
-    this.intervalThird.addEventListener('change', handleIntervalChange);
-    this.intervalFourth.addEventListener('change', handleIntervalChange);
-    this.intervalFifth.addEventListener('change', handleIntervalChange);
-    this.intervalSixth.addEventListener('change', handleIntervalChange);
-    this.intervalSeventh.addEventListener('change', handleIntervalChange);
-    this.intervalOctave.addEventListener('change', handleIntervalChange);
-    this.intervalNinthPlus.addEventListener('change', handleIntervalChange);
+    for (const cb of this.intervalCheckboxes) {
+      cb.addEventListener('change', handleIntervalChange);
+    }
 
-    // Subdivisions
-    const handleSubdivChange = (): void => {
+    // Subdivisions: ensure at least one subdivision remains checked
+    const handleSubdivChange = (e: Event): void => {
+      const checkedCount = this.subdivCheckboxes.filter((cb) => cb.checked).length;
+      const target = e.target as HTMLInputElement;
+
+      if (checkedCount === 0) {
+        // Prevent unchecking the sole active subdivision
+        target.checked = true;
+        return;
+      }
+
       globalState.updateSettings({
         subdivisions: {
           quarter: this.subdivQuarter.checked,
@@ -186,12 +242,9 @@ class SolfegeScrollerApp {
       this.resetSession();
     };
 
-    this.subdivQuarter.addEventListener('change', handleSubdivChange);
-    this.subdivEighth.addEventListener('change', handleSubdivChange);
-    this.subdivHalf.addEventListener('change', handleSubdivChange);
-    this.subdivWhole.addEventListener('change', handleSubdivChange);
-    this.subdivSixteenth.addEventListener('change', handleSubdivChange);
-    this.subdivTriplets.addEventListener('change', handleSubdivChange);
+    for (const cb of this.subdivCheckboxes) {
+      cb.addEventListener('change', handleSubdivChange);
+    }
 
     // Rests
     this.toggleRests.addEventListener('change', () => {
@@ -202,7 +255,13 @@ class SolfegeScrollerApp {
 
   private bindKeyboardShortcuts(): void {
     window.addEventListener('keydown', (e) => {
+      // Prevent rapid fire on key-repeat for action triggers
+      if (e.repeat && (e.code === 'Space' || e.code === 'KeyR' || e.code === 'Escape')) {
+        return;
+      }
+
       const target = e.target as HTMLElement;
+
       if (target.tagName === 'INPUT' || target.tagName === 'SELECT') {
         if (e.code === 'Space') {
           e.preventDefault();
@@ -214,6 +273,13 @@ class SolfegeScrollerApp {
           this.resetSession();
           return;
         }
+        return;
+      }
+
+      if (target.tagName === 'BUTTON' && e.code === 'Space') {
+        e.preventDefault();
+        target.blur();
+        this.togglePlayback();
         return;
       }
 
@@ -288,7 +354,8 @@ class SolfegeScrollerApp {
   private resetBuffer(): void {
     this.buffer.reset();
     const settings = globalState.settings;
-    this.buffer.ensureAhead(0, 16, settings, window.devicePixelRatio || 1);
+    const initialBeat = this.metronome.getCurrentGlobalBeat();
+    this.buffer.ensureAhead(initialBeat, 16, settings);
     this.scroller.renderFrame(settings);
   }
 
@@ -323,20 +390,17 @@ class SolfegeScrollerApp {
   }
 
   private syncUI(state: SessionState): void {
-    const label = this.btnPlayPause.querySelector('.btn-label') as HTMLElement;
-    const icon = this.btnPlayPause.querySelector('.btn-icon') as HTMLElement;
-
     if (state.playbackState === 'counting-in' || state.playbackState === 'playing') {
-      label.textContent = 'Pause';
-      icon.textContent = '⏸';
+      this.btnLabel.textContent = 'Pause';
+      this.btnIcon.textContent = '⏸';
       this.btnPlayPause.classList.add('playing');
     } else if (state.playbackState === 'paused') {
-      label.textContent = 'Resume';
-      icon.textContent = '▶';
+      this.btnLabel.textContent = 'Resume';
+      this.btnIcon.textContent = '▶';
       this.btnPlayPause.classList.remove('playing');
     } else {
-      label.textContent = 'Start';
-      icon.textContent = '▶';
+      this.btnLabel.textContent = 'Start';
+      this.btnIcon.textContent = '▶';
       this.btnPlayPause.classList.remove('playing');
     }
 

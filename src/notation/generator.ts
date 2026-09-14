@@ -75,6 +75,7 @@ export class MusicGenerator {
   }
 
   public resetPitch(): void {
+    this.tupletCounter = 0;
     this.consecutiveUnisons = 0;
     this.isFirstNoteOfSession = true;
     for (const clef of ['treble', 'bass', 'alto', 'tenor'] as Clef[]) {
@@ -288,6 +289,16 @@ export class MusicGenerator {
       result.push({
         duration: 'w',
         beatDuration: 4,
+        isRest: allowRests && Math.random() < 0.1,
+      });
+      return result;
+    }
+
+    // In 3/4 meter, allow dotted half note (3 beats) filling the full measure
+    if (ts === '3/4' && (effectiveSubdiv.half || effectiveSubdiv.whole) && currentBeatIndex === 0 && Math.random() < 0.3) {
+      result.push({
+        duration: 'hd',
+        beatDuration: 3,
         isRest: allowRests && Math.random() < 0.1,
       });
       return result;

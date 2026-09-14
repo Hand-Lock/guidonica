@@ -1,4 +1,4 @@
-import { AppSettings, PlaybackState, TimeSignature, Clef } from './notation/types';
+import { AppSettings, PlaybackState } from './notation/types';
 
 export interface SessionState {
   settings: AppSettings;

@@ -78,7 +78,6 @@ export interface RenderedMeasure {
 }
 
 /** Global metric layout constants */
-export const DEFAULT_BEAT_WIDTH = 120; // Default fallback pixel width per metric beat
 export const NOTE_START_OFFSET = 26; // Padding before beat 0 after the left barline
 export const MEASURE_CANVAS_HEIGHT = 180;
 export const STAVE_CANVAS_Y = 40;
