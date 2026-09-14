@@ -13,6 +13,7 @@ This directory documents the core architectural decisions, implementation method
 | [0005](0005-dynamic-subdivision-beat-width-and-stave-padding-compensation.md) | Dynamic Subdivision Beat Width & Stave Padding Compensation | Accepted | 2026-09-14 |
 | [0006](0006-multi-interval-selection-and-clef-pitch-pools.md) | Multi-Interval Checkbox Selection & Clef-Dependent Pitch Pools (±3 Ledger Lines) | Accepted | 2026-09-14 |
 | [0007](0007-comprehensive-system-audit-and-optimizations.md) | Comprehensive System Audit, Glitch Elimination & Performance Optimizations | Accepted | 2026-09-14 |
+| [0008](0008-pause-and-resume-state-synchronization.md) | Pause and Resume State Synchronization & Beat Grid Phase Alignment | Accepted | 2026-09-14 |
 
 ---
 
