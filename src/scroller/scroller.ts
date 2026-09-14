@@ -1,4 +1,4 @@
-import { AppSettings, BEAT_WIDTH, Clef, NOTE_START_OFFSET, STAVE_TOP_LINE_Y } from '../notation/types';
+import { AppSettings, Clef, NOTE_START_OFFSET, STAVE_TOP_LINE_Y, computeBeatWidth } from '../notation/types';
 import { MetronomeEngine } from '../audio/metronome';
 import { MeasureBuffer } from './buffer';
 import { MeasureRenderer } from '../notation/renderer';
@@ -127,12 +127,13 @@ export class ScrollerView {
 
     // 3. Obtain current beat from hardware audio clock
     const currentGlobalBeat = this.metronome.getCurrentGlobalBeat();
+    const activeBeatWidth = computeBeatWidth(settings.subdivisions, settings.timeSignature);
 
     // 4. Update ring buffer: pre-render upcoming measures and evict offscreen ones
-    const lookaheadBeats = ((w - this.playheadX) / BEAT_WIDTH) + 6;
+    const lookaheadBeats = ((w - this.playheadX) / activeBeatWidth) + 6;
     this.buffer.ensureAhead(currentGlobalBeat, lookaheadBeats, settings, dpr);
 
-    const minVisibleBeat = currentGlobalBeat - (this.playheadX / BEAT_WIDTH) - 2;
+    const minVisibleBeat = currentGlobalBeat - (this.playheadX / activeBeatWidth) - 2;
     this.buffer.evictBefore(minVisibleBeat);
 
     // 5. Blit visible measures from ring-buffer
@@ -141,7 +142,7 @@ export class ScrollerView {
       const m = measures[i];
       // Screen X where measure's left edge aligns so that noteheads cross playhead at their exact beat time
       const measureScreenX =
-        this.playheadX - NOTE_START_OFFSET + (m.data.startBeat - currentGlobalBeat) * BEAT_WIDTH;
+        this.playheadX - NOTE_START_OFFSET + (m.data.startBeat - currentGlobalBeat) * m.data.beatWidth;
 
       if (measureScreenX + m.width >= 0 && measureScreenX <= w) {
         ctx.drawImage(

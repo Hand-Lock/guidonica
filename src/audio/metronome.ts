@@ -65,11 +65,11 @@ export class MetronomeEngine {
     if (this.tempo === bpm) return;
 
     if (this.isRunning && !this.isPaused && this.ctx) {
-      // Re-anchor timing seamlessly on tempo change
-      const currentElapsed = this.getElapsedPlaybackSeconds();
+      // Re-anchor timing seamlessly on tempo change so current fractional beat position remains continuous
+      const currentBeat = this.getCurrentGlobalBeat();
       this.tempo = bpm;
       this.updateMeterParams();
-      this.measureZeroStartTime = this.ctx.currentTime - currentElapsed;
+      this.measureZeroStartTime = this.ctx.currentTime - currentBeat * this.secondsPerBeat;
       this.nextBeatTime = this.ctx.currentTime;
     } else {
       this.tempo = bpm;
