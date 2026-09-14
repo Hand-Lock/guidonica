@@ -9,6 +9,7 @@ This directory documents the core architectural decisions, implementation method
 | [0001](0001-core-architecture-and-rendering-pipeline.md) | Core Architecture, Metric Linearity & Blitting Pipeline | Accepted | 2026-09-14 |
 | [0002](0002-light-theme-standardization.md) | Light Theme Standardization & High-Contrast Canvas Rendering | Accepted | 2026-09-14 |
 | [0003](0003-infinite-stream-stave-alignment-and-barlines.md) | Infinite Streaming Buffer, Stave Alignment & Barline Rendering | Accepted | 2026-09-14 |
+| [0004](0004-beaming-geometry-and-stave-attachment.md) | Beaming Geometry, Stave Attachment & Stem Extension Alignment | Accepted | 2026-09-14 |
 
 ---
 
