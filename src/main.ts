@@ -1,4 +1,13 @@
-import { CLEF_RANGE_DISPLAY, Clef, TimeSignature } from './notation/types';
+import {
+  CLEF_RANGE_DISPLAY,
+  Clef,
+  TUPLET_NAMES,
+  TUPLET_VALUES,
+  TimeSignature,
+  TupletName,
+  TupletOptions,
+  TupletValue,
+} from './notation/types';
 import { globalState, SessionState } from './state';
 import { MetronomeEngine } from './audio/metronome';
 import { MusicGenerator } from './notation/generator';
@@ -44,8 +53,14 @@ class SolfegeScrollerApp {
   private subdivHalf: HTMLInputElement;
   private subdivWhole: HTMLInputElement;
   private subdivSixteenth: HTMLInputElement;
-  private subdivTriplets: HTMLInputElement;
   private subdivCheckboxes: HTMLInputElement[];
+
+  private btnTupletsToggle: HTMLButtonElement;
+  private tupletsBadge: HTMLElement;
+  private tupletsPopover: HTMLElement;
+  private btnTupletsClear: HTMLButtonElement;
+  private btnTupletsClose: HTMLButtonElement;
+  private tupletCheckboxes: HTMLInputElement[];
 
   constructor() {
     // 1. Query all UI DOM elements
@@ -90,7 +105,6 @@ class SolfegeScrollerApp {
     this.subdivHalf = document.getElementById('subdiv-half') as HTMLInputElement;
     this.subdivWhole = document.getElementById('subdiv-whole') as HTMLInputElement;
     this.subdivSixteenth = document.getElementById('subdiv-sixteenth') as HTMLInputElement;
-    this.subdivTriplets = document.getElementById('subdiv-triplets') as HTMLInputElement;
 
     this.subdivCheckboxes = [
       this.subdivQuarter,
@@ -98,8 +112,16 @@ class SolfegeScrollerApp {
       this.subdivHalf,
       this.subdivWhole,
       this.subdivSixteenth,
-      this.subdivTriplets,
     ];
+
+    this.btnTupletsToggle = document.getElementById('btn-tuplets-toggle') as HTMLButtonElement;
+    this.tupletsBadge = document.getElementById('tuplets-badge') as HTMLElement;
+    this.tupletsPopover = document.getElementById('tuplets-popover') as HTMLElement;
+    this.btnTupletsClear = document.getElementById('btn-tuplets-clear') as HTMLButtonElement;
+    this.btnTupletsClose = document.getElementById('btn-tuplets-close') as HTMLButtonElement;
+    this.tupletCheckboxes = Array.from(
+      this.tupletsPopover.querySelectorAll<HTMLInputElement>('input[data-tuplet]')
+    );
 
     const canvas = document.getElementById('scroller-canvas') as HTMLCanvasElement;
 
@@ -224,13 +246,14 @@ class SolfegeScrollerApp {
       cb.addEventListener('change', handleIntervalChange);
     }
 
-    // Subdivisions: ensure at least one subdivision remains checked
+    // Subdivisions: ensure at least one subdivision or tuplet remains checked
     const handleSubdivChange = (e: Event): void => {
       const checkedCount = this.subdivCheckboxes.filter((cb) => cb.checked).length;
+      const activeTupletCount = this.getActiveTupletCount();
       const target = e.target as HTMLInputElement;
 
-      if (checkedCount === 0) {
-        // Prevent unchecking the sole active subdivision
+      if (checkedCount === 0 && activeTupletCount === 0) {
+        // Prevent unchecking when no other subdivision or tuplet is active
         target.checked = true;
         return;
       }
@@ -242,7 +265,6 @@ class SolfegeScrollerApp {
           half: this.subdivHalf.checked,
           whole: this.subdivWhole.checked,
           sixteenth: this.subdivSixteenth.checked,
-          triplets: this.subdivTriplets.checked,
         },
       });
       this.resetSession();
@@ -252,6 +274,9 @@ class SolfegeScrollerApp {
       cb.addEventListener('change', handleSubdivChange);
     }
 
+    // Tuplets menu and matrix checkboxes
+    this.bindTupletEvents();
+
     // Rests
     this.toggleRests.addEventListener('change', () => {
       globalState.updateSettings({ rests: this.toggleRests.checked });
@@ -259,8 +284,159 @@ class SolfegeScrollerApp {
     });
   }
 
+  private bindTupletEvents(): void {
+    // Open / toggle popover
+    this.btnTupletsToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleTupletsPopover();
+    });
+
+    // Close button inside popover
+    this.btnTupletsClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.closeTupletsPopover();
+    });
+
+    // Clear all tuplets
+    this.btnTupletsClear.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.clearAllTuplets();
+    });
+
+    // Prevent clicks inside popover from bubbling up to document click listener
+    this.tupletsPopover.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    // Dismiss popover when clicking anywhere outside
+    document.addEventListener('click', (e) => {
+      if (
+        !this.tupletsPopover.classList.contains('hidden') &&
+        !this.tupletsPopover.contains(e.target as Node) &&
+        !this.btnTupletsToggle.contains(e.target as Node)
+      ) {
+        this.closeTupletsPopover();
+      }
+    });
+
+    // Change listeners for each matrix cell checkbox
+    for (const cb of this.tupletCheckboxes) {
+      cb.addEventListener('change', () => {
+        this.handleTupletChange();
+      });
+    }
+  }
+
+  private toggleTupletsPopover(): void {
+    const isHidden = this.tupletsPopover.classList.contains('hidden');
+    if (isHidden) {
+      this.openTupletsPopover();
+    } else {
+      this.closeTupletsPopover();
+    }
+  }
+
+  private openTupletsPopover(): void {
+    this.tupletsPopover.classList.remove('hidden');
+    this.btnTupletsToggle.classList.add('open');
+    this.btnTupletsToggle.setAttribute('aria-expanded', 'true');
+  }
+
+  private closeTupletsPopover(): void {
+    this.tupletsPopover.classList.add('hidden');
+    this.btnTupletsToggle.classList.remove('open');
+    this.btnTupletsToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  private getActiveTupletCount(): number {
+    return this.tupletCheckboxes.filter((cb) => cb.checked).length;
+  }
+
+  private getTupletOptionsFromUI(): TupletOptions {
+    const options: TupletOptions = {
+      duplet: { '1/4': false, '1/8': false, '1/16': false },
+      triplet: { '1/4': false, '1/8': false, '1/16': false },
+      quadruplet: { '1/4': false, '1/8': false, '1/16': false },
+      quintuplet: { '1/4': false, '1/8': false, '1/16': false },
+      sextuplet: { '1/4': false, '1/8': false, '1/16': false },
+      septuplet: { '1/4': false, '1/8': false, '1/16': false },
+    };
+
+    for (const cb of this.tupletCheckboxes) {
+      const tupletName = cb.dataset.tuplet as TupletName | undefined;
+      const tupletValue = cb.dataset.value as TupletValue | undefined;
+      if (tupletName && tupletValue && options[tupletName]) {
+        options[tupletName][tupletValue] = cb.checked;
+      }
+    }
+
+    return options;
+  }
+
+  private updateTupletsUI(): void {
+    const count = this.getActiveTupletCount();
+    this.tupletsBadge.textContent = String(count);
+    if (count > 0) {
+      this.tupletsBadge.classList.remove('hidden');
+      this.btnTupletsToggle.classList.add('has-active');
+    } else {
+      this.tupletsBadge.classList.add('hidden');
+      this.btnTupletsToggle.classList.remove('has-active');
+    }
+  }
+
+  private handleTupletChange(): void {
+    const activeTupletCount = this.getActiveTupletCount();
+    const checkedSubdivCount = this.subdivCheckboxes.filter((cb) => cb.checked).length;
+
+    // If user unchecked all tuplets and had no regular subdivisions checked, restore quarter notes
+    if (activeTupletCount === 0 && checkedSubdivCount === 0) {
+      this.subdivQuarter.checked = true;
+      globalState.updateSettings({
+        subdivisions: {
+          ...globalState.settings.subdivisions,
+          quarter: true,
+        },
+      });
+    }
+
+    const tuplets = this.getTupletOptionsFromUI();
+    globalState.updateSettings({ tuplets });
+    this.updateTupletsUI();
+    this.resetSession();
+  }
+
+  private clearAllTuplets(): void {
+    for (const cb of this.tupletCheckboxes) {
+      cb.checked = false;
+    }
+
+    const checkedSubdivCount = this.subdivCheckboxes.filter((cb) => cb.checked).length;
+    if (checkedSubdivCount === 0) {
+      this.subdivQuarter.checked = true;
+      globalState.updateSettings({
+        subdivisions: {
+          ...globalState.settings.subdivisions,
+          quarter: true,
+        },
+      });
+    }
+
+    const tuplets = this.getTupletOptionsFromUI();
+    globalState.updateSettings({ tuplets });
+    this.updateTupletsUI();
+    this.resetSession();
+  }
+
   private bindKeyboardShortcuts(): void {
     window.addEventListener('keydown', (e) => {
+      // If popover is open, Escape should dismiss it first
+      if (e.code === 'Escape' && !this.tupletsPopover.classList.contains('hidden')) {
+        e.preventDefault();
+        this.closeTupletsPopover();
+        return;
+      }
+
       // Prevent rapid fire on key-repeat for action triggers
       if (e.repeat && (e.code === 'Space' || e.code === 'KeyR' || e.code === 'Escape')) {
         return;

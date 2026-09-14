@@ -6,7 +6,10 @@ import {
   MeasureData,
   NoteData,
   SubdivisionOptions,
+  TUPLET_NAMES,
+  TUPLET_VALUES,
   TimeSignature,
+  TupletOptions,
   computeBeatWidth,
 } from './types';
 
@@ -89,12 +92,12 @@ export class MusicGenerator {
    * Generates a procedurally composed measure satisfying metric linearity and rhythm/melody rules.
    */
   public generateMeasure(measureIndex: number, settings: AppSettings, startBeat: number): MeasureData {
-    const { timeSignature, clef, subdivisions, rests, intervals } = settings;
+    const { timeSignature, clef, subdivisions, tuplets, rests, intervals } = settings;
     const { beatsPerMeasure, beatValue } = this.getMeterConfig(timeSignature);
-    const beatWidth = computeBeatWidth(subdivisions, timeSignature);
+    const beatWidth = computeBeatWidth(subdivisions, timeSignature, tuplets);
     const measureWidth = beatsPerMeasure * beatWidth;
 
-    const rawRhythms = this.partitionRhythm(timeSignature, beatsPerMeasure, subdivisions, rests);
+    const rawRhythms = this.partitionRhythm(timeSignature, beatsPerMeasure, subdivisions, tuplets, rests);
     const notes: NoteData[] = [];
 
     let currentOffset = 0;
@@ -118,6 +121,10 @@ export class MusicGenerator {
         isRest: item.isRest,
         isTuplet: item.isTuplet,
         tupletGroup: item.tupletGroup,
+        tupletNumNotes: item.tupletNumNotes,
+        tupletNotesOccupied: item.tupletNotesOccupied,
+        tupletBracketed: item.tupletBracketed,
+        tupletRatioed: item.tupletRatioed,
         beatOffset: currentOffset,
         beatDuration: item.beatDuration,
       });
@@ -257,24 +264,118 @@ export class MusicGenerator {
   }
 
   /**
+   * Checks if any tuplet combination is active in settings.
+   */
+  private hasActiveTuplets(tuplets?: TupletOptions): boolean {
+    if (!tuplets) return false;
+    for (const name of TUPLET_NAMES) {
+      for (const val of TUPLET_VALUES) {
+        if (tuplets[name]?.[val]) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Helper to generate an array of notes belonging to a single tuplet group.
+   */
+  private makeTupletItems(
+    numNotes: number,
+    notesOccupied: number,
+    duration: string,
+    totalBeatDuration: number,
+    bracketed?: boolean,
+    ratioed?: boolean
+  ): Array<{
+    duration: string;
+    beatDuration: number;
+    isRest: boolean;
+    isTuplet?: boolean;
+    tupletGroup?: number;
+    tupletNumNotes?: number;
+    tupletNotesOccupied?: number;
+    tupletBracketed?: boolean;
+    tupletRatioed?: boolean;
+  }> {
+    const tupletId = ++this.tupletCounter;
+    const noteBeatDuration = totalBeatDuration / numNotes;
+    const items: Array<{
+      duration: string;
+      beatDuration: number;
+      isRest: boolean;
+      isTuplet?: boolean;
+      tupletGroup?: number;
+      tupletNumNotes?: number;
+      tupletNotesOccupied?: number;
+      tupletBracketed?: boolean;
+      tupletRatioed?: boolean;
+    }> = [];
+
+    for (let i = 0; i < numNotes; i++) {
+      items.push({
+        duration,
+        beatDuration: noteBeatDuration,
+        isRest: false,
+        isTuplet: true,
+        tupletGroup: tupletId,
+        tupletNumNotes: numNotes,
+        tupletNotesOccupied: notesOccupied,
+        tupletBracketed: bracketed,
+        tupletRatioed: ratioed,
+      });
+    }
+
+    return items;
+  }
+
+  /**
    * Partitions the metric beats of a measure into rhythms strictly summing to beatsPerMeasure.
    */
   private partitionRhythm(
     ts: TimeSignature,
     beatsPerMeasure: number,
     subdiv: SubdivisionOptions,
+    tuplets: TupletOptions | undefined,
     allowRests: boolean
-  ): Array<{ duration: string; beatDuration: number; isRest: boolean; isTuplet?: boolean; tupletGroup?: number }> {
-    const result: Array<{ duration: string; beatDuration: number; isRest: boolean; isTuplet?: boolean; tupletGroup?: number }> = [];
+  ): Array<{
+    duration: string;
+    beatDuration: number;
+    isRest: boolean;
+    isTuplet?: boolean;
+    tupletGroup?: number;
+    tupletNumNotes?: number;
+    tupletNotesOccupied?: number;
+    tupletBracketed?: boolean;
+    tupletRatioed?: boolean;
+  }> {
+    const result: Array<{
+      duration: string;
+      beatDuration: number;
+      isRest: boolean;
+      isTuplet?: boolean;
+      tupletGroup?: number;
+      tupletNumNotes?: number;
+      tupletNotesOccupied?: number;
+      tupletBracketed?: boolean;
+      tupletRatioed?: boolean;
+    }> = [];
 
-    // Fallback if all checkboxes are unchecked: default to quarter notes
-    const hasAnySubdiv = subdiv.whole || subdiv.half || subdiv.quarter || subdiv.eighth || subdiv.sixteenth || subdiv.triplets;
-    const effectiveSubdiv = hasAnySubdiv ? subdiv : { ...subdiv, quarter: true };
+    const hasAnySubdiv =
+      subdiv.whole ||
+      subdiv.half ||
+      subdiv.quarter ||
+      subdiv.eighth ||
+      subdiv.sixteenth ||
+      Boolean(subdiv.triplets);
+    const hasAnyTuplet = this.hasActiveTuplets(tuplets);
+
+    // Fallback: if absolutely nothing is selected, default to quarter notes
+    const effectiveSubdiv = !hasAnySubdiv && !hasAnyTuplet ? { ...subdiv, quarter: true } : subdiv;
 
     if (ts === '6/8') {
       // 6/8 compound meter: 6 eighth-note beats grouped into 2 dotted-quarter groups (beats 0-2 and beats 3-5)
       for (let group = 0; group < 2; group++) {
-        const groupRhythms = this.partitionCompoundGroup(effectiveSubdiv, allowRests);
+        const groupRhythms = this.partitionCompoundGroup(effectiveSubdiv, tuplets, allowRests);
         result.push(...groupRhythms);
       }
       return result;
@@ -294,6 +395,20 @@ export class MusicGenerator {
       return result;
     }
 
+    // Check 4-beat tuplets (e.g. Quintuplet, Sextuplet, Septuplet of quarter notes in 4/4)
+    if (remainingBeats >= 4 && currentBeatIndex === 0) {
+      const fourBeatTupletGenerators: Array<() => typeof result> = [];
+      if (tuplets?.quintuplet['1/4']) fourBeatTupletGenerators.push(() => this.makeTupletItems(5, 4, 'q', 4, true));
+      if (tuplets?.sextuplet['1/4']) fourBeatTupletGenerators.push(() => this.makeTupletItems(6, 4, 'q', 4, true));
+      if (tuplets?.septuplet['1/4']) fourBeatTupletGenerators.push(() => this.makeTupletItems(7, 4, 'q', 4, true));
+
+      if (fourBeatTupletGenerators.length > 0 && (!hasAnySubdiv || Math.random() < 0.35)) {
+        const gen = fourBeatTupletGenerators[Math.floor(Math.random() * fourBeatTupletGenerators.length)];
+        result.push(...gen());
+        return result;
+      }
+    }
+
     // In 3/4 meter, allow dotted half note (3 beats) filling the full measure
     if (ts === '3/4' && (effectiveSubdiv.half || effectiveSubdiv.whole) && currentBeatIndex === 0 && Math.random() < 0.3) {
       result.push({
@@ -304,9 +419,43 @@ export class MusicGenerator {
       return result;
     }
 
+    // Check 3-beat tuplets (e.g. Quadruplet or Duplet of quarter notes in 3/4 or across 3 beats)
+    if (remainingBeats >= 3 && currentBeatIndex === 0) {
+      const threeBeatTupletGenerators: Array<() => typeof result> = [];
+      if (tuplets?.quadruplet['1/4']) threeBeatTupletGenerators.push(() => this.makeTupletItems(4, 3, 'q', 3, true));
+      if (tuplets?.duplet['1/4']) threeBeatTupletGenerators.push(() => this.makeTupletItems(2, 3, 'q', 3, true));
+      if (ts === '3/4' && tuplets?.quadruplet['1/8']) {
+        threeBeatTupletGenerators.push(() => this.makeTupletItems(4, 6, '8', 3, false));
+      }
+
+      if (threeBeatTupletGenerators.length > 0 && (!hasAnySubdiv || Math.random() < 0.35)) {
+        const gen = threeBeatTupletGenerators[Math.floor(Math.random() * threeBeatTupletGenerators.length)];
+        result.push(...gen());
+        remainingBeats -= 3;
+        currentBeatIndex += 3;
+      }
+    }
+
     while (remainingBeats > 0) {
+      // Check 2-beat tuplets: Triplet 1/4, Quintuplet 1/8, Sextuplet 1/8, Septuplet 1/8
+      if (remainingBeats >= 2 && currentBeatIndex % 2 === 0) {
+        const twoBeatTupletGenerators: Array<() => typeof result> = [];
+        if (tuplets?.triplet['1/4']) twoBeatTupletGenerators.push(() => this.makeTupletItems(3, 2, 'q', 2, true));
+        if (tuplets?.quintuplet['1/8']) twoBeatTupletGenerators.push(() => this.makeTupletItems(5, 4, '8', 2));
+        if (tuplets?.sextuplet['1/8']) twoBeatTupletGenerators.push(() => this.makeTupletItems(6, 4, '8', 2));
+        if (tuplets?.septuplet['1/8']) twoBeatTupletGenerators.push(() => this.makeTupletItems(7, 4, '8', 2));
+
+        if (twoBeatTupletGenerators.length > 0 && (!hasAnySubdiv || Math.random() < 0.35)) {
+          const gen = twoBeatTupletGenerators[Math.floor(Math.random() * twoBeatTupletGenerators.length)];
+          result.push(...gen());
+          remainingBeats -= 2;
+          currentBeatIndex += 2;
+          continue;
+        }
+      }
+
       // Check if half note is allowed and aligns with metric boundaries (e.g., beats 0 or 2 in 4/4)
-      const canDoHalf = effectiveSubdiv.half && remainingBeats >= 2 && (currentBeatIndex % 2 === 0);
+      const canDoHalf = effectiveSubdiv.half && remainingBeats >= 2 && currentBeatIndex % 2 === 0;
       if (canDoHalf && Math.random() < 0.35) {
         result.push({
           duration: 'h',
@@ -319,7 +468,7 @@ export class MusicGenerator {
       }
 
       // Fill a single metric beat (1 quarter beat)
-      const beatItems = this.partitionSingleBeat(effectiveSubdiv, allowRests);
+      const beatItems = this.partitionSingleBeat(effectiveSubdiv, tuplets, allowRests);
       result.push(...beatItems);
       remainingBeats -= 1;
       currentBeatIndex += 1;
@@ -330,13 +479,40 @@ export class MusicGenerator {
 
   private partitionSingleBeat(
     subdiv: SubdivisionOptions,
+    tuplets: TupletOptions | undefined,
     allowRests: boolean
-  ): Array<{ duration: string; beatDuration: number; isRest: boolean; isTuplet?: boolean; tupletGroup?: number }> {
-    const candidates: Array<'quarter' | 'eighth' | 'sixteenth' | 'triplet'> = [];
+  ): Array<{
+    duration: string;
+    beatDuration: number;
+    isRest: boolean;
+    isTuplet?: boolean;
+    tupletGroup?: number;
+    tupletNumNotes?: number;
+    tupletNotesOccupied?: number;
+    tupletBracketed?: boolean;
+    tupletRatioed?: boolean;
+  }> {
+    type BeatCandidate =
+      | 'quarter'
+      | 'eighth'
+      | 'sixteenth'
+      | 'triplet_8'
+      | 'quintuplet_16'
+      | 'sextuplet_16'
+      | 'septuplet_16'
+      | 'triplet_16_pair';
+
+    const candidates: BeatCandidate[] = [];
+
     if (subdiv.quarter) candidates.push('quarter');
     if (subdiv.eighth) candidates.push('eighth');
     if (subdiv.sixteenth) candidates.push('sixteenth');
-    if (subdiv.triplets) candidates.push('triplet');
+
+    if (tuplets?.triplet['1/8'] || subdiv.triplets) candidates.push('triplet_8');
+    if (tuplets?.quintuplet['1/16']) candidates.push('quintuplet_16');
+    if (tuplets?.sextuplet['1/16']) candidates.push('sextuplet_16');
+    if (tuplets?.septuplet['1/16']) candidates.push('septuplet_16');
+    if (tuplets?.triplet['1/16']) candidates.push('triplet_16_pair');
 
     if (candidates.length === 0) {
       candidates.push('quarter');
@@ -369,28 +545,50 @@ export class MusicGenerator {
           { duration: '16', beatDuration: 0.25, isRest: restIdx === 3 },
         ];
       }
-      case 'triplet': {
-        const tupletId = ++this.tupletCounter;
-        // Sight reading triplets typically do not include rests
+      case 'triplet_8':
+        return this.makeTupletItems(3, 2, '8', 1);
+      case 'quintuplet_16':
+        return this.makeTupletItems(5, 4, '16', 1);
+      case 'sextuplet_16':
+        return this.makeTupletItems(6, 4, '16', 1);
+      case 'septuplet_16':
+        return this.makeTupletItems(7, 4, '16', 1);
+      case 'triplet_16_pair':
         return [
-          { duration: '8', beatDuration: 1 / 3, isRest: false, isTuplet: true, tupletGroup: tupletId },
-          { duration: '8', beatDuration: 1 / 3, isRest: false, isTuplet: true, tupletGroup: tupletId },
-          { duration: '8', beatDuration: 1 / 3, isRest: false, isTuplet: true, tupletGroup: tupletId },
+          ...this.makeTupletItems(3, 2, '16', 0.5),
+          ...this.makeTupletItems(3, 2, '16', 0.5),
         ];
-      }
     }
   }
 
   private partitionCompoundGroup(
     subdiv: SubdivisionOptions,
+    tuplets: TupletOptions | undefined,
     allowRests: boolean
-  ): Array<{ duration: string; beatDuration: number; isRest: boolean; isTuplet?: boolean; tupletGroup?: number }> {
+  ): Array<{
+    duration: string;
+    beatDuration: number;
+    isRest: boolean;
+    isTuplet?: boolean;
+    tupletGroup?: number;
+    tupletNumNotes?: number;
+    tupletNotesOccupied?: number;
+    tupletBracketed?: boolean;
+    tupletRatioed?: boolean;
+  }> {
     // A compound group in 6/8 is 3 eighth-note beats (total 3 beats in our eighth-based beat count)
-    // Options: 3 eighth notes, or 1 dotted quarter note (takes all 3 eighths)
+    // Check compound tuplets: Duplet 1/8 (2 in 3) or Quadruplet 1/8 (4 in 3)
+    const compoundTupletGenerators: Array<() => ReturnType<typeof this.makeTupletItems>> = [];
+    if (tuplets?.duplet['1/8']) compoundTupletGenerators.push(() => this.makeTupletItems(2, 3, '8', 3));
+    if (tuplets?.quadruplet['1/8']) compoundTupletGenerators.push(() => this.makeTupletItems(4, 3, '8', 3));
+
+    if (compoundTupletGenerators.length > 0 && Math.random() < 0.4) {
+      const gen = compoundTupletGenerators[Math.floor(Math.random() * compoundTupletGenerators.length)];
+      return gen();
+    }
+
     const canDoDottedQuarter = subdiv.quarter && Math.random() < 0.35;
     if (canDoDottedQuarter) {
-      // In 6/8, a dotted quarter has duration 'qd' or 'q' with dot
-      // In our beatDuration where 1 beat = 1 eighth, dotted quarter is 3 beats
       return [
         {
           duration: 'qd',
@@ -400,11 +598,23 @@ export class MusicGenerator {
       ];
     }
 
-    // 3 eighth notes (with potential sixteenth-note subdivisions)
-    const result: Array<{ duration: string; beatDuration: number; isRest: boolean; isTuplet?: boolean; tupletGroup?: number }> = [];
+    // 3 eighth notes (with potential sixteenth or 16th-triplet subdivisions)
+    const result: Array<{
+      duration: string;
+      beatDuration: number;
+      isRest: boolean;
+      isTuplet?: boolean;
+      tupletGroup?: number;
+      tupletNumNotes?: number;
+      tupletNotesOccupied?: number;
+      tupletBracketed?: boolean;
+      tupletRatioed?: boolean;
+    }> = [];
+
     for (let beat = 0; beat < 3; beat++) {
-      if (subdiv.sixteenth && Math.random() < 0.4) {
-        // Two 16th notes fill 1 eighth-note beat
+      if (tuplets?.triplet['1/16'] && Math.random() < 0.35) {
+        result.push(...this.makeTupletItems(3, 2, '16', 1));
+      } else if (subdiv.sixteenth && Math.random() < 0.4) {
         const restIdx = allowRests && Math.random() < 0.15 ? Math.floor(Math.random() * 2) : -1;
         result.push(
           { duration: '16', beatDuration: 0.5, isRest: restIdx === 0 },
