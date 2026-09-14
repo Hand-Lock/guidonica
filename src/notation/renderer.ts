@@ -36,21 +36,25 @@ export class MeasureRenderer {
     ctx.setFillStyle('#000000');
     ctx.setStrokeStyle('#000000');
 
-    // Create stave without left barline, but with right barline separating measures
+    // Create stave with left barline separating measures, but with invisible horizontal lines
+    // so notes, ledger lines, and barlines blit seamlessly over the stationary staff lines
     const stave = new Stave(0, STAVE_CANVAS_Y, data.width, {
-      leftBar: false,
-      rightBar: true,
-      lineConfig: [
-        { visible: true },
-        { visible: true },
-        { visible: true },
-        { visible: true },
-        { visible: true },
-      ],
+      leftBar: true,
+      rightBar: false,
     });
+    stave.setConfigForLines([
+      { visible: false },
+      { visible: false },
+      { visible: false },
+      { visible: false },
+      { visible: false },
+    ]);
 
     stave.setStyle({ strokeStyle: '#64748b', fillStyle: '#64748b' });
     stave.setDefaultLedgerLineStyle({ strokeStyle: '#64748b', fillStyle: '#64748b' });
+    stave.getModifiers().forEach((mod) => {
+      mod.setStyle({ fillStyle: '#475569', strokeStyle: '#475569' });
+    });
 
     // Construct StaveNotes
     const staveNotes: StaveNote[] = [];
@@ -156,14 +160,14 @@ export class MeasureRenderer {
     const stave = new Stave(10, STAVE_CANVAS_Y, width - 10, {
       leftBar: false,
       rightBar: false,
-      lineConfig: [
-        { visible: false },
-        { visible: false },
-        { visible: false },
-        { visible: false },
-        { visible: false },
-      ],
     });
+    stave.setConfigForLines([
+      { visible: false },
+      { visible: false },
+      { visible: false },
+      { visible: false },
+      { visible: false },
+    ]);
 
     stave.addClef(clef);
     stave.setStyle({ strokeStyle: '#000000', fillStyle: '#000000' });

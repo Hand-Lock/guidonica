@@ -57,3 +57,4 @@ export const BEAT_WIDTH = 120; // W_beat: pixel width per metric beat
 export const NOTE_START_OFFSET = 24; // Padding before beat 0 after the barline
 export const MEASURE_CANVAS_HEIGHT = 180;
 export const STAVE_CANVAS_Y = 40;
+export const STAVE_TOP_LINE_Y = 80; // In VexFlow, stave.getYForLine(0) = STAVE_CANVAS_Y + 4 * 10 = 80
