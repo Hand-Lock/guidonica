@@ -28,14 +28,14 @@
         <div class="control-group tempo-group">
           <label for="tempo-slider">Tempo: <span id="bpm-display">60</span> BPM</label>
           <div class="tempo-inputs">
-            <input type="range" id="tempo-slider" min="30" max="240" value="60" step="1" />
-            <input type="number" id="tempo-number" min="30" max="240" value="60" step="1" />
+            <input type="range" id="tempo-slider" min="30" max="240" value="60" step="1" aria-label="Tempo slider in BPM" />
+            <input type="number" id="tempo-number" min="30" max="240" value="60" step="1" aria-label="Tempo numeric input in BPM" />
           </div>
         </div>
 
         <div class="control-group">
           <label for="select-time-signature">Meter</label>
-          <select id="select-time-signature">
+          <select id="select-time-signature" aria-label="Select musical time signature">
             <option value="4/4" selected>4/4</option>
             <option value="3/4">3/4</option>
             <option value="2/4">2/4</option>
@@ -46,7 +46,7 @@
         <div class="control-group clef-group">
           <label for="select-clef">Clef</label>
           <div class="clef-select-container">
-            <select id="select-clef">
+            <select id="select-clef" aria-label="Select musical clef">
               <option value="treble" selected>Treble (G)</option>
               <option value="bass">Bass (F)</option>
               <option value="alto">Alto (C3)</option>
@@ -144,7 +144,7 @@
       </header>
 
       <main class="canvas-wrapper">
-        <canvas id="scroller-canvas"></canvas>
+        <canvas id="scroller-canvas" role="img" aria-label="Streaming sight-reading music notation canvas"></canvas>
       </main>
 
       <footer class="shortcuts-hint">

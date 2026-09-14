@@ -1,4 +1,11 @@
-import { AppSettings, Clef, NOTE_START_OFFSET, STAVE_TOP_LINE_Y, computeBeatWidth } from '../notation/types';
+import {
+  AppSettings,
+  Clef,
+  MEASURE_CANVAS_HEIGHT,
+  NOTE_START_OFFSET,
+  STAVE_TOP_LINE_Y,
+  computeBeatWidth,
+} from '../notation/types';
 import { MetronomeEngine } from '../audio/metronome';
 import { MeasureBuffer } from './buffer';
 import { MeasureRenderer } from '../notation/renderer';
@@ -130,17 +137,17 @@ export class ScrollerView {
     const activeBeatWidth = computeBeatWidth(settings.subdivisions, settings.timeSignature);
 
     // 4. Update ring buffer: pre-render upcoming measures and evict offscreen ones
-    const lookaheadBeats = ((w - this.playheadX) / activeBeatWidth) + 6;
-    this.buffer.ensureAhead(currentGlobalBeat, lookaheadBeats, settings, dpr);
+    const lookaheadBeats = (w - this.playheadX) / activeBeatWidth + 6;
+    this.buffer.ensureAhead(currentGlobalBeat, lookaheadBeats, settings);
 
-    const minVisibleBeat = currentGlobalBeat - (this.playheadX / activeBeatWidth) - 2;
+    const minVisibleBeat = currentGlobalBeat - this.playheadX / activeBeatWidth - 2;
     this.buffer.evictBefore(minVisibleBeat);
 
-    // 5. Blit visible measures from ring-buffer
+    // 5. Blit visible measures from ring-buffer with subpixel floating-point positioning
     const measures = this.buffer.getMeasures();
     for (let i = 0; i < measures.length; i++) {
       const m = measures[i];
-      // Screen X where measure's left edge aligns so that noteheads cross playhead at their exact beat time
+      // Subpixel screen X: noteheads cross playhead at their exact fractional beat time
       const measureScreenX =
         this.playheadX - NOTE_START_OFFSET + (m.data.startBeat - currentGlobalBeat) * m.data.beatWidth;
 
@@ -151,16 +158,16 @@ export class ScrollerView {
           0,
           m.canvas.width,
           m.canvas.height,
-          Math.round(measureScreenX),
-          Math.round(this.measureDrawY),
+          measureScreenX,
+          this.measureDrawY,
           m.width,
           m.height
         );
       }
     }
 
-    // 6. Draw pinned clef at the left margin
-    this.drawPinnedClef(ctx, settings.clef);
+    // 6. Draw pinned clef at the left margin with clean gradient fade
+    this.drawPinnedClef(ctx, settings.clef, h);
 
     // 7. Draw fixed playhead guide line in high-contrast red accent
     this.drawPlayhead(ctx, h);
@@ -182,28 +189,40 @@ export class ScrollerView {
     ctx.stroke();
   }
 
-  private drawPinnedClef(ctx: CanvasRenderingContext2D, clef: Clef): void {
+  private drawPinnedClef(ctx: CanvasRenderingContext2D, clef: Clef, height: number): void {
     if (!this.pinnedClefCanvas || this.cachedClef !== clef) {
-      this.pinnedClefCanvas = this.renderer.renderPinnedClef(clef, this.dpr);
+      this.pinnedClefCanvas = this.renderer.renderPinnedClef(clef);
       this.cachedClef = clef;
     }
 
     const clefX = 24;
-    // Subtly shade behind clef so scrolling notes don't visually clutter the reference clef
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-    ctx.fillRect(0, this.staveTopY - 25, clefX + 70, 90);
+    const maskSolidWidth = 100;
+    const fadeWidth = 45;
+    const totalMargin = maskSolidWidth + fadeWidth; // 145px
 
-    // Re-draw staff lines under the clef
+    // Full-height solid white mask behind pinned clef to prevent ledger lines/stems poking out
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, maskSolidWidth, height);
+
+    // Graceful horizontal fade from solid white to transparent so scrolling notes disappear smoothly
+    const fadeGrad = ctx.createLinearGradient(maskSolidWidth, 0, totalMargin, 0);
+    fadeGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    fadeGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = fadeGrad;
+    ctx.fillRect(maskSolidWidth, 0, fadeWidth, height);
+
+    // Re-draw staff lines across the masked & faded margin
     ctx.strokeStyle = '#64748b';
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let line = 0; line < 5; line++) {
       const y = Math.round(this.staveTopY + line * 10) + 0.5;
       ctx.moveTo(0, y);
-      ctx.lineTo(clefX + 70, y);
+      ctx.lineTo(totalMargin, y);
     }
     ctx.stroke();
 
+    // Draw the pinned clef glyph
     ctx.drawImage(
       this.pinnedClefCanvas,
       0,
@@ -211,9 +230,9 @@ export class ScrollerView {
       this.pinnedClefCanvas.width,
       this.pinnedClefCanvas.height,
       clefX,
-      Math.round(this.measureDrawY),
+      this.measureDrawY,
       80,
-      this.pinnedClefCanvas.height / this.dpr
+      MEASURE_CANVAS_HEIGHT
     );
   }
 

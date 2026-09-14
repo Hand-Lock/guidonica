@@ -36,13 +36,34 @@ export class MeasureBuffer {
 
   /**
    * Ensures measures are rendered far enough ahead of the viewport playhead.
+   * Includes background-tab catch-up protection to avoid large loops.
    */
   public ensureAhead(
     currentGlobalBeat: number,
     lookaheadBeats: number,
-    settings: AppSettings,
-    dpr: number = window.devicePixelRatio || 1
+    settings: AppSettings
   ): void {
+    // If the browser tab was throttled in the background and currentGlobalBeat jumped ahead,
+    // skip rendering offscreen measures that would be immediately discarded.
+    const beatsPerMeasure =
+      settings.timeSignature === '6/8'
+        ? 6
+        : settings.timeSignature === '3/4'
+        ? 3
+        : settings.timeSignature === '2/4'
+        ? 2
+        : 4;
+
+    if (this.nextMeasureStartBeat < currentGlobalBeat - 2) {
+      const skippedMeasures = Math.floor(
+        (currentGlobalBeat - 2 - this.nextMeasureStartBeat) / beatsPerMeasure
+      );
+      if (skippedMeasures > 0) {
+        this.nextMeasureIndex += skippedMeasures;
+        this.nextMeasureStartBeat += skippedMeasures * beatsPerMeasure;
+      }
+    }
+
     const targetBeat = currentGlobalBeat + lookaheadBeats;
 
     while (this.nextMeasureStartBeat < targetBeat) {
@@ -52,7 +73,7 @@ export class MeasureBuffer {
         this.nextMeasureStartBeat
       );
 
-      const rendered = this.renderer.renderMeasure(measureData, dpr);
+      const rendered = this.renderer.renderMeasure(measureData);
       this.measures.push(rendered);
 
       this.nextMeasureIndex++;
@@ -83,16 +104,5 @@ export class MeasureBuffer {
     if (removeCount > 0) {
       this.measures.splice(0, removeCount);
     }
-  }
-
-  /**
-   * Returns measures that intersect the visible viewport beat range.
-   */
-  public getVisibleMeasures(startBeat: number, endBeat: number): RenderedMeasure[] {
-    return this.measures.filter((m) => {
-      const mStart = m.data.startBeat;
-      const mEnd = mStart + m.data.beatsPerMeasure;
-      return mEnd >= startBeat && mStart <= endBeat;
-    });
   }
 }

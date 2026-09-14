@@ -11,6 +11,7 @@ export type BeatCallback = (event: BeatEvent) => void;
 
 export class MetronomeEngine {
   private ctx: AudioContext | null = null;
+  private masterGainNode: GainNode | null = null;
   private isRunning: boolean = false;
   private isPaused: boolean = false;
   private tempo: number = 60;
@@ -32,14 +33,32 @@ export class MetronomeEngine {
   private readonly lookaheadMs: number = 25;
   private readonly scheduleAheadSeconds: number = 0.1;
 
-  // Listeners
+  // Beat dispatch tracking
+  private pendingBeatTimeouts: Set<number> = new Set();
   private beatCallbacks: Set<BeatCallback> = new Set();
 
   constructor(initialTempo: number = 60, initialTimeSignature: TimeSignature = '4/4') {
     this.tempo = initialTempo;
     this.timeSignature = initialTimeSignature;
     this.updateMeterParams();
+
+    // Re-trigger scheduler when tab visibility returns to prevent background throttling gap
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
   }
+
+  public destroy(): void {
+    this.stop();
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    if (this.ctx && this.ctx.state !== 'closed') {
+      void this.ctx.close();
+    }
+  }
+
+  private handleVisibilityChange = (): void => {
+    if (!document.hidden && this.isRunning && !this.isPaused) {
+      this.scheduler();
+    }
+  };
 
   public onBeat(callback: BeatCallback): () => void {
     this.beatCallbacks.add(callback);
@@ -50,8 +69,12 @@ export class MetronomeEngine {
 
   private ensureAudioContext(): AudioContext {
     if (!this.ctx) {
-      const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtxClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.ctx = new AudioCtxClass();
+      this.masterGainNode = this.ctx.createGain();
+      this.masterGainNode.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') {
       void this.ctx.resume();
@@ -60,19 +83,24 @@ export class MetronomeEngine {
   }
 
   public setTempo(bpm: number): void {
-    if (bpm < 30) bpm = 30;
-    if (bpm > 240) bpm = 240;
-    if (this.tempo === bpm) return;
+    const clamped = Math.max(30, Math.min(240, bpm));
+    if (this.tempo === clamped) return;
 
     if (this.isRunning && !this.isPaused && this.ctx) {
       // Re-anchor timing seamlessly on tempo change so current fractional beat position remains continuous
       const currentBeat = this.getCurrentGlobalBeat();
-      this.tempo = bpm;
+      this.tempo = clamped;
       this.updateMeterParams();
       this.measureZeroStartTime = this.ctx.currentTime - currentBeat * this.secondsPerBeat;
-      this.nextBeatTime = this.ctx.currentTime;
+
+      // Accurately align to the next unplayed beat boundary to avoid duplicate or clashing clicks
+      const nextGlobalBeatIndex = Math.ceil(
+        (this.ctx.currentTime + 0.02 - this.measureZeroStartTime) / this.secondsPerBeat
+      );
+      this.nextBeatTime = this.measureZeroStartTime + nextGlobalBeatIndex * this.secondsPerBeat;
+      this.scheduledBeatCount = nextGlobalBeatIndex + this.countInBeatsTotal;
     } else {
-      this.tempo = bpm;
+      this.tempo = clamped;
       this.updateMeterParams();
     }
   }
@@ -99,9 +127,8 @@ export class MetronomeEngine {
         break;
       case '6/8':
         this.beatsPerMeasure = 6;
-        // In 6/8, compound meter: 6 eighth-note beats.
-        // If tempo is dotted-quarter BPM: eighth = (60 / tempo) / 3
-        // If tempo is quarter BPM: eighth = (60 / tempo) * 0.5
+        // In 6/8 compound meter, 6 eighth-note beats.
+        // At tempo = 60 BPM (quarter BPM), eighth note = 0.5s (120 eighths per minute)
         this.secondsPerBeat = (60 / this.tempo) * 0.5;
         break;
     }
@@ -115,6 +142,10 @@ export class MetronomeEngine {
     this.isPaused = false;
     this.hasCountIn = countIn;
     this.countInBeatsTotal = countIn ? this.beatsPerMeasure : 0;
+
+    if (this.masterGainNode) {
+      this.masterGainNode.gain.setValueAtTime(1, ctx.currentTime);
+    }
 
     const startTime = ctx.currentTime + 0.05;
     this.nextBeatTime = startTime;
@@ -135,6 +166,15 @@ export class MetronomeEngine {
       clearInterval(this.timerId);
       this.timerId = null;
     }
+
+    // Immediately silence any queued audio clicks
+    if (this.masterGainNode) {
+      this.masterGainNode.gain.setValueAtTime(0, this.ctx.currentTime);
+    }
+
+    // Cancel all pending visual beat dispatches
+    this.clearPendingBeatTimeouts();
+
     this.pausedElapsedSeconds = this.getElapsedPlaybackSeconds();
   }
 
@@ -142,6 +182,11 @@ export class MetronomeEngine {
     if (!this.isRunning || !this.isPaused || !this.ctx) return;
     void this.ctx.resume();
     this.isPaused = false;
+
+    // Unmute master gain
+    if (this.masterGainNode) {
+      this.masterGainNode.gain.setValueAtTime(1, this.ctx.currentTime);
+    }
 
     this.measureZeroStartTime = this.ctx.currentTime - this.pausedElapsedSeconds;
     this.nextBeatTime = this.ctx.currentTime + 0.02;
@@ -158,8 +203,22 @@ export class MetronomeEngine {
       clearInterval(this.timerId);
       this.timerId = null;
     }
+
+    // Silence master gain immediately
+    if (this.masterGainNode && this.ctx) {
+      this.masterGainNode.gain.setValueAtTime(0, this.ctx.currentTime);
+    }
+
+    this.clearPendingBeatTimeouts();
     this.scheduledBeatCount = 0;
     this.pausedElapsedSeconds = 0;
+  }
+
+  private clearPendingBeatTimeouts(): void {
+    for (const timeoutId of this.pendingBeatTimeouts) {
+      window.clearTimeout(timeoutId);
+    }
+    this.pendingBeatTimeouts.clear();
   }
 
   private scheduler(): void {
@@ -190,7 +249,7 @@ export class MetronomeEngine {
   }
 
   private scheduleClick(time: number, isDownbeat: boolean, isCompoundSubaccent: boolean = false): void {
-    if (!this.ctx) return;
+    if (!this.ctx || !this.masterGainNode) return;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -215,7 +274,7 @@ export class MetronomeEngine {
     gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.035);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.masterGainNode);
 
     osc.start(time);
     osc.stop(time + 0.04);
@@ -234,8 +293,10 @@ export class MetronomeEngine {
     if (!this.ctx) return;
     const delayMs = Math.max(0, (audioTime - this.ctx.currentTime) * 1000);
 
-    window.setTimeout(() => {
-      if (!this.isRunning) return;
+    const timeoutId = window.setTimeout(() => {
+      this.pendingBeatTimeouts.delete(timeoutId);
+      if (!this.isRunning || this.isPaused) return;
+
       const event: BeatEvent = {
         beatNumber,
         isDownbeat,
@@ -246,30 +307,18 @@ export class MetronomeEngine {
         cb(event);
       }
     }, delayMs);
-  }
 
-  public getAudioTime(): number {
-    return this.ctx?.currentTime ?? 0;
-  }
-
-  public getSecondsPerBeat(): number {
-    return this.secondsPerBeat;
-  }
-
-  public getBeatsPerMeasure(): number {
-    return this.beatsPerMeasure;
-  }
-
-  public getMeasureZeroStartTime(): number {
-    return this.measureZeroStartTime;
+    this.pendingBeatTimeouts.add(timeoutId);
   }
 
   /**
    * Returns elapsed seconds relative to Measure 0.
-   * During count-in, this value will be negative (-countInDuration to 0).
+   * When stopped or during count-in, this value is negative (-countInDuration to 0).
    */
   public getElapsedPlaybackSeconds(): number {
-    if (!this.isRunning) return 0;
+    if (!this.isRunning) {
+      return this.hasCountIn ? -this.beatsPerMeasure * this.secondsPerBeat : 0;
+    }
     if (this.isPaused) return this.pausedElapsedSeconds;
     if (!this.ctx) return 0;
     return this.ctx.currentTime - this.measureZeroStartTime;
@@ -278,17 +327,13 @@ export class MetronomeEngine {
   /**
    * Returns current fractional beat position relative to Measure 0.
    * At beat 0 of Measure 0, this returns 0.
+   * When stopped with count-in enabled, this returns -beatsPerMeasure.
    */
   public getCurrentGlobalBeat(): number {
+    if (!this.isRunning) {
+      return this.hasCountIn ? -this.beatsPerMeasure : 0;
+    }
     if (this.secondsPerBeat <= 0) return 0;
     return this.getElapsedPlaybackSeconds() / this.secondsPerBeat;
-  }
-
-  public getIsRunning(): boolean {
-    return this.isRunning;
-  }
-
-  public getIsPaused(): boolean {
-    return this.isPaused;
   }
 }
