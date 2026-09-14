@@ -98,7 +98,13 @@ export class MetronomeEngine {
         (this.ctx.currentTime + 0.02 - this.measureZeroStartTime) / this.secondsPerBeat
       );
       this.nextBeatTime = this.measureZeroStartTime + nextGlobalBeatIndex * this.secondsPerBeat;
-      this.scheduledBeatCount = nextGlobalBeatIndex + this.countInBeatsTotal;
+      this.scheduledBeatCount = Math.max(0, nextGlobalBeatIndex + this.countInBeatsTotal);
+    } else if (this.isRunning && this.isPaused) {
+      // Preserve current fractional beat position when tempo changes while paused
+      const currentBeat = this.getCurrentGlobalBeat();
+      this.tempo = clamped;
+      this.updateMeterParams();
+      this.pausedElapsedSeconds = currentBeat * this.secondsPerBeat;
     } else {
       this.tempo = clamped;
       this.updateMeterParams();
@@ -144,6 +150,7 @@ export class MetronomeEngine {
     this.countInBeatsTotal = countIn ? this.beatsPerMeasure : 0;
 
     if (this.masterGainNode) {
+      this.masterGainNode.gain.cancelScheduledValues(ctx.currentTime);
       this.masterGainNode.gain.setValueAtTime(1, ctx.currentTime);
     }
 
@@ -157,10 +164,12 @@ export class MetronomeEngine {
     this.timerId = window.setInterval(() => {
       this.scheduler();
     }, this.lookaheadMs);
+    this.scheduler();
   }
 
   public pause(): void {
     if (!this.isRunning || this.isPaused || !this.ctx) return;
+    this.pausedElapsedSeconds = this.ctx.currentTime - this.measureZeroStartTime;
     this.isPaused = true;
     if (this.timerId !== null) {
       clearInterval(this.timerId);
@@ -169,31 +178,40 @@ export class MetronomeEngine {
 
     // Immediately silence any queued audio clicks
     if (this.masterGainNode) {
+      this.masterGainNode.gain.cancelScheduledValues(this.ctx.currentTime);
       this.masterGainNode.gain.setValueAtTime(0, this.ctx.currentTime);
     }
 
     // Cancel all pending visual beat dispatches
     this.clearPendingBeatTimeouts();
-
-    this.pausedElapsedSeconds = this.getElapsedPlaybackSeconds();
   }
 
   public resume(): void {
     if (!this.isRunning || !this.isPaused || !this.ctx) return;
-    void this.ctx.resume();
+    if (this.ctx.state === 'suspended') {
+      void this.ctx.resume();
+    }
     this.isPaused = false;
 
     // Unmute master gain
     if (this.masterGainNode) {
+      this.masterGainNode.gain.cancelScheduledValues(this.ctx.currentTime);
       this.masterGainNode.gain.setValueAtTime(1, this.ctx.currentTime);
     }
 
     this.measureZeroStartTime = this.ctx.currentTime - this.pausedElapsedSeconds;
-    this.nextBeatTime = this.ctx.currentTime + 0.02;
+
+    // Accurately align to the next unplayed beat boundary to avoid duplicate or clashing clicks
+    const nextGlobalBeatIndex = Math.ceil(
+      (this.ctx.currentTime + 0.02 - this.measureZeroStartTime) / this.secondsPerBeat
+    );
+    this.nextBeatTime = this.measureZeroStartTime + nextGlobalBeatIndex * this.secondsPerBeat;
+    this.scheduledBeatCount = Math.max(0, nextGlobalBeatIndex + this.countInBeatsTotal);
 
     this.timerId = window.setInterval(() => {
       this.scheduler();
     }, this.lookaheadMs);
+    this.scheduler();
   }
 
   public stop(): void {
@@ -206,6 +224,7 @@ export class MetronomeEngine {
 
     // Silence master gain immediately
     if (this.masterGainNode && this.ctx) {
+      this.masterGainNode.gain.cancelScheduledValues(this.ctx.currentTime);
       this.masterGainNode.gain.setValueAtTime(0, this.ctx.currentTime);
     }
 
@@ -335,5 +354,18 @@ export class MetronomeEngine {
     }
     if (this.secondsPerBeat <= 0) return 0;
     return this.getElapsedPlaybackSeconds() / this.secondsPerBeat;
+  }
+
+  public getIsRunning(): boolean {
+    return this.isRunning;
+  }
+
+  public getIsPaused(): boolean {
+    return this.isPaused;
+  }
+
+  public isCountingIn(): boolean {
+    if (!this.isRunning) return false;
+    return this.hasCountIn && this.getCurrentGlobalBeat() < 0;
   }
 }

@@ -149,6 +149,9 @@ class SolfegeScrollerApp {
       this.bpmDisplay.textContent = String(clamped);
       this.metronome.setTempo(clamped);
       globalState.updateSettings({ tempo: clamped });
+      if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
+        this.scroller.renderFrame();
+      }
     };
 
     this.tempoSlider.addEventListener('input', (e) => {
@@ -163,6 +166,9 @@ class SolfegeScrollerApp {
         this.bpmDisplay.textContent = String(val);
         this.metronome.setTempo(val);
         globalState.updateSettings({ tempo: val });
+        if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
+          this.scroller.renderFrame();
+        }
       }
     });
 
@@ -309,6 +315,9 @@ class SolfegeScrollerApp {
     this.bpmDisplay.textContent = String(next);
     this.metronome.setTempo(next);
     globalState.updateSettings({ tempo: next });
+    if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
+      this.scroller.renderFrame();
+    }
   }
 
   private bindAudioEvents(): void {
@@ -336,7 +345,8 @@ class SolfegeScrollerApp {
       this.metronome.pause();
       this.scroller.stopLoop();
     } else if (state === 'paused') {
-      globalState.setPlaybackState('playing');
+      const nextState = this.metronome.isCountingIn() ? 'counting-in' : 'playing';
+      globalState.setPlaybackState(nextState);
       this.metronome.resume();
       this.scroller.startLoop();
     }

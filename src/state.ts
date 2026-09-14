@@ -81,10 +81,16 @@ export class AppState {
 
   public setPlaybackState(playbackState: PlaybackState): void {
     if (this.state.playbackState === playbackState) return;
+    const wasCountIn = this.state.isCountIn;
     this.state = {
       ...this.state,
       playbackState,
-      isCountIn: playbackState === 'counting-in',
+      isCountIn:
+        playbackState === 'counting-in'
+          ? true
+          : playbackState === 'paused'
+          ? wasCountIn
+          : false,
     };
     if (playbackState === 'stopped') {
       this.state.currentBeat = 1;
