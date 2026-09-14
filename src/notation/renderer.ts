@@ -53,7 +53,15 @@ export class MeasureRenderer {
 
     // Construct StaveNotes
     const staveNotes: StaveNote[] = [];
-    const tupletGroupsMap: Map<number, StaveNote[]> = new Map();
+    interface TupletGroupEntry {
+      notes: StaveNote[];
+      numNotes: number;
+      notesOccupied: number;
+      bracketed?: boolean;
+      ratioed?: boolean;
+    }
+    const tupletGroupsMap: Map<number, TupletGroupEntry> = new Map();
+    const tupletNotesSet = new Set<StaveNote>();
 
     for (let i = 0; i < data.notes.length; i++) {
       const noteData = data.notes[i];
@@ -61,32 +69,63 @@ export class MeasureRenderer {
       staveNotes.push(staveNote);
 
       if (noteData.isTuplet && noteData.tupletGroup !== undefined) {
-        if (!tupletGroupsMap.has(noteData.tupletGroup)) {
-          tupletGroupsMap.set(noteData.tupletGroup, []);
+        let entry = tupletGroupsMap.get(noteData.tupletGroup);
+        if (!entry) {
+          entry = {
+            notes: [],
+            numNotes: noteData.tupletNumNotes ?? 3,
+            notesOccupied: noteData.tupletNotesOccupied ?? 2,
+            bracketed: noteData.tupletBracketed,
+            ratioed: noteData.tupletRatioed,
+          };
+          tupletGroupsMap.set(noteData.tupletGroup, entry);
         }
-        tupletGroupsMap.get(noteData.tupletGroup)!.push(staveNote);
+        entry.notes.push(staveNote);
+        tupletNotesSet.add(staveNote);
       }
     }
 
     // Build tuplets
     const tuplets: Tuplet[] = [];
-    for (const group of tupletGroupsMap.values()) {
-      if (group.length === 3) {
-        const tuplet = new Tuplet(group, {
-          numNotes: 3,
-          notesOccupied: 2,
+    for (const entry of tupletGroupsMap.values()) {
+      if (entry.notes.length === entry.numNotes) {
+        const isQuarter = entry.notes[0].getDuration() === 'q';
+        const tuplet = new Tuplet(entry.notes, {
+          numNotes: entry.numNotes,
+          notesOccupied: entry.notesOccupied,
           location: Tuplet.LOCATION_TOP,
+          bracketed: entry.bracketed ?? isQuarter,
+          ratioed: entry.ratioed ?? false,
         });
         tuplet.setStyle({ fillStyle: '#334155', strokeStyle: '#334155' });
         tuplets.push(tuplet);
       }
     }
 
-    // Build beams with meter-aware beam groups
-    const beams = Beam.generateBeams(staveNotes, {
-      groups: Beam.getDefaultBeamGroups(data.timeSignature),
-      beamRests: false,
-    });
+    // Build beams:
+    // Tuplet groups of 8ths or 16ths receive dedicated unified beams spanning the tuplet
+    const beams: Beam[] = [];
+    for (const entry of tupletGroupsMap.values()) {
+      const isBeamable = entry.notes.every((n) => {
+        const d = n.getDuration();
+        return (d === '8' || d === '16') && !n.isRest();
+      });
+      if (isBeamable && entry.notes.length > 1) {
+        const tupletBeam = new Beam(entry.notes);
+        beams.push(tupletBeam);
+      }
+    }
+
+    // Non-tuplet notes receive meter-aware automatic beam groups
+    const nonTupletNotes = staveNotes.filter((n) => !tupletNotesSet.has(n));
+    if (nonTupletNotes.length > 0) {
+      const regularBeams = Beam.generateBeams(nonTupletNotes, {
+        groups: Beam.getDefaultBeamGroups(data.timeSignature),
+        beamRests: false,
+      });
+      beams.push(...regularBeams);
+    }
+
     for (const beam of beams) {
       beam.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
     }

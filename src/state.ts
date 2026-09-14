@@ -1,4 +1,4 @@
-import { AppSettings, PlaybackState } from './notation/types';
+import { AppSettings, DEFAULT_TUPLET_OPTIONS, PlaybackState } from './notation/types';
 
 export interface SessionState {
   settings: AppSettings;
@@ -27,6 +27,14 @@ export class AppState {
           eighth: true,
           sixteenth: false,
           triplets: false,
+        },
+        tuplets: {
+          duplet: { ...DEFAULT_TUPLET_OPTIONS.duplet },
+          triplet: { ...DEFAULT_TUPLET_OPTIONS.triplet },
+          quadruplet: { ...DEFAULT_TUPLET_OPTIONS.quadruplet },
+          quintuplet: { ...DEFAULT_TUPLET_OPTIONS.quintuplet },
+          sextuplet: { ...DEFAULT_TUPLET_OPTIONS.sextuplet },
+          septuplet: { ...DEFAULT_TUPLET_OPTIONS.septuplet },
         },
         rests: false,
         intervals: {

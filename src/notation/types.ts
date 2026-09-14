@@ -28,13 +28,37 @@ export const CLEF_RANGE_DISPLAY: Record<Clef, string> = {
   tenor: 'D2 – E5 (±3 ledger lines)',
 };
 
+export const TUPLET_NAMES = [
+  'duplet',
+  'triplet',
+  'quadruplet',
+  'quintuplet',
+  'sextuplet',
+  'septuplet',
+] as const;
+export type TupletName = (typeof TUPLET_NAMES)[number];
+
+export const TUPLET_VALUES = ['1/4', '1/8', '1/16'] as const;
+export type TupletValue = (typeof TUPLET_VALUES)[number];
+
+export type TupletOptions = Record<TupletName, Record<TupletValue, boolean>>;
+
+export const DEFAULT_TUPLET_OPTIONS: TupletOptions = {
+  duplet: { '1/4': false, '1/8': false, '1/16': false },
+  triplet: { '1/4': false, '1/8': false, '1/16': false },
+  quadruplet: { '1/4': false, '1/8': false, '1/16': false },
+  quintuplet: { '1/4': false, '1/8': false, '1/16': false },
+  sextuplet: { '1/4': false, '1/8': false, '1/16': false },
+  septuplet: { '1/4': false, '1/8': false, '1/16': false },
+};
+
 export interface SubdivisionOptions {
   whole: boolean;
   half: boolean;
   quarter: boolean;
   eighth: boolean;
   sixteenth: boolean;
-  triplets: boolean;
+  triplets?: boolean;
 }
 
 export interface AppSettings {
@@ -42,6 +66,7 @@ export interface AppSettings {
   timeSignature: TimeSignature;
   clef: Clef;
   subdivisions: SubdivisionOptions;
+  tuplets: TupletOptions;
   rests: boolean;
   intervals: IntervalOptions;
 }
@@ -54,6 +79,10 @@ export interface NoteData {
   isRest: boolean;
   isTuplet?: boolean;
   tupletGroup?: number;
+  tupletNumNotes?: number; // e.g. 2, 3, 4, 5, 6, 7
+  tupletNotesOccupied?: number; // e.g. 2, 3, 4
+  tupletBracketed?: boolean;
+  tupletRatioed?: boolean;
   beatOffset: number; // Beat offset within the measure (0-indexed)
   beatDuration: number; // Duration measured in metric beats
 }
@@ -85,32 +114,65 @@ export const STAVE_TOP_LINE_Y = 80; // In VexFlow, stave.getYForLine(0) = STAVE_
 
 /**
  * Computes the metric beat width (W_beat) beforehand based on the active
- * subdivisions and time signature.
+ * subdivisions, tuplets, and time signature.
  * Sizing the beat width beforehand guarantees that measures saturated with the highest
- * enabled subdivision (e.g. 16th notes, triplets) have sufficient horizontal room
+ * enabled subdivision (e.g. 16th notes, fast tuplets) have sufficient horizontal room
  * so notes, stems, beams, and barlines never collide or overshoot the measure boundary,
  * while maintaining a perfectly constant scrolling velocity throughout playback.
  */
 export function computeBeatWidth(
   subdivisions: SubdivisionOptions,
-  timeSignature: TimeSignature
+  timeSignature: TimeSignature,
+  tuplets?: TupletOptions
 ): number {
+  const has16thTuplet =
+    tuplets &&
+    (tuplets.septuplet['1/16'] ||
+      tuplets.sextuplet['1/16'] ||
+      tuplets.quintuplet['1/16'] ||
+      tuplets.quadruplet['1/16'] ||
+      tuplets.triplet['1/16'] ||
+      tuplets.duplet['1/16']);
+
+  const hasSeptuplet16 = tuplets?.septuplet['1/16'];
+  const hasSextuplet16 = tuplets?.sextuplet['1/16'];
+  const hasQuintuplet16 = tuplets?.quintuplet['1/16'];
+
+  const has8thTuplet =
+    tuplets &&
+    (tuplets.septuplet['1/8'] ||
+      tuplets.sextuplet['1/8'] ||
+      tuplets.quintuplet['1/8'] ||
+      tuplets.quadruplet['1/8'] ||
+      tuplets.triplet['1/8'] ||
+      tuplets.duplet['1/8']);
+
   if (timeSignature === '6/8') {
     // 6/8 compound meter: 6 eighth-note beats per measure.
-    if (subdivisions.sixteenth) {
-      // 16th note = 0.5 eighth beat -> 55px per 16th note (110px per eighth beat)
+    if (subdivisions.sixteenth || has16thTuplet) {
       return 110;
+    }
+    if (tuplets?.quadruplet['1/8'] || tuplets?.duplet['1/8']) {
+      return 95;
     }
     // Eighth notes only
     return 80;
   }
 
   // Simple meters (4/4, 3/4, 2/4): 1 beat = 1 quarter note.
-  if (subdivisions.sixteenth) {
+  if (hasSeptuplet16) {
+    // 7 sixteenth notes in 1 beat -> 40px spacing per note (280px per beat)
+    return 280;
+  }
+  if (hasSextuplet16 || hasQuintuplet16) {
+    // 5 or 6 sixteenth notes in 1 beat -> 42-48px spacing per note (250px per beat)
+    return 250;
+  }
+  if (subdivisions.sixteenth || has16thTuplet) {
     // 16th note = 0.25 beat -> 55px spacing per 16th note (220px per quarter beat)
     return 220;
   }
-  if (subdivisions.triplets) {
+  if (has8thTuplet || subdivisions.triplets) {
     // Triplet eighth = 1/3 beat -> 55px spacing per triplet note (165px per quarter beat)
     return 165;
   }

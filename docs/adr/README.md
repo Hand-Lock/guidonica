@@ -15,6 +15,7 @@ This directory documents the core architectural decisions, implementation method
 | [0007](0007-comprehensive-system-audit-and-optimizations.md) | Comprehensive System Audit, Glitch Elimination & Performance Optimizations | Accepted | 2026-09-14 |
 | [0008](0008-pause-and-resume-state-synchronization.md) | Pause and Resume State Synchronization & Beat Grid Phase Alignment | Accepted | 2026-09-14 |
 | [0009](0009-cross-platform-portability-and-github-synchronization.md) | Cross-Platform Portability, macOS Apple Silicon Support & GitHub Synchronization | Accepted | 2026-09-14 |
+| [0010](0010-separate-tuplet-subdivision-matrix-menu.md) | Separate Tuplet Subdivision Matrix Menu & Arbitrary n-Tuplet Engine | Accepted | 2026-09-14 |
 
 ---
 

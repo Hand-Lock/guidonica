@@ -121,12 +121,174 @@
               <input type="checkbox" id="subdiv-sixteenth" />
               <span>16th (𝅘𝅥𝅯)</span>
             </label>
-            <label class="checkbox-item">
-              <input type="checkbox" id="subdiv-triplets" />
-              <span>Triplets (3)</span>
-            </label>
           </div>
         </fieldset>
+
+        <div class="control-group tuplets-group">
+          <label for="btn-tuplets-toggle">Tuplets</label>
+          <div class="tuplets-menu-wrapper">
+            <button id="btn-tuplets-toggle" class="btn btn-menu" type="button" aria-haspopup="dialog" aria-expanded="false" title="Configure n-tuplets and subdivisions">
+              <span class="btn-icon">♬</span>
+              <span class="btn-label">Tuplets</span>
+              <span id="tuplets-badge" class="badge-count hidden">0</span>
+              <span class="menu-arrow">▾</span>
+            </button>
+
+            <div id="tuplets-popover" class="tuplets-popover hidden" role="dialog" aria-label="Tuplet configuration menu">
+              <div class="tuplets-popover-header">
+                <span class="tuplets-popover-title">Tuplet Subdivisions</span>
+                <div class="tuplets-popover-actions">
+                  <button id="btn-tuplets-clear" class="btn-text" type="button" title="Uncheck all tuplets">Clear all</button>
+                  <button id="btn-tuplets-close" class="btn-close" type="button" aria-label="Close tuplet menu">✕</button>
+                </div>
+              </div>
+
+              <div class="tuplets-table-wrapper">
+                <table class="tuplets-table">
+                  <thead>
+                    <tr>
+                      <th class="th-corner">n-Tuplet</th>
+                      <th class="th-val" title="Quarter Note (1/4) Tuplets">1/4 (♩)</th>
+                      <th class="th-val" title="Eighth Note (1/8) Tuplets">1/8 (♪)</th>
+                      <th class="th-val" title="Sixteenth Note (1/16) Tuplets">1/16 (𝅘𝅥𝅯)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-row="duplet">
+                      <th class="th-row" scope="row">Duplet (2)</th>
+                      <td>
+                        <label class="tuplet-cell-label" title="Duplet 1/4 (2:3 quarters, 3 beats)">
+                          <input type="checkbox" id="tuplet-duplet-1-4" data-tuplet="duplet" data-value="1/4" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <label class="tuplet-cell-label" title="Duplet 1/8 (2:3 eighths, 1 compound beat in 6/8)">
+                          <input type="checkbox" id="tuplet-duplet-1-8" data-tuplet="duplet" data-value="1/8" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <label class="tuplet-cell-label" title="Duplet 1/16 (2:3 sixteenths)">
+                          <input type="checkbox" id="tuplet-duplet-1-16" data-tuplet="duplet" data-value="1/16" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                    </tr>
+                    <tr data-row="triplet">
+                      <th class="th-row" scope="row">Triplet (3)</th>
+                      <td>
+                        <label class="tuplet-cell-label" title="Triplet 1/4 (3:2 quarters, 2 beats)">
+                          <input type="checkbox" id="tuplet-triplet-1-4" data-tuplet="triplet" data-value="1/4" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <label class="tuplet-cell-label" title="Triplet 1/8 (3:2 eighths, 1 beat)">
+                          <input type="checkbox" id="tuplet-triplet-1-8" data-tuplet="triplet" data-value="1/8" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <label class="tuplet-cell-label" title="Triplet 1/16 (3:2 sixteenths, 0.5 beat)">
+                          <input type="checkbox" id="tuplet-triplet-1-16" data-tuplet="triplet" data-value="1/16" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                    </tr>
+                    <tr data-row="quadruplet">
+                      <th class="th-row" scope="row">Quadruplet (4)</th>
+                      <td>
+                        <label class="tuplet-cell-label" title="Quadruplet 1/4 (4:3 quarters, 3 beats)">
+                          <input type="checkbox" id="tuplet-quadruplet-1-4" data-tuplet="quadruplet" data-value="1/4" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <label class="tuplet-cell-label" title="Quadruplet 1/8 (4:3 eighths, 1 compound beat in 6/8)">
+                          <input type="checkbox" id="tuplet-quadruplet-1-8" data-tuplet="quadruplet" data-value="1/8" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <label class="tuplet-cell-label" title="Quadruplet 1/16 (4:3 sixteenths)">
+                          <input type="checkbox" id="tuplet-quadruplet-1-16" data-tuplet="quadruplet" data-value="1/16" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                    </tr>
+                    <tr data-row="quintuplet">
+                      <th class="th-row" scope="row">Quintuplet (5)</th>
+                      <td>
+                        <label class="tuplet-cell-label" title="Quintuplet 1/4 (5:4 quarters, 4 beats)">
+                          <input type="checkbox" id="tuplet-quintuplet-1-4" data-tuplet="quintuplet" data-value="1/4" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <label class="tuplet-cell-label" title="Quintuplet 1/8 (5:4 eighths, 2 beats)">
+                          <input type="checkbox" id="tuplet-quintuplet-1-8" data-tuplet="quintuplet" data-value="1/8" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <label class="tuplet-cell-label" title="Quintuplet 1/16 (5:4 sixteenths, 1 beat)">
+                          <input type="checkbox" id="tuplet-quintuplet-1-16" data-tuplet="quintuplet" data-value="1/16" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                    </tr>
+                    <tr data-row="sextuplet">
+                      <th class="th-row" scope="row">Sextuplet (6)</th>
+                      <td>
+                        <label class="tuplet-cell-label" title="Sextuplet 1/4 (6:4 quarters, 4 beats)">
+                          <input type="checkbox" id="tuplet-sextuplet-1-4" data-tuplet="sextuplet" data-value="1/4" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <label class="tuplet-cell-label" title="Sextuplet 1/8 (6:4 eighths, 2 beats)">
+                          <input type="checkbox" id="tuplet-sextuplet-1-8" data-tuplet="sextuplet" data-value="1/8" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <label class="tuplet-cell-label" title="Sextuplet 1/16 (6:4 sixteenths, 1 beat)">
+                          <input type="checkbox" id="tuplet-sextuplet-1-16" data-tuplet="sextuplet" data-value="1/16" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                    </tr>
+                    <tr data-row="septuplet">
+                      <th class="th-row" scope="row">Septuplet (7)</th>
+                      <td>
+                        <label class="tuplet-cell-label" title="Septuplet 1/4 (7:4 quarters, 4 beats)">
+                          <input type="checkbox" id="tuplet-septuplet-1-4" data-tuplet="septuplet" data-value="1/4" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <label class="tuplet-cell-label" title="Septuplet 1/8 (7:4 eighths, 2 beats)">
+                          <input type="checkbox" id="tuplet-septuplet-1-8" data-tuplet="septuplet" data-value="1/8" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <label class="tuplet-cell-label" title="Septuplet 1/16 (7:4 sixteenths, 1 beat)">
+                          <input type="checkbox" id="tuplet-septuplet-1-16" data-tuplet="septuplet" data-value="1/16" />
+                          <span class="custom-chk"></span>
+                        </label>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="tuplets-popover-footer">
+                <span>Select any n-tuplet and note value combinations to stream procedurally.</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div class="control-group rests-group">
           <label class="checkbox-item" for="toggle-rests">
