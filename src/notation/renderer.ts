@@ -62,7 +62,7 @@ export class MeasureRenderer {
 
     for (let i = 0; i < data.notes.length; i++) {
       const noteData = data.notes[i];
-      const staveNote = this.createStaveNote(noteData, data.clef);
+      const staveNote = this.createStaveNote(noteData, data.clef, stave);
       staveNotes.push(staveNote);
 
       if (noteData.isTuplet && noteData.tupletGroup !== undefined) {
@@ -87,8 +87,9 @@ export class MeasureRenderer {
       }
     }
 
-    // Build beams
+    // Build beams with meter-aware beam groups
     const beams = Beam.generateBeams(staveNotes, {
+      groups: Beam.getDefaultBeamGroups(data.timeSignature),
       beamRests: false,
     });
     for (const beam of beams) {
@@ -101,6 +102,7 @@ export class MeasureRenderer {
       beatValue: data.beatValue,
     });
     voice.setMode(Voice.Mode.SOFT);
+    voice.setStave(stave);
     voice.addTickables(staveNotes);
 
     // Initial VexFlow format
@@ -116,6 +118,7 @@ export class MeasureRenderer {
 
     // Re-format beams after exact manual note positioning
     for (const beam of beams) {
+      beam.postFormatted = false;
       beam.postFormat();
     }
 
@@ -179,7 +182,7 @@ export class MeasureRenderer {
     return canvas;
   }
 
-  private createStaveNote(noteData: NoteData, clef: Clef): StaveNote {
+  private createStaveNote(noteData: NoteData, clef: Clef, stave: Stave): StaveNote {
     let durationString = noteData.duration;
     let isDotted = false;
 
@@ -198,6 +201,8 @@ export class MeasureRenderer {
       clef,
       autoStem: true,
     });
+
+    staveNote.setStave(stave);
 
     if (isDotted) {
       Dot.buildAndAttach([staveNote], { all: true });
