@@ -114,8 +114,8 @@ export class ScrollerView {
     ctx.save();
     ctx.scale(dpr, dpr);
 
-    // 1. Clear viewport with dark background
-    ctx.fillStyle = '#141414';
+    // 1. Clear viewport with clean white background
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, w, h);
 
     // 2. Draw continuous stationary staff lines across the entire viewport
@@ -159,14 +159,14 @@ export class ScrollerView {
     // 6. Draw pinned clef at the left margin
     this.drawPinnedClef(ctx, settings?.clef ?? 'treble');
 
-    // 7. Draw fixed playhead guide line in cyan accent
+    // 7. Draw fixed playhead guide line in high-contrast red accent
     this.drawPlayhead(ctx, h);
 
     ctx.restore();
   }
 
   private drawStationaryStaffLines(ctx: CanvasRenderingContext2D, width: number): void {
-    ctx.strokeStyle = '#444444';
+    ctx.strokeStyle = '#64748b';
     ctx.lineWidth = 1;
     ctx.beginPath();
 
@@ -186,12 +186,12 @@ export class ScrollerView {
     }
 
     const clefX = 24;
-    // Subtly blur / shade behind clef so scrolling notes don't visually clutter the reference clef
-    ctx.fillStyle = 'rgba(20, 20, 20, 0.85)';
+    // Subtly shade behind clef so scrolling notes don't visually clutter the reference clef
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
     ctx.fillRect(0, this.staveTopY - 25, clefX + 70, 90);
 
     // Re-draw staff lines under the clef
-    ctx.strokeStyle = '#555555';
+    ctx.strokeStyle = '#64748b';
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let line = 0; line < 5; line++) {
@@ -219,25 +219,25 @@ export class ScrollerView {
 
     // Subtle background glow behind playhead line
     const gradient = ctx.createLinearGradient(x, 0, x, height);
-    gradient.addColorStop(0, 'rgba(0, 255, 204, 0)');
-    gradient.addColorStop(0.3, 'rgba(0, 255, 204, 0.15)');
-    gradient.addColorStop(0.5, 'rgba(0, 255, 204, 0.35)');
-    gradient.addColorStop(0.7, 'rgba(0, 255, 204, 0.15)');
-    gradient.addColorStop(1, 'rgba(0, 255, 204, 0)');
+    gradient.addColorStop(0, 'rgba(220, 38, 38, 0)');
+    gradient.addColorStop(0.3, 'rgba(220, 38, 38, 0.08)');
+    gradient.addColorStop(0.5, 'rgba(220, 38, 38, 0.18)');
+    gradient.addColorStop(0.7, 'rgba(220, 38, 38, 0.08)');
+    gradient.addColorStop(1, 'rgba(220, 38, 38, 0)');
 
     ctx.fillStyle = gradient;
     ctx.fillRect(x - 3, 0, 7, height);
 
     // Crisp playhead line
-    ctx.strokeStyle = '#00ffcc';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(x, this.staveTopY - 35);
     ctx.lineTo(x, this.staveTopY + 75);
     ctx.stroke();
 
     // Accent pointers at top and bottom of playhead line
-    ctx.fillStyle = '#00ffcc';
+    ctx.fillStyle = '#dc2626';
 
     // Top triangle
     ctx.beginPath();
