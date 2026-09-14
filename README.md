@@ -18,7 +18,7 @@
 ## Quickstart
 
 ### Prerequisites
-- **Node.js**: `v18.0.0` or higher (recommended: Node 20 or 22 LTS). If you use `nvm` or `fnm`, run `nvm use`.
+- **Node.js**: `v18.0.0` or higher (recommended: Node 20 or 22 LTS). Check with `node -v`. (If you use a version manager like `nvm` or `fnm`, you can run `nvm use`, but it is not required if Node is already installed).
 - **Package Manager**: `pnpm` (recommended) or `npm`.
 
 ### Installation & Local Run
