@@ -173,7 +173,20 @@ html, body {
   font-family: var(--font-mono);
 }
 
-.subdivisions-group {
+.clef-select-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.clef-range-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.subdivisions-group,
+.intervals-group {
   border: 1px solid var(--panel-border);
   padding: 4px 8px;
   border-radius: 4px;
@@ -183,6 +196,11 @@ html, body {
 .checkbox-grid {
   display: grid;
   grid-template-columns: repeat(3, auto);
+  gap: 4px 10px;
+}
+
+.intervals-grid {
+  grid-template-columns: repeat(4, auto);
   gap: 4px 10px;
 }
 

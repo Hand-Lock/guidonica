@@ -1,4 +1,4 @@
-import { AllowedIntervals, AppSettings, Clef, TimeSignature } from './notation/types';
+import { CLEF_RANGE_DISPLAY, Clef, TimeSignature } from './notation/types';
 import { globalState, SessionState } from './state';
 import { MetronomeEngine } from './audio/metronome';
 import { MusicGenerator } from './notation/generator';
@@ -21,10 +21,19 @@ class SolfegeScrollerApp {
   private bpmDisplay: HTMLElement;
   private selectTimeSig: HTMLSelectElement;
   private selectClef: HTMLSelectElement;
-  private selectIntervals: HTMLSelectElement;
+  private clefRangeHint: HTMLElement;
   private toggleRests: HTMLInputElement;
   private countInBadge: HTMLElement;
   private beatDotsContainer: HTMLElement;
+
+  private intervalUnison: HTMLInputElement;
+  private intervalSecond: HTMLInputElement;
+  private intervalThird: HTMLInputElement;
+  private intervalFourth: HTMLInputElement;
+  private intervalFifth: HTMLInputElement;
+  private intervalSixth: HTMLInputElement;
+  private intervalSeventh: HTMLInputElement;
+  private intervalOctave: HTMLInputElement;
 
   private subdivQuarter: HTMLInputElement;
   private subdivEighth: HTMLInputElement;
@@ -42,10 +51,19 @@ class SolfegeScrollerApp {
     this.bpmDisplay = document.getElementById('bpm-display') as HTMLElement;
     this.selectTimeSig = document.getElementById('select-time-signature') as HTMLSelectElement;
     this.selectClef = document.getElementById('select-clef') as HTMLSelectElement;
-    this.selectIntervals = document.getElementById('select-intervals') as HTMLSelectElement;
+    this.clefRangeHint = document.getElementById('clef-range-hint') as HTMLElement;
     this.toggleRests = document.getElementById('toggle-rests') as HTMLInputElement;
     this.countInBadge = document.getElementById('count-in-badge') as HTMLElement;
     this.beatDotsContainer = document.getElementById('beat-dots') as HTMLElement;
+
+    this.intervalUnison = document.getElementById('interval-unison') as HTMLInputElement;
+    this.intervalSecond = document.getElementById('interval-second') as HTMLInputElement;
+    this.intervalThird = document.getElementById('interval-third') as HTMLInputElement;
+    this.intervalFourth = document.getElementById('interval-fourth') as HTMLInputElement;
+    this.intervalFifth = document.getElementById('interval-fifth') as HTMLInputElement;
+    this.intervalSixth = document.getElementById('interval-sixth') as HTMLInputElement;
+    this.intervalSeventh = document.getElementById('interval-seventh') as HTMLInputElement;
+    this.intervalOctave = document.getElementById('interval-octave') as HTMLInputElement;
 
     this.subdivQuarter = document.getElementById('subdiv-quarter') as HTMLInputElement;
     this.subdivEighth = document.getElementById('subdiv-eighth') as HTMLInputElement;
@@ -118,16 +136,36 @@ class SolfegeScrollerApp {
     // Clef
     this.selectClef.addEventListener('change', (e) => {
       const clef = (e.target as HTMLSelectElement).value as Clef;
+      this.clefRangeHint.textContent = CLEF_RANGE_DISPLAY[clef];
       globalState.updateSettings({ clef });
       this.resetSession();
     });
 
     // Intervals
-    this.selectIntervals.addEventListener('change', (e) => {
-      const intervals = (e.target as HTMLSelectElement).value as AllowedIntervals;
-      globalState.updateSettings({ intervals });
+    const handleIntervalChange = (): void => {
+      globalState.updateSettings({
+        intervals: {
+          unison: this.intervalUnison.checked,
+          second: this.intervalSecond.checked,
+          third: this.intervalThird.checked,
+          fourth: this.intervalFourth.checked,
+          fifth: this.intervalFifth.checked,
+          sixth: this.intervalSixth.checked,
+          seventh: this.intervalSeventh.checked,
+          octave: this.intervalOctave.checked,
+        },
+      });
       this.resetSession();
-    });
+    };
+
+    this.intervalUnison.addEventListener('change', handleIntervalChange);
+    this.intervalSecond.addEventListener('change', handleIntervalChange);
+    this.intervalThird.addEventListener('change', handleIntervalChange);
+    this.intervalFourth.addEventListener('change', handleIntervalChange);
+    this.intervalFifth.addEventListener('change', handleIntervalChange);
+    this.intervalSixth.addEventListener('change', handleIntervalChange);
+    this.intervalSeventh.addEventListener('change', handleIntervalChange);
+    this.intervalOctave.addEventListener('change', handleIntervalChange);
 
     // Subdivisions
     const handleSubdivChange = (): void => {
