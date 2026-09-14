@@ -1,5 +1,29 @@
+# Dependencies
 node_modules/
+
+# Production build artifacts
 dist/
+
+# macOS system files
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor and IDE configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and runtime caches
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.cache/
 *.local
-.cache
+
