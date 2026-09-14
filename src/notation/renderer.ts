@@ -85,6 +85,51 @@ export class MeasureRenderer {
       }
     }
 
+    // Build beams:
+    // Tuplet groups of 8ths or 16ths receive dedicated unified beams spanning the tuplet with autoStem enabled
+    // so notes spanning a wide pitch range share a single unified stem direction towards the beam
+    const beams: Beam[] = [];
+    for (const entry of tupletGroupsMap.values()) {
+      const isBeamable = entry.notes.every((n) => {
+        const d = n.getDuration();
+        return (d === '8' || d === '16') && !n.isRest();
+      });
+      if (isBeamable && entry.notes.length > 1) {
+        const tupletBeam = new Beam(entry.notes, true);
+        beams.push(tupletBeam);
+      }
+    }
+
+    // Non-tuplet notes receive meter-aware automatic beam groups chunked by contiguous runs
+    // so beams never span across intervening tuplet groups
+    const nonTupletRuns: StaveNote[][] = [];
+    let currentRun: StaveNote[] = [];
+    for (const note of staveNotes) {
+      if (!tupletNotesSet.has(note)) {
+        currentRun.push(note);
+      } else {
+        if (currentRun.length > 0) {
+          nonTupletRuns.push(currentRun);
+          currentRun = [];
+        }
+      }
+    }
+    if (currentRun.length > 0) {
+      nonTupletRuns.push(currentRun);
+    }
+
+    for (const run of nonTupletRuns) {
+      const regularBeams = Beam.generateBeams(run, {
+        groups: Beam.getDefaultBeamGroups(data.timeSignature),
+        beamRests: false,
+      });
+      beams.push(...regularBeams);
+    }
+
+    for (const beam of beams) {
+      beam.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+    }
+
     // Build tuplets
     const tuplets: Tuplet[] = [];
     for (const entry of tupletGroupsMap.values()) {
@@ -100,34 +145,6 @@ export class MeasureRenderer {
         tuplet.setStyle({ fillStyle: '#334155', strokeStyle: '#334155' });
         tuplets.push(tuplet);
       }
-    }
-
-    // Build beams:
-    // Tuplet groups of 8ths or 16ths receive dedicated unified beams spanning the tuplet
-    const beams: Beam[] = [];
-    for (const entry of tupletGroupsMap.values()) {
-      const isBeamable = entry.notes.every((n) => {
-        const d = n.getDuration();
-        return (d === '8' || d === '16') && !n.isRest();
-      });
-      if (isBeamable && entry.notes.length > 1) {
-        const tupletBeam = new Beam(entry.notes);
-        beams.push(tupletBeam);
-      }
-    }
-
-    // Non-tuplet notes receive meter-aware automatic beam groups
-    const nonTupletNotes = staveNotes.filter((n) => !tupletNotesSet.has(n));
-    if (nonTupletNotes.length > 0) {
-      const regularBeams = Beam.generateBeams(nonTupletNotes, {
-        groups: Beam.getDefaultBeamGroups(data.timeSignature),
-        beamRests: false,
-      });
-      beams.push(...regularBeams);
-    }
-
-    for (const beam of beams) {
-      beam.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
     }
 
     // Voice setup
