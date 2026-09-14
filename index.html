@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Solfège Scroller</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="control-panel">
+        <div class="brand">
+          <h1>Solfège Scroller</h1>
+        </div>
+
+        <div class="playback-controls">
+          <button id="btn-play-pause" class="btn btn-primary" type="button" aria-label="Play or pause">
+            <span class="btn-icon">▶</span>
+            <span class="btn-label">Start</span>
+          </button>
+          <button id="btn-reset" class="btn btn-secondary" type="button" aria-label="Reset session">
+            <span class="btn-icon">↺</span>
+            <span class="btn-label">Reset</span>
+          </button>
+        </div>
+
+        <div class="control-group tempo-group">
+          <label for="tempo-slider">Tempo: <span id="bpm-display">60</span> BPM</label>
+          <div class="tempo-inputs">
+            <input type="range" id="tempo-slider" min="30" max="240" value="60" step="1" />
+            <input type="number" id="tempo-number" min="30" max="240" value="60" step="1" />
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="select-time-signature">Meter</label>
+          <select id="select-time-signature">
+            <option value="4/4" selected>4/4</option>
+            <option value="3/4">3/4</option>
+            <option value="2/4">2/4</option>
+            <option value="6/8">6/8</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="select-clef">Clef</label>
+          <select id="select-clef">
+            <option value="treble" selected>Treble (G)</option>
+            <option value="bass">Bass (F)</option>
+            <option value="alto">Alto (C3)</option>
+            <option value="tenor">Tenor (C4)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="select-intervals">Intervals</label>
+          <select id="select-intervals">
+            <option value="seconds" selected>Steps (2nds)</option>
+            <option value="thirds">Thirds (3rds)</option>
+            <option value="octaves">Octaves</option>
+            <option value="any">Any Interval</option>
+          </select>
+        </div>
+
+        <fieldset class="control-group subdivisions-group">
+          <legend>Subdivisions</legend>
+          <div class="checkbox-grid">
+            <label class="checkbox-item">
+              <input type="checkbox" id="subdiv-quarter" checked />
+              <span>Quarter (♩)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="subdiv-eighth" checked />
+              <span>Eighth (♪)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="subdiv-half" checked />
+              <span>Half (𝅗𝅥)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="subdiv-whole" checked />
+              <span>Whole (𝅝)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="subdiv-sixteenth" />
+              <span>16th (𝅘𝅥𝅯)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="subdiv-triplets" />
+              <span>Triplets (3)</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="control-group rests-group">
+          <label class="checkbox-item" for="toggle-rests">
+            <input type="checkbox" id="toggle-rests" />
+            <span>Include Rests (𝄽)</span>
+          </label>
+        </div>
+
+        <div class="beat-indicator-container">
+          <div id="count-in-badge" class="badge-count-in hidden">COUNT IN</div>
+          <div id="beat-dots" class="beat-dots">
+            <!-- Dynamically populated beat dots -->
+          </div>
+        </div>
+      </header>
+
+      <main class="canvas-wrapper">
+        <canvas id="scroller-canvas"></canvas>
+      </main>
+
+      <footer class="shortcuts-hint">
+        <span><kbd>Space</kbd> Play/Pause</span>
+        <span><kbd>R</kbd> / <kbd>Esc</kbd> Reset</span>
+        <span><kbd>↑</kbd>/<kbd>↓</kbd> ±5 BPM</span>
+        <span><kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> ±1 BPM</span>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
