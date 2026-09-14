@@ -2,7 +2,30 @@ export type Clef = 'treble' | 'bass' | 'alto' | 'tenor';
 
 export type TimeSignature = '4/4' | '3/4' | '2/4' | '6/8';
 
-export type AllowedIntervals = 'seconds' | 'thirds' | 'octaves' | 'any';
+export interface IntervalOptions {
+  unison: boolean; // 1st: same note / repeat (0 steps)
+  second: boolean; // 2nd: step (1 step)
+  third: boolean; // 3rd: skip (2 steps)
+  fourth: boolean; // 4th (3 steps)
+  fifth: boolean; // 5th (4 steps)
+  sixth: boolean; // 6th (5 steps)
+  seventh: boolean; // 7th (6 steps)
+  octave: boolean; // 8ve: octave leap (7 steps)
+}
+
+export interface ClefPitchConfig {
+  pitches: string[];
+  minPitch: string;
+  maxPitch: string;
+  defaultAnchor: string;
+}
+
+export const CLEF_RANGE_DISPLAY: Record<Clef, string> = {
+  treble: 'E3 – F6 (±3 ledger lines)',
+  bass: 'G1 – A4 (±3 ledger lines)',
+  alto: 'F2 – G5 (±3 ledger lines)',
+  tenor: 'D2 – E5 (±3 ledger lines)',
+};
 
 export interface SubdivisionOptions {
   whole: boolean;
@@ -19,7 +42,7 @@ export interface AppSettings {
   clef: Clef;
   subdivisions: SubdivisionOptions;
   rests: boolean;
-  intervals: AllowedIntervals;
+  intervals: IntervalOptions;
 }
 
 export type PlaybackState = 'stopped' | 'counting-in' | 'playing' | 'paused';

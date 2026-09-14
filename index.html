@@ -43,25 +43,56 @@
           </select>
         </div>
 
-        <div class="control-group">
+        <div class="control-group clef-group">
           <label for="select-clef">Clef</label>
-          <select id="select-clef">
-            <option value="treble" selected>Treble (G)</option>
-            <option value="bass">Bass (F)</option>
-            <option value="alto">Alto (C3)</option>
-            <option value="tenor">Tenor (C4)</option>
-          </select>
+          <div class="clef-select-container">
+            <select id="select-clef">
+              <option value="treble" selected>Treble (G)</option>
+              <option value="bass">Bass (F)</option>
+              <option value="alto">Alto (C3)</option>
+              <option value="tenor">Tenor (C4)</option>
+            </select>
+            <span id="clef-range-hint" class="clef-range-hint">E3 – F6 (±3 ledger lines)</span>
+          </div>
         </div>
 
-        <div class="control-group">
-          <label for="select-intervals">Intervals</label>
-          <select id="select-intervals">
-            <option value="seconds" selected>Steps (2nds)</option>
-            <option value="thirds">Thirds (3rds)</option>
-            <option value="octaves">Octaves</option>
-            <option value="any">Any Interval</option>
-          </select>
-        </div>
+        <fieldset class="control-group intervals-group">
+          <legend>Intervals</legend>
+          <div class="checkbox-grid intervals-grid">
+            <label class="checkbox-item" title="Unison (1st) - Same pitch / repeated note">
+              <input type="checkbox" id="interval-unison" />
+              <span>Unison (1st)</span>
+            </label>
+            <label class="checkbox-item" title="Second (2nd) - 1 step">
+              <input type="checkbox" id="interval-second" checked />
+              <span>2nd (Step)</span>
+            </label>
+            <label class="checkbox-item" title="Third (3rd) - 2 steps / skip">
+              <input type="checkbox" id="interval-third" checked />
+              <span>3rd (Skip)</span>
+            </label>
+            <label class="checkbox-item" title="Fourth (4th) - 3 steps">
+              <input type="checkbox" id="interval-fourth" />
+              <span>4th</span>
+            </label>
+            <label class="checkbox-item" title="Fifth (5th) - 4 steps">
+              <input type="checkbox" id="interval-fifth" />
+              <span>5th</span>
+            </label>
+            <label class="checkbox-item" title="Sixth (6th) - 5 steps">
+              <input type="checkbox" id="interval-sixth" />
+              <span>6th</span>
+            </label>
+            <label class="checkbox-item" title="Seventh (7th) - 6 steps">
+              <input type="checkbox" id="interval-seventh" />
+              <span>7th</span>
+            </label>
+            <label class="checkbox-item" title="Octave (8ve) - 7 steps / octave leap">
+              <input type="checkbox" id="interval-octave" />
+              <span>8ve (Oct)</span>
+            </label>
+          </div>
+        </fieldset>
 
         <fieldset class="control-group subdivisions-group">
           <legend>Subdivisions</legend>
