@@ -24,9 +24,14 @@ solfege-scroller/
 ├── tsconfig.json           # Strict TypeScript configuration
 ├── vite.config.ts          # Minimal Vite configuration
 ├── index.html              # Minimal semantic HTML shell
+├── docs/
+│   └── adr/                # Architectural Decision Records & implementation notes
+│       ├── README.md       # ADR index and registration log
+│       └── 0001-*.md       # Specific architectural & subsystem records
 └── src/
     ├── main.ts             # Application bootstrapper and UI event wiring
     ├── state.ts            # Typed session state and parameter interfaces
+    ├── style.css           # Dark-mode minimalist styles and accent color
     ├── audio/
     │   └── metronome.ts    # Web Audio oscillator synthesis & clock scheduler
     ├── notation/
@@ -63,18 +68,25 @@ solfege-scroller/
 
 ---
 
-## 4. Git & Version Control Hygiene
+## 4. Architectural Decision Records (ADRs) & Knowledge Continuity
 
-1. **Repository Setup**:
+1. **ADR Repository (`docs/adr/`)**:
+   - Whenever a subsystem is designed, an architectural choice is made, or an implementation method is introduced/modified, the agent must document it in `docs/adr/` and register it in `docs/adr/README.md`.
+   - Each ADR must specify: Status, Date, Context/Problem, Decisions & Implementation Methods (with math/code rationale), and Consequences.
+2. **LLM Knowledge Retention**:
+   - The ADRs serve as the persistent source of truth so future LLM agents know with certainty what has been developed, which algorithms are active, and why specific engineering decisions were made.
+
+---
+
+## 5. Git & Version Control Hygiene
+
+1. **Mandatory Commit Upon Task Completion**:
+   - **Every time you finish a task requested by the user, you MUST create a git commit.**
+   - The commit message must be written by the agent following Conventional Commits (`feat:`, `fix:`, `refactor:`, `perf:`, `docs:`, `chore:`).
+   - Never leave uncommitted changes at the end of a completed task unless explicitly instructed by the user.
+2. **Repository Setup**:
    - Keep the repository self-contained and reproducible.
    - `.gitignore` must ignore `node_modules/`, `dist/`, `.DS_Store`, and temporary test artifacts.
-2. **Commit Conventions**:
-   - Use atomic, descriptive commits following Conventional Commits:
-     - `feat:` new feature or generation algorithm
-     - `fix:` bug fix or timing correction
-     - `refactor:` code reorganization without functional change
-     - `perf:` rendering or audio performance optimization
-     - `docs:` documentation updates
 3. **Cross-Machine Reproducibility**:
    - Any developer on another machine must be able to run:
      ```bash
@@ -87,7 +99,7 @@ solfege-scroller/
 
 ---
 
-## 5. Development & Verification Workflow
+## 6. Development & Verification Workflow
 
 - **Install Dependencies**: `pnpm install` (or `npm install`)
 - **Start Dev Server**: `pnpm dev` (or `npm run dev`)
