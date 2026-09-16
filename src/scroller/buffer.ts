@@ -1,6 +1,7 @@
 import { AppSettings, RenderedMeasure } from '../notation/types';
 import { MusicGenerator } from '../notation/generator';
 import { MeasureRenderer } from '../notation/renderer';
+import { isMusicFontReady } from '../notation/fonts';
 
 export class MeasureBuffer {
   private measures: RenderedMeasure[] = [];
@@ -43,6 +44,11 @@ export class MeasureBuffer {
     lookaheadBeats: number,
     settings: AppSettings
   ): void {
+    // Avoid rendering measures with blank fallback glyphs if music fonts are still decoding
+    if (!isMusicFontReady()) {
+      return;
+    }
+
     // If the browser tab was throttled in the background and currentGlobalBeat jumped ahead,
     // skip rendering offscreen measures that would be immediately discarded.
     const beatsPerMeasure =
