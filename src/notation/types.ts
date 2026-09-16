@@ -140,7 +140,7 @@ export interface RenderedMeasure {
 
 /** Global metric layout constants */
 export const NOTE_START_OFFSET = 26; // Padding before beat 0 after the left barline
-export const MEASURE_CANVAS_HEIGHT = 180;
+export const MEASURE_CANVAS_HEIGHT = 220;
 export const STAVE_CANVAS_Y = 40;
 export const STAVE_TOP_LINE_Y = 80; // In VexFlow, stave.getYForLine(0) = STAVE_CANVAS_Y + 4 * 10 = 80
 

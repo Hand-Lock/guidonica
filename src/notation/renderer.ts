@@ -225,10 +225,12 @@ export class MeasureRenderer {
       const rawCtx = canvas.getContext('2d');
       if (rawCtx) {
         rawCtx.save();
-        rawCtx.scale(dpr, dpr);
+        // Reset transform to exactly 1x logical units scaled to device pixel ratio
+        rawCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
         rawCtx.fillStyle = solfegeColor;
-        rawCtx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        rawCtx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         rawCtx.textAlign = 'center';
+        rawCtx.textBaseline = 'middle';
 
         for (let i = 0; i < data.notes.length; i++) {
           const nData = data.notes[i];
@@ -242,9 +244,11 @@ export class MeasureRenderer {
 
           const noteLinearX = NOTE_START_OFFSET + nData.beatOffset * beatWidth;
           const staveNote = staveNotes[i];
-          const noteY = staveNote.getYs()[0] ?? 120;
-          // Place label below bottom staff line (120) and clear of lower ledger lines
-          const labelY = Math.min(MEASURE_CANVAS_HEIGHT - 6, Math.max(142, noteY + 22));
+          const noteY = staveNote.getYs()?.[0] ?? 120;
+          // Position solfege syllables along a uniform baseline below the staff (148),
+          // while stepping down to clear lower ledger lines (e.g. C4 down to E3)
+          const baselineY = 148;
+          const labelY = Math.min(MEASURE_CANVAS_HEIGHT - 12, Math.max(baselineY, noteY + 20));
           rawCtx.fillText(label, noteLinearX, labelY);
         }
         rawCtx.restore();

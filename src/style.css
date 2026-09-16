@@ -642,6 +642,7 @@ html, body {
 .canvas-wrapper {
   flex: 1;
   width: 100%;
+  min-height: 240px;
   position: relative;
   background-color: var(--canvas-bg);
   overflow: hidden;

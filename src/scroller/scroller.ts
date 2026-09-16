@@ -81,7 +81,7 @@ export class ScrollerView {
     };
 
     this.viewportWidth = Math.max(300, Math.floor(rect.width));
-    this.viewportHeight = Math.max(180, Math.floor(rect.height));
+    this.viewportHeight = Math.max(220, Math.floor(rect.height));
 
     this.canvas.width = Math.floor(this.viewportWidth * this.dpr);
     this.canvas.height = Math.floor(this.viewportHeight * this.dpr);
