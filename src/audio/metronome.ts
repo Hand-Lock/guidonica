@@ -19,7 +19,7 @@ export class MetronomeEngine {
 
   private volume: number = 0.8;
   private isMuted: boolean = false;
-  private soundProfile: SoundProfile = 'triangle';
+  private soundProfile: SoundProfile = 'woodblock';
   private pulse68: Pulse68Mode = 'dotted-quarter';
 
   private beatsPerMeasure: number = 4;

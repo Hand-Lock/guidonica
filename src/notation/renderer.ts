@@ -41,7 +41,7 @@ export class MeasureRenderer {
    */
   public renderMeasure(
     data: MeasureData,
-    theme: ThemeMode = 'light',
+    theme: ThemeMode = 'auto',
     solfegeMode: SolfegeLabelMode = 'none'
   ): RenderedMeasure {
     const dpr = this.dpr;
@@ -270,7 +270,7 @@ export class MeasureRenderer {
   /**
    * Renders the stationary clef glyph onto an offscreen canvas to pin at the left margin.
    */
-  public renderPinnedClef(clef: Clef, theme: ThemeMode = 'light'): HTMLCanvasElement {
+  public renderPinnedClef(clef: Clef, theme: ThemeMode = 'auto'): HTMLCanvasElement {
     const dpr = this.dpr;
     const width = 80;
     const canvas = document.createElement('canvas');
