@@ -325,6 +325,24 @@ html, body {
   cursor: pointer;
 }
 
+/* Vector Music Notation Icons */
+.music-icon {
+  display: inline-block;
+  height: 1.15em;
+  width: auto;
+  vertical-align: -0.22em;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.music-icon.icon-whole {
+  vertical-align: -0.05em;
+}
+
+.music-icon.icon-rest {
+  vertical-align: -0.18em;
+}
+
 .rests-group,
 .count-in-group {
   justify-content: center;
