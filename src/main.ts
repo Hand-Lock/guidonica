@@ -2,6 +2,7 @@ import {
   CLEF_RANGE_DISPLAY,
   Clef,
   Pulse68Mode,
+  ResolvedTheme,
   SolfegeLabelMode,
   SoundProfile,
   TUPLET_NAMES,
@@ -11,6 +12,8 @@ import {
   TupletName,
   TupletOptions,
   TupletValue,
+  resolveTheme,
+  subscribeSystemTheme,
 } from './notation/types';
 import { globalState, SessionState } from './state';
 import { MetronomeEngine } from './audio/metronome';
@@ -57,8 +60,10 @@ class SolfegeScrollerApp {
   private toggleCountIn: HTMLInputElement;
   private selectSolfegeMode: HTMLSelectElement;
   private selectSoundProfile: HTMLSelectElement;
+  private selectTheme: HTMLSelectElement;
   private volumeSlider: HTMLInputElement;
   private btnVolumeMute: HTMLButtonElement;
+  private unsubscribeSystemTheme: (() => void) | null = null;
 
   // Intervals & Subdivisions
   private intervalUnison: HTMLInputElement;
@@ -114,6 +119,7 @@ class SolfegeScrollerApp {
     this.toggleCountIn = document.getElementById('toggle-count-in') as HTMLInputElement;
     this.selectSolfegeMode = document.getElementById('select-solfege-mode') as HTMLSelectElement;
     this.selectSoundProfile = document.getElementById('select-sound-profile') as HTMLSelectElement;
+    this.selectTheme = document.getElementById('select-theme') as HTMLSelectElement;
     this.volumeSlider = document.getElementById('volume-slider') as HTMLInputElement;
     this.btnVolumeMute = document.getElementById('btn-volume-mute') as HTMLButtonElement;
 
@@ -203,9 +209,10 @@ class SolfegeScrollerApp {
   }
 
   private hydrateUI(settings: typeof globalState.settings): void {
-    // Apply theme to DOM
-    document.documentElement.setAttribute('data-theme', settings.theme);
-    this.themeIcon.textContent = settings.theme === 'dark' ? '☀️' : '🌙';
+    // Apply theme to DOM and sync controls
+    const resolved = resolveTheme(settings.theme);
+    document.documentElement.setAttribute('data-theme', resolved);
+    this.updateThemeUI(settings.theme, resolved);
 
     // Tempo
     this.tempoSlider.value = String(settings.tempo);
@@ -260,6 +267,37 @@ class SolfegeScrollerApp {
     this.updateTupletsUI();
   }
 
+  private updateThemeUI(theme: ThemeMode, resolved: ResolvedTheme): void {
+    if (theme === 'auto') {
+      this.themeIcon.textContent = '🌓';
+      this.btnThemeToggle.title = `Theme: Auto (OS: ${resolved === 'dark' ? 'Dark' : 'Light'}) - Click for Dark`;
+      this.btnThemeToggle.setAttribute(
+        'aria-label',
+        `Theme: Auto (OS: ${resolved}). Click to cycle theme.`
+      );
+    } else if (theme === 'dark') {
+      this.themeIcon.textContent = '🌙';
+      this.btnThemeToggle.title = 'Theme: Dark - Click for Light';
+      this.btnThemeToggle.setAttribute('aria-label', 'Theme: Dark. Click to cycle theme.');
+    } else {
+      this.themeIcon.textContent = '☀️';
+      this.btnThemeToggle.title = 'Theme: Light - Click for Auto (OS)';
+      this.btnThemeToggle.setAttribute('aria-label', 'Theme: Light. Click to cycle theme.');
+    }
+    if (this.selectTheme) {
+      this.selectTheme.value = theme;
+    }
+  }
+
+  private applyTheme(nextTheme: ThemeMode): void {
+    const resolved = resolveTheme(nextTheme);
+    document.documentElement.setAttribute('data-theme', resolved);
+    this.updateThemeUI(nextTheme, resolved);
+    globalState.updateSettings({ theme: nextTheme });
+    this.scroller.invalidatePinnedClef();
+    this.resetBuffer();
+  }
+
   private async initFonts(): Promise<void> {
     await waitForMusicFonts();
     this.fontsReady = true;
@@ -277,15 +315,36 @@ class SolfegeScrollerApp {
       this.resetSession();
     });
 
-    // Theme Toggle
+    // Theme Toggle: Cycles auto -> dark -> light -> auto
     this.btnThemeToggle.addEventListener('click', () => {
       this.btnThemeToggle.blur();
-      const nextTheme: ThemeMode = globalState.settings.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', nextTheme);
-      this.themeIcon.textContent = nextTheme === 'dark' ? '☀️' : '🌙';
-      globalState.updateSettings({ theme: nextTheme });
-      this.scroller.invalidatePinnedClef();
-      this.resetBuffer();
+      const currentTheme = globalState.settings.theme;
+      let nextTheme: ThemeMode;
+      if (currentTheme === 'auto') {
+        nextTheme = 'dark';
+      } else if (currentTheme === 'dark') {
+        nextTheme = 'light';
+      } else {
+        nextTheme = 'auto';
+      }
+      this.applyTheme(nextTheme);
+    });
+
+    // Theme Select dropdown in settings drawer
+    this.selectTheme.addEventListener('change', () => {
+      const nextTheme = this.selectTheme.value as ThemeMode;
+      this.applyTheme(nextTheme);
+    });
+
+    // Cross-Platform OS color scheme watcher
+    this.unsubscribeSystemTheme = subscribeSystemTheme((isDark) => {
+      if (globalState.settings.theme === 'auto') {
+        const resolved: ResolvedTheme = isDark ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', resolved);
+        this.updateThemeUI('auto', resolved);
+        this.scroller.invalidatePinnedClef();
+        this.resetBuffer();
+      }
     });
 
     // Fullscreen Toggle

@@ -11,6 +11,7 @@ import {
 } from 'vexflow';
 import {
   Clef,
+  ITALIAN_SOLFEGE_SYLLABLES,
   MEASURE_CANVAS_HEIGHT,
   MeasureData,
   NOTE_LETTER_NAMES,
@@ -21,6 +22,7 @@ import {
   STAVE_CANVAS_Y,
   SolfegeLabelMode,
   ThemeMode,
+  resolveTheme,
 } from './types';
 
 export class MeasureRenderer {
@@ -47,7 +49,7 @@ export class MeasureRenderer {
     canvas.width = Math.max(1, Math.floor(data.width * dpr));
     canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr));
 
-    const isDark = theme === 'dark';
+    const isDark = resolveTheme(theme) === 'dark';
     const noteColor = isDark ? '#f8fafc' : '#000000';
     const staffColor = isDark ? '#94a3b8' : '#64748b';
     const tupletColor = isDark ? '#cbd5e1' : '#334155';
@@ -239,6 +241,8 @@ export class MeasureRenderer {
           const label =
             solfegeMode === 'solfege'
               ? SOLFEGE_SYLLABLES[pitchLetter] || ''
+              : solfegeMode === 'italian'
+              ? ITALIAN_SOLFEGE_SYLLABLES[pitchLetter] || ''
               : NOTE_LETTER_NAMES[pitchLetter] || '';
           if (!label) continue;
 
@@ -273,7 +277,7 @@ export class MeasureRenderer {
     canvas.width = Math.max(1, Math.floor(width * dpr));
     canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr));
 
-    const isDark = theme === 'dark';
+    const isDark = resolveTheme(theme) === 'dark';
     const clefColor = isDark ? '#f8fafc' : '#000000';
 
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);

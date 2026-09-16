@@ -338,7 +338,8 @@
             <label for="select-solfege-mode">Labels</label>
             <select id="select-solfege-mode" aria-label="Note labels / Solfège overlay">
               <option value="none" selected>None</option>
-              <option value="solfege">Solfège (Do-Re-Mi)</option>
+              <option value="solfege">Solfège (Do-Re-Mi / Ti)</option>
+              <option value="italian">Italian (Do-Re-Mi / Si)</option>
               <option value="letters">Letters (C-D-E)</option>
             </select>
           </div>
@@ -348,6 +349,15 @@
             <select id="select-sound-profile" aria-label="Metronome click timbre">
               <option value="triangle" selected>Electronic</option>
               <option value="woodblock">Woodblock</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="select-theme">Theme</label>
+            <select id="select-theme" aria-label="Visual color theme">
+              <option value="auto" selected>Auto (OS)</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
             </select>
           </div>
 

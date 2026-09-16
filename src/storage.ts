@@ -1,6 +1,7 @@
-import { AppSettings, DEFAULT_TUPLET_OPTIONS } from './notation/types';
+import { AppSettings, DEFAULT_TUPLET_OPTIONS, ThemeMode } from './notation/types';
 
-const STORAGE_KEY = 'solfege_scroller_settings_v1';
+const STORAGE_KEY_V2 = 'solfege_scroller_settings_v2';
+const STORAGE_KEY_V1 = 'solfege_scroller_settings_v1';
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   tempo: 60,
@@ -38,13 +39,13 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   soundProfile: 'triangle',
   pulse68: 'dotted-quarter',
   countIn: true,
-  theme: 'light',
+  theme: 'auto',
   volume: 0.8,
   isMuted: false,
 };
 
 /**
- * Loads stored settings from localStorage with deep merging and validation against defaults.
+ * Loads stored settings from localStorage with deep merging, validation, and v1 migration.
  */
 export function loadStoredSettings(): AppSettings {
   if (typeof window === 'undefined' || !window.localStorage) {
@@ -52,15 +53,40 @@ export function loadStoredSettings(): AppSettings {
   }
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    let raw = window.localStorage.getItem(STORAGE_KEY_V2);
+    let isLegacyV1 = false;
+    if (!raw) {
+      raw = window.localStorage.getItem(STORAGE_KEY_V1);
+      isLegacyV1 = true;
+    }
     if (!raw) {
       return { ...DEFAULT_APP_SETTINGS };
     }
 
     const parsed = JSON.parse(raw) as Partial<AppSettings>;
+
+    const solfegeLabelMode =
+      parsed.solfegeLabelMode === 'none' ||
+      parsed.solfegeLabelMode === 'solfege' ||
+      parsed.solfegeLabelMode === 'italian' ||
+      parsed.solfegeLabelMode === 'letters'
+        ? parsed.solfegeLabelMode
+        : DEFAULT_APP_SETTINGS.solfegeLabelMode;
+
+    let theme: ThemeMode = DEFAULT_APP_SETTINGS.theme;
+    if (parsed.theme === 'dark') {
+      theme = 'dark';
+    } else if (parsed.theme === 'light') {
+      theme = isLegacyV1 ? 'auto' : 'light';
+    } else if (parsed.theme === 'auto') {
+      theme = 'auto';
+    }
+
     return {
       ...DEFAULT_APP_SETTINGS,
       ...parsed,
+      solfegeLabelMode,
+      theme,
       subdivisions: {
         ...DEFAULT_APP_SETTINGS.subdivisions,
         ...(parsed.subdivisions || {}),
@@ -92,7 +118,7 @@ export function saveStoredSettings(settings: AppSettings): void {
   }
 
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    window.localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(settings));
   } catch {
     // Ignore quota or private-browsing errors
   }

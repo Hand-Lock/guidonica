@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  ITALIAN_SOLFEGE_SYLLABLES,
   MEASURE_CANVAS_HEIGHT,
   NOTE_LETTER_NAMES,
   SOLFEGE_SYLLABLES,
@@ -8,7 +9,7 @@ import {
 import { CLEF_PITCH_RANGES } from '../src/notation/generator';
 
 describe('Solfège and Note Label Geometry', () => {
-  it('maps all 7 natural diatonic pitches to correct Solfège syllables', () => {
+  it('maps all 7 natural diatonic pitches to correct Anglo-American Solfège syllables (with Ti)', () => {
     expect(SOLFEGE_SYLLABLES['c']).toBe('Do');
     expect(SOLFEGE_SYLLABLES['d']).toBe('Re');
     expect(SOLFEGE_SYLLABLES['e']).toBe('Mi');
@@ -16,6 +17,16 @@ describe('Solfège and Note Label Geometry', () => {
     expect(SOLFEGE_SYLLABLES['g']).toBe('Sol');
     expect(SOLFEGE_SYLLABLES['a']).toBe('La');
     expect(SOLFEGE_SYLLABLES['b']).toBe('Ti');
+  });
+
+  it('maps all 7 natural diatonic pitches to correct Italian Solfège syllables (with Si instead of Ti)', () => {
+    expect(ITALIAN_SOLFEGE_SYLLABLES['c']).toBe('Do');
+    expect(ITALIAN_SOLFEGE_SYLLABLES['d']).toBe('Re');
+    expect(ITALIAN_SOLFEGE_SYLLABLES['e']).toBe('Mi');
+    expect(ITALIAN_SOLFEGE_SYLLABLES['f']).toBe('Fa');
+    expect(ITALIAN_SOLFEGE_SYLLABLES['g']).toBe('Sol');
+    expect(ITALIAN_SOLFEGE_SYLLABLES['a']).toBe('La');
+    expect(ITALIAN_SOLFEGE_SYLLABLES['b']).toBe('Si');
   });
 
   it('maps all 7 natural diatonic pitches to correct uppercase Letter names', () => {
@@ -62,7 +73,7 @@ describe('Solfège and Note Label Geometry', () => {
     expect(MEASURE_CANVAS_HEIGHT - lowestLabelY).toBeGreaterThanOrEqual(40);
   });
 
-  it('verifies all pitches across all clefs have valid Solfège mappings', () => {
+  it('verifies all pitches across all clefs have valid Solfège and Italian Solfège mappings', () => {
     const clefs = ['treble', 'bass', 'alto', 'tenor'] as const;
     for (const clef of clefs) {
       const pitchList = CLEF_PITCH_RANGES[clef].pitches;
@@ -70,6 +81,7 @@ describe('Solfège and Note Label Geometry', () => {
       for (const pitch of pitchList) {
         const letter = pitch.split('/')[0].toLowerCase();
         expect(SOLFEGE_SYLLABLES[letter]).toBeDefined();
+        expect(ITALIAN_SOLFEGE_SYLLABLES[letter]).toBeDefined();
         expect(NOTE_LETTER_NAMES[letter]).toBeDefined();
       }
     }

@@ -3,8 +3,10 @@ import {
   Clef,
   MEASURE_CANVAS_HEIGHT,
   NOTE_START_OFFSET,
+  ResolvedTheme,
   STAVE_TOP_LINE_Y,
   computeBeatWidth,
+  resolveTheme,
 } from '../notation/types';
 import { MetronomeEngine } from '../audio/metronome';
 import { MeasureBuffer } from './buffer';
@@ -131,7 +133,8 @@ export class ScrollerView {
     const dpr = this.dpr;
     const w = this.viewportWidth;
     const h = this.viewportHeight;
-    const isDark = settings.theme === 'dark';
+    const resolvedTheme = resolveTheme(settings.theme);
+    const isDark = resolvedTheme === 'dark';
 
     ctx.save();
     ctx.scale(dpr, dpr);
@@ -182,7 +185,7 @@ export class ScrollerView {
     }
 
     // 6. Draw pinned clef at the left margin with clean gradient fade
-    this.drawPinnedClef(ctx, settings.clef, h, isDark, settings.theme);
+    this.drawPinnedClef(ctx, settings.clef, h, isDark, resolvedTheme);
 
     // 7. Draw fixed playhead guide line in high-contrast red accent
     this.drawPlayhead(ctx, h);
@@ -218,7 +221,8 @@ export class ScrollerView {
     const dpr = this.dpr;
     const w = this.viewportWidth;
     const h = this.viewportHeight;
-    const isDark = settings.theme === 'dark';
+    const resolvedTheme = resolveTheme(settings.theme);
+    const isDark = resolvedTheme === 'dark';
 
     ctx.save();
     ctx.scale(dpr, dpr);
@@ -237,7 +241,7 @@ export class ScrollerView {
     clef: Clef,
     height: number,
     isDark: boolean,
-    theme: import('../notation/types').ThemeMode
+    theme: ResolvedTheme
   ): void {
     if (!isMusicFontReady()) {
       return;
