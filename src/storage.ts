@@ -1,4 +1,4 @@
-import { AppSettings, DEFAULT_TUPLET_OPTIONS, ThemeMode } from './notation/types';
+import { AppSettings, DEFAULT_TUPLET_OPTIONS, SoundProfile, ThemeMode } from './notation/types';
 
 const STORAGE_KEY_V2 = 'solfege_scroller_settings_v2';
 const STORAGE_KEY_V1 = 'solfege_scroller_settings_v1';
@@ -36,7 +36,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     ninthPlus: false,
   },
   solfegeLabelMode: 'none',
-  soundProfile: 'triangle',
+  soundProfile: 'woodblock',
   pulse68: 'dotted-quarter',
   countIn: true,
   theme: 'auto',
@@ -73,6 +73,13 @@ export function loadStoredSettings(): AppSettings {
         ? parsed.solfegeLabelMode
         : DEFAULT_APP_SETTINGS.solfegeLabelMode;
 
+    let soundProfile: SoundProfile = DEFAULT_APP_SETTINGS.soundProfile;
+    if (parsed.soundProfile === 'woodblock') {
+      soundProfile = 'woodblock';
+    } else if (parsed.soundProfile === 'triangle') {
+      soundProfile = isLegacyV1 ? 'woodblock' : 'triangle';
+    }
+
     let theme: ThemeMode = DEFAULT_APP_SETTINGS.theme;
     if (parsed.theme === 'dark') {
       theme = 'dark';
@@ -86,6 +93,7 @@ export function loadStoredSettings(): AppSettings {
       ...DEFAULT_APP_SETTINGS,
       ...parsed,
       solfegeLabelMode,
+      soundProfile,
       theme,
       subdivisions: {
         ...DEFAULT_APP_SETTINGS.subdivisions,

@@ -16,7 +16,7 @@ describe('MetronomeEngine', () => {
     expect(metronome.getIsPaused()).toBe(false);
     expect(metronome.getVolume()).toBe(0.8);
     expect(metronome.getIsMuted()).toBe(false);
-    expect(metronome.getSoundProfile()).toBe('triangle');
+    expect(metronome.getSoundProfile()).toBe('woodblock');
     expect(metronome.getPulse68()).toBe('dotted-quarter');
   });
 
@@ -52,6 +52,10 @@ describe('MetronomeEngine', () => {
 
   it('switches sound profile and 6/8 pulse mode cleanly', () => {
     metronome = new MetronomeEngine(60, '6/8');
+    expect(metronome.getSoundProfile()).toBe('woodblock');
+
+    metronome.setSoundProfile('triangle');
+    expect(metronome.getSoundProfile()).toBe('triangle');
 
     metronome.setSoundProfile('woodblock');
     expect(metronome.getSoundProfile()).toBe('woodblock');

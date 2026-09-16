@@ -1,10 +1,31 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <title>Solfège Scroller</title>
+    <script>
+      (function() {
+        try {
+          var raw = localStorage.getItem('solfege_scroller_settings_v2') || localStorage.getItem('solfege_scroller_settings_v1');
+          var theme = 'auto';
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed.theme === 'dark' || parsed.theme === 'light' || parsed.theme === 'auto') {
+              theme = parsed.theme;
+            }
+          }
+          var isDark = theme === 'auto'
+            ? window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+            : theme === 'dark';
+          document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        } catch (e) {
+          var isDarkSys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-theme', isDarkSys ? 'dark' : 'light');
+        }
+      })();
+    </script>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
@@ -42,8 +63,8 @@
           </div>
 
           <div class="utility-actions">
-            <button id="btn-theme-toggle" class="btn-icon-only" type="button" aria-label="Toggle dark/light theme" title="Toggle Theme">
-              <span id="theme-icon">🌙</span>
+            <button id="btn-theme-toggle" class="btn-icon-only" type="button" aria-label="Theme: Auto (OS). Click to cycle theme." title="Theme: Auto (OS)">
+              <span id="theme-icon">🌓</span>
             </button>
             <button id="btn-fullscreen-toggle" class="btn-icon-only" type="button" aria-label="Toggle full screen" title="Toggle Fullscreen">
               <span>⛶</span>
@@ -347,8 +368,8 @@
           <div class="control-group">
             <label for="select-sound-profile">Click</label>
             <select id="select-sound-profile" aria-label="Metronome click timbre">
-              <option value="triangle" selected>Electronic</option>
-              <option value="woodblock">Woodblock</option>
+              <option value="triangle">Electronic</option>
+              <option value="woodblock" selected>Woodblock</option>
             </select>
           </div>
 

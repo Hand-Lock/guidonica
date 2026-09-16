@@ -10,6 +10,8 @@ describe('storage module', () => {
   it('returns default settings when storage is empty', () => {
     const loaded = loadStoredSettings();
     expect(loaded).toEqual(DEFAULT_APP_SETTINGS);
+    expect(loaded.soundProfile).toBe('woodblock');
+    expect(loaded.theme).toBe('auto');
   });
 
   it('persists and reloads modified settings accurately', () => {
@@ -18,6 +20,7 @@ describe('storage module', () => {
       tempo: 144,
       clef: 'bass',
       timeSignature: '3/4',
+      soundProfile: 'triangle',
       theme: 'dark',
       volume: 0.5,
       isMuted: true,
@@ -30,6 +33,7 @@ describe('storage module', () => {
     expect(loaded.tempo).toBe(144);
     expect(loaded.clef).toBe('bass');
     expect(loaded.timeSignature).toBe('3/4');
+    expect(loaded.soundProfile).toBe('triangle');
     expect(loaded.theme).toBe('dark');
     expect(loaded.volume).toBe(0.5);
     expect(loaded.isMuted).toBe(true);
@@ -40,6 +44,8 @@ describe('storage module', () => {
     window.localStorage.setItem('solfege_scroller_settings_v1', 'not valid json!!!');
     const loadedCorrupt = loadStoredSettings();
     expect(loadedCorrupt).toEqual(DEFAULT_APP_SETTINGS);
+    expect(loadedCorrupt.soundProfile).toBe('woodblock');
+    expect(loadedCorrupt.theme).toBe('auto');
 
     // Partial settings
     window.localStorage.setItem(
@@ -49,6 +55,8 @@ describe('storage module', () => {
     const loadedPartial = loadStoredSettings();
     expect(loadedPartial.tempo).toBe(92);
     expect(loadedPartial.clef).toBe(DEFAULT_APP_SETTINGS.clef);
+    expect(loadedPartial.soundProfile).toBe('woodblock');
+    expect(loadedPartial.theme).toBe('auto');
     expect(loadedPartial.subdivisions).toEqual(DEFAULT_APP_SETTINGS.subdivisions);
   });
 
@@ -56,6 +64,7 @@ describe('storage module', () => {
     const custom: AppSettings = {
       ...DEFAULT_APP_SETTINGS,
       solfegeLabelMode: 'italian',
+      soundProfile: 'woodblock',
       theme: 'auto',
     };
 
@@ -63,19 +72,21 @@ describe('storage module', () => {
     const loaded = loadStoredSettings();
 
     expect(loaded.solfegeLabelMode).toBe('italian');
+    expect(loaded.soundProfile).toBe('woodblock');
     expect(loaded.theme).toBe('auto');
   });
 
-  it('migrates legacy v1 storage with light theme to auto, while preserving explicit dark theme', () => {
-    // Legacy v1 with light theme (the old hardcoded default)
+  it('migrates legacy v1 storage with light theme and triangle click to auto and woodblock', () => {
+    // Legacy v1 with light theme & triangle click (the old hardcoded defaults)
     window.localStorage.setItem(
       'solfege_scroller_settings_v1',
-      JSON.stringify({ tempo: 110, theme: 'light', clef: 'bass' })
+      JSON.stringify({ tempo: 110, theme: 'light', soundProfile: 'triangle', clef: 'bass' })
     );
     const migratedLight = loadStoredSettings();
     expect(migratedLight.tempo).toBe(110);
     expect(migratedLight.clef).toBe('bass');
     expect(migratedLight.theme).toBe('auto');
+    expect(migratedLight.soundProfile).toBe('woodblock');
 
     window.localStorage.clear();
 
@@ -87,6 +98,18 @@ describe('storage module', () => {
     const migratedDark = loadStoredSettings();
     expect(migratedDark.tempo).toBe(80);
     expect(migratedDark.theme).toBe('dark');
+    expect(migratedDark.soundProfile).toBe('woodblock');
+
+    window.localStorage.clear();
+
+    // Explicit v2 choices (e.g. user chose electronic click and light theme in v2)
+    window.localStorage.setItem(
+      'solfege_scroller_settings_v2',
+      JSON.stringify({ tempo: 100, theme: 'light', soundProfile: 'triangle' })
+    );
+    const v2Loaded = loadStoredSettings();
+    expect(v2Loaded.theme).toBe('light');
+    expect(v2Loaded.soundProfile).toBe('triangle');
   });
 
   it('correctly resolves explicit and auto themes', () => {
