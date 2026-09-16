@@ -1,4 +1,5 @@
-import { AppSettings, DEFAULT_TUPLET_OPTIONS, PlaybackState } from './notation/types';
+import { AppSettings, PlaybackState } from './notation/types';
+import { loadStoredSettings, saveStoredSettings } from './storage';
 
 export interface SessionState {
   settings: AppSettings;
@@ -16,39 +17,7 @@ export class AppState {
 
   constructor() {
     this.state = {
-      settings: {
-        tempo: 60,
-        timeSignature: '4/4',
-        clef: 'treble',
-        subdivisions: {
-          whole: true,
-          half: true,
-          quarter: true,
-          eighth: true,
-          sixteenth: false,
-          triplets: false,
-        },
-        tuplets: {
-          duplet: { ...DEFAULT_TUPLET_OPTIONS.duplet },
-          triplet: { ...DEFAULT_TUPLET_OPTIONS.triplet },
-          quadruplet: { ...DEFAULT_TUPLET_OPTIONS.quadruplet },
-          quintuplet: { ...DEFAULT_TUPLET_OPTIONS.quintuplet },
-          sextuplet: { ...DEFAULT_TUPLET_OPTIONS.sextuplet },
-          septuplet: { ...DEFAULT_TUPLET_OPTIONS.septuplet },
-        },
-        rests: false,
-        intervals: {
-          unison: false,
-          second: true,
-          third: true,
-          fourth: false,
-          fifth: false,
-          sixth: false,
-          seventh: false,
-          octave: false,
-          ninthPlus: false,
-        },
-      },
+      settings: loadStoredSettings(),
       playbackState: 'stopped',
       currentBeat: 1,
       isDownbeat: true,
@@ -84,6 +53,7 @@ export class AppState {
       this.state.isDownbeat = true;
     }
 
+    saveStoredSettings(this.state.settings);
     this.notify();
   }
 

@@ -1,306 +1,362 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
     <title>Solfège Scroller</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
     <div id="app">
       <header class="control-panel">
-        <div class="brand">
-          <h1>Solfège Scroller</h1>
-        </div>
-
-        <div class="playback-controls">
-          <button id="btn-play-pause" class="btn btn-primary" type="button" aria-label="Play or pause">
-            <span class="btn-icon">▶</span>
-            <span class="btn-label">Start</span>
-          </button>
-          <button id="btn-reset" class="btn btn-secondary" type="button" aria-label="Reset session">
-            <span class="btn-icon">↺</span>
-            <span class="btn-label">Reset</span>
-          </button>
-        </div>
-
-        <div class="control-group tempo-group">
-          <label for="tempo-slider">Tempo: <span id="bpm-display">60</span> BPM</label>
-          <div class="tempo-inputs">
-            <input type="range" id="tempo-slider" min="30" max="240" value="60" step="1" aria-label="Tempo slider in BPM" />
-            <input type="number" id="tempo-number" min="30" max="240" value="60" step="1" aria-label="Tempo numeric input in BPM" />
+        <div class="primary-bar">
+          <div class="brand">
+            <h1>Solfège Scroller</h1>
           </div>
-        </div>
 
-        <div class="control-group">
-          <label for="select-time-signature">Meter</label>
-          <select id="select-time-signature" aria-label="Select musical time signature">
-            <option value="4/4" selected>4/4</option>
-            <option value="3/4">3/4</option>
-            <option value="2/4">2/4</option>
-            <option value="6/8">6/8</option>
-          </select>
-        </div>
-
-        <div class="control-group clef-group">
-          <label for="select-clef">Clef</label>
-          <div class="clef-select-container">
-            <select id="select-clef" aria-label="Select musical clef">
-              <option value="treble" selected>Treble (G)</option>
-              <option value="bass">Bass (F)</option>
-              <option value="alto">Alto (C3)</option>
-              <option value="tenor">Tenor (C4)</option>
-            </select>
-            <span id="clef-range-hint" class="clef-range-hint">E3 – F6 (±3 ledger lines)</span>
-          </div>
-        </div>
-
-        <fieldset class="control-group intervals-group">
-          <legend>Intervals</legend>
-          <div class="checkbox-grid intervals-grid">
-            <label class="checkbox-item" title="Unison (1st) - Same pitch / repeated note">
-              <input type="checkbox" id="interval-unison" />
-              <span>Unison (1st)</span>
-            </label>
-            <label class="checkbox-item" title="Second (2nd) - 1 step">
-              <input type="checkbox" id="interval-second" checked />
-              <span>2nd (Step)</span>
-            </label>
-            <label class="checkbox-item" title="Third (3rd) - 2 steps / skip">
-              <input type="checkbox" id="interval-third" checked />
-              <span>3rd (Skip)</span>
-            </label>
-            <label class="checkbox-item" title="Fourth (4th) - 3 steps">
-              <input type="checkbox" id="interval-fourth" />
-              <span>4th</span>
-            </label>
-            <label class="checkbox-item" title="Fifth (5th) - 4 steps">
-              <input type="checkbox" id="interval-fifth" />
-              <span>5th</span>
-            </label>
-            <label class="checkbox-item" title="Sixth (6th) - 5 steps">
-              <input type="checkbox" id="interval-sixth" />
-              <span>6th</span>
-            </label>
-            <label class="checkbox-item" title="Seventh (7th) - 6 steps">
-              <input type="checkbox" id="interval-seventh" />
-              <span>7th</span>
-            </label>
-            <label class="checkbox-item" title="Octave (8ve) - 7 steps / octave leap">
-              <input type="checkbox" id="interval-octave" />
-              <span>8ve (Oct)</span>
-            </label>
-            <label class="checkbox-item" title="Ninth and plus (9+) - Compound intervals (8+ steps)">
-              <input type="checkbox" id="interval-ninth-plus" />
-              <span>9+</span>
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset class="control-group subdivisions-group">
-          <legend>Subdivisions</legend>
-          <div class="checkbox-grid">
-            <label class="checkbox-item">
-              <input type="checkbox" id="subdiv-quarter" checked />
-              <span>Quarter (♩)</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" id="subdiv-eighth" checked />
-              <span>Eighth (♪)</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" id="subdiv-half" checked />
-              <span>Half (𝅗𝅥)</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" id="subdiv-whole" checked />
-              <span>Whole (𝅝)</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" id="subdiv-sixteenth" />
-              <span>16th (𝅘𝅥𝅯)</span>
-            </label>
-          </div>
-        </fieldset>
-
-        <div class="control-group tuplets-group">
-          <label for="btn-tuplets-toggle">Tuplets</label>
-          <div class="tuplets-menu-wrapper">
-            <button id="btn-tuplets-toggle" class="btn btn-menu" type="button" aria-haspopup="dialog" aria-expanded="false" title="Configure n-tuplets and subdivisions">
-              <span class="btn-icon">♬</span>
-              <span class="btn-label">Tuplets</span>
-              <span id="tuplets-badge" class="badge-count hidden">0</span>
-              <span class="menu-arrow">▾</span>
+          <div class="playback-controls">
+            <button id="btn-play-pause" class="btn btn-primary" type="button" aria-label="Play or pause">
+              <span class="btn-icon">▶</span>
+              <span class="btn-label">Start</span>
             </button>
+            <button id="btn-reset" class="btn btn-secondary" type="button" aria-label="Reset session">
+              <span class="btn-icon">↺</span>
+              <span class="btn-label">Reset</span>
+            </button>
+          </div>
 
-            <div id="tuplets-popover" class="tuplets-popover hidden" role="dialog" aria-label="Tuplet configuration menu">
-              <div class="tuplets-popover-header">
-                <span class="tuplets-popover-title">Tuplet Subdivisions</span>
-                <div class="tuplets-popover-actions">
-                  <button id="btn-tuplets-clear" class="btn-text" type="button" title="Uncheck all tuplets">Clear all</button>
-                  <button id="btn-tuplets-close" class="btn-close" type="button" aria-label="Close tuplet menu">✕</button>
+          <div class="control-group tempo-group">
+            <label for="tempo-slider">Tempo: <span id="bpm-display">60</span> BPM</label>
+            <div class="tempo-inputs">
+              <input type="range" id="tempo-slider" min="30" max="240" value="60" step="1" aria-label="Tempo slider in BPM" />
+              <input type="number" id="tempo-number" min="30" max="240" value="60" step="1" aria-label="Tempo numeric input in BPM" />
+            </div>
+          </div>
+
+          <div class="beat-indicator-container">
+            <div id="count-in-badge" class="badge-count-in hidden">COUNT IN</div>
+            <div id="beat-dots" class="beat-dots">
+              <!-- Dynamically populated beat dots -->
+            </div>
+          </div>
+
+          <div class="utility-actions">
+            <button id="btn-theme-toggle" class="btn-icon-only" type="button" aria-label="Toggle dark/light theme" title="Toggle Theme">
+              <span id="theme-icon">🌙</span>
+            </button>
+            <button id="btn-fullscreen-toggle" class="btn-icon-only" type="button" aria-label="Toggle full screen" title="Toggle Fullscreen">
+              <span>⛶</span>
+            </button>
+            <button id="btn-drawer-toggle" class="btn btn-secondary btn-drawer-toggle" type="button" aria-expanded="false" aria-label="Toggle settings menu">
+              <span>⚙️ Settings</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="controls-drawer" class="controls-drawer">
+          <div class="control-group">
+            <label for="select-time-signature">Meter</label>
+            <select id="select-time-signature" aria-label="Select musical time signature">
+              <option value="4/4" selected>4/4</option>
+              <option value="3/4">3/4</option>
+              <option value="2/4">2/4</option>
+              <option value="6/8">6/8</option>
+            </select>
+          </div>
+
+          <div id="group-pulse-68" class="control-group hidden">
+            <label for="select-pulse-68">6/8 Pulse</label>
+            <select id="select-pulse-68" aria-label="6/8 Meter pulse grouping">
+              <option value="dotted-quarter" selected>2 Beats (♩.)</option>
+              <option value="eighth">6 Beats (♪)</option>
+            </select>
+          </div>
+
+          <div class="control-group clef-group">
+            <label for="select-clef">Clef</label>
+            <div class="clef-select-container">
+              <select id="select-clef" aria-label="Select musical clef">
+                <option value="treble" selected>Treble (G)</option>
+                <option value="bass">Bass (F)</option>
+                <option value="alto">Alto (C3)</option>
+                <option value="tenor">Tenor (C4)</option>
+              </select>
+              <span id="clef-range-hint" class="clef-range-hint">E3 – F6 (±3 ledger lines)</span>
+            </div>
+          </div>
+
+          <fieldset class="control-group intervals-group">
+            <legend>Intervals</legend>
+            <div class="checkbox-grid intervals-grid">
+              <label class="checkbox-item" title="Unison (1st) - Same pitch / repeated note">
+                <input type="checkbox" id="interval-unison" />
+                <span>Unison</span>
+              </label>
+              <label class="checkbox-item" title="Second (2nd) - 1 step">
+                <input type="checkbox" id="interval-second" checked />
+                <span>2nd</span>
+              </label>
+              <label class="checkbox-item" title="Third (3rd) - 2 steps / skip">
+                <input type="checkbox" id="interval-third" checked />
+                <span>3rd</span>
+              </label>
+              <label class="checkbox-item" title="Fourth (4th) - 3 steps">
+                <input type="checkbox" id="interval-fourth" />
+                <span>4th</span>
+              </label>
+              <label class="checkbox-item" title="Fifth (5th) - 4 steps">
+                <input type="checkbox" id="interval-fifth" />
+                <span>5th</span>
+              </label>
+              <label class="checkbox-item" title="Sixth (6th) - 5 steps">
+                <input type="checkbox" id="interval-sixth" />
+                <span>6th</span>
+              </label>
+              <label class="checkbox-item" title="Seventh (7th) - 6 steps">
+                <input type="checkbox" id="interval-seventh" />
+                <span>7th</span>
+              </label>
+              <label class="checkbox-item" title="Octave (8ve) - 7 steps / octave leap">
+                <input type="checkbox" id="interval-octave" />
+                <span>8ve</span>
+              </label>
+              <label class="checkbox-item" title="Ninth and plus (9+) - Compound intervals (8+ steps)">
+                <input type="checkbox" id="interval-ninth-plus" />
+                <span>9+</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="control-group subdivisions-group">
+            <legend>Subdivisions</legend>
+            <div class="checkbox-grid">
+              <label class="checkbox-item">
+                <input type="checkbox" id="subdiv-quarter" checked />
+                <span>Quarter (♩)</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" id="subdiv-eighth" checked />
+                <span>Eighth (♪)</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" id="subdiv-half" checked />
+                <span>Half (𝅗𝅥)</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" id="subdiv-whole" checked />
+                <span>Whole (𝅝)</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" id="subdiv-sixteenth" />
+                <span>16th (𝅘𝅥𝅯)</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="control-group tuplets-group">
+            <label for="btn-tuplets-toggle">Tuplets</label>
+            <div class="tuplets-menu-wrapper">
+              <button id="btn-tuplets-toggle" class="btn btn-menu" type="button" aria-haspopup="dialog" aria-expanded="false" title="Configure n-tuplets and subdivisions">
+                <span class="btn-icon">♬</span>
+                <span class="btn-label">Tuplets</span>
+                <span id="tuplets-badge" class="badge-count hidden">0</span>
+                <span class="menu-arrow">▾</span>
+              </button>
+
+              <div id="tuplets-popover" class="tuplets-popover hidden" role="dialog" aria-label="Tuplet configuration menu">
+                <div class="tuplets-popover-header">
+                  <span class="tuplets-popover-title">Tuplet Subdivisions</span>
+                  <div class="tuplets-popover-actions">
+                    <button id="btn-tuplets-clear" class="btn-text" type="button" title="Uncheck all tuplets">Clear all</button>
+                    <button id="btn-tuplets-close" class="btn-close" type="button" aria-label="Close tuplet menu">✕</button>
+                  </div>
                 </div>
-              </div>
 
-              <div class="tuplets-table-wrapper">
-                <table class="tuplets-table">
-                  <thead>
-                    <tr>
-                      <th class="th-corner">n-Tuplet</th>
-                      <th class="th-val" title="Quarter Note (1/4) Tuplets">1/4 (♩)</th>
-                      <th class="th-val" title="Eighth Note (1/8) Tuplets">1/8 (♪)</th>
-                      <th class="th-val" title="Sixteenth Note (1/16) Tuplets">1/16 (𝅘𝅥𝅯)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr data-row="duplet">
-                      <th class="th-row" scope="row">Duplet (2)</th>
-                      <td>
-                        <label class="tuplet-cell-label" title="Duplet 1/4 (2:3 quarters, 3 beats)">
-                          <input type="checkbox" id="tuplet-duplet-1-4" data-tuplet="duplet" data-value="1/4" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <label class="tuplet-cell-label" title="Duplet 1/8 (2:3 eighths, 1 compound beat in 6/8)">
-                          <input type="checkbox" id="tuplet-duplet-1-8" data-tuplet="duplet" data-value="1/8" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <label class="tuplet-cell-label" title="Duplet 1/16 (2:3 sixteenths)">
-                          <input type="checkbox" id="tuplet-duplet-1-16" data-tuplet="duplet" data-value="1/16" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                    </tr>
-                    <tr data-row="triplet">
-                      <th class="th-row" scope="row">Triplet (3)</th>
-                      <td>
-                        <label class="tuplet-cell-label" title="Triplet 1/4 (3:2 quarters, 2 beats)">
-                          <input type="checkbox" id="tuplet-triplet-1-4" data-tuplet="triplet" data-value="1/4" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <label class="tuplet-cell-label" title="Triplet 1/8 (3:2 eighths, 1 beat)">
-                          <input type="checkbox" id="tuplet-triplet-1-8" data-tuplet="triplet" data-value="1/8" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <label class="tuplet-cell-label" title="Triplet 1/16 (3:2 sixteenths, 0.5 beat)">
-                          <input type="checkbox" id="tuplet-triplet-1-16" data-tuplet="triplet" data-value="1/16" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                    </tr>
-                    <tr data-row="quadruplet">
-                      <th class="th-row" scope="row">Quadruplet (4)</th>
-                      <td>
-                        <label class="tuplet-cell-label" title="Quadruplet 1/4 (4:3 quarters, 3 beats)">
-                          <input type="checkbox" id="tuplet-quadruplet-1-4" data-tuplet="quadruplet" data-value="1/4" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <label class="tuplet-cell-label" title="Quadruplet 1/8 (4:3 eighths, 1 compound beat in 6/8)">
-                          <input type="checkbox" id="tuplet-quadruplet-1-8" data-tuplet="quadruplet" data-value="1/8" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <label class="tuplet-cell-label" title="Quadruplet 1/16 (4:3 sixteenths)">
-                          <input type="checkbox" id="tuplet-quadruplet-1-16" data-tuplet="quadruplet" data-value="1/16" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                    </tr>
-                    <tr data-row="quintuplet">
-                      <th class="th-row" scope="row">Quintuplet (5)</th>
-                      <td>
-                        <label class="tuplet-cell-label" title="Quintuplet 1/4 (5:4 quarters, 4 beats)">
-                          <input type="checkbox" id="tuplet-quintuplet-1-4" data-tuplet="quintuplet" data-value="1/4" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <label class="tuplet-cell-label" title="Quintuplet 1/8 (5:4 eighths, 2 beats)">
-                          <input type="checkbox" id="tuplet-quintuplet-1-8" data-tuplet="quintuplet" data-value="1/8" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <label class="tuplet-cell-label" title="Quintuplet 1/16 (5:4 sixteenths, 1 beat)">
-                          <input type="checkbox" id="tuplet-quintuplet-1-16" data-tuplet="quintuplet" data-value="1/16" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                    </tr>
-                    <tr data-row="sextuplet">
-                      <th class="th-row" scope="row">Sextuplet (6)</th>
-                      <td>
-                        <label class="tuplet-cell-label" title="Sextuplet 1/4 (6:4 quarters, 4 beats)">
-                          <input type="checkbox" id="tuplet-sextuplet-1-4" data-tuplet="sextuplet" data-value="1/4" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <label class="tuplet-cell-label" title="Sextuplet 1/8 (6:4 eighths, 2 beats)">
-                          <input type="checkbox" id="tuplet-sextuplet-1-8" data-tuplet="sextuplet" data-value="1/8" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <label class="tuplet-cell-label" title="Sextuplet 1/16 (6:4 sixteenths, 1 beat)">
-                          <input type="checkbox" id="tuplet-sextuplet-1-16" data-tuplet="sextuplet" data-value="1/16" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                    </tr>
-                    <tr data-row="septuplet">
-                      <th class="th-row" scope="row">Septuplet (7)</th>
-                      <td>
-                        <label class="tuplet-cell-label" title="Septuplet 1/4 (7:4 quarters, 4 beats)">
-                          <input type="checkbox" id="tuplet-septuplet-1-4" data-tuplet="septuplet" data-value="1/4" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <label class="tuplet-cell-label" title="Septuplet 1/8 (7:4 eighths, 2 beats)">
-                          <input type="checkbox" id="tuplet-septuplet-1-8" data-tuplet="septuplet" data-value="1/8" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <label class="tuplet-cell-label" title="Septuplet 1/16 (7:4 sixteenths, 1 beat)">
-                          <input type="checkbox" id="tuplet-septuplet-1-16" data-tuplet="septuplet" data-value="1/16" />
-                          <span class="custom-chk"></span>
-                        </label>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="tuplets-popover-footer">
-                <span>Select any n-tuplet and note value combinations to stream procedurally.</span>
+                <div class="tuplets-table-wrapper">
+                  <table class="tuplets-table">
+                    <thead>
+                      <tr>
+                        <th class="th-corner">n-Tuplet</th>
+                        <th class="th-val" title="Quarter Note (1/4) Tuplets">1/4 (♩)</th>
+                        <th class="th-val" title="Eighth Note (1/8) Tuplets">1/8 (♪)</th>
+                        <th class="th-val" title="Sixteenth Note (1/16) Tuplets">1/16 (𝅘𝅥𝅯)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr data-row="duplet">
+                        <th class="th-row" scope="row">Duplet (2)</th>
+                        <td>
+                          <label class="tuplet-cell-label" title="Duplet 1/4 (2:3 quarters, 3 beats)">
+                            <input type="checkbox" id="tuplet-duplet-1-4" data-tuplet="duplet" data-value="1/4" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <label class="tuplet-cell-label" title="Duplet 1/8 (2:3 eighths, 1 compound beat in 6/8)">
+                            <input type="checkbox" id="tuplet-duplet-1-8" data-tuplet="duplet" data-value="1/8" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <label class="tuplet-cell-label" title="Duplet 1/16 (2:3 sixteenths)">
+                            <input type="checkbox" id="tuplet-duplet-1-16" data-tuplet="duplet" data-value="1/16" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                      </tr>
+                      <tr data-row="triplet">
+                        <th class="th-row" scope="row">Triplet (3)</th>
+                        <td>
+                          <label class="tuplet-cell-label" title="Triplet 1/4 (3:2 quarters, 2 beats)">
+                            <input type="checkbox" id="tuplet-triplet-1-4" data-tuplet="triplet" data-value="1/4" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <label class="tuplet-cell-label" title="Triplet 1/8 (3:2 eighths, 1 beat)">
+                            <input type="checkbox" id="tuplet-triplet-1-8" data-tuplet="triplet" data-value="1/8" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <label class="tuplet-cell-label" title="Triplet 1/16 (3:2 sixteenths, 0.5 beat)">
+                            <input type="checkbox" id="tuplet-triplet-1-16" data-tuplet="triplet" data-value="1/16" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                      </tr>
+                      <tr data-row="quadruplet">
+                        <th class="th-row" scope="row">Quadruplet (4)</th>
+                        <td>
+                          <label class="tuplet-cell-label" title="Quadruplet 1/4 (4:3 quarters, 3 beats)">
+                            <input type="checkbox" id="tuplet-quadruplet-1-4" data-tuplet="quadruplet" data-value="1/4" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <label class="tuplet-cell-label" title="Quadruplet 1/8 (4:3 eighths, 1 compound beat in 6/8)">
+                            <input type="checkbox" id="tuplet-quadruplet-1-8" data-tuplet="quadruplet" data-value="1/8" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <label class="tuplet-cell-label" title="Quadruplet 1/16 (4:3 sixteenths)">
+                            <input type="checkbox" id="tuplet-quadruplet-1-16" data-tuplet="quadruplet" data-value="1/16" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                      </tr>
+                      <tr data-row="quintuplet">
+                        <th class="th-row" scope="row">Quintuplet (5)</th>
+                        <td>
+                          <label class="tuplet-cell-label" title="Quintuplet 1/4 (5:4 quarters, 4 beats)">
+                            <input type="checkbox" id="tuplet-quintuplet-1-4" data-tuplet="quintuplet" data-value="1/4" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <label class="tuplet-cell-label" title="Quintuplet 1/8 (5:4 eighths, 2 beats)">
+                            <input type="checkbox" id="tuplet-quintuplet-1-8" data-tuplet="quintuplet" data-value="1/8" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <label class="tuplet-cell-label" title="Quintuplet 1/16 (5:4 sixteenths, 1 beat)">
+                            <input type="checkbox" id="tuplet-quintuplet-1-16" data-tuplet="quintuplet" data-value="1/16" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                      </tr>
+                      <tr data-row="sextuplet">
+                        <th class="th-row" scope="row">Sextuplet (6)</th>
+                        <td>
+                          <label class="tuplet-cell-label" title="Sextuplet 1/4 (6:4 quarters, 4 beats)">
+                            <input type="checkbox" id="tuplet-sextuplet-1-4" data-tuplet="sextuplet" data-value="1/4" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <label class="tuplet-cell-label" title="Sextuplet 1/8 (6:4 eighths, 2 beats)">
+                            <input type="checkbox" id="tuplet-sextuplet-1-8" data-tuplet="sextuplet" data-value="1/8" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <label class="tuplet-cell-label" title="Sextuplet 1/16 (6:4 sixteenths, 1 beat)">
+                            <input type="checkbox" id="tuplet-sextuplet-1-16" data-tuplet="sextuplet" data-value="1/16" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                      </tr>
+                      <tr data-row="septuplet">
+                        <th class="th-row" scope="row">Septuplet (7)</th>
+                        <td>
+                          <label class="tuplet-cell-label" title="Septuplet 1/4 (7:4 quarters, 4 beats)">
+                            <input type="checkbox" id="tuplet-septuplet-1-4" data-tuplet="septuplet" data-value="1/4" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <label class="tuplet-cell-label" title="Septuplet 1/8 (7:4 eighths, 2 beats)">
+                            <input type="checkbox" id="tuplet-septuplet-1-8" data-tuplet="septuplet" data-value="1/8" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <label class="tuplet-cell-label" title="Septuplet 1/16 (7:4 sixteenths, 1 beat)">
+                            <input type="checkbox" id="tuplet-septuplet-1-16" data-tuplet="septuplet" data-value="1/16" />
+                            <span class="custom-chk"></span>
+                          </label>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="tuplets-popover-footer">
+                  <span>Select any n-tuplet and note value combinations to stream procedurally.</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="control-group rests-group">
-          <label class="checkbox-item" for="toggle-rests">
-            <input type="checkbox" id="toggle-rests" />
-            <span>Include Rests (𝄽)</span>
-          </label>
-        </div>
+          <div class="control-group rests-group">
+            <label class="checkbox-item" for="toggle-rests">
+              <input type="checkbox" id="toggle-rests" />
+              <span>Rests (𝄽)</span>
+            </label>
+          </div>
 
-        <div class="beat-indicator-container">
-          <div id="count-in-badge" class="badge-count-in hidden">COUNT IN</div>
-          <div id="beat-dots" class="beat-dots">
-            <!-- Dynamically populated beat dots -->
+          <div class="control-group count-in-group">
+            <label class="checkbox-item" for="toggle-count-in">
+              <input type="checkbox" id="toggle-count-in" checked />
+              <span>Count-In</span>
+            </label>
+          </div>
+
+          <div class="control-group">
+            <label for="select-solfege-mode">Labels</label>
+            <select id="select-solfege-mode" aria-label="Note labels / Solfège overlay">
+              <option value="none" selected>None</option>
+              <option value="solfege">Solfège (Do-Re-Mi)</option>
+              <option value="letters">Letters (C-D-E)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="select-sound-profile">Click</label>
+            <select id="select-sound-profile" aria-label="Metronome click timbre">
+              <option value="triangle" selected>Electronic</option>
+              <option value="woodblock">Woodblock</option>
+            </select>
+          </div>
+
+          <div class="control-group volume-group">
+            <label for="volume-slider">Volume</label>
+            <div class="volume-inputs">
+              <button id="btn-volume-mute" class="btn-mute" type="button" aria-label="Mute or unmute metronome" title="Mute/Unmute">🔊</button>
+              <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.8" aria-label="Metronome volume" />
+            </div>
           </div>
         </div>
       </header>

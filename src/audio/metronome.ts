@@ -1,4 +1,4 @@
-import { TimeSignature } from '../notation/types';
+import { Pulse68Mode, SoundProfile, TimeSignature } from '../notation/types';
 
 export interface BeatEvent {
   beatNumber: number; // 1-based index within the measure
@@ -16,6 +16,11 @@ export class MetronomeEngine {
   private isPaused: boolean = false;
   private tempo: number = 60;
   private timeSignature: TimeSignature = '4/4';
+
+  private volume: number = 0.8;
+  private isMuted: boolean = false;
+  private soundProfile: SoundProfile = 'triangle';
+  private pulse68: Pulse68Mode = 'dotted-quarter';
 
   private beatsPerMeasure: number = 4;
   private secondsPerBeat: number = 1.0;
@@ -56,6 +61,9 @@ export class MetronomeEngine {
 
   private handleVisibilityChange = (): void => {
     if (!document.hidden && this.isRunning && !this.isPaused) {
+      if (this.ctx && this.ctx.state === 'suspended') {
+        void this.ctx.resume();
+      }
       this.scheduler();
     }
   };
@@ -140,6 +148,48 @@ export class MetronomeEngine {
     }
   }
 
+  public setVolume(volume: number): void {
+    this.volume = Math.max(0, Math.min(1, volume));
+    this.updateMasterGain();
+  }
+
+  public getVolume(): number {
+    return this.volume;
+  }
+
+  public setMuted(muted: boolean): void {
+    this.isMuted = muted;
+    this.updateMasterGain();
+  }
+
+  public getIsMuted(): boolean {
+    return this.isMuted;
+  }
+
+  public setSoundProfile(profile: SoundProfile): void {
+    this.soundProfile = profile;
+  }
+
+  public getSoundProfile(): SoundProfile {
+    return this.soundProfile;
+  }
+
+  public setPulse68(mode: Pulse68Mode): void {
+    this.pulse68 = mode;
+  }
+
+  public getPulse68(): Pulse68Mode {
+    return this.pulse68;
+  }
+
+  private updateMasterGain(): void {
+    if (this.masterGainNode && this.ctx && this.isRunning && !this.isPaused) {
+      const targetGain = this.isMuted ? 0 : this.volume;
+      this.masterGainNode.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.masterGainNode.gain.setValueAtTime(targetGain, this.ctx.currentTime);
+    }
+  }
+
   public start(countIn: boolean = true): void {
     const ctx = this.ensureAudioContext();
     this.stop();
@@ -149,10 +199,7 @@ export class MetronomeEngine {
     this.hasCountIn = countIn;
     this.countInBeatsTotal = countIn ? this.beatsPerMeasure : 0;
 
-    if (this.masterGainNode) {
-      this.masterGainNode.gain.cancelScheduledValues(ctx.currentTime);
-      this.masterGainNode.gain.setValueAtTime(1, ctx.currentTime);
-    }
+    this.updateMasterGain();
 
     const startTime = ctx.currentTime + 0.05;
     this.nextBeatTime = startTime;
@@ -193,11 +240,8 @@ export class MetronomeEngine {
     }
     this.isPaused = false;
 
-    // Unmute master gain
-    if (this.masterGainNode) {
-      this.masterGainNode.gain.cancelScheduledValues(this.ctx.currentTime);
-      this.masterGainNode.gain.setValueAtTime(1, this.ctx.currentTime);
-    }
+    // Unmute master gain to target volume
+    this.updateMasterGain();
 
     this.measureZeroStartTime = this.ctx.currentTime - this.pausedElapsedSeconds;
 
@@ -259,7 +303,17 @@ export class MetronomeEngine {
         isDownbeat = beatNumber === 1;
       }
 
-      this.scheduleClick(beatTime, isDownbeat, this.timeSignature === '6/8' && beatNumber === 4);
+      const isCompound68 = this.timeSignature === '6/8' && this.pulse68 === 'dotted-quarter';
+      const shouldClick = !isCompound68 || beatNumber === 1 || beatNumber === 4;
+
+      if (shouldClick) {
+        this.scheduleClick(
+          beatTime,
+          beatNumber === 1,
+          this.timeSignature === '6/8' && beatNumber === 4
+        );
+      }
+
       this.dispatchBeat(beatNumber, isDownbeat, isCountIn, beatTime);
 
       this.scheduledBeatCount++;
@@ -267,36 +321,70 @@ export class MetronomeEngine {
     }
   }
 
-  private scheduleClick(time: number, isDownbeat: boolean, isCompoundSubaccent: boolean = false): void {
+  private scheduleClick(
+    time: number,
+    isDownbeat: boolean,
+    isCompoundSubaccent: boolean = false
+  ): void {
     if (!this.ctx || !this.masterGainNode) return;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
-    osc.type = 'triangle';
+    if (this.soundProfile === 'woodblock') {
+      // Woodblock: sine wave with rapid downward pitch sweep
+      osc.type = 'sine';
+      let freqStart = 1100;
+      let freqEnd = 550;
+      let gainLevel = 0.9;
 
-    let freq = 800;
-    let gainLevel = 0.7;
+      if (isDownbeat) {
+        freqStart = 1600;
+        freqEnd = 800;
+        gainLevel = 1.0;
+      } else if (isCompoundSubaccent) {
+        freqStart = 1350;
+        freqEnd = 675;
+        gainLevel = 0.95;
+      }
 
-    if (isDownbeat) {
-      freq = 1300;
-      gainLevel = 1.0;
-    } else if (isCompoundSubaccent) {
-      freq = 1050;
-      gainLevel = 0.85;
+      osc.frequency.setValueAtTime(freqStart, time);
+      osc.frequency.exponentialRampToValueAtTime(freqEnd, time + 0.025);
+
+      gain.gain.setValueAtTime(gainLevel, time);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.025);
+
+      osc.connect(gain);
+      gain.connect(this.masterGainNode);
+
+      osc.start(time);
+      osc.stop(time + 0.03);
+    } else {
+      // Electronic triangle click
+      osc.type = 'triangle';
+      let freq = 800;
+      let gainLevel = 0.7;
+
+      if (isDownbeat) {
+        freq = 1300;
+        gainLevel = 1.0;
+      } else if (isCompoundSubaccent) {
+        freq = 1050;
+        gainLevel = 0.85;
+      }
+
+      osc.frequency.setValueAtTime(freq, time);
+
+      gain.gain.setValueAtTime(gainLevel, time);
+      // Smooth exponential decay over 35 milliseconds
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.035);
+
+      osc.connect(gain);
+      gain.connect(this.masterGainNode);
+
+      osc.start(time);
+      osc.stop(time + 0.04);
     }
-
-    osc.frequency.setValueAtTime(freq, time);
-
-    gain.gain.setValueAtTime(gainLevel, time);
-    // Smooth exponential decay over 35 milliseconds
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.035);
-
-    osc.connect(gain);
-    gain.connect(this.masterGainNode);
-
-    osc.start(time);
-    osc.stop(time + 0.04);
 
     osc.onended = () => {
       try {

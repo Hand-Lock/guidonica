@@ -13,23 +13,52 @@ import {
   Clef,
   MEASURE_CANVAS_HEIGHT,
   MeasureData,
+  NOTE_LETTER_NAMES,
   NOTE_START_OFFSET,
   NoteData,
   RenderedMeasure,
+  SOLFEGE_SYLLABLES,
   STAVE_CANVAS_Y,
+  SolfegeLabelMode,
+  ThemeMode,
 } from './types';
 
 export class MeasureRenderer {
+  private dpr: number = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+
+  public setDpr(dpr: number): void {
+    this.dpr = Math.max(1, dpr);
+  }
+
+  public getDpr(): number {
+    return this.dpr;
+  }
+
   /**
    * Renders a single measure onto an offscreen canvas using VexFlow and GPU blitting principles.
    */
-  public renderMeasure(data: MeasureData): RenderedMeasure {
+  public renderMeasure(
+    data: MeasureData,
+    theme: ThemeMode = 'light',
+    solfegeMode: SolfegeLabelMode = 'none'
+  ): RenderedMeasure {
+    const dpr = this.dpr;
     const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.floor(data.width * dpr));
+    canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr));
+
+    const isDark = theme === 'dark';
+    const noteColor = isDark ? '#f8fafc' : '#000000';
+    const staffColor = isDark ? '#94a3b8' : '#64748b';
+    const tupletColor = isDark ? '#cbd5e1' : '#334155';
+    const solfegeColor = isDark ? '#38bdf8' : '#2563eb';
+
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
-    renderer.resize(data.width, MEASURE_CANVAS_HEIGHT);
+    renderer.resize(canvas.width, canvas.height);
     const ctx = renderer.getContext();
-    ctx.setFillStyle('#000000');
-    ctx.setStrokeStyle('#000000');
+    ctx.scale(dpr, dpr);
+    ctx.setFillStyle(noteColor);
+    ctx.setStrokeStyle(noteColor);
 
     // Create stave with left barline separating measures, but with invisible horizontal lines
     // so notes, ledger lines, and barlines blit seamlessly over the stationary staff lines
@@ -45,10 +74,10 @@ export class MeasureRenderer {
       { visible: false },
     ]);
 
-    stave.setStyle({ strokeStyle: '#64748b', fillStyle: '#64748b' });
-    stave.setDefaultLedgerLineStyle({ strokeStyle: '#64748b', fillStyle: '#64748b' });
+    stave.setStyle({ strokeStyle: staffColor, fillStyle: staffColor });
+    stave.setDefaultLedgerLineStyle({ strokeStyle: staffColor, fillStyle: staffColor });
     stave.getModifiers().forEach((mod) => {
-      mod.setStyle({ fillStyle: '#475569', strokeStyle: '#475569' });
+      mod.setStyle({ fillStyle: staffColor, strokeStyle: staffColor });
     });
 
     // Construct StaveNotes
@@ -65,7 +94,7 @@ export class MeasureRenderer {
 
     for (let i = 0; i < data.notes.length; i++) {
       const noteData = data.notes[i];
-      const staveNote = this.createStaveNote(noteData, data.clef, stave);
+      const staveNote = this.createStaveNote(noteData, data.clef, stave, noteColor);
       staveNotes.push(staveNote);
 
       if (noteData.isTuplet && noteData.tupletGroup !== undefined) {
@@ -127,7 +156,7 @@ export class MeasureRenderer {
     }
 
     for (const beam of beams) {
-      beam.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+      beam.setStyle({ fillStyle: noteColor, strokeStyle: noteColor });
     }
 
     // Build tuplets
@@ -142,7 +171,7 @@ export class MeasureRenderer {
           bracketed: entry.bracketed ?? isQuarter,
           ratioed: entry.ratioed ?? false,
         });
-        tuplet.setStyle({ fillStyle: '#334155', strokeStyle: '#334155' });
+        tuplet.setStyle({ fillStyle: tupletColor, strokeStyle: tupletColor });
         tuplets.push(tuplet);
       }
     }
@@ -191,6 +220,37 @@ export class MeasureRenderer {
       tuplet.setContext(ctx).draw();
     }
 
+    // Draw pedagogical Solfège syllables or note names beneath notes
+    if (solfegeMode !== 'none') {
+      const rawCtx = canvas.getContext('2d');
+      if (rawCtx) {
+        rawCtx.save();
+        rawCtx.scale(dpr, dpr);
+        rawCtx.fillStyle = solfegeColor;
+        rawCtx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        rawCtx.textAlign = 'center';
+
+        for (let i = 0; i < data.notes.length; i++) {
+          const nData = data.notes[i];
+          if (nData.isRest || !nData.keys || nData.keys.length === 0) continue;
+          const pitchLetter = nData.keys[0].split('/')[0].toLowerCase();
+          const label =
+            solfegeMode === 'solfege'
+              ? SOLFEGE_SYLLABLES[pitchLetter] || ''
+              : NOTE_LETTER_NAMES[pitchLetter] || '';
+          if (!label) continue;
+
+          const noteLinearX = NOTE_START_OFFSET + nData.beatOffset * beatWidth;
+          const staveNote = staveNotes[i];
+          const noteY = staveNote.getYs()[0] ?? 120;
+          // Place label below bottom staff line (120) and clear of lower ledger lines
+          const labelY = Math.min(MEASURE_CANVAS_HEIGHT - 6, Math.max(142, noteY + 22));
+          rawCtx.fillText(label, noteLinearX, labelY);
+        }
+        rawCtx.restore();
+      }
+    }
+
     return {
       data,
       canvas,
@@ -202,14 +262,22 @@ export class MeasureRenderer {
   /**
    * Renders the stationary clef glyph onto an offscreen canvas to pin at the left margin.
    */
-  public renderPinnedClef(clef: Clef): HTMLCanvasElement {
+  public renderPinnedClef(clef: Clef, theme: ThemeMode = 'light'): HTMLCanvasElement {
+    const dpr = this.dpr;
     const width = 80;
     const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.floor(width * dpr));
+    canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr));
+
+    const isDark = theme === 'dark';
+    const clefColor = isDark ? '#f8fafc' : '#000000';
+
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
-    renderer.resize(width, MEASURE_CANVAS_HEIGHT);
+    renderer.resize(canvas.width, canvas.height);
     const ctx = renderer.getContext();
-    ctx.setFillStyle('#000000');
-    ctx.setStrokeStyle('#000000');
+    ctx.scale(dpr, dpr);
+    ctx.setFillStyle(clefColor);
+    ctx.setStrokeStyle(clefColor);
 
     // The pinned clef is drawn with hidden lines so it cleanly overlays stationary staff lines
     const stave = new Stave(10, STAVE_CANVAS_Y, width - 10, {
@@ -225,16 +293,21 @@ export class MeasureRenderer {
     ]);
 
     stave.addClef(clef);
-    stave.setStyle({ strokeStyle: '#000000', fillStyle: '#000000' });
+    stave.setStyle({ strokeStyle: clefColor, fillStyle: clefColor });
     for (const mod of stave.getModifiers()) {
-      mod.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+      mod.setStyle({ fillStyle: clefColor, strokeStyle: clefColor });
     }
     stave.setContext(ctx).draw();
 
     return canvas;
   }
 
-  private createStaveNote(noteData: NoteData, clef: Clef, stave: Stave): StaveNote {
+  private createStaveNote(
+    noteData: NoteData,
+    clef: Clef,
+    stave: Stave,
+    noteColor: string = '#000000'
+  ): StaveNote {
     const isDotted = noteData.duration.endsWith('d');
     const durationString = noteData.isRest ? `${noteData.duration}r` : noteData.duration;
 
@@ -251,9 +324,9 @@ export class MeasureRenderer {
       Dot.buildAndAttach([staveNote], { all: true });
     }
 
-    staveNote.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+    staveNote.setStyle({ fillStyle: noteColor, strokeStyle: noteColor });
     for (const mod of staveNote.getModifiers()) {
-      mod.setStyle({ fillStyle: '#000000', strokeStyle: '#000000' });
+      mod.setStyle({ fillStyle: noteColor, strokeStyle: noteColor });
     }
     return staveNote;
   }

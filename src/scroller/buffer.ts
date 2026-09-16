@@ -79,7 +79,11 @@ export class MeasureBuffer {
         this.nextMeasureStartBeat
       );
 
-      const rendered = this.renderer.renderMeasure(measureData);
+      const rendered = this.renderer.renderMeasure(
+        measureData,
+        settings.theme,
+        settings.solfegeLabelMode
+      );
       this.measures.push(rendered);
 
       this.nextMeasureIndex++;

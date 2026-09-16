@@ -61,6 +61,31 @@ export interface SubdivisionOptions {
   triplets?: boolean;
 }
 
+export type SolfegeLabelMode = 'none' | 'solfege' | 'letters';
+export type SoundProfile = 'triangle' | 'woodblock';
+export type Pulse68Mode = 'dotted-quarter' | 'eighth';
+export type ThemeMode = 'light' | 'dark';
+
+export const SOLFEGE_SYLLABLES: Record<string, string> = {
+  c: 'Do',
+  d: 'Re',
+  e: 'Mi',
+  f: 'Fa',
+  g: 'Sol',
+  a: 'La',
+  b: 'Ti',
+};
+
+export const NOTE_LETTER_NAMES: Record<string, string> = {
+  c: 'C',
+  d: 'D',
+  e: 'E',
+  f: 'F',
+  g: 'G',
+  a: 'A',
+  b: 'B',
+};
+
 export interface AppSettings {
   tempo: number; // 30-240 BPM
   timeSignature: TimeSignature;
@@ -69,6 +94,13 @@ export interface AppSettings {
   tuplets: TupletOptions;
   rests: boolean;
   intervals: IntervalOptions;
+  solfegeLabelMode: SolfegeLabelMode;
+  soundProfile: SoundProfile;
+  pulse68: Pulse68Mode;
+  countIn: boolean;
+  theme: ThemeMode;
+  volume: number; // 0.0 to 1.0
+  isMuted: boolean;
 }
 
 export type PlaybackState = 'stopped' | 'counting-in' | 'playing' | 'paused';

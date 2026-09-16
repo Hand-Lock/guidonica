@@ -29,6 +29,7 @@ export class ScrollerView {
   // Cached pinned clef canvas
   private pinnedClefCanvas: HTMLCanvasElement | null = null;
   private cachedClef: Clef | null = null;
+  private cachedClefTheme: string | null = null;
 
   private rafId: number | null = null;
   private isLoopRunning: boolean = false;
@@ -63,6 +64,7 @@ export class ScrollerView {
   public invalidatePinnedClef(): void {
     this.pinnedClefCanvas = null;
     this.cachedClef = null;
+    this.cachedClefTheme = null;
   }
 
   private handleResize = (): void => {
@@ -85,9 +87,11 @@ export class ScrollerView {
     this.canvas.height = Math.floor(this.viewportHeight * this.dpr);
     this.canvas.style.width = `${this.viewportWidth}px`;
     this.canvas.style.height = `${this.viewportHeight}px`;
+    this.renderer.setDpr(this.dpr);
 
-    // Playhead fixed at 22% of viewport width (leaves room for clef on left, generous reading distance on right)
-    this.playheadX = Math.round(this.viewportWidth * 0.22);
+    // Playhead fixed at 22% of viewport width with minimum clearance of clef fade margin (145px + 30px safety)
+    const minPlayheadX = 145 + 30; // 175px
+    this.playheadX = Math.max(minPlayheadX, Math.round(this.viewportWidth * 0.22));
 
     // Center the 5 stave lines vertically
     const centerY = Math.round(this.viewportHeight / 2);
@@ -127,20 +131,25 @@ export class ScrollerView {
     const dpr = this.dpr;
     const w = this.viewportWidth;
     const h = this.viewportHeight;
+    const isDark = settings.theme === 'dark';
 
     ctx.save();
     ctx.scale(dpr, dpr);
 
-    // 1. Clear viewport with clean white background
-    ctx.fillStyle = '#ffffff';
+    // 1. Clear viewport with theme-aware background
+    ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
     ctx.fillRect(0, 0, w, h);
 
     // 2. Draw continuous stationary staff lines across the entire viewport
-    this.drawStationaryStaffLines(ctx, w);
+    this.drawStationaryStaffLines(ctx, w, isDark);
 
     // 3. Obtain current beat from hardware audio clock
     const currentGlobalBeat = this.metronome.getCurrentGlobalBeat();
-    const activeBeatWidth = computeBeatWidth(settings.subdivisions, settings.timeSignature);
+    const activeBeatWidth = computeBeatWidth(
+      settings.subdivisions,
+      settings.timeSignature,
+      settings.tuplets
+    );
 
     // 4. Update ring buffer: pre-render upcoming measures and evict offscreen ones
     const lookaheadBeats = (w - this.playheadX) / activeBeatWidth + 6;
@@ -173,7 +182,7 @@ export class ScrollerView {
     }
 
     // 6. Draw pinned clef at the left margin with clean gradient fade
-    this.drawPinnedClef(ctx, settings.clef, h);
+    this.drawPinnedClef(ctx, settings.clef, h, isDark, settings.theme);
 
     // 7. Draw fixed playhead guide line in high-contrast red accent
     this.drawPlayhead(ctx, h);
@@ -181,8 +190,12 @@ export class ScrollerView {
     ctx.restore();
   }
 
-  private drawStationaryStaffLines(ctx: CanvasRenderingContext2D, width: number): void {
-    ctx.strokeStyle = '#64748b';
+  private drawStationaryStaffLines(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    isDark: boolean = false
+  ): void {
+    ctx.strokeStyle = isDark ? '#475569' : '#64748b';
     ctx.lineWidth = 1;
     ctx.beginPath();
 
@@ -199,32 +212,41 @@ export class ScrollerView {
    * Draws a clean stationary viewport (staff lines and playhead) without
    * attempting to render or blit notation glyphs before fonts are ready.
    */
-  public renderEmptyFrame(): void {
+  public renderEmptyFrame(overrideSettings?: AppSettings): void {
+    const settings = overrideSettings ?? this.getSettings();
     const ctx = this.ctx;
     const dpr = this.dpr;
     const w = this.viewportWidth;
     const h = this.viewportHeight;
+    const isDark = settings.theme === 'dark';
 
     ctx.save();
     ctx.scale(dpr, dpr);
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
     ctx.fillRect(0, 0, w, h);
 
-    this.drawStationaryStaffLines(ctx, w);
+    this.drawStationaryStaffLines(ctx, w, isDark);
     this.drawPlayhead(ctx, h);
 
     ctx.restore();
   }
 
-  private drawPinnedClef(ctx: CanvasRenderingContext2D, clef: Clef, height: number): void {
+  private drawPinnedClef(
+    ctx: CanvasRenderingContext2D,
+    clef: Clef,
+    height: number,
+    isDark: boolean,
+    theme: import('../notation/types').ThemeMode
+  ): void {
     if (!isMusicFontReady()) {
       return;
     }
 
-    if (!this.pinnedClefCanvas || this.cachedClef !== clef) {
-      this.pinnedClefCanvas = this.renderer.renderPinnedClef(clef);
+    if (!this.pinnedClefCanvas || this.cachedClef !== clef || this.cachedClefTheme !== theme) {
+      this.pinnedClefCanvas = this.renderer.renderPinnedClef(clef, theme);
       this.cachedClef = clef;
+      this.cachedClefTheme = theme;
     }
 
     const clefX = 24;
@@ -232,19 +254,19 @@ export class ScrollerView {
     const fadeWidth = 45;
     const totalMargin = maskSolidWidth + fadeWidth; // 145px
 
-    // Full-height solid white mask behind pinned clef to prevent ledger lines/stems poking out
-    ctx.fillStyle = '#ffffff';
+    // Full-height solid mask behind pinned clef to prevent ledger lines/stems poking out
+    ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
     ctx.fillRect(0, 0, maskSolidWidth, height);
 
-    // Graceful horizontal fade from solid white to transparent so scrolling notes disappear smoothly
+    // Graceful horizontal fade from solid to transparent so scrolling notes disappear smoothly
     const fadeGrad = ctx.createLinearGradient(maskSolidWidth, 0, totalMargin, 0);
-    fadeGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    fadeGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    fadeGrad.addColorStop(0, isDark ? 'rgba(15, 23, 42, 1)' : 'rgba(255, 255, 255, 1)');
+    fadeGrad.addColorStop(1, isDark ? 'rgba(15, 23, 42, 0)' : 'rgba(255, 255, 255, 0)');
     ctx.fillStyle = fadeGrad;
     ctx.fillRect(maskSolidWidth, 0, fadeWidth, height);
 
     // Re-draw staff lines across the masked & faded margin
-    ctx.strokeStyle = '#64748b';
+    ctx.strokeStyle = isDark ? '#475569' : '#64748b';
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let line = 0; line < 5; line++) {
