@@ -14,6 +14,7 @@ import { MusicGenerator } from './notation/generator';
 import { MeasureRenderer } from './notation/renderer';
 import { MeasureBuffer } from './scroller/buffer';
 import { ScrollerView } from './scroller/scroller';
+import { waitForMusicFonts } from './notation/fonts';
 
 class SolfegeScrollerApp {
   private metronome: MetronomeEngine;
@@ -21,6 +22,8 @@ class SolfegeScrollerApp {
   private renderer: MeasureRenderer;
   private buffer: MeasureBuffer;
   private scroller: ScrollerView;
+  private fontsReady: boolean = false;
+  private fontInitPromise: Promise<void> | null = null;
 
   // DOM Elements
   private btnPlayPause: HTMLButtonElement;
@@ -145,11 +148,20 @@ class SolfegeScrollerApp {
     this.bindAudioEvents();
     this.renderBeatDots(initialSettings.timeSignature);
 
-    // 4. Initial buffer fill and idle frame (anchored to count-in offset)
-    this.resetBuffer();
+    // 4. Initial idle frame (stationary staff lines & playhead)
+    this.scroller.renderEmptyFrame();
 
     // 5. Subscribe to state changes for UI sync
     globalState.subscribe((state) => this.syncUI(state));
+
+    // 6. Asynchronously await musical font readiness before generating notation measures
+    this.fontInitPromise = this.initFonts();
+  }
+
+  private async initFonts(): Promise<void> {
+    await waitForMusicFonts();
+    this.fontsReady = true;
+    this.resetBuffer();
   }
 
   private bindEvents(): void {
@@ -172,7 +184,7 @@ class SolfegeScrollerApp {
       this.metronome.setTempo(clamped);
       globalState.updateSettings({ tempo: clamped });
       if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
-        this.scroller.renderFrame();
+        this.renderIdleFrame();
       }
     };
 
@@ -189,7 +201,7 @@ class SolfegeScrollerApp {
         this.metronome.setTempo(val);
         globalState.updateSettings({ tempo: val });
         if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
-          this.scroller.renderFrame();
+          this.renderIdleFrame();
         }
       }
     });
@@ -492,7 +504,15 @@ class SolfegeScrollerApp {
     this.metronome.setTempo(next);
     globalState.updateSettings({ tempo: next });
     if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
+      this.renderIdleFrame();
+    }
+  }
+
+  private renderIdleFrame(): void {
+    if (this.fontsReady) {
       this.scroller.renderFrame();
+    } else {
+      this.scroller.renderEmptyFrame();
     }
   }
 
@@ -509,7 +529,11 @@ class SolfegeScrollerApp {
     });
   }
 
-  private togglePlayback(): void {
+  private async togglePlayback(): Promise<void> {
+    if (!this.fontsReady && this.fontInitPromise) {
+      await this.fontInitPromise;
+    }
+
     const state = globalState.playbackState;
 
     if (state === 'stopped') {
@@ -538,7 +562,12 @@ class SolfegeScrollerApp {
   }
 
   private resetBuffer(): void {
+    this.scroller.invalidatePinnedClef();
     this.buffer.reset();
+    if (!this.fontsReady) {
+      this.scroller.renderEmptyFrame();
+      return;
+    }
     const settings = globalState.settings;
     const initialBeat = this.metronome.getCurrentGlobalBeat();
     this.buffer.ensureAhead(initialBeat, 16, settings);

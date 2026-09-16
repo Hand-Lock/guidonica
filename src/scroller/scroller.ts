@@ -9,6 +9,7 @@ import {
 import { MetronomeEngine } from '../audio/metronome';
 import { MeasureBuffer } from './buffer';
 import { MeasureRenderer } from '../notation/renderer';
+import { isMusicFontReady } from '../notation/fonts';
 
 export class ScrollerView {
   private canvas: HTMLCanvasElement;
@@ -59,9 +60,14 @@ export class ScrollerView {
     window.removeEventListener('resize', this.handleResize);
   }
 
+  public invalidatePinnedClef(): void {
+    this.pinnedClefCanvas = null;
+    this.cachedClef = null;
+  }
+
   private handleResize = (): void => {
     this.updateDimensions();
-    this.pinnedClefCanvas = null; // Invalidate cached clef for potential dpr changes
+    this.invalidatePinnedClef(); // Invalidate cached clef for potential dpr changes
     this.renderFrame();
   };
 
@@ -189,7 +195,33 @@ export class ScrollerView {
     ctx.stroke();
   }
 
+  /**
+   * Draws a clean stationary viewport (staff lines and playhead) without
+   * attempting to render or blit notation glyphs before fonts are ready.
+   */
+  public renderEmptyFrame(): void {
+    const ctx = this.ctx;
+    const dpr = this.dpr;
+    const w = this.viewportWidth;
+    const h = this.viewportHeight;
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+
+    this.drawStationaryStaffLines(ctx, w);
+    this.drawPlayhead(ctx, h);
+
+    ctx.restore();
+  }
+
   private drawPinnedClef(ctx: CanvasRenderingContext2D, clef: Clef, height: number): void {
+    if (!isMusicFontReady()) {
+      return;
+    }
+
     if (!this.pinnedClefCanvas || this.cachedClef !== clef) {
       this.pinnedClefCanvas = this.renderer.renderPinnedClef(clef);
       this.cachedClef = clef;
