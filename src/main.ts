@@ -1,8 +1,12 @@
 import {
   CLEF_RANGE_DISPLAY,
   Clef,
+  Pulse68Mode,
+  SolfegeLabelMode,
+  SoundProfile,
   TUPLET_NAMES,
   TUPLET_VALUES,
+  ThemeMode,
   TimeSignature,
   TupletName,
   TupletOptions,
@@ -25,7 +29,7 @@ class SolfegeScrollerApp {
   private fontsReady: boolean = false;
   private fontInitPromise: Promise<void> | null = null;
 
-  // DOM Elements
+  // DOM Elements - Playback & Tempo
   private btnPlayPause: HTMLButtonElement;
   private btnLabel: HTMLElement;
   private btnIcon: HTMLElement;
@@ -33,13 +37,30 @@ class SolfegeScrollerApp {
   private tempoSlider: HTMLInputElement;
   private tempoNumber: HTMLInputElement;
   private bpmDisplay: HTMLElement;
-  private selectTimeSig: HTMLSelectElement;
-  private selectClef: HTMLSelectElement;
-  private clefRangeHint: HTMLElement;
-  private toggleRests: HTMLInputElement;
   private countInBadge: HTMLElement;
   private beatDotsContainer: HTMLElement;
 
+  // Primary Header Utilities
+  private btnThemeToggle: HTMLButtonElement;
+  private themeIcon: HTMLElement;
+  private btnFullscreenToggle: HTMLButtonElement;
+  private btnDrawerToggle: HTMLButtonElement;
+  private controlsDrawer: HTMLElement;
+
+  // Drawer Configuration Elements
+  private selectTimeSig: HTMLSelectElement;
+  private groupPulse68: HTMLElement;
+  private selectPulse68: HTMLSelectElement;
+  private selectClef: HTMLSelectElement;
+  private clefRangeHint: HTMLElement;
+  private toggleRests: HTMLInputElement;
+  private toggleCountIn: HTMLInputElement;
+  private selectSolfegeMode: HTMLSelectElement;
+  private selectSoundProfile: HTMLSelectElement;
+  private volumeSlider: HTMLInputElement;
+  private btnVolumeMute: HTMLButtonElement;
+
+  // Intervals & Subdivisions
   private intervalUnison: HTMLInputElement;
   private intervalSecond: HTMLInputElement;
   private intervalThird: HTMLInputElement;
@@ -58,6 +79,7 @@ class SolfegeScrollerApp {
   private subdivSixteenth: HTMLInputElement;
   private subdivCheckboxes: HTMLInputElement[];
 
+  // Tuplets
   private btnTupletsToggle: HTMLButtonElement;
   private tupletsBadge: HTMLElement;
   private tupletsPopover: HTMLElement;
@@ -74,12 +96,26 @@ class SolfegeScrollerApp {
     this.tempoSlider = document.getElementById('tempo-slider') as HTMLInputElement;
     this.tempoNumber = document.getElementById('tempo-number') as HTMLInputElement;
     this.bpmDisplay = document.getElementById('bpm-display') as HTMLElement;
+    this.countInBadge = document.getElementById('count-in-badge') as HTMLElement;
+    this.beatDotsContainer = document.getElementById('beat-dots') as HTMLElement;
+
+    this.btnThemeToggle = document.getElementById('btn-theme-toggle') as HTMLButtonElement;
+    this.themeIcon = document.getElementById('theme-icon') as HTMLElement;
+    this.btnFullscreenToggle = document.getElementById('btn-fullscreen-toggle') as HTMLButtonElement;
+    this.btnDrawerToggle = document.getElementById('btn-drawer-toggle') as HTMLButtonElement;
+    this.controlsDrawer = document.getElementById('controls-drawer') as HTMLElement;
+
     this.selectTimeSig = document.getElementById('select-time-signature') as HTMLSelectElement;
+    this.groupPulse68 = document.getElementById('group-pulse-68') as HTMLElement;
+    this.selectPulse68 = document.getElementById('select-pulse-68') as HTMLSelectElement;
     this.selectClef = document.getElementById('select-clef') as HTMLSelectElement;
     this.clefRangeHint = document.getElementById('clef-range-hint') as HTMLElement;
     this.toggleRests = document.getElementById('toggle-rests') as HTMLInputElement;
-    this.countInBadge = document.getElementById('count-in-badge') as HTMLElement;
-    this.beatDotsContainer = document.getElementById('beat-dots') as HTMLElement;
+    this.toggleCountIn = document.getElementById('toggle-count-in') as HTMLInputElement;
+    this.selectSolfegeMode = document.getElementById('select-solfege-mode') as HTMLSelectElement;
+    this.selectSoundProfile = document.getElementById('select-sound-profile') as HTMLSelectElement;
+    this.volumeSlider = document.getElementById('volume-slider') as HTMLInputElement;
+    this.btnVolumeMute = document.getElementById('btn-volume-mute') as HTMLButtonElement;
 
     this.intervalUnison = document.getElementById('interval-unison') as HTMLInputElement;
     this.intervalSecond = document.getElementById('interval-second') as HTMLInputElement;
@@ -128,9 +164,14 @@ class SolfegeScrollerApp {
 
     const canvas = document.getElementById('scroller-canvas') as HTMLCanvasElement;
 
-    // 2. Initialize engines
+    // 2. Initialize engines with stored settings
     const initialSettings = globalState.settings;
     this.metronome = new MetronomeEngine(initialSettings.tempo, initialSettings.timeSignature);
+    this.metronome.setVolume(initialSettings.volume);
+    this.metronome.setMuted(initialSettings.isMuted);
+    this.metronome.setSoundProfile(initialSettings.soundProfile);
+    this.metronome.setPulse68(initialSettings.pulse68);
+
     this.generator = new MusicGenerator();
     this.renderer = new MeasureRenderer();
     this.buffer = new MeasureBuffer(this.generator, this.renderer);
@@ -142,20 +183,81 @@ class SolfegeScrollerApp {
       () => globalState.settings
     );
 
-    // 3. Setup event wiring and subscriptions
+    // 3. Hydrate UI elements from stored settings
+    this.hydrateUI(initialSettings);
+
+    // 4. Setup event wiring and subscriptions
     this.bindEvents();
     this.bindKeyboardShortcuts();
     this.bindAudioEvents();
     this.renderBeatDots(initialSettings.timeSignature);
 
-    // 4. Initial idle frame (stationary staff lines & playhead)
+    // 5. Initial idle frame (stationary staff lines & playhead)
     this.scroller.renderEmptyFrame();
 
-    // 5. Subscribe to state changes for UI sync
+    // 6. Subscribe to state changes for UI sync
     globalState.subscribe((state) => this.syncUI(state));
 
-    // 6. Asynchronously await musical font readiness before generating notation measures
+    // 7. Asynchronously await musical font readiness before generating notation measures
     this.fontInitPromise = this.initFonts();
+  }
+
+  private hydrateUI(settings: typeof globalState.settings): void {
+    // Apply theme to DOM
+    document.documentElement.setAttribute('data-theme', settings.theme);
+    this.themeIcon.textContent = settings.theme === 'dark' ? '☀️' : '🌙';
+
+    // Tempo
+    this.tempoSlider.value = String(settings.tempo);
+    this.tempoNumber.value = String(settings.tempo);
+    this.bpmDisplay.textContent = String(settings.tempo);
+
+    // Time signature & 6/8 pulse
+    this.selectTimeSig.value = settings.timeSignature;
+    this.groupPulse68.classList.toggle('hidden', settings.timeSignature !== '6/8');
+    this.selectPulse68.value = settings.pulse68;
+
+    // Clef & hint
+    this.selectClef.value = settings.clef;
+    this.clefRangeHint.textContent = CLEF_RANGE_DISPLAY[settings.clef];
+
+    // Rests & Count-In
+    this.toggleRests.checked = settings.rests;
+    this.toggleCountIn.checked = settings.countIn;
+
+    // Sound & Display overlays
+    this.selectSolfegeMode.value = settings.solfegeLabelMode;
+    this.selectSoundProfile.value = settings.soundProfile;
+    this.volumeSlider.value = String(settings.volume);
+    this.btnVolumeMute.textContent = settings.isMuted ? '🔇' : '🔊';
+
+    // Intervals
+    this.intervalUnison.checked = settings.intervals.unison;
+    this.intervalSecond.checked = settings.intervals.second;
+    this.intervalThird.checked = settings.intervals.third;
+    this.intervalFourth.checked = settings.intervals.fourth;
+    this.intervalFifth.checked = settings.intervals.fifth;
+    this.intervalSixth.checked = settings.intervals.sixth;
+    this.intervalSeventh.checked = settings.intervals.seventh;
+    this.intervalOctave.checked = settings.intervals.octave;
+    this.intervalNinthPlus.checked = settings.intervals.ninthPlus;
+
+    // Subdivisions
+    this.subdivQuarter.checked = settings.subdivisions.quarter;
+    this.subdivEighth.checked = settings.subdivisions.eighth;
+    this.subdivHalf.checked = settings.subdivisions.half;
+    this.subdivWhole.checked = settings.subdivisions.whole;
+    this.subdivSixteenth.checked = settings.subdivisions.sixteenth;
+
+    // Tuplets
+    for (const cb of this.tupletCheckboxes) {
+      const tName = cb.dataset.tuplet as TupletName | undefined;
+      const tVal = cb.dataset.value as TupletValue | undefined;
+      if (tName && tVal && settings.tuplets[tName]) {
+        cb.checked = settings.tuplets[tName][tVal];
+      }
+    }
+    this.updateTupletsUI();
   }
 
   private async initFonts(): Promise<void> {
@@ -175,6 +277,33 @@ class SolfegeScrollerApp {
       this.resetSession();
     });
 
+    // Theme Toggle
+    this.btnThemeToggle.addEventListener('click', () => {
+      this.btnThemeToggle.blur();
+      const nextTheme: ThemeMode = globalState.settings.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', nextTheme);
+      this.themeIcon.textContent = nextTheme === 'dark' ? '☀️' : '🌙';
+      globalState.updateSettings({ theme: nextTheme });
+      this.scroller.invalidatePinnedClef();
+      this.resetBuffer();
+    });
+
+    // Fullscreen Toggle
+    this.btnFullscreenToggle.addEventListener('click', () => {
+      this.btnFullscreenToggle.blur();
+      if (!document.fullscreenElement) {
+        void document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        void document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    // Mobile Settings Drawer Toggle
+    this.btnDrawerToggle.addEventListener('click', () => {
+      const isOpen = this.controlsDrawer.classList.toggle('open');
+      this.btnDrawerToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+
     // Tempo controls
     const applyTempo = (val: number): void => {
       const clamped = Math.max(30, Math.min(240, val));
@@ -192,7 +321,6 @@ class SolfegeScrollerApp {
       applyTempo(Number((e.target as HTMLInputElement).value));
     });
 
-    // Live update when typing in number input
     this.tempoNumber.addEventListener('input', (e) => {
       const val = Number((e.target as HTMLInputElement).value);
       if (val >= 30 && val <= 240) {
@@ -213,10 +341,18 @@ class SolfegeScrollerApp {
     // Time Signature
     this.selectTimeSig.addEventListener('change', (e) => {
       const ts = (e.target as HTMLSelectElement).value as TimeSignature;
+      this.groupPulse68.classList.toggle('hidden', ts !== '6/8');
       this.metronome.setTimeSignature(ts);
       this.renderBeatDots(ts);
       globalState.updateSettings({ timeSignature: ts });
       this.resetSession();
+    });
+
+    // 6/8 Pulse
+    this.selectPulse68.addEventListener('change', (e) => {
+      const pulse = (e.target as HTMLSelectElement).value as Pulse68Mode;
+      this.metronome.setPulse68(pulse);
+      globalState.updateSettings({ pulse68: pulse });
     });
 
     // Clef
@@ -227,13 +363,45 @@ class SolfegeScrollerApp {
       this.resetSession();
     });
 
+    // Count-In
+    this.toggleCountIn.addEventListener('change', () => {
+      globalState.updateSettings({ countIn: this.toggleCountIn.checked });
+    });
+
+    // Solfege Labels Mode
+    this.selectSolfegeMode.addEventListener('change', (e) => {
+      const mode = (e.target as HTMLSelectElement).value as SolfegeLabelMode;
+      globalState.updateSettings({ solfegeLabelMode: mode });
+      this.resetBuffer();
+    });
+
+    // Sound Profile (Timbre)
+    this.selectSoundProfile.addEventListener('change', (e) => {
+      const profile = (e.target as HTMLSelectElement).value as SoundProfile;
+      this.metronome.setSoundProfile(profile);
+      globalState.updateSettings({ soundProfile: profile });
+    });
+
+    // Volume & Mute
+    this.volumeSlider.addEventListener('input', (e) => {
+      const vol = parseFloat((e.target as HTMLInputElement).value);
+      this.metronome.setVolume(vol);
+      globalState.updateSettings({ volume: vol });
+    });
+
+    this.btnVolumeMute.addEventListener('click', () => {
+      const nextMuted = !globalState.settings.isMuted;
+      this.metronome.setMuted(nextMuted);
+      this.btnVolumeMute.textContent = nextMuted ? '🔇' : '🔊';
+      globalState.updateSettings({ isMuted: nextMuted });
+    });
+
     // Intervals: ensure at least one interval remains checked
     const handleIntervalChange = (e: Event): void => {
       const checkedCount = this.intervalCheckboxes.filter((cb) => cb.checked).length;
       const target = e.target as HTMLInputElement;
 
       if (checkedCount === 0) {
-        // Prevent unchecking the sole active interval
         target.checked = true;
         return;
       }
@@ -265,7 +433,6 @@ class SolfegeScrollerApp {
       const target = e.target as HTMLInputElement;
 
       if (checkedCount === 0 && activeTupletCount === 0) {
-        // Prevent unchecking when no other subdivision or tuplet is active
         target.checked = true;
         return;
       }
@@ -297,30 +464,25 @@ class SolfegeScrollerApp {
   }
 
   private bindTupletEvents(): void {
-    // Open / toggle popover
     this.btnTupletsToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       this.toggleTupletsPopover();
     });
 
-    // Close button inside popover
     this.btnTupletsClose.addEventListener('click', (e) => {
       e.stopPropagation();
       this.closeTupletsPopover();
     });
 
-    // Clear all tuplets
     this.btnTupletsClear.addEventListener('click', (e) => {
       e.stopPropagation();
       this.clearAllTuplets();
     });
 
-    // Prevent clicks inside popover from bubbling up to document click listener
     this.tupletsPopover.addEventListener('click', (e) => {
       e.stopPropagation();
     });
 
-    // Dismiss popover when clicking anywhere outside
     document.addEventListener('click', (e) => {
       if (
         !this.tupletsPopover.classList.contains('hidden') &&
@@ -331,7 +493,6 @@ class SolfegeScrollerApp {
       }
     });
 
-    // Change listeners for each matrix cell checkbox
     for (const cb of this.tupletCheckboxes) {
       cb.addEventListener('change', () => {
         this.handleTupletChange();
@@ -401,7 +562,6 @@ class SolfegeScrollerApp {
     const activeTupletCount = this.getActiveTupletCount();
     const checkedSubdivCount = this.subdivCheckboxes.filter((cb) => cb.checked).length;
 
-    // If user unchecked all tuplets and had no regular subdivisions checked, restore quarter notes
     if (activeTupletCount === 0 && checkedSubdivCount === 0) {
       this.subdivQuarter.checked = true;
       globalState.updateSettings({
@@ -456,12 +616,26 @@ class SolfegeScrollerApp {
 
       const target = e.target as HTMLElement;
 
-      if (target.tagName === 'INPUT' || target.tagName === 'SELECT') {
+      // Crucial Fix: When focus is on a checkbox or radio button, preserve native Space key behavior!
+      if (target.tagName === 'INPUT') {
+        const input = target as HTMLInputElement;
+        if (input.type === 'checkbox' || input.type === 'radio') {
+          return; // Native checkbox toggle
+        }
         if (e.code === 'Space') {
           e.preventDefault();
           this.togglePlayback();
           return;
         }
+        if (e.code === 'Escape') {
+          input.blur();
+          this.resetSession();
+          return;
+        }
+        return;
+      }
+
+      if (target.tagName === 'SELECT') {
         if (e.code === 'Escape') {
           target.blur();
           this.resetSession();
@@ -535,10 +709,11 @@ class SolfegeScrollerApp {
     }
 
     const state = globalState.playbackState;
+    const hasCountIn = globalState.settings.countIn;
 
     if (state === 'stopped') {
-      globalState.setPlaybackState('counting-in');
-      this.metronome.start(true);
+      globalState.setPlaybackState(hasCountIn ? 'counting-in' : 'playing');
+      this.metronome.start(hasCountIn);
       this.scroller.startLoop();
     } else if (state === 'counting-in' || state === 'playing') {
       globalState.setPlaybackState('paused');
