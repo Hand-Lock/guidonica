@@ -54,17 +54,22 @@ In `src/style.css`:
   vertical-align: -0.22em;
   fill: currentColor;
   flex-shrink: 0;
+  margin: 0 0.18em;
 }
 
 .music-icon.icon-whole {
-  vertical-align: -0.05em;
+  height: 0.58em;
+  vertical-align: -0.06em;
 }
 
 .music-icon.icon-rest {
-  vertical-align: -0.18em;
+  height: 1.05em;
+  vertical-align: -0.16em;
 }
 ```
 - `fill: currentColor`: Automatically binds the icon fill to the active text color in both Light (`#0f172a`) and Dark (`#f8fafc`) modes, as well as on hover and focus states.
+- `margin: 0 0.18em`: Provides optical breathing room between the icon and enclosing parentheses `( ♩ )`.
+- `height: 0.58em` for `.icon-whole`: Because whole notes lack stems, setting `1.15em` would scale the notehead ~4× larger than stemmed noteheads. Scaling to `0.58em` brings the notehead into exact visual balance with quarter and half noteheads.
 - `height: 1.15em; width: auto`: Scales fluidly with parent typography across both `12px` checkboxes and `11px` table headers.
 - `vertical-align`: Precisely counteracts notehead descent to align visually with surrounding label text and parentheses.
 
