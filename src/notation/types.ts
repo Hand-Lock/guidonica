@@ -61,10 +61,11 @@ export interface SubdivisionOptions {
   triplets?: boolean;
 }
 
-export type SolfegeLabelMode = 'none' | 'solfege' | 'letters';
+export type SolfegeLabelMode = 'none' | 'solfege' | 'italian' | 'letters';
 export type SoundProfile = 'triangle' | 'woodblock';
 export type Pulse68Mode = 'dotted-quarter' | 'eighth';
-export type ThemeMode = 'light' | 'dark';
+export type ThemeMode = 'auto' | 'light' | 'dark';
+export type ResolvedTheme = 'light' | 'dark';
 
 export const SOLFEGE_SYLLABLES: Record<string, string> = {
   c: 'Do',
@@ -76,6 +77,16 @@ export const SOLFEGE_SYLLABLES: Record<string, string> = {
   b: 'Ti',
 };
 
+export const ITALIAN_SOLFEGE_SYLLABLES: Record<string, string> = {
+  c: 'Do',
+  d: 'Re',
+  e: 'Mi',
+  f: 'Fa',
+  g: 'Sol',
+  a: 'La',
+  b: 'Si',
+};
+
 export const NOTE_LETTER_NAMES: Record<string, string> = {
   c: 'C',
   d: 'D',
@@ -85,6 +96,50 @@ export const NOTE_LETTER_NAMES: Record<string, string> = {
   a: 'A',
   b: 'B',
 };
+
+/**
+ * Checks whether the host operating system currently prefers dark mode cross-platform.
+ */
+export function isSystemDark(): boolean {
+  if (typeof window === 'undefined' || !window.matchMedia) {
+    return false;
+  }
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+/**
+ * Resolves a ThemeMode ('auto' | 'light' | 'dark') to an explicit display theme ('light' | 'dark').
+ */
+export function resolveTheme(theme: ThemeMode): ResolvedTheme {
+  if (theme === 'auto') {
+    return isSystemDark() ? 'dark' : 'light';
+  }
+  return theme;
+}
+
+/**
+ * Subscribes to OS color scheme preference changes with cross-platform fallback.
+ */
+export function subscribeSystemTheme(callback: (isDark: boolean) => void): () => void {
+  if (typeof window === 'undefined' || !window.matchMedia) {
+    return () => {};
+  }
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const handler = (e: MediaQueryListEvent | MediaQueryList): void => {
+    callback(e.matches);
+  };
+
+  if (typeof mq.addEventListener === 'function') {
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  } else if ('addListener' in mq) {
+    // Safari < 14 fallback
+    (mq as unknown as { addListener: (cb: (e: MediaQueryList) => void) => void }).addListener(handler);
+    return () =>
+      (mq as unknown as { removeListener: (cb: (e: MediaQueryList) => void) => void }).removeListener(handler);
+  }
+  return () => {};
+}
 
 export interface AppSettings {
   tempo: number; // 30-240 BPM
