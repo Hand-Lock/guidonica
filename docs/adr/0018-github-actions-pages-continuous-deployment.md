@@ -51,7 +51,7 @@ An empty `.nojekyll` file was placed in the `public/` directory (`public/.nojeky
 The existing test-only workflow (`ci.yml`) was replaced by a single, comprehensive workflow (`.github/workflows/deploy.yml`):
 - **Validation Job (`build-and-test`)**:
   - Runs on every `push` to `main` and `pull_request` to `main`.
-  - Configures Node.js 20, pnpm 11.8.0 with frozen lockfile validation, and pnpm global store caching.
+  - Configures Node.js 22 (`pnpm@11.8.0` requires Node.js >= 22.13 due to its internal use of `node:sqlite`), pnpm 11.8.0 with frozen lockfile validation, and native pnpm store caching via `actions/setup-node@v4` with `cache: 'pnpm'`. (Manual shell script store extraction was deprecated as it caused empty cache paths).
   - Executes strict TypeScript typechecking (`pnpm run typecheck`), all 27 unit tests (`pnpm test`), and the production build (`pnpm run build`).
 - **Pages Artifact & Deployment Job (`deploy`)**:
   - Gated to run only on `push` to `main` (or manual `workflow_dispatch`).
