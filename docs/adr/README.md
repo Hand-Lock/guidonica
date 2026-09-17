@@ -28,6 +28,7 @@ This directory documents the core architectural decisions, implementation method
 | [0020](0020-in-app-license-and-repository-ui.md) | In-App License and Repository Presentation Architecture | Accepted | 2026-09-17 |
 | [0021](0021-project-rebranding-guidonica.md) | Project, Web-App, and Repository Rebranding to Guidonica | Accepted | 2026-09-17 |
 | [0022](0022-aero-skeuomorphic-design-system-and-manifesto.md) | Aero-Guidonica Skeuomorphic Design System, Alegreya Typography, and Design Manifesto | Accepted | 2026-09-17 |
+| [0023](0023-ubuntu-mono-monospace-typography.md) | Ubuntu Mono Monospace Typography and Numeric System | Accepted | 2026-09-18 |
 
 ---
 
