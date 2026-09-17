@@ -96,6 +96,14 @@ class SolfegeScrollerApp {
   private btnTupletsClose: HTMLButtonElement;
   private tupletCheckboxes: HTMLInputElement[];
 
+  // About & License Modal
+  private modalAbout: HTMLDialogElement | null;
+  private btnAboutToggle: HTMLButtonElement | null;
+  private btnAboutClose: HTMLButtonElement | null;
+  private btnAboutDismiss: HTMLButtonElement | null;
+  private btnDrawerAbout: HTMLButtonElement | null;
+  private btnFooterAbout: HTMLButtonElement | null;
+
   constructor() {
     // 1. Query all UI DOM elements
     this.btnPlayPause = document.getElementById('btn-play-pause') as HTMLButtonElement;
@@ -172,6 +180,13 @@ class SolfegeScrollerApp {
       this.tupletsPopover.querySelectorAll<HTMLInputElement>('input[data-tuplet]')
     );
 
+    this.modalAbout = document.getElementById('modal-about') as HTMLDialogElement | null;
+    this.btnAboutToggle = document.getElementById('btn-about-toggle') as HTMLButtonElement | null;
+    this.btnAboutClose = document.getElementById('btn-about-close') as HTMLButtonElement | null;
+    this.btnAboutDismiss = document.getElementById('btn-about-dismiss') as HTMLButtonElement | null;
+    this.btnDrawerAbout = document.getElementById('btn-drawer-about') as HTMLButtonElement | null;
+    this.btnFooterAbout = document.getElementById('btn-footer-about') as HTMLButtonElement | null;
+
     const canvas = document.getElementById('scroller-canvas') as HTMLCanvasElement;
 
     // 2. Initialize engines with stored settings
@@ -198,6 +213,7 @@ class SolfegeScrollerApp {
 
     // 4. Setup event wiring and subscriptions
     this.bindEvents();
+    this.bindAboutModalEvents();
     this.bindKeyboardShortcuts();
     this.bindAudioEvents();
     this.renderBeatDots(initialSettings.timeSignature);
@@ -663,8 +679,59 @@ class SolfegeScrollerApp {
     this.resetSession();
   }
 
+  private bindAboutModalEvents(): void {
+    const openModal = () => {
+      if (this.modalAbout && typeof this.modalAbout.showModal === 'function') {
+        this.modalAbout.showModal();
+      }
+    };
+
+    const closeModal = () => {
+      if (this.modalAbout && this.modalAbout.open) {
+        this.modalAbout.close();
+      }
+    };
+
+    this.btnAboutToggle?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openModal();
+    });
+
+    this.btnDrawerAbout?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openModal();
+    });
+
+    this.btnFooterAbout?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openModal();
+    });
+
+    this.btnAboutClose?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeModal();
+    });
+
+    this.btnAboutDismiss?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeModal();
+    });
+
+    // Close when clicking outside the dialog content (on the native backdrop)
+    this.modalAbout?.addEventListener('click', (e) => {
+      if (e.target === this.modalAbout) {
+        closeModal();
+      }
+    });
+  }
+
   private bindKeyboardShortcuts(): void {
     window.addEventListener('keydown', (e) => {
+      // If About modal is open, ignore global app shortcuts
+      if (this.modalAbout && this.modalAbout.open) {
+        return;
+      }
+
       // If popover is open, Escape should dismiss it first
       if (e.code === 'Escape' && !this.tupletsPopover.classList.contains('hidden')) {
         e.preventDefault();
