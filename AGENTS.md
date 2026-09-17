@@ -25,6 +25,7 @@ guidonica/
 ├── vite.config.ts          # Minimal Vite configuration
 ├── index.html              # Minimal semantic HTML shell
 ├── docs/
+│   ├── DESIGN_MANIFESTO.md # Aero-Guidonica design manifesto and visual rules
 │   └── adr/                # Architectural Decision Records & implementation notes
 │       ├── README.md       # ADR index and registration log
 │       └── 0001-*.md       # Specific architectural & subsystem records
@@ -64,7 +65,7 @@ guidonica/
 4. **Clean Code & Styling**:
    - 2 spaces for indentation.
    - No extraneous console logging in production modules (`console.log` should be removed before committing).
-   - Minimalist, light-mode CSS with high contrast for music notation readability and a distinct accent color for the playhead.
+   - Strict adherence to the **Aero-Guidonica Design Manifesto** ([`docs/DESIGN_MANIFESTO.md`](docs/DESIGN_MANIFESTO.md)). All visual elements must follow the pure CSS3 Liquid Glass / Frutiger Aero / skeuomorphic tactile physics model without adding external CSS or JS dependencies.
 
 ---
 
