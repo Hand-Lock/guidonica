@@ -96,11 +96,16 @@ solfege-scroller/
      pnpm dev       # or npm run dev
      ```
    - No global binaries or environment variables should be assumed.
+4. **macOS SSH Keychain Authentication**:
+   - The user's SSH key passphrase is saved in macOS Keychain. When running `git push origin main` in background agent or non-interactive subshells, run `ssh-add --apple-load-keychain` first to ensure the identity is loaded without interactive prompts.
+5. **Node.js & pnpm Runtime Requirement**:
+   - `pnpm@11.8.0` requires **Node.js >= 22.13** (due to dependency on `node:sqlite`). All environments, `.nvmrc`, and CI runners must target Node 22+.
 
 ---
 
 ## 6. Development & Verification Workflow
 
+- **Node.js Version**: Node 22+ (`node -v` >= 22.13.0)
 - **Install Dependencies**: `pnpm install` (or `npm install`)
 - **Start Dev Server**: `pnpm dev` (or `npm run dev`)
 - **Typecheck**: `pnpm typecheck` (or `npm run typecheck`)
