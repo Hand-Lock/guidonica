@@ -205,6 +205,15 @@ export const MEASURE_CANVAS_HEIGHT = 220;
 export const STAVE_CANVAS_Y = 40;
 export const STAVE_TOP_LINE_Y = 80; // In VexFlow, stave.getYForLine(0) = STAVE_CANVAS_Y + 4 * 10 = 80
 
+/** Stationary pinned clef + time signature layout constants */
+export const PINNED_HEADER_WIDTH = 115; // Offscreen canvas width for clef + time signature
+export const PINNED_HEADER_OFFSET_X = 20; // Left margin indent of pinned header
+export const PINNED_HEADER_MASK_WIDTH = 135; // Opaque mask protecting stationary header from scrolling notes
+export const PINNED_HEADER_FADE_WIDTH = 40; // Horizontal width of gradient fade
+export const PINNED_HEADER_TOTAL_MARGIN = PINNED_HEADER_MASK_WIDTH + PINNED_HEADER_FADE_WIDTH; // 175
+export const PLAYHEAD_MIN_CLEARANCE = 30; // Clearance between fade margin and fixed playhead
+export const MIN_PLAYHEAD_X = PINNED_HEADER_TOTAL_MARGIN + PLAYHEAD_MIN_CLEARANCE; // 205
+
 /**
  * Computes the metric beat width (W_beat) beforehand based on the active
  * subdivisions, tuplets, and time signature.
