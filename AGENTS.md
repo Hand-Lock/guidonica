@@ -80,10 +80,15 @@ solfege-scroller/
 
 ## 5. Git & Version Control Hygiene
 
-1. **Mandatory Commit Upon Task Completion**:
-   - **Every time you finish a task requested by the user, you MUST create a git commit.**
+1. **Mandatory Commit & Push Upon Task Completion**:
+   - **Every time you finish a task requested by the user, you MUST create a git commit AND push it to remote (`git push origin main`).**
+   - Pushing to `origin/main` automatically triggers the GitHub Actions CI/CD deployment pipeline (`.github/workflows/deploy.yml`), ensuring changes are immediately compiled, tested, and published live to GitHub Pages.
    - The commit message must be written by the agent following Conventional Commits (`feat:`, `fix:`, `refactor:`, `perf:`, `docs:`, `chore:`).
-   - Never leave uncommitted changes at the end of a completed task unless explicitly instructed by the user.
+   - Always execute macOS Keychain loading before pushing in background agent subshells:
+     ```bash
+     ssh-add --apple-load-keychain 2>&1 && git push origin main
+     ```
+   - Never leave uncommitted or unpushed changes at the end of a completed task unless explicitly instructed by the user.
 2. **Repository Setup**:
    - Keep the repository self-contained and reproducible.
    - `.gitignore` must ignore `node_modules/`, `dist/`, `.DS_Store`, and temporary test artifacts.
