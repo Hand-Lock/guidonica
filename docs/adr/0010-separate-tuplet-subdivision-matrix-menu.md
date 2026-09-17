@@ -6,7 +6,7 @@
 
 ## Context & Problem Statement
 
-Prior to this architectural addition, tuplet support in Solfège Scroller was limited to a single boolean checkbox (`triplets: boolean`) embedded inside the standard Subdivisions fieldset. This suffered from multiple critical limitations:
+Prior to this architectural addition, tuplet support in Guidonica was limited to a single boolean checkbox (`triplets: boolean`) embedded inside the standard Subdivisions fieldset. This suffered from multiple critical limitations:
 1. **Inflexible Tuplet Ratios**: Users were locked into 8th-note triplets (3:2) only. They could not select quarter-note triplets (3 in 2 beats), 16th-note triplets (3 in 0.5 beat), or higher-order subdivisions such as quintuplets (5:4), sextuplets (6:4), septuplets (7:4), quadruplets (4:3 in compound or simple meter), or duplets (2:3 in 6/8).
 2. **Lack of Granular Control**: Sight-reading and solfège pedagogy requires isolating specific tuplet ratios and rhythmic values—for example, practicing 5-tuplets of sixteenth notes against quarter notes, or mastering quarter-note triplets across barlines and meter boundaries.
 3. **Toolbar Overcrowding**: Inserting an extensive 2D matrix of tuplet checkboxes directly into the header would drastically expand the vertical height of the navigation bar, squashing the streaming music notation canvas.

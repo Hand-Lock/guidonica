@@ -6,7 +6,7 @@
 
 ## Context & Problem Statement
 
-A full system audit was conducted across the entire codebase (`solfege-scroller`) to evaluate audio-visual synchronization, edge cases, subpixel rendering fidelity, memory discipline, and UI responsiveness. Several issues and optimization opportunities were identified:
+A full system audit was conducted across the entire codebase (`guidonica`) to evaluate audio-visual synchronization, edge cases, subpixel rendering fidelity, memory discipline, and UI responsiveness. Several issues and optimization opportunities were identified:
 
 1. **Tempo Adjustment Desynchronization & Double Clicks**: When adjusting tempo during active playback, `nextBeatTime` was set directly to `ctx.currentTime` without re-anchoring `scheduledBeatCount`. This caused audio clicks to clash and beat numbers to de-synchronize from the visual tape.
 2. **Audio Leakage & Stale Beat Callbacks on Pause/Stop**: Audio oscillators scheduled ahead in the Web Audio pipeline (up to 100ms) could still sound after pause/stop, and pending `setTimeout` callbacks fired during pause/stop, lighting up beat dots and falsely transitioning playback state.

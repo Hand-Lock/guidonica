@@ -1,6 +1,6 @@
 # Architectural Decision Records (ADRs)
 
-This directory documents the core architectural decisions, implementation methods, algorithms, and subsystem designs for **Solfège Scroller**. Future LLM agents and human developers should consult these records to understand what has been developed, how the systems work, and the rationale behind technical decisions.
+This directory documents the core architectural decisions, implementation methods, algorithms, and subsystem designs for **Guidonica**. Future LLM agents and human developers should consult these records to understand what has been developed, how the systems work, and the rationale behind technical decisions.
 
 ## Index of Records
 
@@ -26,6 +26,7 @@ This directory documents the core architectural decisions, implementation method
 | [0018](0018-github-actions-pages-continuous-deployment.md) | Continuous Deployment to GitHub Pages via GitHub Actions & Custom Domain Readiness | Accepted | 2026-09-17 |
 | [0019](0019-licensing-strict-copyleft-agplv3.md) | Strict Copyleft Open-Source Licensing (GNU AGPLv3) | Accepted | 2026-09-17 |
 | [0020](0020-in-app-license-and-repository-ui.md) | In-App License and Repository Presentation Architecture | Accepted | 2026-09-17 |
+| [0021](0021-project-rebranding-guidonica.md) | Project, Web-App, and Repository Rebranding to Guidonica | Accepted | 2026-09-17 |
 
 ---
 

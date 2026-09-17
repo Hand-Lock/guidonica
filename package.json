@@ -1,8 +1,8 @@
 {
-  "name": "solfege-scroller",
+  "name": "guidonica",
   "private": true,
   "version": "0.1.0",
-  "description": "High-performance client-only web tool for sight-reading and solfège practice with continuous procedural notation scrolling",
+  "description": "High-performance client-only web tool for sight-reading and solfège practice with continuous procedural notation scrolling, inspired by Guido d'Arezzo's historic pedagogy",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -18,9 +18,12 @@
   "packageManager": "pnpm@11.8.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Hand-Lock/solfege-scroller.git"
+    "url": "https://github.com/Hand-Lock/guidonica.git"
   },
   "keywords": [
+    "guidonica",
+    "guido-d-arezzo",
+    "manus-guidonica",
     "solfege",
     "sight-reading",
     "music-notation",

@@ -110,6 +110,21 @@ describe('storage module', () => {
     const v2Loaded = loadStoredSettings();
     expect(v2Loaded.theme).toBe('light');
     expect(v2Loaded.soundProfile).toBe('triangle');
+
+    window.localStorage.clear();
+
+    // Primary guidonica_settings_v1 key persistence
+    saveStoredSettings({ ...DEFAULT_APP_SETTINGS, tempo: 130 });
+    expect(window.localStorage.getItem('guidonica_settings_v1')).toBeTruthy();
+    expect(JSON.parse(window.localStorage.getItem('guidonica_settings_v1')!).tempo).toBe(130);
+
+    // guidonica_settings_v1 takes precedence over legacy keys if both exist
+    window.localStorage.setItem(
+      'solfege_scroller_settings_v2',
+      JSON.stringify({ tempo: 75 })
+    );
+    const primaryLoaded = loadStoredSettings();
+    expect(primaryLoaded.tempo).toBe(130);
   });
 
   it('correctly resolves explicit and auto themes', () => {

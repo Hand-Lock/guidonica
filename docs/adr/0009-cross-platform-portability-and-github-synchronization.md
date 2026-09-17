@@ -43,8 +43,8 @@ Key challenges across operating systems include:
 5. **Self-Contained Developer Experience**:
    - Authored a comprehensive `README.md` documenting zero-friction onboarding:
      ```bash
-     git clone <repo-url>
-     cd solfege-scroller
+     git clone git@github.com:Hand-Lock/guidonica.git
+     cd guidonica
      pnpm install
      pnpm dev
      ```

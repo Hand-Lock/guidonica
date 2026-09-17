@@ -6,7 +6,7 @@
 
 ## Context & Problem Statement
 
-Solfège Scroller requires continuous, smooth, horizontal streaming of procedurally generated sheet music across a stationary playhead in lockstep with an audible metronome. 
+Guidonica requires continuous, smooth, horizontal streaming of procedurally generated sheet music across a stationary playhead in lockstep with an audible metronome. 
 
 Key technical requirements:
 1. Note heads must cross the stationary playhead line at the exact microsecond the metronome pulse sounds.
