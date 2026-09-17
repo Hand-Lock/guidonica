@@ -1,4 +1,4 @@
-import { Pulse68Mode, SoundProfile, TimeSignature } from '../notation/types';
+import { AudioSessionType, Pulse68Mode, SoundProfile, TimeSignature } from '../notation/types';
 
 export interface BeatEvent {
   beatNumber: number; // 1-based index within the measure
@@ -47,12 +47,41 @@ export class MetronomeEngine {
     this.timeSignature = initialTimeSignature;
     this.updateMeterParams();
 
+    // Default to 'ambient' so non-essential sounds/UI respect silent mode and don't interrupt other audio
+    this.setAudioSessionCategory('ambient');
+
     // Re-trigger scheduler when tab visibility returns to prevent background throttling gap
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
   }
 
+  /**
+   * Dynamically configures the platform audio session (W3C AudioSession API on iOS/WebKit).
+   * - 'ambient': Respects hardware silent switch (muted), mixes with background apps (used when idle/paused/stopped).
+   * - 'playback': Overrides hardware silent switch (audible), prioritizes media playback (used during active practice).
+   */
+  private setAudioSessionCategory(category: AudioSessionType): void {
+    if (typeof navigator !== 'undefined' && 'audioSession' in navigator && navigator.audioSession) {
+      try {
+        navigator.audioSession.type = category;
+      } catch {
+        // Ignored if platform restricts dynamic audio session mutation
+      }
+    }
+  }
+
+  /**
+   * Returns current W3C audioSession type if supported, or null.
+   */
+  public getAudioSessionType(): AudioSessionType | null {
+    if (typeof navigator !== 'undefined' && 'audioSession' in navigator && navigator.audioSession) {
+      return navigator.audioSession.type;
+    }
+    return null;
+  }
+
   public destroy(): void {
     this.stop();
+    this.setAudioSessionCategory('ambient');
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     if (this.ctx && this.ctx.state !== 'closed') {
       void this.ctx.close();
@@ -75,16 +104,20 @@ export class MetronomeEngine {
     };
   }
 
-  private ensureAudioContext(): AudioContext {
+  private ensureAudioContext(): AudioContext | null {
     if (!this.ctx) {
       const AudioCtxClass =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      this.ctx = new AudioCtxClass();
-      this.masterGainNode = this.ctx.createGain();
-      this.masterGainNode.connect(this.ctx.destination);
+        typeof window !== 'undefined'
+          ? window.AudioContext ||
+            (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+          : undefined;
+      if (AudioCtxClass) {
+        this.ctx = new AudioCtxClass();
+        this.masterGainNode = this.ctx.createGain();
+        this.masterGainNode.connect(this.ctx.destination);
+      }
     }
-    if (this.ctx.state === 'suspended') {
+    if (this.ctx && this.ctx.state === 'suspended') {
       void this.ctx.resume();
     }
     return this.ctx;
@@ -191,6 +224,7 @@ export class MetronomeEngine {
   }
 
   public start(countIn: boolean = true): void {
+    this.setAudioSessionCategory('playback');
     const ctx = this.ensureAudioContext();
     this.stop();
 
@@ -199,7 +233,11 @@ export class MetronomeEngine {
     this.hasCountIn = countIn;
     this.countInBeatsTotal = countIn ? this.beatsPerMeasure : 0;
 
+    // Ensure session category is playback while running
+    this.setAudioSessionCategory('playback');
     this.updateMasterGain();
+
+    if (!ctx) return;
 
     const startTime = ctx.currentTime + 0.05;
     this.nextBeatTime = startTime;
@@ -215,16 +253,17 @@ export class MetronomeEngine {
   }
 
   public pause(): void {
-    if (!this.isRunning || this.isPaused || !this.ctx) return;
-    this.pausedElapsedSeconds = this.ctx.currentTime - this.measureZeroStartTime;
+    if (!this.isRunning || this.isPaused) return;
+    this.pausedElapsedSeconds = this.ctx ? this.ctx.currentTime - this.measureZeroStartTime : 0;
     this.isPaused = true;
+    this.setAudioSessionCategory('ambient');
     if (this.timerId !== null) {
       clearInterval(this.timerId);
       this.timerId = null;
     }
 
     // Immediately silence any queued audio clicks
-    if (this.masterGainNode) {
+    if (this.masterGainNode && this.ctx) {
       this.masterGainNode.gain.cancelScheduledValues(this.ctx.currentTime);
       this.masterGainNode.gain.setValueAtTime(0, this.ctx.currentTime);
     }
@@ -234,8 +273,9 @@ export class MetronomeEngine {
   }
 
   public resume(): void {
-    if (!this.isRunning || !this.isPaused || !this.ctx) return;
-    if (this.ctx.state === 'suspended') {
+    if (!this.isRunning || !this.isPaused) return;
+    this.setAudioSessionCategory('playback');
+    if (this.ctx && this.ctx.state === 'suspended') {
       void this.ctx.resume();
     }
     this.isPaused = false;
@@ -243,11 +283,12 @@ export class MetronomeEngine {
     // Unmute master gain to target volume
     this.updateMasterGain();
 
-    this.measureZeroStartTime = this.ctx.currentTime - this.pausedElapsedSeconds;
+    const currentAudioTime = this.ctx ? this.ctx.currentTime : 0;
+    this.measureZeroStartTime = currentAudioTime - this.pausedElapsedSeconds;
 
     // Accurately align to the next unplayed beat boundary to avoid duplicate or clashing clicks
     const nextGlobalBeatIndex = Math.ceil(
-      (this.ctx.currentTime + 0.02 - this.measureZeroStartTime) / this.secondsPerBeat
+      (currentAudioTime + 0.02 - this.measureZeroStartTime) / this.secondsPerBeat
     );
     this.nextBeatTime = this.measureZeroStartTime + nextGlobalBeatIndex * this.secondsPerBeat;
     this.scheduledBeatCount = Math.max(0, nextGlobalBeatIndex + this.countInBeatsTotal);
@@ -261,6 +302,7 @@ export class MetronomeEngine {
   public stop(): void {
     this.isRunning = false;
     this.isPaused = false;
+    this.setAudioSessionCategory('ambient');
     if (this.timerId !== null) {
       clearInterval(this.timerId);
       this.timerId = null;
