@@ -1,7 +1,7 @@
-# Agent Guidelines & Repository Hygiene: Solfège Scroller
+# Agent Guidelines & Repository Hygiene: Guidonica
 
 ## 1. Project Overview & Philosophy
-**Solfège Scroller** is a high-performance, client-only web tool for sight-reading and solfège practice. It continuously streams procedurally generated music notation across a fixed playhead in synchronization with a synthesized metronome.
+**Guidonica** is a high-performance, client-only web tool for sight-reading and solfège practice, inspired by Guido d'Arezzo's historic *manus guidonica* pedagogy. It continuously streams procedurally generated music notation across a fixed playhead in synchronization with a synthesized metronome.
 
 ### Suckless Engineering Philosophy
 - **Zero Framework Bloat**: No React, Vue, Svelte, or Angular. This application is written in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and Web Audio API directly. Virtual DOM diffing and framework runtime overhead degrade frame pacing and add unnecessary maintenance burden.
@@ -17,7 +17,7 @@
 ## 2. Directory Structure & Architecture
 
 ```
-solfege-scroller/
+guidonica/
 ├── AGENTS.md               # Strict developer & agent rules (this file)
 ├── SPEC.md                 # Product and pedagogical specification
 ├── package.json            # Minimal dependencies (vite, typescript, vexflow)
@@ -96,7 +96,7 @@ solfege-scroller/
    - Any developer on another machine must be able to run:
      ```bash
      git clone <repo-url>
-     cd solfege-scroller
+     cd guidonica
      pnpm install   # or npm install
      pnpm dev       # or npm run dev
      ```

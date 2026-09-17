@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Solfège Scroller - High-Performance Procedural Sight-Reading Engine
+// Guidonica - High-Performance Procedural Sight-Reading Engine
 // Copyright (C) 2026 A. C. Lo Cascio
 
 import {
@@ -27,7 +27,7 @@ import { MeasureBuffer } from './scroller/buffer';
 import { ScrollerView } from './scroller/scroller';
 import { waitForMusicFonts } from './notation/fonts';
 
-class SolfegeScrollerApp {
+class GuidonicaApp {
   private metronome: MetronomeEngine;
   private generator: MusicGenerator;
   private renderer: MeasureRenderer;
@@ -934,5 +934,5 @@ class SolfegeScrollerApp {
 
 // Bootstrap application when DOM is ready
 window.addEventListener('DOMContentLoaded', () => {
-  new SolfegeScrollerApp();
+  new GuidonicaApp();
 });

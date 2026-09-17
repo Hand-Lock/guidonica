@@ -7,11 +7,11 @@ Accepted
 2026-09-17
 
 ## Context
-**Solfège Scroller** is a client-only static web application. To make the tool globally accessible for musicians and students without recurring hosting costs or complex server infrastructure, the application needs to be automatically compiled, tested, and published to **GitHub Pages** upon every commit pushed to the `main` branch. Furthermore, the deployment architecture must allow attaching a custom root domain (e.g., `https://solfegescroller.com`) in the future with zero code modifications or build adjustments.
+**Guidonica** is a client-only static web application. To make the tool globally accessible for musicians and students without recurring hosting costs or complex server infrastructure, the application needs to be automatically compiled, tested, and published to **GitHub Pages** upon every commit pushed to the `main` branch. Furthermore, the deployment architecture must allow attaching a custom root domain (e.g., `https://guidonica.org`) in the future with zero code modifications or build adjustments.
 
 Several architectural and platform constraints were addressed:
 1. **Repository Subpath vs. Custom Apex Root Routing**:
-   Standard GitHub Pages repositories are hosted under a path prefix: `https://<username>.github.io/<repository>/` (in this case, `/solfege-scroller/`). Vite's default base path is `'/'`, which results in `404 Not Found` errors when fetching scripts and stylesheets from the root instead of the repository subfolder. When a custom domain is attached later, the site will be served from the root `'/'`. The configuration must support both hosting scenarios without requiring separate build targets.
+   Standard GitHub Pages repositories are hosted under a path prefix: `https://<username>.github.io/<repository>/` (in this case, `/guidonica/`). Vite's default base path is `'/'`, which results in `404 Not Found` errors when fetching scripts and stylesheets from the root instead of the repository subfolder. When a custom domain is attached later, the site will be served from the root `'/'`. The configuration must support both hosting scenarios without requiring separate build targets.
 2. **VexFlow Asset Volume & Client Cache Invalidation**:
    The VexFlow 5 notation rendering engine bundles complete SMuFL font tables and geometry calculations, resulting in a minified bundle exceeding 1.1 MB. In an un-chunked build, any change to application logic forces every client to re-download this large payload.
 3. **Jekyll Static Site Interference**:
@@ -26,7 +26,7 @@ In `vite.config.ts`, the base path was configured as:
 ```typescript
 base: process.env.BASE_PATH || './'
 ```
-- **Relative Path Resolution (`./`)**: Assets in `index.html` are linked relatively (e.g., `./assets/index-[hash].js`). When accessed via `https://hand-lock.github.io/solfege-scroller/`, the browser resolves assets relative to `/solfege-scroller/`. When later pointed to an apex custom domain (`https://solfegescroller.com/`), assets resolve relative to `/`.
+- **Relative Path Resolution (`./`)**: Assets in `index.html` are linked relatively (e.g., `./assets/index-[hash].js`). When accessed via `https://hand-lock.github.io/guidonica/`, the browser resolves assets relative to `/guidonica/`. When later pointed to an apex custom domain (`https://guidonica.org/`), assets resolve relative to `/`.
 - **Environment Override**: Should an explicit absolute CDN path ever be required in custom build environments, `BASE_PATH` can be passed without altering repository code.
 
 ### 2. Rollup Manual Chunk Partitioning for VexFlow

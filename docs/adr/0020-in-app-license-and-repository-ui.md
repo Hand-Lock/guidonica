@@ -7,12 +7,12 @@ Accepted
 2026-09-17
 
 ## Context
-Following the formal adoption of the **GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`)** in ADR 0019, users interacting with **Solfège Scroller** need clear, prominent, and native in-app access to:
+Following the formal adoption of the **GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`)** in ADR 0019, users interacting with **Guidonica** need clear, prominent, and native in-app access to:
 1. The full legal license terms and copyright notice.
 2. The official GitHub source code repository.
 3. An explanation of the strict copyleft requirements and remote network interaction obligations (Section 13 of the AGPLv3).
 
-In addition, because Solfège Scroller is a responsive client-only web tool that runs across desktop monitors, tablets, and mobile devices (where viewports `<= 960px` collapse the bottom keyboard shortcuts hint and drawer controls), license presentation must be:
+In addition, because Guidonica is a responsive client-only web tool that runs across desktop monitors, tablets, and mobile devices (where viewports `<= 960px` collapse the bottom keyboard shortcuts hint and drawer controls), license presentation must be:
 - Readily discoverable on both desktop and mobile viewports.
 - Keyboard accessible without interfering with ongoing musical practice shortcuts (such as `Space` for playback and `R` for session reset).
 - Native and framework-free, adhering strictly to the repository's Suckless vanilla TypeScript philosophy without third-party modal libraries.
@@ -22,7 +22,7 @@ In addition, because Solfège Scroller is a responsive client-only web tool that
 ### 1. Direct GitHub Top-Bar Anchor
 In the desktop and mobile primary header (`.utility-actions`), added a direct repository icon anchor:
 ```html
-<a id="btn-github-link" class="btn-icon-only btn-github" href="https://github.com/Hand-Lock/solfege-scroller" target="_blank" rel="noopener noreferrer" aria-label="GitHub Repository" title="GitHub Repository & AGPLv3 License">
+<a id="btn-github-link" class="btn-icon-only btn-github" href="https://github.com/Hand-Lock/guidonica" target="_blank" rel="noopener noreferrer" aria-label="GitHub Repository" title="GitHub Repository & AGPLv3 License">
   <svg class="nav-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
     ...
   </svg>

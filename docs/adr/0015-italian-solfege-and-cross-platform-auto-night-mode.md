@@ -7,8 +7,8 @@ Accepted
 2026-09-16
 
 ## Context
-1. **Italian Fixed-Do Solfège Pedagogy**:
-   Solfège Scroller previously provided two label modes: Anglo-American Solfège (`Do`, `Re`, `Mi`, `Fa`, `Sol`, `La`, `Ti`) and standard note letters (`C`, `D`, `E`, `F`, `G`, `A`, `B`). In Romance and classical conservatory pedagogy (Italian, French, Spanish, Latin American traditions), musical notes are named using fixed-Do solfège where degree 7 ($B$) is universally designated **"Si"** rather than **"Ti"** (derived from the historic hymn *Ut queant laxis* honoring *Sancte Iohannes*). Users practicing in these pedagogical frameworks required an Italian lettering solfège option.
+1. **Romance & Classical Solfège Tradition (Do-Re-Mi vs Do-Re-Si)**:
+   Guidonica previously provided two label modes: Anglo-American Solfège (`Do`, `Re`, `Mi`, `Fa`, `Sol`, `La`, `Ti`) and standard note letters (`C`, `D`, `E`, `F`, `G`, `A`, `B`). In Romance and classical conservatory pedagogy (Italian, French, Spanish, Latin American traditions), musical notes are named using fixed-Do solfège where degree 7 ($B$) is universally designated **"Si"** rather than **"Ti"** (derived from the historic hymn *Ut queant laxis* honoring *Sancte Iohannes*). Users practicing in these pedagogical frameworks required an Italian lettering solfège option.
 
 2. **Cross-Platform OS Night Mode Alignment**:
    In previous revisions (ADR 0002), the application standardized on light mode to prevent forced browser contrast inversions and black-on-black glyph clashes in specialized environments. Later updates reintroduced a high-contrast dark theme palette with crisp slate canvases and light notation glyphs, but theme selection was purely manual. Users on macOS, Windows, Linux, and mobile platforms expect modern web applications to automatically detect the operating system's color scheme preference in real time without requiring manual toggling each time system daylight/night scheduling shifts.

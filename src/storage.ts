@@ -1,7 +1,8 @@
 import { AppSettings, DEFAULT_TUPLET_OPTIONS, SoundProfile, ThemeMode } from './notation/types';
 
-const STORAGE_KEY_V2 = 'solfege_scroller_settings_v2';
-const STORAGE_KEY_V1 = 'solfege_scroller_settings_v1';
+export const STORAGE_KEY = 'guidonica_settings_v1';
+export const LEGACY_STORAGE_KEY_V2 = 'solfege_scroller_settings_v2';
+export const LEGACY_STORAGE_KEY_V1 = 'solfege_scroller_settings_v1';
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   tempo: 60,
@@ -45,7 +46,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
 };
 
 /**
- * Loads stored settings from localStorage with deep merging, validation, and v1 migration.
+ * Loads stored settings from localStorage with deep merging, validation, and legacy migrations.
  */
 export function loadStoredSettings(): AppSettings {
   if (typeof window === 'undefined' || !window.localStorage) {
@@ -53,11 +54,14 @@ export function loadStoredSettings(): AppSettings {
   }
 
   try {
-    let raw = window.localStorage.getItem(STORAGE_KEY_V2);
+    let raw = window.localStorage.getItem(STORAGE_KEY);
     let isLegacyV1 = false;
     if (!raw) {
-      raw = window.localStorage.getItem(STORAGE_KEY_V1);
-      isLegacyV1 = true;
+      raw = window.localStorage.getItem(LEGACY_STORAGE_KEY_V2);
+    }
+    if (!raw) {
+      raw = window.localStorage.getItem(LEGACY_STORAGE_KEY_V1);
+      if (raw) isLegacyV1 = true;
     }
     if (!raw) {
       return { ...DEFAULT_APP_SETTINGS };
@@ -126,7 +130,7 @@ export function saveStoredSettings(settings: AppSettings): void {
   }
 
   try {
-    window.localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(settings));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch {
     // Ignore quota or private-browsing errors
   }
