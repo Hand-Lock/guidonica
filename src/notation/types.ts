@@ -156,7 +156,13 @@ export interface AppSettings {
   theme: ThemeMode;
   volume: number; // 0.0 to 1.0
   isMuted: boolean;
+  zoom: number; // 0.5 to 1.5 (default 1.0)
 }
+
+export const MIN_ZOOM = 0.5;
+export const MAX_ZOOM = 1.5;
+export const DEFAULT_ZOOM = 1.0;
+export const ZOOM_STEP = 0.1;
 
 export type PlaybackState = 'stopped' | 'counting-in' | 'playing' | 'paused';
 

@@ -12,6 +12,7 @@ describe('storage module', () => {
     expect(loaded).toEqual(DEFAULT_APP_SETTINGS);
     expect(loaded.soundProfile).toBe('woodblock');
     expect(loaded.theme).toBe('auto');
+    expect(loaded.zoom).toBe(1.0);
   });
 
   it('persists and reloads modified settings accurately', () => {
@@ -25,6 +26,7 @@ describe('storage module', () => {
       volume: 0.5,
       isMuted: true,
       solfegeLabelMode: 'solfege',
+      zoom: 0.75,
     };
 
     saveStoredSettings(custom);
@@ -38,6 +40,30 @@ describe('storage module', () => {
     expect(loaded.volume).toBe(0.5);
     expect(loaded.isMuted).toBe(true);
     expect(loaded.solfegeLabelMode).toBe('solfege');
+    expect(loaded.zoom).toBe(0.75);
+  });
+
+  it('clamps zoom setting between MIN_ZOOM (0.5) and MAX_ZOOM (1.5)', () => {
+    // Zoom too low
+    window.localStorage.setItem(
+      'guidonica_settings_v1',
+      JSON.stringify({ zoom: 0.2 })
+    );
+    expect(loadStoredSettings().zoom).toBe(0.5);
+
+    // Zoom too high
+    window.localStorage.setItem(
+      'guidonica_settings_v1',
+      JSON.stringify({ zoom: 2.5 })
+    );
+    expect(loadStoredSettings().zoom).toBe(1.5);
+
+    // Invalid NaN / non-number zoom fallback to 1.0
+    window.localStorage.setItem(
+      'guidonica_settings_v1',
+      JSON.stringify({ zoom: 'invalid' })
+    );
+    expect(loadStoredSettings().zoom).toBe(1.0);
   });
 
   it('gracefully recovers and merges when stored JSON is partial or corrupt', () => {

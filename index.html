@@ -403,6 +403,16 @@
             </div>
           </div>
 
+          <div class="control-group zoom-group">
+            <label for="zoom-slider">Zoom: <span id="zoom-display">100%</span></label>
+            <div class="zoom-inputs">
+              <button id="btn-zoom-out" class="btn-step" type="button" aria-label="Zoom out" title="Zoom out (-10%)">−</button>
+              <input type="range" id="zoom-slider" min="50" max="150" value="100" step="5" aria-label="Notation zoom percentage" />
+              <button id="btn-zoom-in" class="btn-step" type="button" aria-label="Zoom in" title="Zoom in (+10%)">+</button>
+              <button id="btn-zoom-reset" class="btn btn-secondary btn-sm" type="button" aria-label="Reset zoom to 100%" title="Reset to 100%">100%</button>
+            </div>
+          </div>
+
           <div class="control-group drawer-about-group">
             <button id="btn-drawer-about" class="btn btn-secondary btn-drawer-about" type="button" aria-label="Open About and License dialog">
               <span>ℹ️ About & License</span>
@@ -413,6 +423,11 @@
 
       <main class="canvas-wrapper">
         <canvas id="scroller-canvas" role="img" aria-label="Streaming sight-reading music notation canvas"></canvas>
+        <div class="canvas-zoom-pill" id="canvas-zoom-pill" role="toolbar" aria-label="Notation zoom controls">
+          <button id="btn-pill-zoom-out" class="btn-pill-action" type="button" aria-label="Zoom out" title="Zoom out (−10%)">−</button>
+          <button id="btn-pill-zoom-reset" class="btn-pill-label" type="button" aria-label="Reset zoom" title="Reset zoom to 100%"><span id="pill-zoom-text">100%</span></button>
+          <button id="btn-pill-zoom-in" class="btn-pill-action" type="button" aria-label="Zoom in" title="Zoom in (+10%)">+</button>
+        </div>
       </main>
 
       <footer class="shortcuts-hint">
@@ -420,6 +435,8 @@
         <span><kbd>R</kbd> / <kbd>Esc</kbd> Reset</span>
         <span><kbd>↑</kbd>/<kbd>↓</kbd> ±5 BPM</span>
         <span><kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> ±1 BPM</span>
+        <span><kbd>+</kbd>/<kbd>-</kbd> Zoom</span>
+        <span><kbd>0</kbd> Reset</span>
         <span class="footer-source">
           <button id="btn-footer-about" class="btn-link" type="button">License & Info</button> &nbsp;•&nbsp;
           <a href="https://github.com/Hand-Lock/guidonica" target="_blank" rel="noopener noreferrer" title="View Source Code on GitHub (AGPL-3.0-or-later)">GitHub</a>

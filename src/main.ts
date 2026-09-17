@@ -5,6 +5,9 @@
 import {
   CLEF_RANGE_DISPLAY,
   Clef,
+  DEFAULT_ZOOM,
+  MAX_ZOOM,
+  MIN_ZOOM,
   Pulse68Mode,
   ResolvedTheme,
   SolfegeLabelMode,
@@ -16,6 +19,7 @@ import {
   TupletName,
   TupletOptions,
   TupletValue,
+  ZOOM_STEP,
   resolveTheme,
   subscribeSystemTheme,
 } from './notation/types';
@@ -67,6 +71,19 @@ class GuidonicaApp {
   private selectTheme: HTMLSelectElement;
   private volumeSlider: HTMLInputElement;
   private btnVolumeMute: HTMLButtonElement;
+  private zoomSlider: HTMLInputElement;
+  private zoomDisplay: HTMLElement;
+  private btnZoomOut: HTMLButtonElement;
+  private btnZoomIn: HTMLButtonElement;
+  private btnZoomReset: HTMLButtonElement;
+
+  // Floating On-Canvas Zoom Pill
+  private canvasZoomPill: HTMLElement;
+  private btnPillZoomOut: HTMLButtonElement;
+  private btnPillZoomReset: HTMLButtonElement;
+  private pillZoomText: HTMLElement;
+  private btnPillZoomIn: HTMLButtonElement;
+
   private unsubscribeSystemTheme: (() => void) | null = null;
 
   // Intervals & Subdivisions
@@ -134,6 +151,17 @@ class GuidonicaApp {
     this.selectTheme = document.getElementById('select-theme') as HTMLSelectElement;
     this.volumeSlider = document.getElementById('volume-slider') as HTMLInputElement;
     this.btnVolumeMute = document.getElementById('btn-volume-mute') as HTMLButtonElement;
+    this.zoomSlider = document.getElementById('zoom-slider') as HTMLInputElement;
+    this.zoomDisplay = document.getElementById('zoom-display') as HTMLElement;
+    this.btnZoomOut = document.getElementById('btn-zoom-out') as HTMLButtonElement;
+    this.btnZoomIn = document.getElementById('btn-zoom-in') as HTMLButtonElement;
+    this.btnZoomReset = document.getElementById('btn-zoom-reset') as HTMLButtonElement;
+
+    this.canvasZoomPill = document.getElementById('canvas-zoom-pill') as HTMLElement;
+    this.btnPillZoomOut = document.getElementById('btn-pill-zoom-out') as HTMLButtonElement;
+    this.btnPillZoomReset = document.getElementById('btn-pill-zoom-reset') as HTMLButtonElement;
+    this.pillZoomText = document.getElementById('pill-zoom-text') as HTMLElement;
+    this.btnPillZoomIn = document.getElementById('btn-pill-zoom-in') as HTMLButtonElement;
 
     this.intervalUnison = document.getElementById('interval-unison') as HTMLInputElement;
     this.intervalSecond = document.getElementById('interval-second') as HTMLInputElement;
@@ -199,6 +227,7 @@ class GuidonicaApp {
 
     this.generator = new MusicGenerator();
     this.renderer = new MeasureRenderer();
+    this.renderer.setZoom(initialSettings.zoom || DEFAULT_ZOOM);
     this.buffer = new MeasureBuffer(this.generator, this.renderer);
     this.scroller = new ScrollerView(
       canvas,
@@ -207,6 +236,7 @@ class GuidonicaApp {
       this.renderer,
       () => globalState.settings
     );
+    this.scroller.setZoom(initialSettings.zoom || DEFAULT_ZOOM);
 
     // 3. Hydrate UI elements from stored settings
     this.hydrateUI(initialSettings);
@@ -285,6 +315,35 @@ class GuidonicaApp {
       }
     }
     this.updateTupletsUI();
+
+    // Zoom
+    const zoomVal = settings.zoom || DEFAULT_ZOOM;
+    const zoomPercent = Math.round(zoomVal * 100);
+    this.zoomSlider.value = String(zoomPercent);
+    this.zoomDisplay.textContent = `${zoomPercent}%`;
+    this.pillZoomText.textContent = `${zoomPercent}%`;
+  }
+
+  private applyZoom(val: number): void {
+    const clamped = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(val * 100) / 100));
+    const percentStr = `${Math.round(clamped * 100)}%`;
+    this.zoomSlider.value = String(Math.round(clamped * 100));
+    this.zoomDisplay.textContent = percentStr;
+    this.pillZoomText.textContent = percentStr;
+
+    if (globalState.settings.zoom === clamped) {
+      return;
+    }
+
+    globalState.updateSettings({ zoom: clamped });
+    this.renderer.setZoom(clamped);
+    this.scroller.setZoom(clamped);
+    this.resetBuffer();
+  }
+
+  private adjustZoom(delta: number): void {
+    const current = globalState.settings.zoom || DEFAULT_ZOOM;
+    this.applyZoom(current + delta);
   }
 
   private updateThemeUI(theme: ThemeMode, resolved: ResolvedTheme): void {
@@ -474,6 +533,49 @@ class GuidonicaApp {
       this.btnVolumeMute.textContent = nextMuted ? '🔇' : '🔊';
       globalState.updateSettings({ isMuted: nextMuted });
     });
+
+    // Zoom Controls (Settings Drawer)
+    this.zoomSlider.addEventListener('input', (e) => {
+      const percent = Number((e.target as HTMLInputElement).value);
+      this.applyZoom(percent / 100);
+    });
+
+    this.btnZoomOut.addEventListener('click', () => {
+      this.adjustZoom(-ZOOM_STEP);
+    });
+
+    this.btnZoomIn.addEventListener('click', () => {
+      this.adjustZoom(ZOOM_STEP);
+    });
+
+    this.btnZoomReset.addEventListener('click', () => {
+      this.applyZoom(DEFAULT_ZOOM);
+    });
+
+    // Floating On-Canvas Zoom Pill
+    this.btnPillZoomOut.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.btnPillZoomOut.blur();
+      this.adjustZoom(-ZOOM_STEP);
+    });
+
+    this.btnPillZoomIn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.btnPillZoomIn.blur();
+      this.adjustZoom(ZOOM_STEP);
+    });
+
+    this.btnPillZoomReset.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.btnPillZoomReset.blur();
+      this.applyZoom(DEFAULT_ZOOM);
+    });
+
+    // Canvas Two-Finger Pinch-to-Zoom
+    const canvas = document.getElementById('scroller-canvas') as HTMLCanvasElement;
+    if (canvas) {
+      this.bindCanvasPinchZoom(canvas);
+    }
 
     // Intervals: ensure at least one interval remains checked
     const handleIntervalChange = (e: Event): void => {
@@ -795,8 +897,61 @@ class GuidonicaApp {
         e.preventDefault();
         const delta = e.shiftKey ? -1 : -5;
         this.adjustTempo(delta);
+      } else if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        this.adjustZoom(ZOOM_STEP);
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        this.adjustZoom(-ZOOM_STEP);
+      } else if (e.key === '0') {
+        e.preventDefault();
+        this.applyZoom(DEFAULT_ZOOM);
       }
     });
+  }
+
+  private bindCanvasPinchZoom(canvas: HTMLCanvasElement): void {
+    let initialDistance: number | null = null;
+    let initialZoom: number = DEFAULT_ZOOM;
+
+    const getDistance = (touch1: Touch, touch2: Touch): number => {
+      const dx = touch1.clientX - touch2.clientX;
+      const dy = touch1.clientY - touch2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    canvas.addEventListener(
+      'touchstart',
+      (e: TouchEvent) => {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          initialDistance = getDistance(e.touches[0], e.touches[1]);
+          initialZoom = globalState.settings.zoom || DEFAULT_ZOOM;
+        }
+      },
+      { passive: false }
+    );
+
+    canvas.addEventListener(
+      'touchmove',
+      (e: TouchEvent) => {
+        if (e.touches.length === 2 && initialDistance !== null && initialDistance > 0) {
+          e.preventDefault();
+          const currentDistance = getDistance(e.touches[0], e.touches[1]);
+          const scaleFactor = currentDistance / initialDistance;
+          const targetZoom = initialZoom * scaleFactor;
+          this.applyZoom(targetZoom);
+        }
+      },
+      { passive: false }
+    );
+
+    const endPinch = (): void => {
+      initialDistance = null;
+    };
+
+    canvas.addEventListener('touchend', endPinch);
+    canvas.addEventListener('touchcancel', endPinch);
   }
 
   private adjustTempo(delta: number): void {
