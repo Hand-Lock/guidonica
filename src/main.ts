@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Solfège Scroller - High-Performance Procedural Sight-Reading Engine
+// Copyright (C) 2026 A. C. Lo Cascio
+
 import {
   CLEF_RANGE_DISPLAY,
   Clef,
