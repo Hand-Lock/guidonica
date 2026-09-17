@@ -759,6 +759,106 @@ code, kbd, pre, samp {
   transform: scale(1.18);
 }
 
+/* Zoom Control in Settings Drawer */
+.zoom-group {
+  min-width: 175px;
+}
+
+#zoom-display {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.zoom-inputs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.zoom-inputs input[type='range'] {
+  width: 70px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--slider-track-bg);
+  height: 7px;
+  border-radius: 5px;
+  border: 1px solid var(--input-border);
+  box-shadow: var(--slider-track-shadow);
+  outline: none;
+  cursor: pointer;
+}
+
+.zoom-inputs input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--slider-thumb-bg);
+  border: 1px solid var(--slider-thumb-border);
+  box-shadow: var(--slider-thumb-shadow);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.zoom-inputs input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.zoom-inputs input[type='range']::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--slider-thumb-bg);
+  border: 1px solid var(--slider-thumb-border);
+  box-shadow: var(--slider-thumb-shadow);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.zoom-inputs input[type='range']::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+.btn-step {
+  width: 25px;
+  height: 25px;
+  border-radius: 4px;
+  background: var(--btn-secondary-bg);
+  border: 1px solid var(--btn-secondary-border);
+  box-shadow: var(--btn-secondary-sheen), var(--btn-secondary-shadow);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.1s ease;
+}
+
+.btn-step:hover {
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-step:active {
+  transform: translateY(1px);
+}
+
+.btn-sm {
+  height: 25px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
 /* ==========================================================================
    Tuplets Menu & Floating Glass Popover
    ========================================================================== */
@@ -1105,6 +1205,91 @@ code, kbd, pre, samp {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+/* ==========================================================================
+   Floating On-Canvas Zoom Pill (Aero Liquid Glass)
+   ========================================================================== */
+
+.canvas-zoom-pill {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-bottom-color: var(--panel-border-bottom);
+  border-radius: 20px;
+  box-shadow: var(--panel-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  user-select: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.btn-pill-action {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--btn-secondary-bg);
+  border: 1px solid var(--btn-secondary-border);
+  box-shadow: var(--btn-secondary-sheen), var(--btn-secondary-shadow);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.12s ease;
+}
+
+.btn-pill-action:hover {
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.08);
+}
+
+.btn-pill-action:active {
+  transform: scale(0.96) translateY(1px);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.btn-pill-label {
+  min-width: 44px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.btn-pill-label:hover {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.btn-pill-label:active {
+  transform: scale(0.95);
 }
 
 /* ==========================================================================

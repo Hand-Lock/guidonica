@@ -11,8 +11,11 @@ import {
 } from 'vexflow';
 import {
   Clef,
+  DEFAULT_ZOOM,
   ITALIAN_SOLFEGE_SYLLABLES,
+  MAX_ZOOM,
   MEASURE_CANVAS_HEIGHT,
+  MIN_ZOOM,
   MeasureData,
   NOTE_LETTER_NAMES,
   NOTE_START_OFFSET,
@@ -27,6 +30,7 @@ import {
 
 export class MeasureRenderer {
   private dpr: number = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+  private zoom: number = DEFAULT_ZOOM;
 
   public setDpr(dpr: number): void {
     this.dpr = Math.max(1, dpr);
@@ -34,6 +38,14 @@ export class MeasureRenderer {
 
   public getDpr(): number {
     return this.dpr;
+  }
+
+  public setZoom(zoom: number): void {
+    this.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
+  }
+
+  public getZoom(): number {
+    return this.zoom;
   }
 
   /**
@@ -45,9 +57,10 @@ export class MeasureRenderer {
     solfegeMode: SolfegeLabelMode = 'none'
   ): RenderedMeasure {
     const dpr = this.dpr;
+    const zoom = this.zoom;
     const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.floor(data.width * dpr));
-    canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr));
+    canvas.width = Math.max(1, Math.floor(data.width * dpr * zoom));
+    canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr * zoom));
 
     const isDark = resolveTheme(theme) === 'dark';
     const noteColor = isDark ? '#f8fafc' : '#000000';
@@ -58,7 +71,7 @@ export class MeasureRenderer {
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     renderer.resize(canvas.width, canvas.height);
     const ctx = renderer.getContext();
-    ctx.scale(dpr, dpr);
+    ctx.scale(dpr * zoom, dpr * zoom);
     ctx.setFillStyle(noteColor);
     ctx.setStrokeStyle(noteColor);
 
@@ -227,8 +240,8 @@ export class MeasureRenderer {
       const rawCtx = canvas.getContext('2d');
       if (rawCtx) {
         rawCtx.save();
-        // Reset transform to exactly 1x logical units scaled to device pixel ratio
-        rawCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        // Reset transform to logical units scaled to device pixel ratio and zoom
+        rawCtx.setTransform(dpr * zoom, 0, 0, dpr * zoom, 0, 0);
         rawCtx.fillStyle = solfegeColor;
         rawCtx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         rawCtx.textAlign = 'center';
@@ -262,8 +275,8 @@ export class MeasureRenderer {
     return {
       data,
       canvas,
-      width: data.width,
-      height: MEASURE_CANVAS_HEIGHT,
+      width: data.width * zoom,
+      height: MEASURE_CANVAS_HEIGHT * zoom,
     };
   }
 
@@ -272,10 +285,11 @@ export class MeasureRenderer {
    */
   public renderPinnedClef(clef: Clef, theme: ThemeMode = 'auto'): HTMLCanvasElement {
     const dpr = this.dpr;
+    const zoom = this.zoom;
     const width = 80;
     const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.floor(width * dpr));
-    canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr));
+    canvas.width = Math.max(1, Math.floor(width * dpr * zoom));
+    canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr * zoom));
 
     const isDark = resolveTheme(theme) === 'dark';
     const clefColor = isDark ? '#f8fafc' : '#000000';
@@ -283,7 +297,7 @@ export class MeasureRenderer {
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     renderer.resize(canvas.width, canvas.height);
     const ctx = renderer.getContext();
-    ctx.scale(dpr, dpr);
+    ctx.scale(dpr * zoom, dpr * zoom);
     ctx.setFillStyle(clefColor);
     ctx.setStrokeStyle(clefColor);
 

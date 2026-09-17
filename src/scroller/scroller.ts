@@ -1,7 +1,10 @@
 import {
   AppSettings,
   Clef,
+  DEFAULT_ZOOM,
+  MAX_ZOOM,
   MEASURE_CANVAS_HEIGHT,
+  MIN_ZOOM,
   NOTE_START_OFFSET,
   ResolvedTheme,
   STAVE_TOP_LINE_Y,
@@ -22,6 +25,7 @@ export class ScrollerView {
   private getSettings: () => AppSettings;
 
   private dpr: number = 1;
+  private zoom: number = DEFAULT_ZOOM;
   private viewportWidth: number = 0;
   private viewportHeight: number = 0;
   private playheadX: number = 0;
@@ -53,6 +57,7 @@ export class ScrollerView {
     this.metronome = metronome;
     this.renderer = renderer;
     this.getSettings = getSettings;
+    this.zoom = getSettings().zoom || DEFAULT_ZOOM;
 
     this.updateDimensions();
     window.addEventListener('resize', this.handleResize);
@@ -67,6 +72,18 @@ export class ScrollerView {
     this.pinnedClefCanvas = null;
     this.cachedClef = null;
     this.cachedClefTheme = null;
+  }
+
+  public setZoom(zoom: number): void {
+    const clamped = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
+    if (this.zoom === clamped) return;
+    this.zoom = clamped;
+    this.updateDimensions();
+    this.invalidatePinnedClef();
+  }
+
+  public getZoom(): number {
+    return this.zoom;
   }
 
   private handleResize = (): void => {
@@ -91,15 +108,16 @@ export class ScrollerView {
     this.canvas.style.height = `${this.viewportHeight}px`;
     this.renderer.setDpr(this.dpr);
 
-    // Playhead fixed at 22% of viewport width with minimum clearance of clef fade margin (145px + 30px safety)
-    const minPlayheadX = 145 + 30; // 175px
+    // Playhead fixed at 22% of viewport width with minimum clearance of clef fade margin (145 * zoom + 30 * zoom)
+    const minPlayheadX = Math.round(175 * this.zoom);
     this.playheadX = Math.max(minPlayheadX, Math.round(this.viewportWidth * 0.22));
 
-    // Center the 5 stave lines vertically
+    // Center the 5 stave lines vertically around viewport center
     const centerY = Math.round(this.viewportHeight / 2);
-    // 5 lines spaced by 10px span 40px total (lines at 0, 10, 20, 30, 40)
-    this.staveTopY = centerY - 20;
-    this.measureDrawY = this.staveTopY - STAVE_TOP_LINE_Y;
+    // Line 0 is at -20 * zoom from center
+    this.staveTopY = centerY - 20 * this.zoom;
+    // Measure canvas line 0 is at 80 * zoom from measure canvas top (STAVE_TOP_LINE_Y = 80)
+    this.measureDrawY = centerY - 100 * this.zoom;
   }
 
   public startLoop(): void {
@@ -129,8 +147,12 @@ export class ScrollerView {
    */
   public renderFrame(overrideSettings?: AppSettings): void {
     const settings = overrideSettings ?? this.getSettings();
+    if (settings.zoom !== undefined && settings.zoom !== this.zoom) {
+      this.setZoom(settings.zoom);
+    }
     const ctx = this.ctx;
     const dpr = this.dpr;
+    const zoom = this.zoom;
     const w = this.viewportWidth;
     const h = this.viewportHeight;
     const resolvedTheme = resolveTheme(settings.theme);
@@ -155,10 +177,10 @@ export class ScrollerView {
     );
 
     // 4. Update ring buffer: pre-render upcoming measures and evict offscreen ones
-    const lookaheadBeats = (w - this.playheadX) / activeBeatWidth + 6;
+    const lookaheadBeats = (w - this.playheadX) / (activeBeatWidth * zoom) + 6;
     this.buffer.ensureAhead(currentGlobalBeat, lookaheadBeats, settings);
 
-    const minVisibleBeat = currentGlobalBeat - this.playheadX / activeBeatWidth - 2;
+    const minVisibleBeat = currentGlobalBeat - this.playheadX / (activeBeatWidth * zoom) - 2;
     this.buffer.evictBefore(minVisibleBeat);
 
     // 5. Blit visible measures from ring-buffer with subpixel floating-point positioning
@@ -167,7 +189,7 @@ export class ScrollerView {
       const m = measures[i];
       // Subpixel screen X: noteheads cross playhead at their exact fractional beat time
       const measureScreenX =
-        this.playheadX - NOTE_START_OFFSET + (m.data.startBeat - currentGlobalBeat) * m.data.beatWidth;
+        this.playheadX - NOTE_START_OFFSET * zoom + (m.data.startBeat - currentGlobalBeat) * (m.data.beatWidth * zoom);
 
       if (measureScreenX + m.width >= 0 && measureScreenX <= w) {
         ctx.drawImage(
@@ -202,8 +224,9 @@ export class ScrollerView {
     ctx.lineWidth = 1;
     ctx.beginPath();
 
+    const lineSpacing = 10 * this.zoom;
     for (let line = 0; line < 5; line++) {
-      const y = Math.round(this.staveTopY + line * 10) + 0.5;
+      const y = Math.round(this.staveTopY + line * lineSpacing) + 0.5;
       ctx.moveTo(0, y);
       ctx.lineTo(width, y);
     }
@@ -217,6 +240,9 @@ export class ScrollerView {
    */
   public renderEmptyFrame(overrideSettings?: AppSettings): void {
     const settings = overrideSettings ?? this.getSettings();
+    if (settings.zoom !== undefined && settings.zoom !== this.zoom) {
+      this.setZoom(settings.zoom);
+    }
     const ctx = this.ctx;
     const dpr = this.dpr;
     const w = this.viewportWidth;
@@ -253,10 +279,11 @@ export class ScrollerView {
       this.cachedClefTheme = theme;
     }
 
-    const clefX = 24;
-    const maskSolidWidth = 100;
-    const fadeWidth = 45;
-    const totalMargin = maskSolidWidth + fadeWidth; // 145px
+    const zoom = this.zoom;
+    const clefX = 24 * zoom;
+    const maskSolidWidth = 100 * zoom;
+    const fadeWidth = 45 * zoom;
+    const totalMargin = maskSolidWidth + fadeWidth; // 145 * zoom
 
     // Full-height solid mask behind pinned clef to prevent ledger lines/stems poking out
     ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
@@ -273,8 +300,9 @@ export class ScrollerView {
     ctx.strokeStyle = isDark ? '#475569' : '#64748b';
     ctx.lineWidth = 1;
     ctx.beginPath();
+    const lineSpacing = 10 * zoom;
     for (let line = 0; line < 5; line++) {
-      const y = Math.round(this.staveTopY + line * 10) + 0.5;
+      const y = Math.round(this.staveTopY + line * lineSpacing) + 0.5;
       ctx.moveTo(0, y);
       ctx.lineTo(totalMargin, y);
     }
@@ -289,12 +317,13 @@ export class ScrollerView {
       this.pinnedClefCanvas.height,
       clefX,
       this.measureDrawY,
-      80,
-      MEASURE_CANVAS_HEIGHT
+      80 * zoom,
+      MEASURE_CANVAS_HEIGHT * zoom
     );
   }
 
   private drawPlayhead(ctx: CanvasRenderingContext2D, height: number): void {
+    const zoom = this.zoom;
     const x = Math.round(this.playheadX) + 0.5;
 
     // Subtle background glow behind playhead line
@@ -308,30 +337,35 @@ export class ScrollerView {
     ctx.fillStyle = gradient;
     ctx.fillRect(x - 3, 0, 7, height);
 
-    // Crisp playhead line
+    // Crisp playhead line spanning staff lines + clearance
+    const topY = this.staveTopY - 35 * zoom;
+    const bottomY = this.staveTopY + 75 * zoom;
     ctx.strokeStyle = '#dc2626';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(x, this.staveTopY - 35);
-    ctx.lineTo(x, this.staveTopY + 75);
+    ctx.moveTo(x, topY);
+    ctx.lineTo(x, bottomY);
     ctx.stroke();
 
     // Accent pointers at top and bottom of playhead line
     ctx.fillStyle = '#dc2626';
 
+    const triW = 4 * Math.min(1.2, Math.max(0.75, zoom));
+    const triH = 8 * Math.min(1.2, Math.max(0.75, zoom));
+
     // Top triangle
     ctx.beginPath();
-    ctx.moveTo(x - 4, this.staveTopY - 35);
-    ctx.lineTo(x + 4, this.staveTopY - 35);
-    ctx.lineTo(x, this.staveTopY - 27);
+    ctx.moveTo(x - triW, topY);
+    ctx.lineTo(x + triW, topY);
+    ctx.lineTo(x, topY + triH);
     ctx.closePath();
     ctx.fill();
 
     // Bottom triangle
     ctx.beginPath();
-    ctx.moveTo(x - 4, this.staveTopY + 75);
-    ctx.lineTo(x + 4, this.staveTopY + 75);
-    ctx.lineTo(x, this.staveTopY + 67);
+    ctx.moveTo(x - triW, bottomY);
+    ctx.lineTo(x + triW, bottomY);
+    ctx.lineTo(x, bottomY - triH);
     ctx.closePath();
     ctx.fill();
   }

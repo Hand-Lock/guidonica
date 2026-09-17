@@ -1,4 +1,12 @@
-import { AppSettings, DEFAULT_TUPLET_OPTIONS, SoundProfile, ThemeMode } from './notation/types';
+import {
+  AppSettings,
+  DEFAULT_TUPLET_OPTIONS,
+  DEFAULT_ZOOM,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  SoundProfile,
+  ThemeMode,
+} from './notation/types';
 
 export const STORAGE_KEY = 'guidonica_settings_v1';
 export const LEGACY_STORAGE_KEY_V2 = 'solfege_scroller_settings_v2';
@@ -43,6 +51,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   theme: 'auto',
   volume: 0.8,
   isMuted: false,
+  zoom: DEFAULT_ZOOM,
 };
 
 /**
@@ -93,12 +102,18 @@ export function loadStoredSettings(): AppSettings {
       theme = 'auto';
     }
 
+    let zoom = DEFAULT_APP_SETTINGS.zoom;
+    if (typeof parsed.zoom === 'number' && !isNaN(parsed.zoom)) {
+      zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, parsed.zoom));
+    }
+
     return {
       ...DEFAULT_APP_SETTINGS,
       ...parsed,
       solfegeLabelMode,
       soundProfile,
       theme,
+      zoom,
       subdivisions: {
         ...DEFAULT_APP_SETTINGS.subdivisions,
         ...(parsed.subdivisions || {}),
