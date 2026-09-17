@@ -124,6 +124,7 @@ To attach a custom domain (e.g., `https://solfegescroller.com`):
   - [ADR 0009: Cross-Platform Portability and GitHub Synchronization](docs/adr/0009-cross-platform-portability-and-github-synchronization.md)
   - [ADR 0018: Continuous Deployment to GitHub Pages via GitHub Actions & Custom Domain Readiness](docs/adr/0018-github-actions-pages-continuous-deployment.md)
   - [ADR 0019: Strict Copyleft Open-Source Licensing (GNU AGPLv3)](docs/adr/0019-licensing-strict-copyleft-agplv3.md)
+  - [ADR 0020: In-App License and Repository Presentation Architecture](docs/adr/0020-in-app-license-and-repository-ui.md)
 
 ---
 

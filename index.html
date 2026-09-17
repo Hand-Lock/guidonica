@@ -63,6 +63,14 @@
           </div>
 
           <div class="utility-actions">
+            <a id="btn-github-link" class="btn-icon-only btn-github" href="https://github.com/Hand-Lock/solfege-scroller" target="_blank" rel="noopener noreferrer" aria-label="GitHub Repository" title="GitHub Repository & AGPLv3 License">
+              <svg class="nav-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+            </a>
+            <button id="btn-about-toggle" class="btn-icon-only" type="button" aria-label="About & License" title="About & License">
+              <span class="btn-icon">ℹ️</span>
+            </button>
             <button id="btn-theme-toggle" class="btn-icon-only" type="button" aria-label="Theme: Auto (OS). Click to cycle theme." title="Theme: Auto (OS)">
               <span id="theme-icon">🌓</span>
             </button>
@@ -389,6 +397,12 @@
               <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.8" aria-label="Metronome volume" />
             </div>
           </div>
+
+          <div class="control-group drawer-about-group">
+            <button id="btn-drawer-about" class="btn btn-secondary btn-drawer-about" type="button" aria-label="Open About and License dialog">
+              <span>ℹ️ About & License</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -401,8 +415,65 @@
         <span><kbd>R</kbd> / <kbd>Esc</kbd> Reset</span>
         <span><kbd>↑</kbd>/<kbd>↓</kbd> ±5 BPM</span>
         <span><kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> ±1 BPM</span>
-        <span class="footer-source"><a href="https://github.com/Hand-Lock/solfege-scroller" target="_blank" rel="noopener noreferrer" title="View Source Code on GitHub (AGPL-3.0-or-later)">AGPL-3.0 Source</a></span>
+        <span class="footer-source">
+          <button id="btn-footer-about" class="btn-link" type="button">License & Info</button> &nbsp;•&nbsp;
+          <a href="https://github.com/Hand-Lock/solfege-scroller" target="_blank" rel="noopener noreferrer" title="View Source Code on GitHub (AGPL-3.0-or-later)">GitHub</a>
+        </span>
       </footer>
+
+      <!-- In-App About & License Modal Dialog -->
+      <dialog id="modal-about" class="about-dialog" aria-labelledby="about-dialog-title">
+        <div class="about-dialog-content">
+          <div class="about-dialog-header">
+            <h2 id="about-dialog-title">About Solfège Scroller</h2>
+            <button id="btn-about-close" class="btn-close" type="button" aria-label="Close dialog">✕</button>
+          </div>
+
+          <div class="about-dialog-body">
+            <p class="about-tagline">
+              High-performance, client-only web tool for sight-reading and solfège practice. Continuously streams procedurally generated music notation across a fixed playhead in synchronization with a Web Audio synthesized metronome.
+            </p>
+
+            <div class="about-meta-grid">
+              <div class="about-meta-row">
+                <span class="meta-label">Author</span>
+                <span class="meta-value"><strong>A. C. Lo Cascio</strong></span>
+              </div>
+              <div class="about-meta-row">
+                <span class="meta-label">License</span>
+                <span class="meta-value"><span class="badge-license">GNU AGPLv3</span> (Strict Copyleft)</span>
+              </div>
+              <div class="about-meta-row">
+                <span class="meta-label">Copyright</span>
+                <span class="meta-value">&copy; 2026 A. C. Lo Cascio</span>
+              </div>
+              <div class="about-meta-row">
+                <span class="meta-label">Repository</span>
+                <span class="meta-value"><a href="https://github.com/Hand-Lock/solfege-scroller" target="_blank" rel="noopener noreferrer" class="link-external">github.com/Hand-Lock/solfege-scroller ↗</a></span>
+              </div>
+            </div>
+
+            <div class="about-section">
+              <h3>Strict Copyleft (AGPLv3)</h3>
+              <p>
+                This software is free and open-source under the <strong>GNU Affero General Public License v3.0 or later</strong>. You are free to run, study, and modify it. In accordance with Section 13, any modified version deployed as a service over a computer network must make its complete source code available to all users.
+              </p>
+            </div>
+
+            <div class="about-section">
+              <h3>Third-Party Acknowledgements</h3>
+              <p>
+                Music notation layout and rendering powered by <a href="https://github.com/vexflow/vexflow" target="_blank" rel="noopener noreferrer" class="link-external">VexFlow 5</a> (MIT License).
+              </p>
+            </div>
+          </div>
+
+          <div class="about-dialog-footer">
+            <a href="https://github.com/Hand-Lock/solfege-scroller/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">View Full LICENSE</a>
+            <button id="btn-about-dismiss" class="btn btn-primary" type="button">Close</button>
+          </div>
+        </div>
+      </dialog>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

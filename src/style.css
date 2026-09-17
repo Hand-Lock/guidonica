@@ -724,6 +724,11 @@ kbd {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+.footer-source {
+  display: inline-flex;
+  align-items: center;
+}
+
 .footer-source a {
   color: var(--text-muted);
   text-decoration: underline;
@@ -734,6 +739,194 @@ kbd {
 
 .footer-source a:hover {
   color: var(--accent);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease-in-out;
+}
+
+.btn-link:hover {
+  color: var(--accent);
+}
+
+a.btn-icon-only {
+  text-decoration: none;
+  color: var(--text-main);
+}
+
+.nav-icon {
+  display: block;
+}
+
+.drawer-about-group {
+  margin-top: 4px;
+}
+
+.btn-drawer-about {
+  width: 100%;
+  height: 34px;
+}
+
+/* About & License Modal Dialog */
+dialog.about-dialog {
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--popover-bg);
+  color: var(--text-main);
+  padding: 0;
+  max-width: 520px;
+  width: calc(100% - 32px);
+  margin: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+dialog.about-dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.about-dialog-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.about-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.about-dialog-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.about-dialog-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-main);
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.about-tagline {
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 13px;
+}
+
+.about-meta-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+
+.about-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.meta-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.meta-value {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.badge-license {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.link-external {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-external:hover {
+  color: var(--accent-hover);
+}
+
+.about-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.about-section h3 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.about-section p {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 12px;
+}
+
+.about-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--panel-border);
+  background: var(--btn-secondary-bg);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.about-dialog-footer a.btn {
+  text-decoration: none;
 }
 
 .hidden {
