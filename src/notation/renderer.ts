@@ -20,11 +20,13 @@ import {
   NOTE_LETTER_NAMES,
   NOTE_START_OFFSET,
   NoteData,
+  PINNED_HEADER_WIDTH,
   RenderedMeasure,
   SOLFEGE_SYLLABLES,
   STAVE_CANVAS_Y,
   SolfegeLabelMode,
   ThemeMode,
+  TimeSignature,
   resolveTheme,
 } from './types';
 
@@ -281,27 +283,48 @@ export class MeasureRenderer {
   }
 
   /**
-   * Renders the stationary clef glyph onto an offscreen canvas to pin at the left margin.
+   * Renders the stationary clef and selected time signature glyphs onto an offscreen
+   * canvas to pin at the left margin.
    */
-  public renderPinnedClef(clef: Clef, theme: ThemeMode = 'auto'): HTMLCanvasElement {
+  public renderPinnedClef(clef: Clef, theme?: ThemeMode): HTMLCanvasElement;
+  public renderPinnedClef(clef: Clef, timeSignature: TimeSignature, theme?: ThemeMode): HTMLCanvasElement;
+  public renderPinnedClef(
+    clef: Clef,
+    timeSignatureOrTheme: TimeSignature | ThemeMode = '4/4',
+    maybeTheme: ThemeMode = 'auto'
+  ): HTMLCanvasElement {
+    let timeSignature: TimeSignature = '4/4';
+    let theme: ThemeMode = 'auto';
+
+    if (
+      timeSignatureOrTheme === 'auto' ||
+      timeSignatureOrTheme === 'light' ||
+      timeSignatureOrTheme === 'dark'
+    ) {
+      theme = timeSignatureOrTheme;
+    } else {
+      timeSignature = timeSignatureOrTheme;
+      theme = maybeTheme;
+    }
+
     const dpr = this.dpr;
     const zoom = this.zoom;
-    const width = 80;
+    const width = PINNED_HEADER_WIDTH;
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.floor(width * dpr * zoom));
     canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr * zoom));
 
     const isDark = resolveTheme(theme) === 'dark';
-    const clefColor = isDark ? '#f8fafc' : '#000000';
+    const headerColor = isDark ? '#f8fafc' : '#000000';
 
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     renderer.resize(canvas.width, canvas.height);
     const ctx = renderer.getContext();
     ctx.scale(dpr * zoom, dpr * zoom);
-    ctx.setFillStyle(clefColor);
-    ctx.setStrokeStyle(clefColor);
+    ctx.setFillStyle(headerColor);
+    ctx.setStrokeStyle(headerColor);
 
-    // The pinned clef is drawn with hidden lines so it cleanly overlays stationary staff lines
+    // The pinned clef + time signature is drawn with hidden lines so it cleanly overlays stationary staff lines
     const stave = new Stave(10, STAVE_CANVAS_Y, width - 10, {
       leftBar: false,
       rightBar: false,
@@ -315,13 +338,22 @@ export class MeasureRenderer {
     ]);
 
     stave.addClef(clef);
-    stave.setStyle({ strokeStyle: clefColor, fillStyle: clefColor });
+    stave.addTimeSignature(timeSignature);
+    stave.setStyle({ strokeStyle: headerColor, fillStyle: headerColor });
     for (const mod of stave.getModifiers()) {
-      mod.setStyle({ fillStyle: clefColor, strokeStyle: clefColor });
+      mod.setStyle({ fillStyle: headerColor, strokeStyle: headerColor });
     }
     stave.setContext(ctx).draw();
 
     return canvas;
+  }
+
+  public renderPinnedHeader(
+    clef: Clef,
+    timeSignature: TimeSignature,
+    theme: ThemeMode = 'auto'
+  ): HTMLCanvasElement {
+    return this.renderPinnedClef(clef, timeSignature, theme);
   }
 
   private createStaveNote(

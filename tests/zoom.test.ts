@@ -1,11 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
+  Clef,
   DEFAULT_ZOOM,
   MAX_ZOOM,
   MEASURE_CANVAS_HEIGHT,
+  MIN_PLAYHEAD_X,
   MIN_ZOOM,
   NOTE_START_OFFSET,
+  PINNED_HEADER_WIDTH,
   STAVE_TOP_LINE_Y,
+  TimeSignature,
   ZOOM_STEP,
   computeBeatWidth,
 } from '../src/notation/types';
@@ -51,6 +55,7 @@ describe('In-App Notation Zoom Pipeline', () => {
   afterEach(() => {
     HTMLCanvasElement.prototype.getContext = originalGetContext;
   });
+
   it('defines valid zoom boundary and step constants', () => {
     expect(MIN_ZOOM).toBe(0.5);
     expect(MAX_ZOOM).toBe(1.5);
@@ -76,27 +81,42 @@ describe('In-App Notation Zoom Pipeline', () => {
     expect(renderer.getZoom()).toBe(MAX_ZOOM);
   });
 
-  it('rasterizes pinned clef canvas scaled to dpr and zoom', () => {
+  it('rasterizes pinned clef and time signature canvas scaled to dpr and zoom', () => {
     const renderer = new MeasureRenderer();
     renderer.setDpr(2);
 
     renderer.setZoom(1.0);
-    const canvas100 = renderer.renderPinnedClef('treble', 'light');
-    // base width = 80, height = 220. At dpr=2, zoom=1: width=160, height=440
-    expect(canvas100.width).toBe(160);
+    const canvas100 = renderer.renderPinnedClef('treble', '4/4', 'light');
+    // base width = PINNED_HEADER_WIDTH (115), height = 220. At dpr=2, zoom=1: width=230, height=440
+    expect(canvas100.width).toBe(Math.floor(PINNED_HEADER_WIDTH * 2 * 1.0));
     expect(canvas100.height).toBe(440);
 
     renderer.setZoom(0.75);
-    const canvas75 = renderer.renderPinnedClef('treble', 'light');
-    // At dpr=2, zoom=0.75: width = 80 * 2 * 0.75 = 120, height = 220 * 2 * 0.75 = 330
-    expect(canvas75.width).toBe(120);
+    const canvas75 = renderer.renderPinnedClef('treble', '4/4', 'light');
+    // At dpr=2, zoom=0.75: width = 115 * 2 * 0.75 = 172.5 -> floor = 172, height = 220 * 2 * 0.75 = 330
+    expect(canvas75.width).toBe(Math.floor(PINNED_HEADER_WIDTH * 2 * 0.75));
     expect(canvas75.height).toBe(330);
 
     renderer.setZoom(1.5);
-    const canvas150 = renderer.renderPinnedClef('treble', 'light');
-    // At dpr=2, zoom=1.5: width = 80 * 2 * 1.5 = 240, height = 220 * 2 * 1.5 = 660
-    expect(canvas150.width).toBe(240);
+    const canvas150 = renderer.renderPinnedClef('treble', '4/4', 'light');
+    // At dpr=2, zoom=1.5: width = 115 * 2 * 1.5 = 345, height = 220 * 2 * 1.5 = 660
+    expect(canvas150.width).toBe(Math.floor(PINNED_HEADER_WIDTH * 2 * 1.5));
     expect(canvas150.height).toBe(660);
+  });
+
+  it('rasterizes pinned header across all time signatures and clefs', () => {
+    const renderer = new MeasureRenderer();
+    const clefs: Clef[] = ['treble', 'bass', 'alto', 'tenor'];
+    const timeSigs: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
+
+    for (const clef of clefs) {
+      for (const ts of timeSigs) {
+        const canvas = renderer.renderPinnedHeader(clef, ts, 'light');
+        expect(canvas).toBeInstanceOf(HTMLCanvasElement);
+        expect(canvas.width).toBe(PINNED_HEADER_WIDTH);
+        expect(canvas.height).toBe(MEASURE_CANVAS_HEIGHT);
+      }
+    }
   });
 
   it('mathematically preserves exact staff line vertical alignment across all zoom levels', () => {
@@ -127,7 +147,7 @@ describe('In-App Notation Zoom Pipeline', () => {
     );
 
     for (const zoom of testZooms) {
-      const playheadX = Math.max(Math.round(175 * zoom), Math.round(viewportWidth * 0.22));
+      const playheadX = Math.max(Math.round(MIN_PLAYHEAD_X * zoom), Math.round(viewportWidth * 0.22));
       const startBeat = 12;
       const noteOffset = 2.5; // note on beat 2.5 of measure
       const noteGlobalBeat = startBeat + noteOffset;
@@ -151,7 +171,7 @@ describe('In-App Notation Zoom Pipeline', () => {
     const beatWidth = 110;
 
     const getLookaheadBeats = (zoom: number): number => {
-      const playheadX = Math.max(Math.round(175 * zoom), Math.round(w * 0.22));
+      const playheadX = Math.max(Math.round(MIN_PLAYHEAD_X * zoom), Math.round(w * 0.22));
       return (w - playheadX) / (beatWidth * zoom) + 6;
     };
 

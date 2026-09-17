@@ -4,10 +4,17 @@ import {
   DEFAULT_ZOOM,
   MAX_ZOOM,
   MEASURE_CANVAS_HEIGHT,
+  MIN_PLAYHEAD_X,
   MIN_ZOOM,
   NOTE_START_OFFSET,
+  PINNED_HEADER_FADE_WIDTH,
+  PINNED_HEADER_MASK_WIDTH,
+  PINNED_HEADER_OFFSET_X,
+  PINNED_HEADER_TOTAL_MARGIN,
+  PINNED_HEADER_WIDTH,
   ResolvedTheme,
   STAVE_TOP_LINE_Y,
+  TimeSignature,
   computeBeatWidth,
   resolveTheme,
 } from '../notation/types';
@@ -32,9 +39,10 @@ export class ScrollerView {
   private staveTopY: number = 0;
   private measureDrawY: number = 0;
 
-  // Cached pinned clef canvas
+  // Cached pinned clef + time signature canvas
   private pinnedClefCanvas: HTMLCanvasElement | null = null;
   private cachedClef: Clef | null = null;
+  private cachedTimeSignature: TimeSignature | null = null;
   private cachedClefTheme: string | null = null;
 
   private rafId: number | null = null;
@@ -71,7 +79,12 @@ export class ScrollerView {
   public invalidatePinnedClef(): void {
     this.pinnedClefCanvas = null;
     this.cachedClef = null;
+    this.cachedTimeSignature = null;
     this.cachedClefTheme = null;
+  }
+
+  public invalidatePinnedHeader(): void {
+    this.invalidatePinnedClef();
   }
 
   public setZoom(zoom: number): void {
@@ -108,8 +121,8 @@ export class ScrollerView {
     this.canvas.style.height = `${this.viewportHeight}px`;
     this.renderer.setDpr(this.dpr);
 
-    // Playhead fixed at 22% of viewport width with minimum clearance of clef fade margin (145 * zoom + 30 * zoom)
-    const minPlayheadX = Math.round(175 * this.zoom);
+    // Playhead fixed at 22% of viewport width with minimum clearance of pinned header fade margin
+    const minPlayheadX = Math.round(MIN_PLAYHEAD_X * this.zoom);
     this.playheadX = Math.max(minPlayheadX, Math.round(this.viewportWidth * 0.22));
 
     // Center the 5 stave lines vertically around viewport center
@@ -206,8 +219,8 @@ export class ScrollerView {
       }
     }
 
-    // 6. Draw pinned clef at the left margin with clean gradient fade
-    this.drawPinnedClef(ctx, settings.clef, h, isDark, resolvedTheme);
+    // 6. Draw pinned clef & time signature at the left margin with clean gradient fade
+    this.drawPinnedClef(ctx, settings.clef, settings.timeSignature, h, isDark, resolvedTheme);
 
     // 7. Draw fixed playhead guide line in high-contrast red accent
     this.drawPlayhead(ctx, h);
@@ -265,6 +278,7 @@ export class ScrollerView {
   private drawPinnedClef(
     ctx: CanvasRenderingContext2D,
     clef: Clef,
+    timeSignature: TimeSignature,
     height: number,
     isDark: boolean,
     theme: ResolvedTheme
@@ -273,19 +287,25 @@ export class ScrollerView {
       return;
     }
 
-    if (!this.pinnedClefCanvas || this.cachedClef !== clef || this.cachedClefTheme !== theme) {
-      this.pinnedClefCanvas = this.renderer.renderPinnedClef(clef, theme);
+    if (
+      !this.pinnedClefCanvas ||
+      this.cachedClef !== clef ||
+      this.cachedTimeSignature !== timeSignature ||
+      this.cachedClefTheme !== theme
+    ) {
+      this.pinnedClefCanvas = this.renderer.renderPinnedClef(clef, timeSignature, theme);
       this.cachedClef = clef;
+      this.cachedTimeSignature = timeSignature;
       this.cachedClefTheme = theme;
     }
 
     const zoom = this.zoom;
-    const clefX = 24 * zoom;
-    const maskSolidWidth = 100 * zoom;
-    const fadeWidth = 45 * zoom;
-    const totalMargin = maskSolidWidth + fadeWidth; // 145 * zoom
+    const headerX = PINNED_HEADER_OFFSET_X * zoom;
+    const maskSolidWidth = PINNED_HEADER_MASK_WIDTH * zoom;
+    const fadeWidth = PINNED_HEADER_FADE_WIDTH * zoom;
+    const totalMargin = PINNED_HEADER_TOTAL_MARGIN * zoom;
 
-    // Full-height solid mask behind pinned clef to prevent ledger lines/stems poking out
+    // Full-height solid mask behind pinned header to prevent ledger lines/stems poking out
     ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
     ctx.fillRect(0, 0, maskSolidWidth, height);
 
@@ -308,16 +328,16 @@ export class ScrollerView {
     }
     ctx.stroke();
 
-    // Draw the pinned clef glyph
+    // Draw the pinned clef + time signature glyphs
     ctx.drawImage(
       this.pinnedClefCanvas,
       0,
       0,
       this.pinnedClefCanvas.width,
       this.pinnedClefCanvas.height,
-      clefX,
+      headerX,
       this.measureDrawY,
-      80 * zoom,
+      PINNED_HEADER_WIDTH * zoom,
       MEASURE_CANVAS_HEIGHT * zoom
     );
   }
