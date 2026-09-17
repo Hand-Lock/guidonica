@@ -285,3 +285,28 @@ export function computeBeatWidth(
   // Quarter notes, half notes, whole notes:
   return 110;
 }
+
+/**
+ * W3C Audio Session API specification types (WebKit Safari 16.4+).
+ * Direct mapping to native iOS AVAudioSessionCategory.
+ */
+export type AudioSessionType =
+  | 'auto'
+  | 'playback'
+  | 'transient'
+  | 'transient-solo'
+  | 'ambient'
+  | 'play-and-record';
+
+export interface NavigatorAudioSession {
+  type: AudioSessionType;
+  readonly state?: 'inactive' | 'active' | 'interrupted';
+  addEventListener?: (type: string, listener: EventListenerOrEventListenerObject) => void;
+  removeEventListener?: (type: string, listener: EventListenerOrEventListenerObject) => void;
+}
+
+declare global {
+  interface Navigator {
+    audioSession?: NavigatorAudioSession;
+  }
+}

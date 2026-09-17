@@ -32,6 +32,7 @@ This directory documents the core architectural decisions, implementation method
 | [0024](0024-haptic-feedback-feasibility-and-rejection.md) | Technical Feasibility Evaluation and Rejection of Web Haptic Motor Feedback | Decided | 2026-09-18 |
 | [0025](0025-in-app-notation-zoom-and-mobile-ergonomics.md) | In-App Notation Zoom & Mobile Ergonomics | Accepted | 2026-09-18 |
 | [0026](0026-stationary-time-signature-and-stave-header.md) | Stationary Selected Time Signature & Left Stave Header | Accepted | 2026-09-18 |
+| [0027](0027-ios-silent-mode-dynamic-audio-session.md) | Dynamic iOS AudioSession: Ambient UI & Playback Metronome | Accepted | 2026-09-18 |
 
 ---
 

@@ -72,4 +72,62 @@ describe('MetronomeEngine', () => {
     metronome.setTimeSignature('6/8');
     expect(metronome.getCurrentGlobalBeat()).toBe(-6);
   });
+
+  it('dynamically switches audio session between ambient (idle/pause/stop) and playback (active practice)', () => {
+    // Mock W3C AudioSession API
+    const mockSession = {
+      type: 'auto' as const,
+    };
+    Object.defineProperty(navigator, 'audioSession', {
+      value: mockSession,
+      configurable: true,
+      writable: true,
+    });
+
+    metronome = new MetronomeEngine(60, '4/4');
+    // Initial state must be ambient to respect silent mode and not hijack other media
+    expect(mockSession.type).toBe('ambient');
+    expect(metronome.getAudioSessionType()).toBe('ambient');
+
+    // Start practice: must elevate to playback to cut through iOS silent switch
+    metronome.start(false);
+    expect(mockSession.type).toBe('playback');
+    expect(metronome.getAudioSessionType()).toBe('playback');
+
+    // Pause practice: must revert to ambient to respect silent mode for UI
+    metronome.pause();
+    expect(mockSession.type).toBe('ambient');
+    expect(metronome.getAudioSessionType()).toBe('ambient');
+
+    // Resume practice: re-elevate to playback
+    metronome.resume();
+    expect(mockSession.type).toBe('playback');
+    expect(metronome.getAudioSessionType()).toBe('playback');
+
+    // Stop practice: revert to ambient
+    metronome.stop();
+    expect(mockSession.type).toBe('ambient');
+    expect(metronome.getAudioSessionType()).toBe('ambient');
+
+    // Destroy: ensure session remains ambient
+    metronome.destroy();
+    expect(mockSession.type).toBe('ambient');
+
+    // Clean up mock
+    delete (navigator as { audioSession?: unknown }).audioSession;
+  });
+
+  it('safely handles environments where navigator.audioSession is absent', () => {
+    delete (navigator as { audioSession?: unknown }).audioSession;
+    metronome = new MetronomeEngine(60, '4/4');
+    expect(metronome.getAudioSessionType()).toBeNull();
+
+    expect(() => {
+      metronome.start(false);
+      metronome.pause();
+      metronome.resume();
+      metronome.stop();
+      metronome.destroy();
+    }).not.toThrow();
+  });
 });
