@@ -2,7 +2,7 @@
 
 > High-performance, client-only web tool for sight-reading and solfège practice. Continuously streams procedurally generated music notation across a fixed playhead in sample-accurate synchronization with a Web Audio synthesized metronome.
 
-**Live Application**: [https://hand-lock.github.io/solfege-scroller/](https://hand-lock.github.io/solfege-scroller/)
+**Live Application**: [https://hand-lock.github.io/solfege-scroller/](https://hand-lock.github.io/solfege-scroller/) &nbsp;|&nbsp; [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 
 ---
 
@@ -123,9 +123,18 @@ To attach a custom domain (e.g., `https://solfegescroller.com`):
   - [ADR 0008: Pause and Resume State Synchronization & Phase Alignment](docs/adr/0008-pause-and-resume-state-synchronization.md)
   - [ADR 0009: Cross-Platform Portability and GitHub Synchronization](docs/adr/0009-cross-platform-portability-and-github-synchronization.md)
   - [ADR 0018: Continuous Deployment to GitHub Pages via GitHub Actions & Custom Domain Readiness](docs/adr/0018-github-actions-pages-continuous-deployment.md)
+  - [ADR 0019: Strict Copyleft Open-Source Licensing (GNU AGPLv3)](docs/adr/0019-licensing-strict-copyleft-agplv3.md)
 
 ---
 
 ## License
 
-MIT License. See code comments and individual files for details.
+This project is free and open-source software licensed under the **[GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)](LICENSE)**.
+
+Copyright &copy; 2026 **A. C. Lo Cascio**.
+
+### Copyleft Terms
+- **Freedom & Reciprocity**: You are free to run, study, modify, and distribute this software.
+- **Strict Copyleft (Section 13)**: If you modify this program and run it on a server or deploy it as a network/cloud service where users interact with it remotely, you **must** make the complete Corresponding Source code of your modified version available to all users under the terms of the AGPLv3.
+- **Third-Party Acknowledgements**: This project incorporates [VexFlow](https://github.com/vexflow/vexflow), licensed under the [MIT License](https://github.com/vexflow/vexflow/blob/master/LICENSE.txt).
+

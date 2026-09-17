@@ -28,8 +28,8 @@
     "canvas",
     "web-audio"
   ],
-  "author": "HandLock_",
-  "license": "MIT",
+  "author": "A. C. Lo Cascio",
+  "license": "AGPL-3.0-or-later",
   "dependencies": {
     "vexflow": "^5.0.0"
   },
