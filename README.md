@@ -83,8 +83,8 @@ Guidonica is fully cross-platform and tested for Apple Silicon on macOS:
    Modern macOS browsers (Safari, Chrome, Arc, Brave) enforce autoplay restrictions. The application cleanly instantiates and unlocks the `AudioContext` upon the first explicit user interaction (clicking **Start** or pressing the `Space` key).
 3. **Retina Display Scaling**:
    On high-density displays (such as MacBook Retina screens), the canvas automatically detects `devicePixelRatio: 2` and scales the canvas viewport buffer, ensuring crisp note glyphs and subpixel-smooth scrolling.
-4. **Native Typography**:
-   UI styling leverages native Apple system font stacks (`-apple-system`, `SF Pro`, `SF Mono`) for seamless macOS look and feel.
+4. **Typography & Font Fallbacks**:
+   UI styling pairs Google Fonts (`Alegreya`, `Alegreya Sans`, `Ubuntu Mono`) with native system font stacks (`-apple-system`, `SF Pro`, `SF Mono`) for resilient, high-legibility cross-platform rendering.
 
 ---
 

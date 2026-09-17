@@ -8,7 +8,7 @@
   color-scheme: light;
   --font-title: 'Alegreya', Georgia, 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
   --font-family: 'Alegreya Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'SF Mono', 'Cascadia Code', Consolas, Menlo, Monaco, monospace;
+  --font-mono: 'Ubuntu Mono', 'SF Mono', 'Cascadia Code', Consolas, Menlo, Monaco, monospace;
 
   /* Ambient Canvas & Window Framing */
   --bg-gradient: linear-gradient(135deg, #e3effb 0%, #f0f6fd 45%, #e8f2fc 100%);
@@ -97,7 +97,7 @@
   color-scheme: dark;
   --font-title: 'Alegreya', Georgia, 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
   --font-family: 'Alegreya Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'SF Mono', 'Cascadia Code', Consolas, Menlo, Monaco, monospace;
+  --font-mono: 'Ubuntu Mono', 'SF Mono', 'Cascadia Code', Consolas, Menlo, Monaco, monospace;
 
   /* Ambient Canvas & Window Framing */
   --bg-gradient: linear-gradient(135deg, #070b14 0%, #0d1628 50%, #080e1a 100%);
@@ -187,7 +187,7 @@
     color-scheme: dark;
     --font-title: 'Alegreya', Georgia, 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
     --font-family: 'Alegreya Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'SF Mono', 'Cascadia Code', Consolas, Menlo, Monaco, monospace;
+    --font-mono: 'Ubuntu Mono', 'SF Mono', 'Cascadia Code', Consolas, Menlo, Monaco, monospace;
 
     --bg-gradient: linear-gradient(135deg, #070b14 0%, #0d1628 50%, #080e1a 100%);
     --bg-color: #090e1a;
@@ -280,6 +280,10 @@ html, body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+code, kbd, pre, samp {
+  font-family: var(--font-mono);
 }
 
 #app {
@@ -572,6 +576,12 @@ html, body {
   min-width: 180px;
 }
 
+#bpm-display {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .tempo-inputs {
   display: flex;
   align-items: center;
@@ -583,6 +593,7 @@ html, body {
   text-align: center;
   font-family: var(--font-mono);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Skeuomorphic Range Slider (Webkit & Firefox) */

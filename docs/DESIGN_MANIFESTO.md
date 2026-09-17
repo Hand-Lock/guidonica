@@ -46,10 +46,12 @@ Guidonica uses two complementary typefaces designed by Huerta Tipográfica, marr
   ```
 
 #### C. Numeric & Monospace Data
-- **Role**: Tempo display (BPM), keyboard shortcuts (`<kbd>`), and technical values.
+- **Classification**: Monospace humanist font designed by Dalton Maag.
+- **Role**: Tempo display (BPM), number inputs, keyboard shortcuts (`<kbd>`), metric ratio badges, and technical values.
+- **Rationale**: Features distinct numeral shapes and comfortable horizontal rhythm that ensure rapid legibility at both high tempos and small badge dimensions.
 - **Font Stack**:
   ```css
-  --font-mono: 'SF Mono', 'Cascadia Code', Consolas, Menlo, Monaco, monospace;
+  --font-mono: 'Ubuntu Mono', 'SF Mono', 'Cascadia Code', Consolas, Menlo, Monaco, monospace;
   ```
 
 ---
