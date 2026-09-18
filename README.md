@@ -1,6 +1,6 @@
 # Guidonica
 
-> High-performance, client-only web tool for sight-reading and solfège practice. Continuously streams procedurally generated music notation across a fixed playhead in sample-accurate synchronization with a Web Audio synthesized metronome.
+> Guidonica is a high-performance, client-only web app for sight-reading and solfège practice, inspired by Guido d'Arezzo's historic pedagogy. It continuously streams procedurally generated sheet music across a fixed playhead in sample-accurate sync with a Web Audio metronome—zero framework bloat, pure Vanilla TypeScript, and 60/120 FPS GPU blitting.
 
 **Live Application**: [https://guidonica.it](https://guidonica.it) *(mirror: [hand-lock.github.io/guidonica](https://hand-lock.github.io/guidonica/))* &nbsp;|&nbsp; [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 
