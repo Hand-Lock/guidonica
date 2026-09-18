@@ -99,6 +99,10 @@ export class ScrollerView {
     return this.zoom;
   }
 
+  public getViewportWidth(): number {
+    return this.viewportWidth;
+  }
+
   private handleResize = (): void => {
     this.updateDimensions();
     this.invalidatePinnedClef(); // Invalidate cached clef for potential dpr changes

@@ -6,6 +6,7 @@ import {
   MIN_ZOOM,
   SoundProfile,
   ThemeMode,
+  ZoomMode,
 } from './notation/types';
 
 export const STORAGE_KEY = 'guidonica_settings_v1';
@@ -52,6 +53,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   volume: 0.8,
   isMuted: false,
   zoom: DEFAULT_ZOOM,
+  zoomMode: 'auto',
 };
 
 /**
@@ -107,6 +109,17 @@ export function loadStoredSettings(): AppSettings {
       zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, parsed.zoom));
     }
 
+    let zoomMode: ZoomMode = DEFAULT_APP_SETTINGS.zoomMode;
+    if (parsed.zoomMode === 'auto' || parsed.zoomMode === 'manual') {
+      zoomMode = parsed.zoomMode;
+    } else if (
+      typeof parsed.zoom === 'number' &&
+      !isNaN(parsed.zoom) &&
+      Math.abs(parsed.zoom - DEFAULT_ZOOM) > 0.001
+    ) {
+      zoomMode = 'manual';
+    }
+
     return {
       ...DEFAULT_APP_SETTINGS,
       ...parsed,
@@ -114,6 +127,7 @@ export function loadStoredSettings(): AppSettings {
       soundProfile,
       theme,
       zoom,
+      zoomMode,
       subdivisions: {
         ...DEFAULT_APP_SETTINGS.subdivisions,
         ...(parsed.subdivisions || {}),

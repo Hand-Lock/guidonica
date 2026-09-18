@@ -859,6 +859,13 @@ code, kbd, pre, samp {
   font-weight: 700;
 }
 
+.btn-sm.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
 /* ==========================================================================
    Tuplets Menu & Floating Glass Popover
    ========================================================================== */
