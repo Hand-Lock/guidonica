@@ -323,8 +323,8 @@ export function computeOptimalZoom(
   // Exact scale allowing at least 1 full measure to fit across the visible stave
   const rawFit = viewportWidth / (measureWidth + headerMargin);
 
-  // Round to nearest clean 5% (0.05) step
-  const stepped = Math.round(rawFit * 20) / 20;
+  // Quantize to integer staff-line scale (multiples of 0.1 / 10% so 10 * Z is an integer)
+  const stepped = Math.round(rawFit * 10) / 10;
 
   // Cap at 1.0 (100%) on larger screens, and clamp between MIN_ZOOM (0.3) and MAX_ZOOM (1.5)
   return Math.max(MIN_ZOOM, Math.min(DEFAULT_ZOOM, stepped));

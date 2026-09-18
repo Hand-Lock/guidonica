@@ -352,7 +352,8 @@ class GuidonicaApp {
   }
 
   private applyZoom(val: number, mode?: ZoomMode): void {
-    const clamped = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(val * 100) / 100));
+    const quantized = Math.round(val * 10) / 10;
+    const clamped = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, quantized));
     const nextMode: ZoomMode = mode ?? 'manual';
     const percentStr = `${Math.round(clamped * 100)}%`;
     this.zoomSlider.value = String(Math.round(clamped * 100));
@@ -977,7 +978,7 @@ class GuidonicaApp {
           e.preventDefault();
           const currentDistance = getDistance(e.touches[0], e.touches[1]);
           const scaleFactor = currentDistance / initialDistance;
-          const targetZoom = initialZoom * scaleFactor;
+          const targetZoom = Math.round(initialZoom * scaleFactor * 10) / 10;
           this.applyZoom(targetZoom, 'manual');
         }
       },
