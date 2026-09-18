@@ -121,7 +121,9 @@ class GuidonicaApp {
   private subdivHalf: HTMLInputElement;
   private subdivWhole: HTMLInputElement;
   private subdivSixteenth: HTMLInputElement;
+  private subdivDotted: HTMLInputElement;
   private subdivCheckboxes: HTMLInputElement[];
+  private toggleTies: HTMLInputElement;
 
   // Tuplets
   private btnTupletsToggle: HTMLButtonElement;
@@ -163,6 +165,7 @@ class GuidonicaApp {
     this.selectClef = document.getElementById('select-clef') as HTMLSelectElement;
     this.clefRangeHint = document.getElementById('clef-range-hint') as HTMLElement;
     this.toggleRests = document.getElementById('toggle-rests') as HTMLInputElement;
+    this.toggleTies = document.getElementById('toggle-ties') as HTMLInputElement;
     this.toggleCountIn = document.getElementById('toggle-count-in') as HTMLInputElement;
     this.selectSolfegeMode = document.getElementById('select-solfege-mode') as HTMLSelectElement;
     this.selectSoundProfile = document.getElementById('select-sound-profile') as HTMLSelectElement;
@@ -208,6 +211,7 @@ class GuidonicaApp {
     this.subdivHalf = document.getElementById('subdiv-half') as HTMLInputElement;
     this.subdivWhole = document.getElementById('subdiv-whole') as HTMLInputElement;
     this.subdivSixteenth = document.getElementById('subdiv-sixteenth') as HTMLInputElement;
+    this.subdivDotted = document.getElementById('subdiv-dotted') as HTMLInputElement;
 
     this.subdivCheckboxes = [
       this.subdivQuarter,
@@ -215,6 +219,7 @@ class GuidonicaApp {
       this.subdivHalf,
       this.subdivWhole,
       this.subdivSixteenth,
+      this.subdivDotted,
     ];
 
     this.btnTupletsToggle = document.getElementById('btn-tuplets-toggle') as HTMLButtonElement;
@@ -297,8 +302,9 @@ class GuidonicaApp {
     this.selectClef.value = settings.clef;
     this.clefRangeHint.textContent = CLEF_RANGE_DISPLAY[settings.clef];
 
-    // Rests & Count-In
+    // Rests, Ties & Count-In
     this.toggleRests.checked = settings.rests;
+    this.toggleTies.checked = settings.ties;
     this.toggleCountIn.checked = settings.countIn;
 
     // Sound & Display overlays
@@ -324,6 +330,7 @@ class GuidonicaApp {
     this.subdivHalf.checked = settings.subdivisions.half;
     this.subdivWhole.checked = settings.subdivisions.whole;
     this.subdivSixteenth.checked = settings.subdivisions.sixteenth;
+    this.subdivDotted.checked = settings.subdivisions.dotted !== false;
 
     // Tuplets
     for (const cb of this.tupletCheckboxes) {
@@ -696,13 +703,13 @@ class GuidonicaApp {
       cb.addEventListener('change', handleIntervalChange);
     }
 
-    // Subdivisions: ensure at least one subdivision or tuplet remains checked
+    // Subdivisions: ensure at least one base subdivision or tuplet remains checked
     const handleSubdivChange = (e: Event): void => {
-      const checkedCount = this.subdivCheckboxes.filter((cb) => cb.checked).length;
+      const baseCheckedCount = this.getBaseSubdivCount();
       const activeTupletCount = this.getActiveTupletCount();
       const target = e.target as HTMLInputElement;
 
-      if (checkedCount === 0 && activeTupletCount === 0) {
+      if (baseCheckedCount === 0 && activeTupletCount === 0) {
         target.checked = true;
         return;
       }
@@ -714,6 +721,7 @@ class GuidonicaApp {
           half: this.subdivHalf.checked,
           whole: this.subdivWhole.checked,
           sixteenth: this.subdivSixteenth.checked,
+          dotted: this.subdivDotted.checked,
         },
       });
       this.resetSession();
@@ -729,6 +737,12 @@ class GuidonicaApp {
     // Rests
     this.toggleRests.addEventListener('change', () => {
       globalState.updateSettings({ rests: this.toggleRests.checked });
+      this.resetSession();
+    });
+
+    // Ties
+    this.toggleTies.addEventListener('change', () => {
+      globalState.updateSettings({ ties: this.toggleTies.checked });
       this.resetSession();
     });
   }
@@ -828,11 +842,21 @@ class GuidonicaApp {
     }
   }
 
+  private getBaseSubdivCount(): number {
+    return [
+      this.subdivQuarter,
+      this.subdivEighth,
+      this.subdivHalf,
+      this.subdivWhole,
+      this.subdivSixteenth,
+    ].filter((cb) => cb.checked).length;
+  }
+
   private handleTupletChange(): void {
     const activeTupletCount = this.getActiveTupletCount();
-    const checkedSubdivCount = this.subdivCheckboxes.filter((cb) => cb.checked).length;
+    const baseSubdivCount = this.getBaseSubdivCount();
 
-    if (activeTupletCount === 0 && checkedSubdivCount === 0) {
+    if (activeTupletCount === 0 && baseSubdivCount === 0) {
       this.subdivQuarter.checked = true;
       globalState.updateSettings({
         subdivisions: {
@@ -853,8 +877,8 @@ class GuidonicaApp {
       cb.checked = false;
     }
 
-    const checkedSubdivCount = this.subdivCheckboxes.filter((cb) => cb.checked).length;
-    if (checkedSubdivCount === 0) {
+    const baseSubdivCount = this.getBaseSubdivCount();
+    if (baseSubdivCount === 0) {
       this.subdivQuarter.checked = true;
       globalState.updateSettings({
         subdivisions: {

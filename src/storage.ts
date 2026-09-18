@@ -23,6 +23,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     quarter: true,
     eighth: true,
     sixteenth: false,
+    dotted: true,
     triplets: false,
   },
   tuplets: {
@@ -34,6 +35,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     septuplet: { ...DEFAULT_TUPLET_OPTIONS.septuplet },
   },
   rests: false,
+  ties: false,
   intervals: {
     unison: false,
     second: true,
@@ -120,6 +122,8 @@ export function loadStoredSettings(): AppSettings {
       zoomMode = 'manual';
     }
 
+    const ties = typeof parsed.ties === 'boolean' ? parsed.ties : DEFAULT_APP_SETTINGS.ties;
+
     return {
       ...DEFAULT_APP_SETTINGS,
       ...parsed,
@@ -128,6 +132,7 @@ export function loadStoredSettings(): AppSettings {
       theme,
       zoom,
       zoomMode,
+      ties,
       subdivisions: {
         ...DEFAULT_APP_SETTINGS.subdivisions,
         ...(parsed.subdivisions || {}),

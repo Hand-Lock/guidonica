@@ -58,6 +58,7 @@ export interface SubdivisionOptions {
   quarter: boolean;
   eighth: boolean;
   sixteenth: boolean;
+  dotted?: boolean;
   triplets?: boolean;
 }
 
@@ -150,6 +151,7 @@ export interface AppSettings {
   subdivisions: SubdivisionOptions;
   tuplets: TupletOptions;
   rests: boolean;
+  ties: boolean;
   intervals: IntervalOptions;
   solfegeLabelMode: SolfegeLabelMode;
   soundProfile: SoundProfile;
@@ -171,7 +173,7 @@ export type PlaybackState = 'stopped' | 'counting-in' | 'playing' | 'paused';
 
 export interface NoteData {
   keys: string[]; // e.g. ['c/4']
-  duration: string; // VexFlow duration string: 'w', 'h', 'q', '8', '16'
+  duration: string; // VexFlow duration string: 'w', 'h', 'q', '8', '16', 'hd', 'qd', '8d'
   isRest: boolean;
   isTuplet?: boolean;
   tupletGroup?: number;
@@ -179,6 +181,8 @@ export interface NoteData {
   tupletNotesOccupied?: number; // e.g. 2, 3, 4
   tupletBracketed?: boolean;
   tupletRatioed?: boolean;
+  tieStart?: boolean;
+  tieEnd?: boolean;
   beatOffset: number; // Beat offset within the measure (0-indexed)
   beatDuration: number; // Duration measured in metric beats
 }
