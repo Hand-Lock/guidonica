@@ -26,6 +26,14 @@
 > - **Aero Material Resonance**: Within Frutiger Aero and Aqua skeuomorphism, `#00FFCC` is the quintessential luminous liquid crystal hue—radiant, aquatic, optimistic, and hyper-tactile.
 > - **Dual-Tier Contrast Architecture**: Because pure `#00FFCC` has high relative luminance ($Y \approx 0.76$), it shines with unmatched brilliance ($>13.5:1$ contrast) in Dark Mode, while in Light Mode it pairs with **Deep Olo / Olo Viridian** (`#008269` / `#007a62`, $>4.6:1$ contrast) for text and staves, using pure `#00FFCC` for specular highlights, glass beads, and radiant hover halos.
 
+#### The Ergodic Principle: State-Space Completeness & Transparent Generation
+> **"Every path through the hand must be walked."**  
+> Guido d'Arezzo designed the *Manus Guidonica* as an exhaustive, all-encompassing cognitive map of medieval solmization—no legitimate gamut transition was absent. In Guidonica, this manifests as the **Ergodic Generation Principle**: the procedural engine is mathematically guaranteed to explore the complete state space of the user's chosen settings.
+> 
+> - **Zero Pedagogical Blind Spots**: No valid rhythmic figure (such as `q 8` or `8 q` in 6/8, or `q h` and `h q` in 3/4) or interval leap is suppressed, hijacked, or obscured.
+> - **The Infinite Monkey Heuristic**: Given sufficient practice time, every mathematically and grammatically valid musical combination within the chosen configuration will eventually appear with non-zero probability ($P(\omega) > 0$).
+> - **Transparent Control**: The generator never hides rules or heuristics behind magic constants. Modifiers such as dotted notes and ties are explicitly exposed as user controls.
+
 ---
 
 ### 2. Typographic Architecture

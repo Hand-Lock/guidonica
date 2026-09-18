@@ -7,6 +7,7 @@
 - **No Evaluation Friction**: The software acts as an unyielding, rhythmic pacing tool. It deliberately omits microphone pitch detection, scoring, or gamified leaderboards. The musician self-monitors their vocalized solfège (rhythmic syllables or pitched singing) against the audible pulse and oncoming notation.
 - **Anticipatory Reading**: Traditional static sight-reading suffers from "page-turn panic" and erratic eye movements. Continuous horizontal scrolling trains the musician's eye to read ahead of the playhead, recognizing upcoming interval patterns, melodic shapes, and rhythmic groupings before vocalizing them.
 - **Progressive Difficulty**: Users can isolate individual musical variables—clef, meter, rhythmic subdivisions, and melodic intervals—to target specific cognitive bottlenecks.
+- **The Ergodic Principle (State-Space Completeness)**: Pedagogically, true sight-reading proficiency requires encountering every possible permutation of rhythmic figures and melodic intervals within the chosen scope. If software artificially favors cliches or suppresses valid figures (e.g., omitting quarter-eighth pairs in 6/8 or quarter-half pairs in 3/4), the musician develops cognitive blind spots. Guidonica treats the user's active settings as a bounded musical universe $\Omega$: given infinite time, the generator is mathematically guaranteed to generate every valid musical phrase in that universe ("the infinite monkey theorem" for sight-reading).
 
 ### The Suckless Engineering Axioms
 Guidonica rejects modern web bloat in favor of mathematical simplicity, client-side sovereignty, and mechanical sympathy:
@@ -16,6 +17,7 @@ Guidonica rejects modern web bloat in favor of mathematical simplicity, client-s
 4. **Bounded Ring-Buffer Memory Discipline**: Only 4 to 6 measures kept in memory; expired canvases are immediately dereferenced for leak-free infinite sessions.
 5. **Sample-Free Audio Synthesis**: Metronome clicks synthesized live via Web Audio oscillators; 0 bytes of audio sample files over the wire.
 6. **Pure CSS3 Liquid Glass UI**: 100% vector and CSS3-powered Frutiger Aero / Aqua styling; zero CSS framework runtimes (~5.4 kB gzipped CSS).
+7. **Ergodic State-Space Completeness**: Procedural algorithms never artificially censor or prune mathematically and grammatically valid permutations of the user's active settings ($P(\omega) > 0, \forall \omega \in \Omega$). All rhythm partitioning and pitch walks are strictly ergodic.
 
 ---
 
@@ -40,7 +42,9 @@ The user must have full control over the generation engine prior to and during a
      - Eighth notes (`1/8`)
      - Sixteenth notes (`1/16`)
      - Triplets (eighth-note tuplets `3:2`)
-   - Rest toggle: Option to enable/disable rhythmic rests (quarter rests, eighth rests).
+   - **Dotted notes modifier**: Explicit toggle allowing dotted durations (`hd`, `qd`, `8d`) when combined with enabled base durations.
+   - **Tied notes toggle**: Explicit toggle allowing cross-beat ties with pitch preservation.
+   - **Rest toggle**: Option to enable/disable rhythmic rests (quarter rests, eighth rests).
 5. **Melodic Intervals & Pitch Transitions**:
    - Selectable transition constraints:
      - *Stepwise only (Seconds)*: Scales, adjacent notes ($\pm 1$ diatonic step).
@@ -80,20 +84,54 @@ To maintain a stable 60 FPS / 120 FPS on all hardware without CPU throttling:
 
 ## 4. Procedural Music Generation Engine
 
-### Rhythmic Generator (Metric Tree Partitioning)
-1. The generator allocates a measure based on the selected time signature (e.g., `4/4` = 4 quarter beats).
-2. Each metric beat is recursively partitioned into allowed subdivisions according to the user's active checkboxes.
-3. Rhythms conform to standard metric grouping:
-   - Beams do not obscure the metric half-bar in `4/4`.
-   - Notes are beamed together per beat or beat-group (e.g., dotted quarters in `6/8`).
-   - If rests are enabled, rests are placed according to standard notation rules (no unreadable syncopated rests across metric boundaries).
+### The Ergodic Principle (State-Space Completeness)
+The central mathematical doctrine of Guidonica's procedural generator is **ergodicity** (the "infinite monkey theorem" for sight-reading).
 
-### Melodic Generator (Constrained Random Walk)
-1. **Initial Pitch**: Begins on a stable anchor note (e.g., the tonic or middle line of the chosen clef).
-2. **Successive Pitches**:
-   - The next pitch is sampled from the allowed interval set relative to the current pitch.
-   - Direction (ascending vs. descending) is randomized with boundary bias: if the pitch approaches the edge of the allowed range (e.g., $\ge 2$ ledger lines), the direction probability biases back toward the center of the staff.
-   - Scale degrees map cleanly to standard VexFlow pitch keys (e.g., `c/4`, `d/4`, `e/4`).
+#### Mathematical Formulation
+Let the user's active session configuration define a discrete musical parameter space:
+$$\Omega = (\text{Clef}, \text{TimeSignature}, \text{Subdivisions}, \text{Dotted}, \text{Ties}, \text{Intervals}, \text{Accidentals})$$
+
+A generated measure $M = (r_1, p_1), (r_2, p_2), \dots, (r_k, p_k)$ consists of a sequence of durations $r_i$ and pitches $p_i$. Let $\mathcal{M}(\Omega)$ denote the set of all syntactically and grammatically valid measures conforming to $\Omega$. The generator is strictly ergodic:
+$$\forall M \in \mathcal{M}(\Omega), \quad P(M \mid \Omega) > 0$$
+
+Given an arbitrarily long practice session, the empirical distribution of generated figures converges to the uniform or stationary measure over $\mathcal{M}(\Omega)$. No valid rhythmic figure (such as `q 8` or `8 q` in 6/8, or `q h` and `h q` in 3/4) or melodic skip within the user's settings may have probability zero.
+
+### Rhythmic Generator: Ergodic Metric Tree Partitioning
+Rhythm generation decomposes each measure top-down through a metric tree structure based on meter and active subdivisions:
+
+1. **Compound Meter Partitioning (6/8)**:
+   - A 6/8 measure consists of 2 compound beats of 3 eighth notes each ($3+3 = 6$ eighths).
+   - If dotted half (`hd`) is active with dotted enabled $\rightarrow$ full-measure dotted half ($3+3=6$).
+   - Otherwise, each 3-eighth beat group is independently partitioned via candidate branch sampling:
+     $$\mathcal{P}_{\text{compound}} = \{ [qd], [q, 8], [8, q], [8, 8, 8], [8, 16, 16], [16, 16, 8], [16, 16, 16, 16] \dots \}$$
+   - Filtered against active subdivisions. Standard quarter notes (`q`, 2 eighths) combined with eighth notes (`8`, 1 eighth) have equal stochastic selection probability alongside dotted quarters (`qd`, 3 eighths).
+
+2. **Simple Triple Meter Partitioning (3/4)**:
+   - A 3/4 measure consists of 3 quarter beats ($1+1+1 = 3$).
+   - Allowed macro-partitions:
+     $$\mathcal{P}_{3/4} = \{ [hd], [h, q], [q, h], [1+1+1 \text{ beats}] \}$$
+   - Any active combination (e.g. half + quarter notes) generates both $[h, q]$ and $[q, h]$ with non-zero probability. Dotted half $[hd]$ requires both `subdiv.half` and `subdiv.dotted`.
+
+3. **Simple Quadruple & Duple Partitioning (4/4, 2/4)**:
+   - In 4/4, partitions preserve the metric half-bar (beats 1-2 and beats 3-4):
+     $$\mathcal{P}_{4/4} = \{ [w], [h, h], [qd, 8 \text{ across 2 beats}], [8, qd \text{ across 2 beats}], [1+1+1+1 \text{ beats}] \}$$
+   - Two-beat groups evaluate $[h]$, $[qd, 8]$, $[8, qd]$, or independent 1-beat subdivisions.
+   - One-beat units evaluate $[q]$, $[8d, 16]$, $[8, 8]$, or 16th-note groupings.
+
+4. **Tied Notes Engine**:
+   - When `settings.ties` is active, candidate rhythmic events spanning metric beat boundaries are linked via `tieStart` and `tieEnd` flags.
+   - Ties strictly preserve pitch identity across noteheads ($p_{i+1} = p_i$) and are rendered via VexFlow `StaveTie`.
+
+### Melodic Generator (Ergodic Markov Random Walk)
+1. **Strongly Connected Pitch Digraph**:
+   - The allowed pitches within the clef's range forms a finite state graph $V$.
+   - Edges $E$ are defined by active interval constraints ($\pm 1$ step, skips, leaps).
+   - Because the graph is undirected (or symmetric) and strongly connected, the Markov chain is irreducible and recurrent.
+2. **Boundary Reflection Bias**:
+   - As pitch approaches upper/lower ledger limits ($\ge 2$ ledger lines), transition weights bias inward to prevent clipping without truncating state reachability.
+3. **Scale Degrees & Accidentals**:
+   - Natural diatonic scales (C Major / A Minor) map cleanly to staff lines/spaces.
+   - When chromatic accidentals are enabled, inflected pitches are sampled uniformly over the chromatic gamut.
 
 ---
 
