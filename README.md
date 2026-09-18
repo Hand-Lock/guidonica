@@ -110,6 +110,9 @@ Guidonica is fully cross-platform and tested for Apple Silicon on macOS:
 | `↓` (Arrow Down) | Decrease tempo by 5 BPM |
 | `Shift + ↑` | Increase tempo by 1 BPM |
 | `Shift + ↓` | Decrease tempo by 1 BPM |
+| `+` / `=` | Zoom in (+10%) |
+| `-` / `_` | Zoom out (-10%) |
+| `0` | Auto-fit zoom to screen (Auto Zoom) |
 
 ---
 
