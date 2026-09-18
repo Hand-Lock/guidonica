@@ -131,10 +131,11 @@ export class ScrollerView {
 
     // Center the 5 stave lines vertically around viewport center
     const centerY = Math.round(this.viewportHeight / 2);
-    // Line 0 is at -20 * zoom from center
-    this.staveTopY = centerY - 20 * this.zoom;
+    const lineSpacing = Math.round(10 * this.zoom);
+    // Line 0 is at -2 * lineSpacing from center (since center is line 2)
+    this.staveTopY = centerY - 2 * lineSpacing;
     // Measure canvas line 0 is at 80 * zoom from measure canvas top (STAVE_TOP_LINE_Y = 80)
-    this.measureDrawY = centerY - 100 * this.zoom;
+    this.measureDrawY = centerY - Math.round(100 * this.zoom);
   }
 
   public startLoop(): void {
@@ -241,9 +242,10 @@ export class ScrollerView {
     ctx.lineWidth = 1;
     ctx.beginPath();
 
-    const lineSpacing = 10 * this.zoom;
+    const lineSpacing = Math.round(10 * this.zoom);
+    const startY = Math.round(this.staveTopY);
     for (let line = 0; line < 5; line++) {
-      const y = Math.round(this.staveTopY + line * lineSpacing) + 0.5;
+      const y = startY + line * lineSpacing + 0.5;
       ctx.moveTo(0, y);
       ctx.lineTo(width, y);
     }
@@ -324,9 +326,10 @@ export class ScrollerView {
     ctx.strokeStyle = isDark ? '#475569' : '#64748b';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    const lineSpacing = 10 * zoom;
+    const lineSpacing = Math.round(10 * zoom);
+    const startY = Math.round(this.staveTopY);
     for (let line = 0; line < 5; line++) {
-      const y = Math.round(this.staveTopY + line * lineSpacing) + 0.5;
+      const y = startY + line * lineSpacing + 0.5;
       ctx.moveTo(0, y);
       ctx.lineTo(totalMargin, y);
     }

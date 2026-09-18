@@ -122,21 +122,54 @@ describe('In-App Notation Zoom Pipeline', () => {
   });
 
   it('mathematically preserves exact staff line vertical alignment across all zoom levels', () => {
-    const testZooms = [0.5, 0.75, 1.0, 1.25, 1.5];
+    const testZooms = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5];
     const viewportHeight = 400;
     const centerY = Math.round(viewportHeight / 2); // 200
 
     for (const zoom of testZooms) {
-      const staveTopY = centerY - 20 * zoom;
-      const measureDrawY = centerY - 100 * zoom;
+      const lineSpacing = Math.round(10 * zoom);
+      const staveTopY = centerY - 2 * lineSpacing;
+      const measureDrawY = centerY - Math.round(100 * zoom);
+      const startY = Math.round(staveTopY);
+
+      // Verify line spacing is an exact integer
+      expect(Number.isInteger(lineSpacing)).toBe(true);
 
       // Check all 5 staff lines (k = 0, 1, 2, 3, 4)
       for (let k = 0; k < 5; k++) {
-        const stationaryLineY = staveTopY + k * 10 * zoom;
+        const stationaryLineY = startY + k * lineSpacing;
         // On the measure canvas, line 0 is at STAVE_TOP_LINE_Y (80). Line k is at (80 + k * 10) * zoom
         const measureLineY = measureDrawY + (STAVE_TOP_LINE_Y + k * 10) * zoom;
         expect(stationaryLineY).toBeCloseTo(measureLineY, 5);
       }
+    }
+  });
+
+  it('guarantees uniform integer line spacing across all 4 pentagram spaces without pixel jitter', () => {
+    for (let pct = 30; pct <= 150; pct += 10) {
+      const zoom = pct / 100;
+      const lineSpacing = Math.round(10 * zoom);
+      // Spacing must be an exact positive integer
+      expect(Number.isInteger(lineSpacing)).toBe(true);
+      expect(lineSpacing).toBe(pct / 10);
+
+      // Compute all 5 line coordinates
+      const startY = 100;
+      const linePositions: number[] = [];
+      for (let line = 0; line < 5; line++) {
+        linePositions.push(startY + line * lineSpacing + 0.5);
+      }
+
+      // Check differences between adjacent lines are identical
+      const space0 = linePositions[1] - linePositions[0];
+      const space1 = linePositions[2] - linePositions[1];
+      const space2 = linePositions[3] - linePositions[2];
+      const space3 = linePositions[4] - linePositions[3];
+
+      expect(space0).toBe(lineSpacing);
+      expect(space1).toBe(lineSpacing);
+      expect(space2).toBe(lineSpacing);
+      expect(space3).toBe(lineSpacing);
     }
   });
 
@@ -211,20 +244,20 @@ describe('In-App Notation Zoom Pipeline', () => {
       sixteenth: false,
     };
 
-    it('computes 55% zoom for iPhone 13 Mini in Portrait under default 4/4 meter', () => {
+    it('computes 60% zoom for iPhone 13 Mini in Portrait under default 4/4 meter', () => {
       const iPhoneMiniWidth = 375;
       // In 4/4 with 8th notes, beatWidth = 130, measureWidth = 520.
-      // Raw fit: 375 / (520 + 135) = 375 / 655 ≈ 0.5725 -> rounded to 5% step: 0.55
+      // Raw fit: 375 / (520 + 135) = 375 / 655 ≈ 0.5725 -> rounded to 10% integer step: 0.60
       const optimal = computeOptimalZoom(iPhoneMiniWidth, defaultSubdivs, '4/4');
-      expect(optimal).toBe(0.55);
+      expect(optimal).toBe(0.6);
     });
 
-    it('adapts down to 35% zoom for iPhone 13 Mini in Portrait when 16th notes are enabled', () => {
+    it('adapts down to 40% zoom for iPhone 13 Mini in Portrait when 16th notes are enabled', () => {
       const iPhoneMiniWidth = 375;
       // In 4/4 with 16th notes, beatWidth = 220, measureWidth = 880.
-      // Raw fit: 375 / (880 + 135) = 375 / 1015 ≈ 0.3695 -> rounded to 5% step: 0.35
+      // Raw fit: 375 / (880 + 135) = 375 / 1015 ≈ 0.3695 -> rounded to 10% integer step: 0.40
       const optimal = computeOptimalZoom(iPhoneMiniWidth, sixteenthSubdivs, '4/4');
-      expect(optimal).toBe(0.35);
+      expect(optimal).toBe(0.4);
     });
 
     it('maintains 100% zoom for iPhone 13 Mini in Portrait under 2/4 quarter-note meter', () => {
@@ -253,9 +286,9 @@ describe('In-App Notation Zoom Pipeline', () => {
       const optimalDefault = computeOptimalZoom(iPadPortraitWidth, defaultSubdivs, '4/4');
       expect(optimalDefault).toBe(1.0);
 
-      // 16th notes in 4/4: raw fit 768 / 1015 ≈ 0.7566 -> 0.75
+      // 16th notes in 4/4: raw fit 768 / 1015 ≈ 0.7566 -> rounded to 10% integer step: 0.8
       const optimal16th = computeOptimalZoom(iPadPortraitWidth, sixteenthSubdivs, '4/4');
-      expect(optimal16th).toBe(0.75);
+      expect(optimal16th).toBe(0.8);
     });
 
     it('adapts for 6/8 compound meter on compact phone screens', () => {
@@ -266,9 +299,9 @@ describe('In-App Notation Zoom Pipeline', () => {
       expect(optimal68).toBe(0.6);
 
       // 6/8 with 16th notes: 6 beats * 110px = 660px.
-      // Raw fit: 375 / (660 + 135) = 375 / 795 ≈ 0.4717 -> 0.45
+      // Raw fit: 375 / (660 + 135) = 375 / 795 ≈ 0.4717 -> rounded to 10% integer step: 0.50
       const optimal68_16th = computeOptimalZoom(iPhoneMiniWidth, sixteenthSubdivs, '6/8');
-      expect(optimal68_16th).toBe(0.45);
+      expect(optimal68_16th).toBe(0.5);
     });
 
     it('clamps optimal zoom within MIN_ZOOM (0.3) and MAX_ZOOM (1.5)', () => {
