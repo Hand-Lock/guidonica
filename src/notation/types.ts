@@ -141,6 +141,8 @@ export function subscribeSystemTheme(callback: (isDark: boolean) => void): () =>
   return () => {};
 }
 
+export type ZoomMode = 'auto' | 'manual';
+
 export interface AppSettings {
   tempo: number; // 30-240 BPM
   timeSignature: TimeSignature;
@@ -156,10 +158,11 @@ export interface AppSettings {
   theme: ThemeMode;
   volume: number; // 0.0 to 1.0
   isMuted: boolean;
-  zoom: number; // 0.5 to 1.5 (default 1.0)
+  zoom: number; // 0.3 to 1.5 (default 1.0)
+  zoomMode: ZoomMode;
 }
 
-export const MIN_ZOOM = 0.5;
+export const MIN_ZOOM = 0.3;
 export const MAX_ZOOM = 1.5;
 export const DEFAULT_ZOOM = 1.0;
 export const ZOOM_STEP = 0.1;
@@ -284,6 +287,47 @@ export function computeBeatWidth(
   }
   // Quarter notes, half notes, whole notes:
   return 110;
+}
+
+/**
+ * Returns the count of metric beats in a measure for a given time signature.
+ */
+export function getBeatsPerMeasure(ts: TimeSignature): number {
+  switch (ts) {
+    case '2/4': return 2;
+    case '3/4': return 3;
+    case '4/4': return 4;
+    case '6/8': return 6;
+  }
+}
+
+/**
+ * Computes the optimal / recommended zoom scale for a given viewport width and measure settings.
+ * Ensures that at least one full measure can be seen at once across the visible stave for proper
+ * sight-reading forereading, while capping the default at 1.0 (100%) on larger screens where
+ * multiple measures naturally fit.
+ */
+export function computeOptimalZoom(
+  viewportWidth: number,
+  subdivisions: SubdivisionOptions,
+  timeSignature: TimeSignature,
+  tuplets?: TupletOptions
+): number {
+  const beatWidth = computeBeatWidth(subdivisions, timeSignature, tuplets);
+  const beatsPerMeasure = getBeatsPerMeasure(timeSignature);
+  const measureWidth = beatsPerMeasure * beatWidth;
+
+  // Space occupied by stationary pinned header solid mask before scaling
+  const headerMargin = PINNED_HEADER_MASK_WIDTH; // 135
+
+  // Exact scale allowing at least 1 full measure to fit across the visible stave
+  const rawFit = viewportWidth / (measureWidth + headerMargin);
+
+  // Round to nearest clean 5% (0.05) step
+  const stepped = Math.round(rawFit * 20) / 20;
+
+  // Cap at 1.0 (100%) on larger screens, and clamp between MIN_ZOOM (0.3) and MAX_ZOOM (1.5)
+  return Math.max(MIN_ZOOM, Math.min(DEFAULT_ZOOM, stepped));
 }
 
 /**

@@ -13,6 +13,7 @@ describe('storage module', () => {
     expect(loaded.soundProfile).toBe('woodblock');
     expect(loaded.theme).toBe('auto');
     expect(loaded.zoom).toBe(1.0);
+    expect(loaded.zoomMode).toBe('auto');
   });
 
   it('persists and reloads modified settings accurately', () => {
@@ -27,6 +28,7 @@ describe('storage module', () => {
       isMuted: true,
       solfegeLabelMode: 'solfege',
       zoom: 0.75,
+      zoomMode: 'manual',
     };
 
     saveStoredSettings(custom);
@@ -41,15 +43,16 @@ describe('storage module', () => {
     expect(loaded.isMuted).toBe(true);
     expect(loaded.solfegeLabelMode).toBe('solfege');
     expect(loaded.zoom).toBe(0.75);
+    expect(loaded.zoomMode).toBe('manual');
   });
 
-  it('clamps zoom setting between MIN_ZOOM (0.5) and MAX_ZOOM (1.5)', () => {
+  it('clamps zoom setting between MIN_ZOOM (0.3) and MAX_ZOOM (1.5)', () => {
     // Zoom too low
     window.localStorage.setItem(
       'guidonica_settings_v1',
-      JSON.stringify({ zoom: 0.2 })
+      JSON.stringify({ zoom: 0.1 })
     );
-    expect(loadStoredSettings().zoom).toBe(0.5);
+    expect(loadStoredSettings().zoom).toBe(0.3);
 
     // Zoom too high
     window.localStorage.setItem(

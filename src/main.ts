@@ -20,6 +20,8 @@ import {
   TupletOptions,
   TupletValue,
   ZOOM_STEP,
+  ZoomMode,
+  computeOptimalZoom,
   resolveTheme,
   subscribeSystemTheme,
 } from './notation/types';
@@ -317,25 +319,53 @@ class GuidonicaApp {
     this.updateTupletsUI();
 
     // Zoom
-    const zoomVal = settings.zoom || DEFAULT_ZOOM;
-    const zoomPercent = Math.round(zoomVal * 100);
-    this.zoomSlider.value = String(zoomPercent);
-    this.zoomDisplay.textContent = `${zoomPercent}%`;
-    this.pillZoomText.textContent = `${zoomPercent}%`;
+    const isAuto = settings.zoomMode === 'auto';
+    const effectiveZoom = isAuto ? this.getEffectiveAutoZoom() : (settings.zoom || DEFAULT_ZOOM);
+    this.applyZoom(effectiveZoom, isAuto ? 'auto' : 'manual');
   }
 
-  private applyZoom(val: number): void {
+  private getEffectiveAutoZoom(): number {
+    const viewportWidth = this.scroller ? this.scroller.getViewportWidth() : window.innerWidth;
+    const settings = globalState.settings;
+    return computeOptimalZoom(
+      viewportWidth,
+      settings.subdivisions,
+      settings.timeSignature,
+      settings.tuplets
+    );
+  }
+
+  private syncAutoZoom(): void {
+    const optimal = this.getEffectiveAutoZoom();
+    this.applyZoom(optimal, 'auto');
+  }
+
+  private updateZoomUI(mode: ZoomMode, zoomVal: number): void {
+    const isAuto = mode === 'auto';
+    this.btnZoomReset.classList.toggle('active', isAuto);
+    this.btnZoomReset.title = isAuto
+      ? `Auto-fit active (${Math.round(zoomVal * 100)}%) - click to recalculate`
+      : `Auto-fit zoom to screen (resets to ${Math.round(this.getEffectiveAutoZoom() * 100)}%)`;
+    this.btnPillZoomReset.title = isAuto
+      ? `Zoom: ${Math.round(zoomVal * 100)}% (Auto)`
+      : `Zoom: ${Math.round(zoomVal * 100)}% (Click to reset to Auto)`;
+  }
+
+  private applyZoom(val: number, mode?: ZoomMode): void {
     const clamped = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(val * 100) / 100));
+    const nextMode: ZoomMode = mode ?? 'manual';
     const percentStr = `${Math.round(clamped * 100)}%`;
     this.zoomSlider.value = String(Math.round(clamped * 100));
     this.zoomDisplay.textContent = percentStr;
     this.pillZoomText.textContent = percentStr;
 
-    if (globalState.settings.zoom === clamped) {
+    this.updateZoomUI(nextMode, clamped);
+
+    if (globalState.settings.zoom === clamped && globalState.settings.zoomMode === nextMode) {
       return;
     }
 
-    globalState.updateSettings({ zoom: clamped });
+    globalState.updateSettings({ zoom: clamped, zoomMode: nextMode });
     this.renderer.setZoom(clamped);
     this.scroller.setZoom(clamped);
     this.resetBuffer();
@@ -343,7 +373,7 @@ class GuidonicaApp {
 
   private adjustZoom(delta: number): void {
     const current = globalState.settings.zoom || DEFAULT_ZOOM;
-    this.applyZoom(current + delta);
+    this.applyZoom(current + delta, 'manual');
   }
 
   private updateThemeUI(theme: ThemeMode, resolved: ResolvedTheme): void {
@@ -534,10 +564,17 @@ class GuidonicaApp {
       globalState.updateSettings({ isMuted: nextMuted });
     });
 
+    // Responsive Auto-Zoom Resizing
+    window.addEventListener('resize', () => {
+      if (globalState.settings.zoomMode === 'auto') {
+        this.syncAutoZoom();
+      }
+    });
+
     // Zoom Controls (Settings Drawer)
     this.zoomSlider.addEventListener('input', (e) => {
       const percent = Number((e.target as HTMLInputElement).value);
-      this.applyZoom(percent / 100);
+      this.applyZoom(percent / 100, 'manual');
     });
 
     this.btnZoomOut.addEventListener('click', () => {
@@ -549,7 +586,8 @@ class GuidonicaApp {
     });
 
     this.btnZoomReset.addEventListener('click', () => {
-      this.applyZoom(DEFAULT_ZOOM);
+      this.btnZoomReset.blur();
+      this.syncAutoZoom();
     });
 
     // Floating On-Canvas Zoom Pill
@@ -568,7 +606,7 @@ class GuidonicaApp {
     this.btnPillZoomReset.addEventListener('click', (e) => {
       e.stopPropagation();
       this.btnPillZoomReset.blur();
-      this.applyZoom(DEFAULT_ZOOM);
+      this.syncAutoZoom();
     });
 
     // Canvas Two-Finger Pinch-to-Zoom
@@ -905,7 +943,7 @@ class GuidonicaApp {
         this.adjustZoom(-ZOOM_STEP);
       } else if (e.key === '0') {
         e.preventDefault();
-        this.applyZoom(DEFAULT_ZOOM);
+        this.syncAutoZoom();
       }
     });
   }
@@ -940,7 +978,7 @@ class GuidonicaApp {
           const currentDistance = getDistance(e.touches[0], e.touches[1]);
           const scaleFactor = currentDistance / initialDistance;
           const targetZoom = initialZoom * scaleFactor;
-          this.applyZoom(targetZoom);
+          this.applyZoom(targetZoom, 'manual');
         }
       },
       { passive: false }
@@ -1016,6 +1054,15 @@ class GuidonicaApp {
     this.metronome.stop();
     this.scroller.stopLoop();
     globalState.setPlaybackState('stopped');
+
+    if (globalState.settings.zoomMode === 'auto') {
+      const optimal = this.getEffectiveAutoZoom();
+      if (Math.abs(globalState.settings.zoom - optimal) > 0.001) {
+        this.applyZoom(optimal, 'auto');
+        this.resetBeatDots();
+        return; // applyZoom calls resetBuffer()
+      }
+    }
 
     this.resetBuffer();
     this.resetBeatDots();

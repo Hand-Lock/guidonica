@@ -407,9 +407,9 @@
             <label for="zoom-slider">Zoom: <span id="zoom-display">100%</span></label>
             <div class="zoom-inputs">
               <button id="btn-zoom-out" class="btn-step" type="button" aria-label="Zoom out" title="Zoom out (-10%)">−</button>
-              <input type="range" id="zoom-slider" min="50" max="150" value="100" step="5" aria-label="Notation zoom percentage" />
+              <input type="range" id="zoom-slider" min="30" max="150" value="100" step="5" aria-label="Notation zoom percentage" />
               <button id="btn-zoom-in" class="btn-step" type="button" aria-label="Zoom in" title="Zoom in (+10%)">+</button>
-              <button id="btn-zoom-reset" class="btn btn-secondary btn-sm" type="button" aria-label="Reset zoom to 100%" title="Reset to 100%">100%</button>
+              <button id="btn-zoom-reset" class="btn btn-secondary btn-sm" type="button" aria-label="Auto-fit zoom to screen" title="Auto-fit zoom to screen">Auto</button>
             </div>
           </div>
 
@@ -425,7 +425,7 @@
         <canvas id="scroller-canvas" role="img" aria-label="Streaming sight-reading music notation canvas"></canvas>
         <div class="canvas-zoom-pill" id="canvas-zoom-pill" role="toolbar" aria-label="Notation zoom controls">
           <button id="btn-pill-zoom-out" class="btn-pill-action" type="button" aria-label="Zoom out" title="Zoom out (−10%)">−</button>
-          <button id="btn-pill-zoom-reset" class="btn-pill-label" type="button" aria-label="Reset zoom" title="Reset zoom to 100%"><span id="pill-zoom-text">100%</span></button>
+          <button id="btn-pill-zoom-reset" class="btn-pill-label" type="button" aria-label="Reset zoom" title="Reset zoom to auto-fit"><span id="pill-zoom-text">100%</span></button>
           <button id="btn-pill-zoom-in" class="btn-pill-action" type="button" aria-label="Zoom in" title="Zoom in (+10%)">+</button>
         </div>
       </main>
