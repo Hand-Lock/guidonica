@@ -6,6 +6,7 @@ import {
   Renderer,
   Stave,
   StaveNote,
+  StaveTie,
   Tuplet,
   Voice,
 } from 'vexflow';
@@ -225,6 +226,21 @@ export class MeasureRenderer {
       beam.postFormat();
     }
 
+    // Build ties: connect consecutive notes where note[i].tieStart is true and note[i+1].tieEnd is true
+    const ties: StaveTie[] = [];
+    for (let i = 0; i < data.notes.length - 1; i++) {
+      if (data.notes[i].tieStart && data.notes[i + 1].tieEnd) {
+        const tie = new StaveTie({
+          firstNote: staveNotes[i],
+          lastNote: staveNotes[i + 1],
+          firstIndexes: [0],
+          lastIndexes: [0],
+        });
+        tie.setStyle({ fillStyle: noteColor, strokeStyle: noteColor });
+        ties.push(tie);
+      }
+    }
+
     // Render elements onto the offscreen canvas
     stave.setContext(ctx).draw();
     voice.draw(ctx, stave);
@@ -235,6 +251,10 @@ export class MeasureRenderer {
 
     for (const tuplet of tuplets) {
       tuplet.setContext(ctx).draw();
+    }
+
+    for (const tie of ties) {
+      tie.setContext(ctx).draw();
     }
 
     // Draw pedagogical Solfège syllables or note names beneath notes
