@@ -1077,7 +1077,7 @@ class GuidonicaApp {
       return;
     }
     const settings = globalState.settings;
-    const initialBeat = this.metronome.getCurrentGlobalBeat();
+    const initialBeat = this.metronome.getVisualBeat();
     this.buffer.ensureAhead(initialBeat, 16, settings);
     this.scroller.renderFrame(settings);
   }

@@ -462,12 +462,11 @@ export class MetronomeEngine {
 
   /**
    * Returns elapsed seconds relative to Measure 0.
-   * When stopped or during count-in, this value is negative (-countInDuration to 0).
+   * When stopped, returns 0.
+   * During count-in, this value is negative (-countInDuration to 0).
    */
   public getElapsedPlaybackSeconds(): number {
-    if (!this.isRunning) {
-      return this.hasCountIn ? -this.beatsPerMeasure * this.secondsPerBeat : 0;
-    }
+    if (!this.isRunning) return 0;
     if (this.isPaused) return this.pausedElapsedSeconds;
     if (!this.ctx) return 0;
     return this.ctx.currentTime - this.measureZeroStartTime;
@@ -476,14 +475,20 @@ export class MetronomeEngine {
   /**
    * Returns current fractional beat position relative to Measure 0.
    * At beat 0 of Measure 0, this returns 0.
-   * When stopped with count-in enabled, this returns -beatsPerMeasure.
+   * During count-in, this returns negative fractional beats (-beatsPerMeasure to 0).
    */
   public getCurrentGlobalBeat(): number {
-    if (!this.isRunning) {
-      return this.hasCountIn ? -this.beatsPerMeasure : 0;
-    }
+    if (!this.isRunning) return 0;
     if (this.secondsPerBeat <= 0) return 0;
     return this.getElapsedPlaybackSeconds() / this.secondsPerBeat;
+  }
+
+  /**
+   * Returns current visual scroll beat position.
+   * Clamped to >= 0 so during count-in the score waits in place at Measure 0.
+   */
+  public getVisualBeat(): number {
+    return Math.max(0, this.getCurrentGlobalBeat());
   }
 
   public getIsRunning(): boolean {
