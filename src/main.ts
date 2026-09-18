@@ -33,6 +33,16 @@ import { MeasureBuffer } from './scroller/buffer';
 import { ScrollerView } from './scroller/scroller';
 import { waitForMusicFonts } from './notation/fonts';
 
+interface WebKitDocument extends Document {
+  webkitFullscreenEnabled?: boolean;
+  webkitFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => Promise<void> | void;
+}
+
+interface WebKitElement extends HTMLElement {
+  webkitRequestFullscreen?: () => Promise<void> | void;
+}
+
 class GuidonicaApp {
   private metronome: MetronomeEngine;
   private generator: MusicGenerator;
@@ -457,15 +467,48 @@ class GuidonicaApp {
       }
     });
 
-    // Fullscreen Toggle
-    this.btnFullscreenToggle.addEventListener('click', () => {
-      this.btnFullscreenToggle.blur();
-      if (!document.fullscreenElement) {
-        void document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        void document.exitFullscreen().catch(() => {});
-      }
-    });
+    // Fullscreen Capability Detection & Auto-Hide
+    if (!this.isFullscreenSupported()) {
+      this.btnFullscreenToggle.classList.add('hidden');
+      this.btnFullscreenToggle.setAttribute('aria-hidden', 'true');
+      this.btnFullscreenToggle.tabIndex = -1;
+    } else {
+      this.btnFullscreenToggle.addEventListener('click', () => {
+        this.btnFullscreenToggle.blur();
+        const doc = document as WebKitDocument;
+        const docEl = document.documentElement as WebKitElement;
+        const isFs = Boolean(doc.fullscreenElement || doc.webkitFullscreenElement);
+
+        if (!isFs) {
+          if (docEl.requestFullscreen) {
+            void docEl.requestFullscreen().catch(() => {});
+          } else if (docEl.webkitRequestFullscreen) {
+            void docEl.webkitRequestFullscreen();
+          }
+        } else {
+          if (doc.exitFullscreen) {
+            void doc.exitFullscreen().catch(() => {});
+          } else if (doc.webkitExitFullscreen) {
+            void doc.webkitExitFullscreen();
+          }
+        }
+      });
+
+      const syncFullscreenGlyph = (): void => {
+        const doc = document as WebKitDocument;
+        const isFs = Boolean(doc.fullscreenElement || doc.webkitFullscreenElement);
+        const glyph = this.btnFullscreenToggle.querySelector('span');
+        if (glyph) {
+          glyph.textContent = isFs ? '🗗' : '⛶';
+        }
+        const label = isFs ? 'Exit full screen' : 'Toggle full screen';
+        this.btnFullscreenToggle.setAttribute('aria-label', label);
+        this.btnFullscreenToggle.title = label;
+      };
+
+      document.addEventListener('fullscreenchange', syncFullscreenGlyph);
+      document.addEventListener('webkitfullscreenchange', syncFullscreenGlyph);
+    }
 
     // Mobile Settings Drawer Toggle
     this.btnDrawerToggle.addEventListener('click', () => {
@@ -1132,6 +1175,38 @@ class GuidonicaApp {
     } else {
       this.countInBadge.classList.add('hidden');
     }
+  }
+
+  /**
+   * Evaluates if the current browser and device environment supports the W3C Fullscreen API
+   * for arbitrary HTML elements. Returns false on iPhone/iPod, sandboxed iframes, or non-supporting browsers.
+   */
+  private isFullscreenSupported(): boolean {
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+      return false;
+    }
+
+    // 1. Explicit exclusion of iPhone and iPod touch (Apple disallows DOM element fullscreen on iOS phones)
+    const ua = window.navigator.userAgent || '';
+    if (/iPhone|iPod/i.test(ua)) {
+      return false;
+    }
+
+    // 2. Document-level permission or policy restrictions (e.g. sandboxed iframe without allow="fullscreen")
+    const doc = document as WebKitDocument;
+    if ('fullscreenEnabled' in document && !document.fullscreenEnabled) {
+      return false;
+    }
+    if ('webkitFullscreenEnabled' in doc && !doc.webkitFullscreenEnabled) {
+      return false;
+    }
+
+    // 3. Executable method check on document.documentElement
+    const docEl = document.documentElement as WebKitElement;
+    return (
+      typeof docEl.requestFullscreen === 'function' ||
+      typeof docEl.webkitRequestFullscreen === 'function'
+    );
   }
 }
 
