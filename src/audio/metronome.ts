@@ -41,6 +41,7 @@ export class MetronomeEngine {
   // Beat dispatch tracking
   private pendingBeatTimeouts: Set<number> = new Set();
   private beatCallbacks: Set<BeatCallback> = new Set();
+  private interruptionCallbacks: Set<() => void> = new Set();
 
   constructor(initialTempo: number = 60, initialTimeSignature: TimeSignature = '4/4') {
     this.tempo = initialTempo;
@@ -49,9 +50,6 @@ export class MetronomeEngine {
 
     // Default to 'ambient' so non-essential sounds/UI respect silent mode and don't interrupt other audio
     this.setAudioSessionCategory('ambient');
-
-    // Re-trigger scheduler when tab visibility returns to prevent background throttling gap
-    document.addEventListener('visibilitychange', this.handleVisibilityChange);
   }
 
   /**
@@ -82,26 +80,55 @@ export class MetronomeEngine {
   public destroy(): void {
     this.stop();
     this.setAudioSessionCategory('ambient');
-    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
-    if (this.ctx && this.ctx.state !== 'closed') {
-      void this.ctx.close();
+    this.interruptionCallbacks.clear();
+    if (this.ctx) {
+      this.ctx.onstatechange = null;
+      if (this.ctx.state !== 'closed') {
+        void this.ctx.close();
+      }
     }
   }
-
-  private handleVisibilityChange = (): void => {
-    if (!document.hidden && this.isRunning && !this.isPaused) {
-      if (this.ctx && this.ctx.state === 'suspended') {
-        void this.ctx.resume();
-      }
-      this.scheduler();
-    }
-  };
 
   public onBeat(callback: BeatCallback): () => void {
     this.beatCallbacks.add(callback);
     return () => {
       this.beatCallbacks.delete(callback);
     };
+  }
+
+  /**
+   * Subscribes to OS-level audio interruptions (e.g. system sleep, headphone disconnection, incoming call).
+   */
+  public onInterruption(callback: () => void): () => void {
+    this.interruptionCallbacks.add(callback);
+    return () => {
+      this.interruptionCallbacks.delete(callback);
+    };
+  }
+
+  private handleAudioContextStateChange = (): void => {
+    if (!this.ctx) return;
+    const state = this.ctx.state as string;
+    if (state === 'suspended' || state === 'interrupted') {
+      if (this.isRunning && !this.isPaused) {
+        for (const cb of this.interruptionCallbacks) {
+          cb();
+        }
+      }
+    }
+  };
+
+  /**
+   * Attempts to resume an AudioContext that may have been suspended during sleep or backgrounding.
+   */
+  public async ensureAudioContextActive(): Promise<void> {
+    if (this.ctx && (this.ctx.state === 'suspended' || (this.ctx.state as string) === 'interrupted')) {
+      try {
+        await this.ctx.resume();
+      } catch {
+        // Expected if platform demands direct user interaction
+      }
+    }
   }
 
   private ensureAudioContext(): AudioContext | null {
@@ -113,6 +140,7 @@ export class MetronomeEngine {
           : undefined;
       if (AudioCtxClass) {
         this.ctx = new AudioCtxClass();
+        this.ctx.onstatechange = this.handleAudioContextStateChange;
         this.masterGainNode = this.ctx.createGain();
         this.masterGainNode.connect(this.ctx.destination);
       }

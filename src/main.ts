@@ -32,6 +32,7 @@ import { MeasureRenderer } from './notation/renderer';
 import { MeasureBuffer } from './scroller/buffer';
 import { ScrollerView } from './scroller/scroller';
 import { waitForMusicFonts } from './notation/fonts';
+import { ScreenWakeLockController } from './utils/wakeLock';
 
 interface WebKitDocument extends Document {
   webkitFullscreenEnabled?: boolean;
@@ -52,6 +53,8 @@ class GuidonicaApp {
   private renderer: MeasureRenderer;
   private buffer: MeasureBuffer;
   private scroller: ScrollerView;
+  private wakeLock: ScreenWakeLockController = new ScreenWakeLockController();
+  private isAutoPaused: boolean = false;
   private fontsReady: boolean = false;
   private fontInitPromise: Promise<void> | null = null;
 
@@ -261,6 +264,7 @@ class GuidonicaApp {
     this.bindAboutModalEvents();
     this.bindKeyboardShortcuts();
     this.bindAudioEvents();
+    this.bindLifecycleEvents();
     this.renderBeatDots(initialSettings.timeSignature);
 
     // 5. Initial idle frame (stationary staff lines & playhead)
@@ -1071,35 +1075,96 @@ class GuidonicaApp {
 
       this.highlightBeatDot(event.beatNumber, event.isDownbeat);
     });
+
+    // Handle OS-level audio interruptions (system sleep, Bluetooth disconnect, phone call)
+    this.metronome.onInterruption(() => {
+      if (globalState.playbackState === 'playing' || globalState.playbackState === 'counting-in') {
+        this.pausePlayback();
+      }
+    });
   }
 
-  private async togglePlayback(): Promise<void> {
+  private bindLifecycleEvents(): void {
+    // 1. Page Visibility API: Auto-pause when tab is hidden, minimized, or device locked
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (globalState.playbackState === 'playing' || globalState.playbackState === 'counting-in') {
+          this.isAutoPaused = true;
+          this.pausePlayback();
+        }
+      } else {
+        // Tab returned to foreground
+        if (this.isAutoPaused) {
+          this.isAutoPaused = false;
+          // Ensure audio context is ready after sleep or backgrounding
+          void this.metronome.ensureAudioContextActive();
+          // Render current paused frame cleanly
+          this.renderIdleFrame();
+        }
+      }
+    });
+
+    // 2. Pagehide & Freeze (Page Lifecycle API / background tab memory saver)
+    window.addEventListener('pagehide', () => {
+      if (globalState.playbackState === 'playing' || globalState.playbackState === 'counting-in') {
+        this.isAutoPaused = true;
+        this.pausePlayback();
+      }
+    });
+
+    document.addEventListener('freeze', () => {
+      if (globalState.playbackState === 'playing' || globalState.playbackState === 'counting-in') {
+        this.isAutoPaused = true;
+        this.pausePlayback();
+      }
+    });
+  }
+
+  private async startPlayback(): Promise<void> {
     if (!this.fontsReady && this.fontInitPromise) {
       await this.fontInitPromise;
     }
-
-    const state = globalState.playbackState;
     const hasCountIn = globalState.settings.countIn;
+    globalState.setPlaybackState(hasCountIn ? 'counting-in' : 'playing');
+    this.metronome.start(hasCountIn);
+    this.scroller.startLoop();
+    void this.wakeLock.acquire();
+  }
 
+  private pausePlayback(): void {
+    globalState.setPlaybackState('paused');
+    this.metronome.pause();
+    this.scroller.stopLoop();
+    void this.wakeLock.release();
+  }
+
+  private async resumePlayback(): Promise<void> {
+    if (!this.fontsReady && this.fontInitPromise) {
+      await this.fontInitPromise;
+    }
+    const nextState = this.metronome.isCountingIn() ? 'counting-in' : 'playing';
+    globalState.setPlaybackState(nextState);
+    this.metronome.resume();
+    this.scroller.startLoop();
+    void this.wakeLock.acquire();
+  }
+
+  private async togglePlayback(): Promise<void> {
+    const state = globalState.playbackState;
     if (state === 'stopped') {
-      globalState.setPlaybackState(hasCountIn ? 'counting-in' : 'playing');
-      this.metronome.start(hasCountIn);
-      this.scroller.startLoop();
+      await this.startPlayback();
     } else if (state === 'counting-in' || state === 'playing') {
-      globalState.setPlaybackState('paused');
-      this.metronome.pause();
-      this.scroller.stopLoop();
+      this.pausePlayback();
     } else if (state === 'paused') {
-      const nextState = this.metronome.isCountingIn() ? 'counting-in' : 'playing';
-      globalState.setPlaybackState(nextState);
-      this.metronome.resume();
-      this.scroller.startLoop();
+      await this.resumePlayback();
     }
   }
 
   private resetSession(): void {
+    this.isAutoPaused = false;
     this.metronome.stop();
     this.scroller.stopLoop();
+    void this.wakeLock.release();
     globalState.setPlaybackState('stopped');
 
     if (globalState.settings.zoomMode === 'auto') {
