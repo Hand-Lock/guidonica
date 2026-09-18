@@ -8,7 +8,7 @@
 
 ### 1. Vision & Core Philosophy
 
-**Aero-Guidonica** unites two seemingly disparate worlds:
+**Aero-Guidonica** unites three fundamental pillars:
 1. **Historical Humanist Musical Pedagogy**: Inspired by Guido d'Arezzo's 11th-century revolutionary sight-singing mnemonic (*Manus Guidonica*), solfège tradition, and classical music engraving.
 2. **The Golden Age of Digital Tactility (2000–2010)**: The optimistic, sensory, and refractive aesthetics of **Frutiger Aero**, **macOS Aqua**, **Windows Aero**, and **Liquid Glass** skeuomorphism.
 3. **The Suckless Web Philosophy**: Absolute refusal of the slow, bloated "modern web". Zero megabyte-heavy frameworks, zero sluggish CSS libraries, zero sprite sheet downloads, zero layout jank.
@@ -16,6 +16,15 @@
 #### The Suckless Aero Axiom
 > **"Sensory richness through mathematical frugality."**  
 > We achieve luminous glass, tactile buttons, refractive specular highlights, and physical feedback **entirely through pure, hardware-accelerated CSS3 and SVG vector math**. Not a single kilobyte of external JavaScript UI runtime or heavy raster textures is tolerated.
+
+#### The Chromatic Principle of Olo: LMS (0, 1, 0) & Perceptual Extremes
+> **"Guido unlocked the ear; Olo illuminates the eye."**  
+> In 2025, vision scientists at UC Berkeley isolated retinal stimulation of the human eye's M-cones (medium-wavelength / green cones) at coordinate $(0, 1, 0)$ in LMS color space—a state never activated in isolation by natural broadband light. They called this hypothetical perceptual color **"Olo"** (from $0-1-0$). On standard digital sRGB displays, the closest attainable approximation is **`#00FFCC`** (an ultra-saturated, electric spring-turquoise / cyan-green).
+>
+> In Guidonica, Olo is elevated into a core **design principle**:
+> - **Pedagogical Parallels**: Just as Guido d'Arezzo made the invisible acoustics of pitch visible and structured through the Guidonian Hand, four-line staff, and solfège syllables, Olo makes the extreme theoretical boundaries of human retinal perception tangible on a digital screen.
+> - **Aero Material Resonance**: Within Frutiger Aero and Aqua skeuomorphism, `#00FFCC` is the quintessential luminous liquid crystal hue—radiant, aquatic, optimistic, and hyper-tactile.
+> - **Dual-Tier Contrast Architecture**: Because pure `#00FFCC` has high relative luminance ($Y \approx 0.76$), it shines with unmatched brilliance ($>13.5:1$ contrast) in Dark Mode, while in Light Mode it pairs with **Deep Olo / Olo Viridian** (`#008269` / `#007a62`, $>4.6:1$ contrast) for text and staves, using pure `#00FFCC` for specular highlights, glass beads, and radiant hover halos.
 
 ---
 
@@ -33,8 +42,8 @@ Guidonica uses two complementary typefaces designed by Huerta Tipográfica, marr
   ```
 - **Styling Rules**:
   - Headings feature subtle glass text emboss:
-    - *Light Mode*: `text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8), 0 0 12px rgba(37, 99, 235, 0.15);`
-    - *Dark Mode*: `text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 16px rgba(56, 189, 248, 0.35);`
+    - *Light Mode*: `text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8), 0 0 12px rgba(0, 130, 105, 0.18);`
+    - *Dark Mode*: `text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 16px rgba(0, 255, 204, 0.35);`
 
 #### B. Interface & Body Text: *Alegreya Sans*
 - **Classification**: Humanist sans-serif counterpart to Alegreya.
@@ -93,21 +102,22 @@ Every interactive element in Guidonica exists in a coherent simulated physical l
 
 ### 4. Color Palettes & Material Systems
 
-#### Light Mode: *Liquid Crystal & Aqua*
-- **Mood**: High-clarity optical glass, luminous clear water, crisp alpine sky.
-- **Background**: Subtle cool iridescent gradient (`#ebf4fc` to `#f7faff`).
-- **Glass Ribbon (Header)**: `rgba(255, 255, 255, 0.75)` with `backdrop-filter: blur(16px) saturate(180%)`.
-- **Primary Accent (Aqua Gel)**: Luminous azure gel (`#2563eb` through `#3b82f6` with specular cap).
+#### Light Mode: *Liquid Crystal & Olo Viridian*
+- **Mood**: High-clarity optical glass, luminous clear water, crisp alpine sky with vibrant seafoam reflection.
+- **Background**: Subtle cool iridescent gradient (`#e3effb` to `#e8f2fc`).
+- **Glass Ribbon (Header)**: `rgba(255, 255, 255, 0.76)` with `backdrop-filter: blur(16px) saturate(180%)`.
+- **Primary Accent (Aqua-Olo Liquid Gel)**: Luminous spring-turquoise gel (`#00ffcc` specular cap down to `#00b894` and `#00705a` base).
+- **High-Contrast Accent (Deep Olo Viridian)**: Deep chromatic Olo (`#008269`, $4.6:1$ contrast) for text, interactive borders, and focus rings.
 - **Secondary Surfaces**: Frosted crystal acrylic (`linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%)`).
-- **Canvas Base**: Pure optical white (`#ffffff`) preserving optimal sheet music contrast.
+- **Canvas Base**: Pure optical white (`#ffffff`) preserving optimal sheet music contrast, with Solfège labels in Deep Olo Viridian (`#007a62`).
 
-#### Dark Mode: *Obsidian Aero & Quartz*
-- **Mood**: Sleek tinted smoked acrylic, deep space cobalt, incandescent neon glows.
-- **Background**: Deep obsidian blue gradient (`#080c16` to `#0d1527`).
-- **Glass Ribbon (Header)**: `rgba(15, 23, 42, 0.75)` with `backdrop-filter: blur(16px) saturate(190%)`.
-- **Primary Accent (Cyan Neon Gel)**: Electric sky blue (`#0ea5e9` to `#38bdf8` with glowing specular edge).
+#### Dark Mode: *Obsidian Aero & Olo Neon*
+- **Mood**: Sleek tinted smoked acrylic, deep space cobalt, incandescent neon Olo luminescence.
+- **Background**: Deep obsidian blue gradient (`#070b14` to `#0d1628`).
+- **Glass Ribbon (Header)**: `rgba(13, 22, 40, 0.78)` with `backdrop-filter: blur(16px) saturate(190%)` and subtle Olo refraction edge (`rgba(0, 255, 204, 0.22)`).
+- **Primary Accent (Olo Neon Gel)**: Pure electric Olo (`#00ffcc` specular cap to `#00bfa5` body and `#005a4e` base, $>13.5:1$ contrast).
 - **Secondary Surfaces**: Smoked midnight glass (`linear-gradient(180deg, #1e293b 0%, #0f172a 100%)`).
-- **Canvas Base**: Midnight slate (`#0f172a`) with cool steel staves.
+- **Canvas Base**: Midnight slate (`#0f172a`) with cool steel staves and Solfège labels glowing in radiant pure Olo (`#00ffcc`).
 
 ---
 
@@ -116,27 +126,26 @@ Every interactive element in Guidonica exists in a coherent simulated physical l
 #### A. The Primary Gel Button (`#btn-play-pause`)
 - **Structure**: Rounded pill button ($R=6\text{px}$), high tactile presence.
 - **States**:
-  - *Rest*: Multi-layer gradient with top specular gloss arc, outer drop shadow.
-  - *Hover*: Luminescent halo (`box-shadow: 0 0 14px var(--accent-glow), 0 3px 6px rgba(0,0,0,0.2)`).
-  - *Active / Pressed*: `transform: translateY(1px)`, inset shadow.
-  - *Playing (State Shift)*: Transforms into a radiant Amber/Topaz gel button (`#f59e0b` to `#d97706`).
+  - *Rest*: Multi-layer gradient with top specular gloss arc reflecting `#00ffcc`, rich turquoise/teal body, and outer drop shadow.
+  - *Hover*: Luminescent Olo halo (`box-shadow: var(--btn-primary-sheen), 0 0 16px var(--accent-glow), 0 4px 10px rgba(0, 184, 148, 0.4)`).
+  - *Active / Pressed*: `transform: translateY(1px)`, inset cavity shadow.
+  - *Playing (State Shift)*: Transforms into a radiant Amber/Topaz gel button (`#fbbf24` to `#d97706`).
 
 #### B. Secondary Acrylic Buttons & Icon Controls
-- Crisp beveled border with frosted sub-surface reflection.
+- Crisp beveled border with frosted sub-surface reflection. Hover state highlights border in `var(--accent)` with a subtle Olo glow halo.
 - Icon controls (`#btn-theme-toggle`, `#btn-fullscreen-toggle`, etc.) are square glass gems with centered micro-glyphs.
 
 #### C. Skeuomorphic Sliders (Tempo & Volume)
 - **Track**: Sunken groove well (`box-shadow: inset 0 2px 4px rgba(0,0,0,0.25)`).
 - **Thumb**: Polished 3D glass bead or capsule with radial specular reflection hotspot at top-left:
-  ```css
-  radial-gradient(circle at 35% 35%, #ffffff 0%, var(--accent) 55%, var(--accent-hover) 100%)
-  ```
+  - *Light Mode*: `radial-gradient(circle at 35% 35%, #ffffff 0%, #00ffcc 30%, #009e80 75%, #006652 100%)`
+  - *Dark Mode*: `radial-gradient(circle at 35% 35%, #ffffff 0%, #33ffdb 30%, #00bfa5 75%, #006954 100%)`
 
 #### D. Luminous LED Beat Indicators
 - Encased in a frosted glass capsule pill.
 - **Inactive Beads**: Softly recessed smoked pearls.
-- **Active Downbeat (Beat 1)**: Radiant ruby/coral laser gem with multi-stage radial bloom.
-- **Active Sub-beats (2, 3, 4, etc.)**: Luminous aqua/cyan glowing sphere.
+- **Active Downbeat (Beat 1)**: Radiant ruby/coral laser gem with multi-stage radial bloom (`#f43f5e`), forming a complementary Teal & Ruby aesthetic with Olo.
+- **Active Sub-beats (2, 3, 4, etc.)**: Luminous Olo glowing sphere (`radial-gradient(...)` with `0 0 12px #00ffcc, 0 0 22px rgba(0, 255, 204, 0.65)`).
 
 #### E. Floating Glass Sheets (Tuplets Popover & Modals)
 - Deep glass depth: `backdrop-filter: blur(20px)`, `border: 1px solid var(--panel-border-glass)`.

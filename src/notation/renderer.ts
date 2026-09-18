@@ -68,7 +68,7 @@ export class MeasureRenderer {
     const noteColor = isDark ? '#f8fafc' : '#000000';
     const staffColor = isDark ? '#94a3b8' : '#64748b';
     const tupletColor = isDark ? '#cbd5e1' : '#334155';
-    const solfegeColor = isDark ? '#38bdf8' : '#2563eb';
+    const solfegeColor = isDark ? '#00ffcc' : '#007a62';
 
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     renderer.resize(canvas.width, canvas.height);
