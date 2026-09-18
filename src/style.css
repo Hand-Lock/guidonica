@@ -1,7 +1,15 @@
 /*
  * Aero-Guidonica Design System: Liquid Glass, Skeuomorphic Tactility & Suckless Web Engine
  * Authoritative styling specification: docs/DESIGN_MANIFESTO.md
+ * Chromatic principle: "Olo" (#00FFCC) — UC Berkeley LMS (0, 1, 0) M-cone perceptual boundary
  */
+
+:root {
+  --color-olo: #00ffcc;
+  --color-olo-rgb: 0, 255, 204;
+  --color-olo-deep: #008269;
+  --color-olo-viridian: #00705a;
+}
 
 :root,
 [data-theme='light'] {
@@ -18,7 +26,7 @@
   --playhead-color: #e11d48;
   --playhead-glow: rgba(225, 29, 72, 0.45);
 
-  /* Glass Ribbons & Panels (Aero Aqua) */
+  /* Glass Ribbons & Panels (Aero Aqua & Olo) */
   --panel-bg: rgba(255, 255, 255, 0.76);
   --panel-border: rgba(255, 255, 255, 0.85);
   --panel-border-bottom: rgba(186, 210, 235, 0.75);
@@ -31,14 +39,14 @@
   --text-muted: #526581;
   --text-emboss: 0 1px 0 rgba(255, 255, 255, 0.9);
 
-  /* Primary Aqua Gel Button */
-  --btn-primary-bg: linear-gradient(180deg, #60a5fa 0%, #2563eb 48%, #1d4ed8 52%, #1e40af 100%);
-  --btn-primary-hover-bg: linear-gradient(180deg, #93c5fd 0%, #3b82f6 48%, #2563eb 52%, #1d4ed8 100%);
-  --btn-primary-border: rgba(29, 78, 216, 0.85);
-  --btn-primary-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-  --btn-primary-shadow: 0 3px 8px rgba(37, 99, 235, 0.35), 0 1px 2px rgba(0, 0, 0, 0.12);
+  /* Primary Aqua-Olo Liquid Gel Button */
+  --btn-primary-bg: linear-gradient(180deg, #00ffcc 0%, #00b894 48%, #009376 52%, #00705a 100%);
+  --btn-primary-hover-bg: linear-gradient(180deg, #5dfde0 0%, #00cc9e 48%, #00a887 52%, #00856b 100%);
+  --btn-primary-border: rgba(0, 112, 90, 0.85);
+  --btn-primary-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.75), inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  --btn-primary-shadow: 0 3px 10px rgba(0, 184, 148, 0.35), 0 1px 2px rgba(0, 0, 0, 0.12);
   --btn-primary-text: #ffffff;
-  --btn-primary-text-shadow: 0 -1px 0 rgba(15, 23, 42, 0.5);
+  --btn-primary-text-shadow: 0 -1px 0 rgba(0, 50, 40, 0.6);
 
   /* Playing State (Amber/Topaz Liquid Gel) */
   --btn-playing-bg: linear-gradient(180deg, #fbbf24 0%, #f59e0b 48%, #d97706 52%, #b45309 100%);
@@ -58,21 +66,21 @@
   --input-bg: rgba(255, 255, 255, 0.88);
   --input-border: #cbd5e1;
   --input-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 0 rgba(255, 255, 255, 0.8);
-  --input-focus-border: #2563eb;
-  --input-focus-glow: 0 0 0 3px rgba(37, 99, 235, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  --input-focus-border: #008269;
+  --input-focus-glow: 0 0 0 3px rgba(0, 255, 204, 0.32), inset 0 1px 2px rgba(0, 0, 0, 0.05);
 
   /* Skeuomorphic Sliders */
   --slider-track-bg: linear-gradient(180deg, #cbd5e1 0%, #e2e8f0 100%);
   --slider-track-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.2), 0 1px 0 rgba(255, 255, 255, 0.8);
-  --slider-thumb-bg: radial-gradient(circle at 35% 35%, #ffffff 0%, #60a5fa 35%, #2563eb 80%, #1d4ed8 100%);
-  --slider-thumb-border: #1d4ed8;
-  --slider-thumb-shadow: 0 2px 5px rgba(37, 99, 235, 0.45), 0 1px 2px rgba(0, 0, 0, 0.25);
+  --slider-thumb-bg: radial-gradient(circle at 35% 35%, #ffffff 0%, #00ffcc 30%, #009e80 75%, #006652 100%);
+  --slider-thumb-border: #00705a;
+  --slider-thumb-shadow: 0 2px 6px rgba(0, 158, 128, 0.45), 0 1px 2px rgba(0, 0, 0, 0.25);
 
-  /* Accents & Highlights */
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-dim: rgba(37, 99, 235, 0.12);
-  --accent-glow: rgba(37, 99, 235, 0.35);
+  /* Accents & Highlights (Olo Viridian & Olo Glow) */
+  --accent: #008269;
+  --accent-hover: #006652;
+  --accent-dim: rgba(0, 255, 204, 0.14);
+  --accent-glow: rgba(0, 255, 204, 0.5);
   --danger: #e11d48;
 
   /* Beat Dots & LED Indicators */
@@ -81,8 +89,8 @@
   --beat-container-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.8);
   --beat-dot-inactive: radial-gradient(circle at 35% 35%, #ffffff 0%, #cbd5e1 70%, #94a3b8 100%);
   --beat-dot-inactive-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.8);
-  --beat-dot-active: radial-gradient(circle at 35% 35%, #ffffff 0%, #38bdf8 30%, #0284c7 80%, #0369a1 100%);
-  --beat-dot-active-glow: 0 0 12px #38bdf8, 0 0 22px rgba(56, 189, 248, 0.6), inset 0 1px 1px #ffffff;
+  --beat-dot-active: radial-gradient(circle at 35% 35%, #ffffff 0%, #00ffcc 35%, #00b894 75%, #00705a 100%);
+  --beat-dot-active-glow: 0 0 12px #00ffcc, 0 0 22px rgba(0, 255, 204, 0.65), inset 0 1px 1px #ffffff;
   --beat-dot-downbeat: radial-gradient(circle at 35% 35%, #ffffff 0%, #f43f5e 30%, #e11d48 80%, #9f1239 100%);
   --beat-dot-downbeat-glow: 0 0 14px #f43f5e, 0 0 24px rgba(225, 29, 72, 0.7), inset 0 1px 1px #ffffff;
 
@@ -107,9 +115,9 @@
   --playhead-color: #f43f5e;
   --playhead-glow: rgba(244, 63, 94, 0.5);
 
-  /* Glass Ribbons & Panels (Obsidian Aero) */
+  /* Glass Ribbons & Panels (Obsidian Aero & Olo) */
   --panel-bg: rgba(13, 22, 40, 0.78);
-  --panel-border: rgba(56, 189, 248, 0.22);
+  --panel-border: rgba(0, 255, 204, 0.22);
   --panel-border-bottom: rgba(30, 41, 59, 0.85);
   --panel-glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 49%, rgba(0, 0, 0, 0.25) 50%, rgba(255, 255, 255, 0.05) 100%);
   --panel-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.35);
@@ -120,14 +128,14 @@
   --text-muted: #94a3b8;
   --text-emboss: 0 1px 2px rgba(0, 0, 0, 0.9);
 
-  /* Primary Aqua Gel Button */
-  --btn-primary-bg: linear-gradient(180deg, #38bdf8 0%, #0284c7 48%, #0369a1 52%, #075985 100%);
-  --btn-primary-hover-bg: linear-gradient(180deg, #7dd3fc 0%, #0ea5e9 48%, #0284c7 52%, #0369a1 100%);
-  --btn-primary-border: rgba(56, 189, 248, 0.65);
-  --btn-primary-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
-  --btn-primary-shadow: 0 3px 10px rgba(14, 165, 233, 0.45), 0 1px 2px rgba(0, 0, 0, 0.4);
+  /* Primary Olo Neon Gel Button */
+  --btn-primary-bg: linear-gradient(180deg, #00ffcc 0%, #00bfa5 48%, #00897b 52%, #005a4e 100%);
+  --btn-primary-hover-bg: linear-gradient(180deg, #33ffdb 0%, #00d4b2 48%, #009e8d 52%, #006e5f 100%);
+  --btn-primary-border: rgba(0, 255, 204, 0.65);
+  --btn-primary-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+  --btn-primary-shadow: 0 3px 12px rgba(0, 255, 204, 0.4), 0 1px 2px rgba(0, 0, 0, 0.4);
   --btn-primary-text: #ffffff;
-  --btn-primary-text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.7);
+  --btn-primary-text-shadow: 0 -1px 1px rgba(0, 30, 20, 0.8);
 
   /* Playing State (Amber/Topaz Liquid Gel) */
   --btn-playing-bg: linear-gradient(180deg, #fbbf24 0%, #d97706 48%, #b45309 52%, #78350f 100%);
@@ -147,21 +155,21 @@
   --input-bg: rgba(15, 23, 42, 0.88);
   --input-border: rgba(71, 85, 105, 0.65);
   --input-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.05);
-  --input-focus-border: #38bdf8;
-  --input-focus-glow: 0 0 0 3px rgba(56, 189, 248, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  --input-focus-border: #00ffcc;
+  --input-focus-glow: 0 0 0 3px rgba(0, 255, 204, 0.28), inset 0 1px 2px rgba(0, 0, 0, 0.3);
 
   /* Skeuomorphic Sliders */
   --slider-track-bg: linear-gradient(180deg, #090e1a 0%, #172033 100%);
   --slider-track-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.08);
-  --slider-thumb-bg: radial-gradient(circle at 35% 35%, #ffffff 0%, #7dd3fc 35%, #0284c7 80%, #0369a1 100%);
-  --slider-thumb-border: #38bdf8;
-  --slider-thumb-shadow: 0 2px 6px rgba(14, 165, 233, 0.5), 0 1px 2px rgba(0, 0, 0, 0.6);
+  --slider-thumb-bg: radial-gradient(circle at 35% 35%, #ffffff 0%, #33ffdb 30%, #00bfa5 75%, #006954 100%);
+  --slider-thumb-border: #00ffcc;
+  --slider-thumb-shadow: 0 2px 8px rgba(0, 255, 204, 0.5), 0 1px 2px rgba(0, 0, 0, 0.6);
 
   /* Accents & Highlights */
-  --accent: #38bdf8;
-  --accent-hover: #0ea5e9;
-  --accent-dim: rgba(56, 189, 248, 0.15);
-  --accent-glow: rgba(56, 189, 248, 0.4);
+  --accent: #00ffcc;
+  --accent-hover: #33ffdb;
+  --accent-dim: rgba(0, 255, 204, 0.15);
+  --accent-glow: rgba(0, 255, 204, 0.45);
   --danger: #f43f5e;
 
   /* Beat Dots & LED Indicators */
@@ -170,14 +178,14 @@
   --beat-container-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.05);
   --beat-dot-inactive: radial-gradient(circle at 35% 35%, #334155 0%, #1e293b 70%, #0f172a 100%);
   --beat-dot-inactive-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.08);
-  --beat-dot-active: radial-gradient(circle at 35% 35%, #ffffff 0%, #38bdf8 30%, #0284c7 80%, #0369a1 100%);
-  --beat-dot-active-glow: 0 0 14px #38bdf8, 0 0 24px rgba(56, 189, 248, 0.7), inset 0 1px 1px #ffffff;
+  --beat-dot-active: radial-gradient(circle at 35% 35%, #ffffff 0%, #00ffcc 30%, #00bfa5 75%, #005a4e 100%);
+  --beat-dot-active-glow: 0 0 14px #00ffcc, 0 0 24px rgba(0, 255, 204, 0.7), inset 0 1px 1px #ffffff;
   --beat-dot-downbeat: radial-gradient(circle at 35% 35%, #ffffff 0%, #f43f5e 30%, #e11d48 80%, #9f1239 100%);
   --beat-dot-downbeat-glow: 0 0 16px #f43f5e, 0 0 26px rgba(244, 63, 94, 0.75), inset 0 1px 1px #ffffff;
 
   /* Floating Popovers & Dialogs */
   --popover-bg: rgba(15, 23, 42, 0.88);
-  --popover-border: rgba(56, 189, 248, 0.25);
+  --popover-border: rgba(0, 255, 204, 0.25);
   --popover-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7), 0 10px 20px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   --table-row-hover: rgba(30, 41, 59, 0.75);
 }
@@ -197,7 +205,7 @@
     --playhead-glow: rgba(244, 63, 94, 0.5);
 
     --panel-bg: rgba(13, 22, 40, 0.78);
-    --panel-border: rgba(56, 189, 248, 0.22);
+    --panel-border: rgba(0, 255, 204, 0.22);
     --panel-border-bottom: rgba(30, 41, 59, 0.85);
     --panel-glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 49%, rgba(0, 0, 0, 0.25) 50%, rgba(255, 255, 255, 0.05) 100%);
     --panel-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.35);
@@ -207,13 +215,13 @@
     --text-muted: #94a3b8;
     --text-emboss: 0 1px 2px rgba(0, 0, 0, 0.9);
 
-    --btn-primary-bg: linear-gradient(180deg, #38bdf8 0%, #0284c7 48%, #0369a1 52%, #075985 100%);
-    --btn-primary-hover-bg: linear-gradient(180deg, #7dd3fc 0%, #0ea5e9 48%, #0284c7 52%, #0369a1 100%);
-    --btn-primary-border: rgba(56, 189, 248, 0.65);
-    --btn-primary-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
-    --btn-primary-shadow: 0 3px 10px rgba(14, 165, 233, 0.45), 0 1px 2px rgba(0, 0, 0, 0.4);
+    --btn-primary-bg: linear-gradient(180deg, #00ffcc 0%, #00bfa5 48%, #00897b 52%, #005a4e 100%);
+    --btn-primary-hover-bg: linear-gradient(180deg, #33ffdb 0%, #00d4b2 48%, #009e8d 52%, #006e5f 100%);
+    --btn-primary-border: rgba(0, 255, 204, 0.65);
+    --btn-primary-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+    --btn-primary-shadow: 0 3px 12px rgba(0, 255, 204, 0.4), 0 1px 2px rgba(0, 0, 0, 0.4);
     --btn-primary-text: #ffffff;
-    --btn-primary-text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.7);
+    --btn-primary-text-shadow: 0 -1px 1px rgba(0, 30, 20, 0.8);
 
     --btn-playing-bg: linear-gradient(180deg, #fbbf24 0%, #d97706 48%, #b45309 52%, #78350f 100%);
     --btn-playing-hover-bg: linear-gradient(180deg, #fcd34d 0%, #f59e0b 48%, #d97706 52%, #b45309 100%);
@@ -230,19 +238,19 @@
     --input-bg: rgba(15, 23, 42, 0.88);
     --input-border: rgba(71, 85, 105, 0.65);
     --input-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.05);
-    --input-focus-border: #38bdf8;
-    --input-focus-glow: 0 0 0 3px rgba(56, 189, 248, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.3);
+    --input-focus-border: #00ffcc;
+    --input-focus-glow: 0 0 0 3px rgba(0, 255, 204, 0.28), inset 0 1px 2px rgba(0, 0, 0, 0.3);
 
     --slider-track-bg: linear-gradient(180deg, #090e1a 0%, #172033 100%);
     --slider-track-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.08);
-    --slider-thumb-bg: radial-gradient(circle at 35% 35%, #ffffff 0%, #7dd3fc 35%, #0284c7 80%, #0369a1 100%);
-    --slider-thumb-border: #38bdf8;
-    --slider-thumb-shadow: 0 2px 6px rgba(14, 165, 233, 0.5), 0 1px 2px rgba(0, 0, 0, 0.6);
+    --slider-thumb-bg: radial-gradient(circle at 35% 35%, #ffffff 0%, #33ffdb 30%, #00bfa5 75%, #006954 100%);
+    --slider-thumb-border: #00ffcc;
+    --slider-thumb-shadow: 0 2px 8px rgba(0, 255, 204, 0.5), 0 1px 2px rgba(0, 0, 0, 0.6);
 
-    --accent: #38bdf8;
-    --accent-hover: #0ea5e9;
-    --accent-dim: rgba(56, 189, 248, 0.15);
-    --accent-glow: rgba(56, 189, 248, 0.4);
+    --accent: #00ffcc;
+    --accent-hover: #33ffdb;
+    --accent-dim: rgba(0, 255, 204, 0.15);
+    --accent-glow: rgba(0, 255, 204, 0.45);
     --danger: #f43f5e;
 
     --beat-container-bg: linear-gradient(180deg, rgba(10, 16, 30, 0.75) 0%, rgba(15, 23, 42, 0.85) 100%);
@@ -250,13 +258,13 @@
     --beat-container-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.05);
     --beat-dot-inactive: radial-gradient(circle at 35% 35%, #334155 0%, #1e293b 70%, #0f172a 100%);
     --beat-dot-inactive-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.08);
-    --beat-dot-active: radial-gradient(circle at 35% 35%, #ffffff 0%, #38bdf8 30%, #0284c7 80%, #0369a1 100%);
-    --beat-dot-active-glow: 0 0 14px #38bdf8, 0 0 24px rgba(56, 189, 248, 0.7), inset 0 1px 1px #ffffff;
+    --beat-dot-active: radial-gradient(circle at 35% 35%, #ffffff 0%, #00ffcc 30%, #00bfa5 75%, #005a4e 100%);
+    --beat-dot-active-glow: 0 0 14px #00ffcc, 0 0 24px rgba(0, 255, 204, 0.7), inset 0 1px 1px #ffffff;
     --beat-dot-downbeat: radial-gradient(circle at 35% 35%, #ffffff 0%, #f43f5e 30%, #e11d48 80%, #9f1239 100%);
     --beat-dot-downbeat-glow: 0 0 16px #f43f5e, 0 0 26px rgba(244, 63, 94, 0.75), inset 0 1px 1px #ffffff;
 
     --popover-bg: rgba(15, 23, 42, 0.88);
-    --popover-border: rgba(56, 189, 248, 0.25);
+    --popover-border: rgba(0, 255, 204, 0.25);
     --popover-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7), 0 10px 20px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
     --table-row-hover: rgba(30, 41, 59, 0.75);
   }
@@ -436,7 +444,7 @@ code, kbd, pre, samp {
 
 .btn-primary:hover {
   background: var(--btn-primary-hover-bg);
-  box-shadow: var(--btn-primary-sheen), 0 0 14px var(--accent-glow), 0 4px 10px rgba(37, 99, 235, 0.4);
+  box-shadow: var(--btn-primary-sheen), 0 0 16px var(--accent-glow), var(--btn-primary-shadow);
 }
 
 /* Playing State: Amber/Topaz Gel */
