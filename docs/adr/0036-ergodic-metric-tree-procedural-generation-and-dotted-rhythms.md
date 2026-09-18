@@ -20,13 +20,20 @@ An architectural audit of the legacy rhythm generator revealed three critical fl
 
 ## Decisions & Implementation Methods
 
-### 1. Transparent Modifier Architecture: Dotted & Tied Controls
+### 1. Architectural Doctrine: The Ergodic Generation Principle
+Guidonica establishes **Procedural Ergodicity** as an uncompromisable core architectural axiom:
+- **Formal State-Space Completeness**: Let the user's chosen configuration define a discrete state space $\Omega = (\text{Clef}, \text{TimeSig}, \text{Subdivisions}, \text{Dotted}, \text{Ties}, \text{Intervals}, \text{Accidentals})$. The engine is strictly ergodic:
+  $$\forall \omega \in \Omega, \quad P(\omega) > 0$$
+  Every grammatically and mathematically valid musical combination in $\Omega$ must possess a non-zero probability of being generated.
+- **Prohibition of Silent Hijacking & Magic Biases**: Algorithmic rules must never silently replace durations (such as mapping quarters to dotted quarters) or omit valid patterns. Any rhythmic or melodic capability must be explicitly exposed to the user as a toggle or parameter.
+
+### 2. Transparent Modifier Architecture: Dotted & Tied Controls
 - **Subdivision Modifier (`subdivisions.dotted`)**:
   Added an explicit toggle in the Subdivisions matrix with a custom vector dotted-quarter icon (`.icon-dotted-quarter`). Dotted durations (`hd`, `qd`, `8d`) are only generated when `dotted: true` AND their corresponding base subdivision is enabled.
 - **Tied Notes Toggle (`settings.ties`)**:
   Added a toggle in the Options drawer with an SVG curved tie icon (`.icon-tie`). When enabled, adjacent rhythmic units may be tied together while strictly preserving pitch identity.
 
-### 2. Ergodic Metric Tree Partitioning (`src/notation/generator.ts`)
+### 3. Ergodic Metric Tree Partitioning (`src/notation/generator.ts`)
 The procedural generator was rewritten around recursive, ergodic metric trees:
 
 #### A. Compound Meters (6/8):
