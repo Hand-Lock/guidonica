@@ -186,8 +186,8 @@ export class ScrollerView {
     // 2. Draw continuous stationary staff lines across the entire viewport
     this.drawStationaryStaffLines(ctx, w, isDark);
 
-    // 3. Obtain current beat from hardware audio clock
-    const currentGlobalBeat = this.metronome.getCurrentGlobalBeat();
+    // 3. Obtain visual beat position from hardware audio clock (waits at 0 during count-in)
+    const visualBeat = this.metronome.getVisualBeat();
     const activeBeatWidth = computeBeatWidth(
       settings.subdivisions,
       settings.timeSignature,
@@ -196,9 +196,9 @@ export class ScrollerView {
 
     // 4. Update ring buffer: pre-render upcoming measures and evict offscreen ones
     const lookaheadBeats = (w - this.playheadX) / (activeBeatWidth * zoom) + 6;
-    this.buffer.ensureAhead(currentGlobalBeat, lookaheadBeats, settings);
+    this.buffer.ensureAhead(visualBeat, lookaheadBeats, settings);
 
-    const minVisibleBeat = currentGlobalBeat - this.playheadX / (activeBeatWidth * zoom) - 2;
+    const minVisibleBeat = visualBeat - this.playheadX / (activeBeatWidth * zoom) - 2;
     this.buffer.evictBefore(minVisibleBeat);
 
     // 5. Blit visible measures from ring-buffer with subpixel floating-point positioning
@@ -207,7 +207,7 @@ export class ScrollerView {
       const m = measures[i];
       // Subpixel screen X: noteheads cross playhead at their exact fractional beat time
       const measureScreenX =
-        this.playheadX - NOTE_START_OFFSET * zoom + (m.data.startBeat - currentGlobalBeat) * (m.data.beatWidth * zoom);
+        this.playheadX - NOTE_START_OFFSET * zoom + (m.data.startBeat - visualBeat) * (m.data.beatWidth * zoom);
 
       if (measureScreenX + m.width >= 0 && measureScreenX <= w) {
         ctx.drawImage(

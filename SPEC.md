@@ -49,7 +49,7 @@ The user must have full control over the generation engine prior to and during a
      - *Any interval*: Unrestricted random walk within clef range.
    - Tonality: Natural notes (diatonic C Major / A Minor) as the clean default baseline, with optional chromatic accidental toggles.
 6. **Count-In / Lead-In**:
-   - 1-measure metronome lead-in with visual beat indicators before the first note reaches the playhead, allowing the musician to internalize tempo.
+   - 1-measure metronome lead-in with visual beat indicators where the score waits in place at the true first measure (Measure 0) under the playhead, allowing the musician to prepare and internalize tempo before tape scrolling begins on beat 1.
 
 ---
 

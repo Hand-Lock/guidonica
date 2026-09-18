@@ -24,11 +24,13 @@ describe('MetronomeEngine', () => {
     metronome = new MetronomeEngine(60, '4/4');
 
     metronome.setTempo(15);
-    // At stopped state, tempo is clamped
-    expect(metronome.getCurrentGlobalBeat()).toBe(-4); // count-in default
+    // At stopped state, tempo is clamped and beat rests at origin 0
+    expect(metronome.getCurrentGlobalBeat()).toBe(0);
+    expect(metronome.getVisualBeat()).toBe(0);
 
     metronome.setTempo(300);
-    expect(metronome.getCurrentGlobalBeat()).toBe(-4);
+    expect(metronome.getCurrentGlobalBeat()).toBe(0);
+    expect(metronome.getVisualBeat()).toBe(0);
   });
 
   it('clamps volume to [0.0, 1.0] and handles mute toggles', () => {
@@ -64,13 +66,76 @@ describe('MetronomeEngine', () => {
     expect(metronome.getPulse68()).toBe('eighth');
   });
 
-  it('computes negative count-in beats when stopped with count-in', () => {
+  it('returns 0 for both global and visual beats when stopped', () => {
     metronome = new MetronomeEngine(60, '3/4');
-    // 3 beats per measure count-in
-    expect(metronome.getCurrentGlobalBeat()).toBe(-3);
+    // In stationary count-in design, stopped state rests at Measure 0 beat 0
+    expect(metronome.getCurrentGlobalBeat()).toBe(0);
+    expect(metronome.getVisualBeat()).toBe(0);
 
     metronome.setTimeSignature('6/8');
-    expect(metronome.getCurrentGlobalBeat()).toBe(-6);
+    expect(metronome.getCurrentGlobalBeat()).toBe(0);
+    expect(metronome.getVisualBeat()).toBe(0);
+  });
+
+  it('clamps negative count-in beats to 0 for getVisualBeat to wait in place', () => {
+    // Mock AudioContext for Web Audio clock simulation
+    const mockCtx = {
+      currentTime: 10.0,
+      state: 'running',
+      destination: {},
+      createGain: () => ({
+        connect: () => {},
+        disconnect: () => {},
+        gain: {
+          setValueAtTime: () => {},
+          exponentialRampToValueAtTime: () => {},
+          cancelScheduledValues: () => {},
+        },
+      }),
+      createOscillator: () => ({
+        type: 'sine',
+        connect: () => {},
+        disconnect: () => {},
+        frequency: {
+          setValueAtTime: () => {},
+          exponentialRampToValueAtTime: () => {},
+        },
+        start: () => {},
+        stop: () => {},
+      }),
+      resume: () => Promise.resolve(),
+      close: () => Promise.resolve(),
+    };
+
+    const OriginalAudioContext = window.AudioContext;
+    window.AudioContext = function () {
+      return mockCtx as unknown as AudioContext;
+    } as unknown as typeof AudioContext;
+
+    try {
+      metronome = new MetronomeEngine(60, '4/4');
+      // Start metronome with count-in at simulated currentTime = 10.0s
+      metronome.start(true);
+      expect(metronome.getIsRunning()).toBe(true);
+
+      // During count-in, global beat is negative while visual beat waits in place at 0
+      expect(metronome.isCountingIn()).toBe(true);
+      expect(metronome.getCurrentGlobalBeat()).toBeLessThan(0);
+      expect(metronome.getVisualBeat()).toBe(0);
+
+      // Advance clock into active playback (after count-in completes at measureZeroStartTime)
+      // startTime = 10.0 + 0.05 = 10.05; countIn = 4 beats = 4.0s; measureZeroStartTime = 14.05s
+      mockCtx.currentTime = 15.05; // 1 beat into Measure 0
+      expect(metronome.isCountingIn()).toBe(false);
+      expect(metronome.getCurrentGlobalBeat()).toBeCloseTo(1.0, 3);
+      expect(metronome.getVisualBeat()).toBeCloseTo(1.0, 3);
+
+      metronome.stop();
+      expect(metronome.getCurrentGlobalBeat()).toBe(0);
+      expect(metronome.getVisualBeat()).toBe(0);
+    } finally {
+      window.AudioContext = OriginalAudioContext;
+    }
   });
 
   it('dynamically switches audio session between ambient (idle/pause/stop) and playback (active practice)', () => {
