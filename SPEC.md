@@ -137,3 +137,6 @@ To maintain a stable 60 FPS / 120 FPS on all hardware without CPU throttling:
 - `R` or `Escape`: Reset session to start.
 - `ArrowUp` / `ArrowDown`: Increment / decrement tempo by 5 BPM.
 - `Shift + ArrowUp` / `Shift + ArrowDown`: Increment / decrement tempo by 1 BPM.
+- `+` / `=`: Zoom in (+10%).
+- `-` / `_`: Zoom out (-10%).
+- `0`: Auto-fit zoom to screen (Auto Zoom).
