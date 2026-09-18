@@ -43,6 +43,9 @@ interface WebKitElement extends HTMLElement {
   webkitRequestFullscreen?: () => Promise<void> | void;
 }
 
+export const FULLSCREEN_ENTER_PATH = 'M2.5 5.5V2.5h3 M13.5 5.5V2.5h-3 M2.5 10.5v3h3 M13.5 10.5v3h-3';
+export const FULLSCREEN_EXIT_PATH = 'M5.5 2.5v3h-3 M10.5 2.5v3h3 M5.5 13.5v-3h-3 M10.5 13.5v-3h3';
+
 class GuidonicaApp {
   private metronome: MetronomeEngine;
   private generator: MusicGenerator;
@@ -497,9 +500,9 @@ class GuidonicaApp {
       const syncFullscreenGlyph = (): void => {
         const doc = document as WebKitDocument;
         const isFs = Boolean(doc.fullscreenElement || doc.webkitFullscreenElement);
-        const glyph = this.btnFullscreenToggle.querySelector('span');
-        if (glyph) {
-          glyph.textContent = isFs ? '🗗' : '⛶';
+        const iconPath = this.btnFullscreenToggle.querySelector<SVGPathElement>('#fullscreen-icon-path');
+        if (iconPath) {
+          iconPath.setAttribute('d', isFs ? FULLSCREEN_EXIT_PATH : FULLSCREEN_ENTER_PATH);
         }
         const label = isFs ? 'Exit full screen' : 'Toggle full screen';
         this.btnFullscreenToggle.setAttribute('aria-label', label);

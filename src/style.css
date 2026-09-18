@@ -1389,7 +1389,8 @@ a.btn-icon-only {
   color: var(--text-main);
 }
 
-.nav-icon {
+.nav-icon,
+.fullscreen-icon {
   display: block;
 }
 
