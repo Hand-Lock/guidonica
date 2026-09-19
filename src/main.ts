@@ -84,6 +84,7 @@ class GuidonicaApp {
   private clefRangeHint: HTMLElement;
   private toggleRests: HTMLInputElement;
   private toggleCountIn: HTMLInputElement;
+  private togglePlayhead: HTMLInputElement;
   private selectSolfegeMode: HTMLSelectElement;
   private selectSoundProfile: HTMLSelectElement;
   private selectTheme: HTMLSelectElement;
@@ -167,6 +168,7 @@ class GuidonicaApp {
     this.toggleRests = document.getElementById('toggle-rests') as HTMLInputElement;
     this.toggleTies = document.getElementById('toggle-ties') as HTMLInputElement;
     this.toggleCountIn = document.getElementById('toggle-count-in') as HTMLInputElement;
+    this.togglePlayhead = document.getElementById('toggle-playhead') as HTMLInputElement;
     this.selectSolfegeMode = document.getElementById('select-solfege-mode') as HTMLSelectElement;
     this.selectSoundProfile = document.getElementById('select-sound-profile') as HTMLSelectElement;
     this.selectTheme = document.getElementById('select-theme') as HTMLSelectElement;
@@ -302,10 +304,11 @@ class GuidonicaApp {
     this.selectClef.value = settings.clef;
     this.clefRangeHint.textContent = CLEF_RANGE_DISPLAY[settings.clef];
 
-    // Rests, Ties & Count-In
+    // Rests, Ties, Count-In & Playhead
     this.toggleRests.checked = settings.rests;
     this.toggleTies.checked = settings.ties;
     this.toggleCountIn.checked = settings.countIn;
+    this.togglePlayhead.checked = settings.showPlayhead !== false;
 
     // Sound & Display overlays
     this.selectSolfegeMode.value = settings.solfegeLabelMode;
@@ -592,6 +595,15 @@ class GuidonicaApp {
     // Count-In
     this.toggleCountIn.addEventListener('change', () => {
       globalState.updateSettings({ countIn: this.toggleCountIn.checked });
+    });
+
+    // Playhead Visibility Toggle
+    this.togglePlayhead.addEventListener('change', () => {
+      const show = this.togglePlayhead.checked;
+      globalState.updateSettings({ showPlayhead: show });
+      if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
+        this.renderIdleFrame();
+      }
     });
 
     // Solfege Labels Mode
@@ -1002,6 +1014,14 @@ class GuidonicaApp {
       } else if (e.code === 'KeyR' || e.code === 'Escape') {
         e.preventDefault();
         this.resetSession();
+      } else if (e.code === 'KeyP') {
+        e.preventDefault();
+        const nextVal = !(globalState.settings.showPlayhead !== false);
+        this.togglePlayhead.checked = nextVal;
+        globalState.updateSettings({ showPlayhead: nextVal });
+        if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
+          this.renderIdleFrame();
+        }
       } else if (e.code === 'ArrowUp') {
         e.preventDefault();
         const delta = e.shiftKey ? 1 : 5;

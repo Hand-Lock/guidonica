@@ -162,6 +162,7 @@ export interface AppSettings {
   isMuted: boolean;
   zoom: number; // 0.3 to 1.5 (default 1.0)
   zoomMode: ZoomMode;
+  showPlayhead: boolean; // default true: stationary red playhead cursor line
 }
 
 export const MIN_ZOOM = 0.3;

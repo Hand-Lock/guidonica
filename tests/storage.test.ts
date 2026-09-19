@@ -14,6 +14,7 @@ describe('storage module', () => {
     expect(loaded.theme).toBe('auto');
     expect(loaded.zoom).toBe(1.0);
     expect(loaded.zoomMode).toBe('auto');
+    expect(loaded.showPlayhead).toBe(true);
   });
 
   it('persists and reloads modified settings accurately', () => {
@@ -29,6 +30,7 @@ describe('storage module', () => {
       solfegeLabelMode: 'solfege',
       zoom: 0.75,
       zoomMode: 'manual',
+      showPlayhead: false,
     };
 
     saveStoredSettings(custom);
@@ -44,6 +46,7 @@ describe('storage module', () => {
     expect(loaded.solfegeLabelMode).toBe('solfege');
     expect(loaded.zoom).toBe(0.75);
     expect(loaded.zoomMode).toBe('manual');
+    expect(loaded.showPlayhead).toBe(false);
   });
 
   it('clamps zoom setting between MIN_ZOOM (0.3) and MAX_ZOOM (1.5)', () => {

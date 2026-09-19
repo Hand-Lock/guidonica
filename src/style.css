@@ -737,9 +737,15 @@ code, kbd, pre, samp {
   vertical-align: -0.08em;
 }
 
+.music-icon.icon-playhead {
+  height: 1.05em;
+  vertical-align: -0.16em;
+}
+
 .rests-group,
 .ties-group,
-.count-in-group {
+.count-in-group,
+.playhead-group {
   justify-content: center;
 }
 

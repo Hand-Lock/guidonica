@@ -227,8 +227,10 @@ export class ScrollerView {
     // 6. Draw pinned clef & time signature at the left margin with clean gradient fade
     this.drawPinnedClef(ctx, settings.clef, settings.timeSignature, h, isDark, resolvedTheme);
 
-    // 7. Draw fixed playhead guide line in high-contrast red accent
-    this.drawPlayhead(ctx, h);
+    // 7. Draw fixed playhead guide line in high-contrast red accent (when enabled)
+    if (settings.showPlayhead !== false) {
+      this.drawPlayhead(ctx, h);
+    }
 
     ctx.restore();
   }
@@ -276,7 +278,9 @@ export class ScrollerView {
     ctx.fillRect(0, 0, w, h);
 
     this.drawStationaryStaffLines(ctx, w, isDark);
-    this.drawPlayhead(ctx, h);
+    if (settings.showPlayhead !== false) {
+      this.drawPlayhead(ctx, h);
+    }
 
     ctx.restore();
   }
