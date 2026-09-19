@@ -166,4 +166,33 @@ describe('storage module', () => {
     const resolvedAuto = resolveTheme('auto');
     expect(['light', 'dark']).toContain(resolvedAuto);
   });
+
+  it('persists and validates all 8 Setticlavio clefs, falling back to default for invalid clef values', () => {
+    const allClefs = [
+      'treble',
+      'soprano',
+      'mezzo-soprano',
+      'alto',
+      'tenor',
+      'baritone-f',
+      'baritone-c',
+      'bass',
+    ] as const;
+
+    for (const clef of allClefs) {
+      window.localStorage.clear();
+      saveStoredSettings({ ...DEFAULT_APP_SETTINGS, clef });
+      const loaded = loadStoredSettings();
+      expect(loaded.clef).toBe(clef);
+    }
+
+    // Invalid clef fallback
+    window.localStorage.clear();
+    window.localStorage.setItem(
+      'guidonica_settings_v1',
+      JSON.stringify({ clef: 'nonexistent-clef' })
+    );
+    const fallbackLoaded = loadStoredSettings();
+    expect(fallbackLoaded.clef).toBe(DEFAULT_APP_SETTINGS.clef);
+  });
 });

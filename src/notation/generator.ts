@@ -43,17 +43,29 @@ export const CLEF_PITCH_RANGES: Record<Clef, ClefPitchConfig> = {
     maxPitch: 'f/6',
     defaultAnchor: 'c/4',
   },
-  bass: {
-    // Staff lines: G2 to A3.
-    // 3 ledger lines below: A1 (space G1). 3 ledger lines above: G4 (space A4). Center line: D3.
+  soprano: {
+    // Staff lines: C4 to D5.
+    // 3 ledger lines below: D3 (space C3). 3 ledger lines above: C6 (space D6). Center line: G4.
     pitches: [
-      'g/1', 'a/1', 'b/1', 'c/2', 'd/2', 'e/2', 'f/2', 'g/2', 'a/2', 'b/2',
       'c/3', 'd/3', 'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4',
-      'f/4', 'g/4', 'a/4',
+      'f/4', 'g/4', 'a/4', 'b/4', 'c/5', 'd/5', 'e/5', 'f/5', 'g/5', 'a/5',
+      'b/5', 'c/6', 'd/6',
     ],
-    minPitch: 'g/1',
-    maxPitch: 'a/4',
-    defaultAnchor: 'c/3',
+    minPitch: 'c/3',
+    maxPitch: 'd/6',
+    defaultAnchor: 'c/4',
+  },
+  'mezzo-soprano': {
+    // Staff lines: A3 to B4.
+    // 3 ledger lines below: B2 (space A2). 3 ledger lines above: A5 (space B5). Center line: E4.
+    pitches: [
+      'a/2', 'b/2', 'c/3', 'd/3', 'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4',
+      'd/4', 'e/4', 'f/4', 'g/4', 'a/4', 'b/4', 'c/5', 'd/5', 'e/5', 'f/5',
+      'g/5', 'a/5', 'b/5',
+    ],
+    minPitch: 'a/2',
+    maxPitch: 'b/5',
+    defaultAnchor: 'c/4',
   },
   alto: {
     // Staff lines: F3 to G4.
@@ -79,6 +91,42 @@ export const CLEF_PITCH_RANGES: Record<Clef, ClefPitchConfig> = {
     maxPitch: 'e/5',
     defaultAnchor: 'c/4',
   },
+  'baritone-f': {
+    // Staff lines: B2 to C4.
+    // 3 ledger lines below: C2 (space B1). 3 ledger lines above: B4 (space C5). Center line: F3.
+    pitches: [
+      'b/1', 'c/2', 'd/2', 'e/2', 'f/2', 'g/2', 'a/2', 'b/2', 'c/3', 'd/3',
+      'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4', 'f/4', 'g/4',
+      'a/4', 'b/4', 'c/5',
+    ],
+    minPitch: 'b/1',
+    maxPitch: 'c/5',
+    defaultAnchor: 'c/3',
+  },
+  'baritone-c': {
+    // Staff lines: B2 to C4.
+    // 3 ledger lines below: C2 (space B1). 3 ledger lines above: B4 (space C5). Center line: F3.
+    pitches: [
+      'b/1', 'c/2', 'd/2', 'e/2', 'f/2', 'g/2', 'a/2', 'b/2', 'c/3', 'd/3',
+      'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4', 'f/4', 'g/4',
+      'a/4', 'b/4', 'c/5',
+    ],
+    minPitch: 'b/1',
+    maxPitch: 'c/5',
+    defaultAnchor: 'c/3',
+  },
+  bass: {
+    // Staff lines: G2 to A3.
+    // 3 ledger lines below: A1 (space G1). 3 ledger lines above: G4 (space A4). Center line: D3.
+    pitches: [
+      'g/1', 'a/1', 'b/1', 'c/2', 'd/2', 'e/2', 'f/2', 'g/2', 'a/2', 'b/2',
+      'c/3', 'd/3', 'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4',
+      'f/4', 'g/4', 'a/4',
+    ],
+    minPitch: 'g/1',
+    maxPitch: 'a/4',
+    defaultAnchor: 'c/3',
+  },
 };
 
 export class MusicGenerator {
@@ -95,7 +143,7 @@ export class MusicGenerator {
     this.tupletCounter = 0;
     this.consecutiveUnisons = 0;
     this.isFirstNoteOfSession = true;
-    for (const clef of ['treble', 'bass', 'alto', 'tenor'] as Clef[]) {
+    for (const clef of Object.keys(CLEF_PITCH_RANGES) as Clef[]) {
       const config = CLEF_PITCH_RANGES[clef];
       const anchorIdx = config.pitches.indexOf(config.defaultAnchor);
       this.lastPitchIndex.set(clef, anchorIdx >= 0 ? anchorIdx : Math.floor(config.pitches.length / 2));
@@ -188,9 +236,13 @@ export class MusicGenerator {
   private getRestDefaultPitch(clef: Clef): string {
     switch (clef) {
       case 'treble': return 'b/4';
-      case 'bass': return 'd/3';
+      case 'soprano': return 'g/4';
+      case 'mezzo-soprano': return 'e/4';
       case 'alto': return 'c/4';
       case 'tenor': return 'a/3';
+      case 'baritone-f':
+      case 'baritone-c': return 'f/3';
+      case 'bass': return 'd/3';
     }
   }
 

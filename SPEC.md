@@ -32,8 +32,16 @@ The user must have full control over the generation engine prior to and during a
    - Common meters: `2/4`, `3/4`, `4/4`, `6/8`.
    - The generator ensures each measure strictly satisfies the metric beat count and beaming conventions of the selected meter.
 3. **Clef**:
-   - Selectable: Treble (G clef), Bass (F clef), Alto (C clef on line 3), Tenor (C clef on line 4).
-   - Pitches are strictly constrained to the comfortable reading range of the chosen clef (standard staff lines plus up to 2 ledger lines above/below).
+   - Complete **Setticlavio** system (8 historical vocal/instrumental clefs):
+     - **Treble (G2)** (`treble`): G clef on line 2, range E3 – F6 (±3 ledger lines).
+     - **Soprano (C1)** (`soprano`): C clef on line 1, range C3 – D6 (±3 ledger lines).
+     - **Mezzo-Soprano (C2)** (`mezzo-soprano`): C clef on line 2, range A2 – B5 (±3 ledger lines).
+     - **Alto (C3)** (`alto`): C clef on line 3, range F2 – G5 (±3 ledger lines).
+     - **Tenor (C4)** (`tenor`): C clef on line 4, range D2 – E5 (±3 ledger lines).
+     - **Baritone (F3)** (`baritone-f`): F clef on line 3, range B1 – C5 (±3 ledger lines).
+     - **Baritone (C5)** (`baritone-c`): C clef on line 5, range B1 – C5 (±3 ledger lines).
+     - **Bass (F4)** (`bass`): F clef on line 4, range G1 – A4 (±3 ledger lines).
+   - Pitches are strictly constrained to the reading range of the chosen clef (standard staff lines plus up to 3 ledger lines above/below, spanning exactly 23 diatonic pitches).
 4. **Subdivisions & Rhythmic Vocabulary**:
    - Granular toggles allowing any combination of:
      - Whole notes (`1`)

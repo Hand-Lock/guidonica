@@ -74,7 +74,16 @@ describe('Solfège and Note Label Geometry', () => {
   });
 
   it('verifies all pitches across all clefs have valid Solfège and Italian Solfège mappings', () => {
-    const clefs = ['treble', 'bass', 'alto', 'tenor'] as const;
+    const clefs = [
+      'treble',
+      'soprano',
+      'mezzo-soprano',
+      'alto',
+      'tenor',
+      'baritone-f',
+      'baritone-c',
+      'bass',
+    ] as const;
     for (const clef of clefs) {
       const pitchList = CLEF_PITCH_RANGES[clef].pitches;
       expect(pitchList.length).toBeGreaterThan(0);

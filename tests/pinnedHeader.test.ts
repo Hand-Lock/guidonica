@@ -75,7 +75,16 @@ describe('Stationary Clef and Time Signature Left Stave Header', () => {
 
   it('correctly rasterizes all combinations of clefs and time signatures', () => {
     const renderer = new MeasureRenderer();
-    const clefs: Clef[] = ['treble', 'bass', 'alto', 'tenor'];
+    const clefs: Clef[] = [
+      'treble',
+      'soprano',
+      'mezzo-soprano',
+      'alto',
+      'tenor',
+      'baritone-f',
+      'baritone-c',
+      'bass',
+    ];
     const timeSignatures: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
 
     for (const clef of clefs) {
