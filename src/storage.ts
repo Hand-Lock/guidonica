@@ -1,5 +1,6 @@
 import {
   AppSettings,
+  Clef,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
   MAX_ZOOM,
@@ -83,6 +84,21 @@ export function loadStoredSettings(): AppSettings {
 
     const parsed = JSON.parse(raw) as Partial<AppSettings>;
 
+    const VALID_CLEFS: readonly Clef[] = [
+      'treble',
+      'soprano',
+      'mezzo-soprano',
+      'alto',
+      'tenor',
+      'baritone-f',
+      'baritone-c',
+      'bass',
+    ];
+    const clef: Clef =
+      typeof parsed.clef === 'string' && (VALID_CLEFS as readonly string[]).includes(parsed.clef)
+        ? (parsed.clef as Clef)
+        : DEFAULT_APP_SETTINGS.clef;
+
     const solfegeLabelMode =
       parsed.solfegeLabelMode === 'none' ||
       parsed.solfegeLabelMode === 'solfege' ||
@@ -132,6 +148,7 @@ export function loadStoredSettings(): AppSettings {
     return {
       ...DEFAULT_APP_SETTINGS,
       ...parsed,
+      clef,
       solfegeLabelMode,
       soundProfile,
       theme,

@@ -5,7 +5,16 @@ import { DEFAULT_APP_SETTINGS } from '../src/storage';
 
 describe('MusicGenerator', () => {
   const timeSignatures: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
-  const clefs: Clef[] = ['treble', 'bass', 'alto', 'tenor'];
+  const clefs: Clef[] = [
+    'treble',
+    'soprano',
+    'mezzo-soprano',
+    'alto',
+    'tenor',
+    'baritone-f',
+    'baritone-c',
+    'bass',
+  ];
 
   it('strictly conserves metric beat totals across all meters', () => {
     const generator = new MusicGenerator();
@@ -349,5 +358,62 @@ describe('MusicGenerator', () => {
     }
 
     expect(tiedPairCount).toBeGreaterThan(0);
+  });
+
+  it('configures all 8 Setticlavio clefs with exactly 23 diatonic pitches (±3 ledger lines)', () => {
+    for (const clef of clefs) {
+      const config = CLEF_PITCH_RANGES[clef];
+      expect(config.pitches.length).toBe(23);
+      expect(config.pitches[0]).toBe(config.minPitch);
+      expect(config.pitches[config.pitches.length - 1]).toBe(config.maxPitch);
+      expect(config.pitches).toContain(config.defaultAnchor);
+    }
+  });
+
+  it('anchors the initial session note to defaultAnchor for every clef', () => {
+    for (const clef of clefs) {
+      const generator = new MusicGenerator();
+      const settings: AppSettings = {
+        ...DEFAULT_APP_SETTINGS,
+        clef,
+        rests: false,
+      };
+      const measure = generator.generateMeasure(0, settings, 0);
+      expect(measure.notes[0].keys[0]).toBe(CLEF_PITCH_RANGES[clef].defaultAnchor);
+    }
+  });
+
+  it('positions rests on the middle staff line across all 8 clefs', () => {
+    const expectedCenterPitches: Record<Clef, string> = {
+      treble: 'b/4',
+      soprano: 'g/4',
+      'mezzo-soprano': 'e/4',
+      alto: 'c/4',
+      tenor: 'a/3',
+      'baritone-f': 'f/3',
+      'baritone-c': 'f/3',
+      bass: 'd/3',
+    };
+
+    for (const clef of clefs) {
+      const generator = new MusicGenerator();
+      const settings: AppSettings = {
+        ...DEFAULT_APP_SETTINGS,
+        clef,
+        rests: true,
+      };
+
+      let foundRest = false;
+      for (let m = 0; m < 20; m++) {
+        const measure = generator.generateMeasure(m, settings, m * 4);
+        for (const note of measure.notes) {
+          if (note.isRest) {
+            foundRest = true;
+            expect(note.keys[0]).toBe(expectedCenterPitches[clef]);
+          }
+        }
+      }
+      expect(foundRest).toBe(true);
+    }
   });
 });

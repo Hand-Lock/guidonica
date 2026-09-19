@@ -1,4 +1,12 @@
-export type Clef = 'treble' | 'bass' | 'alto' | 'tenor';
+export type Clef =
+  | 'treble'
+  | 'soprano'
+  | 'mezzo-soprano'
+  | 'alto'
+  | 'tenor'
+  | 'baritone-f'
+  | 'baritone-c'
+  | 'bass';
 
 export type TimeSignature = '4/4' | '3/4' | '2/4' | '6/8';
 
@@ -23,9 +31,13 @@ export interface ClefPitchConfig {
 
 export const CLEF_RANGE_DISPLAY: Record<Clef, string> = {
   treble: 'E3 – F6 (±3 ledger lines)',
-  bass: 'G1 – A4 (±3 ledger lines)',
+  soprano: 'C3 – D6 (±3 ledger lines)',
+  'mezzo-soprano': 'A2 – B5 (±3 ledger lines)',
   alto: 'F2 – G5 (±3 ledger lines)',
   tenor: 'D2 – E5 (±3 ledger lines)',
+  'baritone-f': 'B1 – C5 (±3 ledger lines)',
+  'baritone-c': 'B1 – C5 (±3 ledger lines)',
+  bass: 'G1 – A4 (±3 ledger lines)',
 };
 
 export const TUPLET_NAMES = [

@@ -108,7 +108,16 @@ describe('In-App Notation Zoom Pipeline', () => {
 
   it('rasterizes pinned header across all time signatures and clefs', () => {
     const renderer = new MeasureRenderer();
-    const clefs: Clef[] = ['treble', 'bass', 'alto', 'tenor'];
+    const clefs: Clef[] = [
+      'treble',
+      'soprano',
+      'mezzo-soprano',
+      'alto',
+      'tenor',
+      'baritone-f',
+      'baritone-c',
+      'bass',
+    ];
     const timeSigs: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
 
     for (const clef of clefs) {
