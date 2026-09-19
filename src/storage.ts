@@ -56,6 +56,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   isMuted: false,
   zoom: DEFAULT_ZOOM,
   zoomMode: 'auto',
+  showPlayhead: true,
 };
 
 /**
@@ -123,6 +124,10 @@ export function loadStoredSettings(): AppSettings {
     }
 
     const ties = typeof parsed.ties === 'boolean' ? parsed.ties : DEFAULT_APP_SETTINGS.ties;
+    const showPlayhead =
+      typeof parsed.showPlayhead === 'boolean'
+        ? parsed.showPlayhead
+        : DEFAULT_APP_SETTINGS.showPlayhead;
 
     return {
       ...DEFAULT_APP_SETTINGS,
@@ -133,6 +138,7 @@ export function loadStoredSettings(): AppSettings {
       zoom,
       zoomMode,
       ties,
+      showPlayhead,
       subdivisions: {
         ...DEFAULT_APP_SETTINGS.subdivisions,
         ...(parsed.subdivisions || {}),
