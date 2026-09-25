@@ -1,5 +1,6 @@
 import {
   AppSettings,
+  CLEFS,
   Clef,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
@@ -25,16 +26,8 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     eighth: true,
     sixteenth: false,
     dotted: true,
-    triplets: false,
   },
-  tuplets: {
-    duplet: { ...DEFAULT_TUPLET_OPTIONS.duplet },
-    triplet: { ...DEFAULT_TUPLET_OPTIONS.triplet },
-    quadruplet: { ...DEFAULT_TUPLET_OPTIONS.quadruplet },
-    quintuplet: { ...DEFAULT_TUPLET_OPTIONS.quintuplet },
-    sextuplet: { ...DEFAULT_TUPLET_OPTIONS.sextuplet },
-    septuplet: { ...DEFAULT_TUPLET_OPTIONS.septuplet },
-  },
+  tuplets: structuredClone(DEFAULT_TUPLET_OPTIONS),
   rests: false,
   ties: false,
   intervals: {
@@ -84,18 +77,8 @@ export function loadStoredSettings(): AppSettings {
 
     const parsed = JSON.parse(raw) as Partial<AppSettings>;
 
-    const VALID_CLEFS: readonly Clef[] = [
-      'treble',
-      'soprano',
-      'mezzo-soprano',
-      'alto',
-      'tenor',
-      'baritone-f',
-      'baritone-c',
-      'bass',
-    ];
     const clef: Clef =
-      typeof parsed.clef === 'string' && (VALID_CLEFS as readonly string[]).includes(parsed.clef)
+      typeof parsed.clef === 'string' && (CLEFS as readonly string[]).includes(parsed.clef)
         ? (parsed.clef as Clef)
         : DEFAULT_APP_SETTINGS.clef;
 

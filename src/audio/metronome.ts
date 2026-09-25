@@ -1,4 +1,11 @@
-import { AudioSessionType, Pulse68Mode, SoundProfile, TimeSignature } from '../notation/types';
+import {
+  AudioSessionType,
+  METER,
+  Pulse68Mode,
+  SoundProfile,
+  TimeSignature,
+  clampTempo,
+} from '../notation/types';
 
 export interface BeatEvent {
   beatNumber: number; // 1-based index within the measure
@@ -152,7 +159,7 @@ export class MetronomeEngine {
   }
 
   public setTempo(bpm: number): void {
-    const clamped = Math.max(30, Math.min(240, bpm));
+    const clamped = clampTempo(bpm);
     if (this.tempo === clamped) return;
 
     if (this.isRunning && !this.isPaused && this.ctx) {
@@ -187,26 +194,9 @@ export class MetronomeEngine {
   }
 
   private updateMeterParams(): void {
-    switch (this.timeSignature) {
-      case '2/4':
-        this.beatsPerMeasure = 2;
-        this.secondsPerBeat = 60 / this.tempo;
-        break;
-      case '3/4':
-        this.beatsPerMeasure = 3;
-        this.secondsPerBeat = 60 / this.tempo;
-        break;
-      case '4/4':
-        this.beatsPerMeasure = 4;
-        this.secondsPerBeat = 60 / this.tempo;
-        break;
-      case '6/8':
-        this.beatsPerMeasure = 6;
-        // In 6/8 compound meter, 6 eighth-note beats.
-        // At tempo = 60 BPM (quarter BPM), eighth note = 0.5s (120 eighths per minute)
-        this.secondsPerBeat = (60 / this.tempo) * 0.5;
-        break;
-    }
+    const meter = METER[this.timeSignature];
+    this.beatsPerMeasure = meter.beatsPerMeasure;
+    this.secondsPerBeat = (60 / this.tempo) * meter.secondsPerBeatFactor;
   }
 
   public setVolume(volume: number): void {

@@ -364,8 +364,8 @@ describe('MusicGenerator', () => {
     for (const clef of clefs) {
       const config = CLEF_PITCH_RANGES[clef];
       expect(config.pitches.length).toBe(23);
-      expect(config.pitches[0]).toBe(config.minPitch);
-      expect(config.pitches[config.pitches.length - 1]).toBe(config.maxPitch);
+      // Rest pitch sits on the centre staff line, the midpoint of the ±3-ledger pool
+      expect(config.pitches[11]).toBe(config.restPitch);
       expect(config.pitches).toContain(config.defaultAnchor);
     }
   });

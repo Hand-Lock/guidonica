@@ -1,4 +1,4 @@
-import { AppSettings, RenderedMeasure } from '../notation/types';
+import { AppSettings, RenderedMeasure, getBeatsPerMeasure } from '../notation/types';
 import { MusicGenerator } from '../notation/generator';
 import { MeasureRenderer } from '../notation/renderer';
 import { isMusicFontReady } from '../notation/fonts';
@@ -51,14 +51,7 @@ export class MeasureBuffer {
 
     // If the browser tab was throttled in the background and currentGlobalBeat jumped ahead,
     // skip rendering offscreen measures that would be immediately discarded.
-    const beatsPerMeasure =
-      settings.timeSignature === '6/8'
-        ? 6
-        : settings.timeSignature === '3/4'
-        ? 3
-        : settings.timeSignature === '2/4'
-        ? 2
-        : 4;
+    const beatsPerMeasure = getBeatsPerMeasure(settings.timeSignature);
 
     if (this.nextMeasureStartBeat < currentGlobalBeat - 2) {
       const skippedMeasures = Math.floor(

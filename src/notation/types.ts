@@ -1,14 +1,39 @@
-export type Clef =
-  | 'treble'
-  | 'soprano'
-  | 'mezzo-soprano'
-  | 'alto'
-  | 'tenor'
-  | 'baritone-f'
-  | 'baritone-c'
-  | 'bass';
+export const CLEFS = [
+  'treble',
+  'soprano',
+  'mezzo-soprano',
+  'alto',
+  'tenor',
+  'baritone-f',
+  'baritone-c',
+  'bass',
+] as const;
+export type Clef = (typeof CLEFS)[number];
 
-export type TimeSignature = '4/4' | '3/4' | '2/4' | '6/8';
+export const TIME_SIGNATURES = ['4/4', '3/4', '2/4', '6/8'] as const;
+export type TimeSignature = (typeof TIME_SIGNATURES)[number];
+
+export interface MeterConfig {
+  beatsPerMeasure: number; // Count of metric beats (6/8 counts eighth-note beats)
+  beatValue: number; // Denominator of the time signature
+  secondsPerBeatFactor: number; // Metric beat length relative to one quarter-note BPM beat
+}
+
+/** Single source of truth for meter arithmetic (generator, buffer, metronome, UI). */
+export const METER: Record<TimeSignature, MeterConfig> = {
+  '4/4': { beatsPerMeasure: 4, beatValue: 4, secondsPerBeatFactor: 1 },
+  '3/4': { beatsPerMeasure: 3, beatValue: 4, secondsPerBeatFactor: 1 },
+  '2/4': { beatsPerMeasure: 2, beatValue: 4, secondsPerBeatFactor: 1 },
+  // At tempo = 60 quarter BPM an eighth-note beat lasts 0.5 s
+  '6/8': { beatsPerMeasure: 6, beatValue: 8, secondsPerBeatFactor: 0.5 },
+};
+
+export const MIN_TEMPO = 30;
+export const MAX_TEMPO = 240;
+
+export function clampTempo(bpm: number): number {
+  return Math.max(MIN_TEMPO, Math.min(MAX_TEMPO, Math.round(bpm)));
+}
 
 export interface IntervalOptions {
   unison: boolean; // 1st: same note / repeat (0 steps)
@@ -23,22 +48,10 @@ export interface IntervalOptions {
 }
 
 export interface ClefPitchConfig {
-  pitches: string[];
-  minPitch: string;
-  maxPitch: string;
+  pitches: string[]; // Ascending diatonic pool; first and last entries are the range bounds
   defaultAnchor: string;
+  restPitch: string; // Middle staff line, where rests are positioned
 }
-
-export const CLEF_RANGE_DISPLAY: Record<Clef, string> = {
-  treble: 'E3 – F6 (±3 ledger lines)',
-  soprano: 'C3 – D6 (±3 ledger lines)',
-  'mezzo-soprano': 'A2 – B5 (±3 ledger lines)',
-  alto: 'F2 – G5 (±3 ledger lines)',
-  tenor: 'D2 – E5 (±3 ledger lines)',
-  'baritone-f': 'B1 – C5 (±3 ledger lines)',
-  'baritone-c': 'B1 – C5 (±3 ledger lines)',
-  bass: 'G1 – A4 (±3 ledger lines)',
-};
 
 export const TUPLET_NAMES = [
   'duplet',
@@ -55,7 +68,7 @@ export type TupletValue = (typeof TUPLET_VALUES)[number];
 
 export type TupletOptions = Record<TupletName, Record<TupletValue, boolean>>;
 
-export const DEFAULT_TUPLET_OPTIONS: TupletOptions = {
+export const DEFAULT_TUPLET_OPTIONS: Readonly<TupletOptions> = {
   duplet: { '1/4': false, '1/8': false, '1/16': false },
   triplet: { '1/4': false, '1/8': false, '1/16': false },
   quadruplet: { '1/4': false, '1/8': false, '1/16': false },
@@ -71,7 +84,6 @@ export interface SubdivisionOptions {
   eighth: boolean;
   sixteenth: boolean;
   dotted?: boolean;
-  triplets?: boolean;
 }
 
 export type SolfegeLabelMode = 'none' | 'solfege' | 'italian' | 'letters';
@@ -157,7 +169,7 @@ export function subscribeSystemTheme(callback: (isDark: boolean) => void): () =>
 export type ZoomMode = 'auto' | 'manual';
 
 export interface AppSettings {
-  tempo: number; // 30-240 BPM
+  tempo: number; // MIN_TEMPO-MAX_TEMPO BPM
   timeSignature: TimeSignature;
   clef: Clef;
   subdivisions: SubdivisionOptions;
@@ -294,7 +306,7 @@ export function computeBeatWidth(
     // 16th note = 0.25 beat -> 55px spacing per 16th note (220px per quarter beat)
     return 220;
   }
-  if (has8thTuplet || subdivisions.triplets) {
+  if (has8thTuplet) {
     // Triplet eighth = 1/3 beat -> 55px spacing per triplet note (165px per quarter beat)
     return 165;
   }
@@ -310,12 +322,7 @@ export function computeBeatWidth(
  * Returns the count of metric beats in a measure for a given time signature.
  */
 export function getBeatsPerMeasure(ts: TimeSignature): number {
-  switch (ts) {
-    case '2/4': return 2;
-    case '3/4': return 3;
-    case '4/4': return 4;
-    case '6/8': return 6;
-  }
+  return METER[ts].beatsPerMeasure;
 }
 
 /**

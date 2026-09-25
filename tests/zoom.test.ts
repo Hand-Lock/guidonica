@@ -122,7 +122,7 @@ describe('In-App Notation Zoom Pipeline', () => {
 
     for (const clef of clefs) {
       for (const ts of timeSigs) {
-        const canvas = renderer.renderPinnedHeader(clef, ts, 'light');
+        const canvas = renderer.renderPinnedClef(clef, ts, 'light');
         expect(canvas).toBeInstanceOf(HTMLCanvasElement);
         expect(canvas.width).toBe(PINNED_HEADER_WIDTH);
         expect(canvas.height).toBe(MEASURE_CANVAS_HEIGHT);

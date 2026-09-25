@@ -3,6 +3,7 @@ import {
   Clef,
   ClefPitchConfig,
   IntervalOptions,
+  METER,
   MeasureData,
   NoteData,
   SubdivisionOptions,
@@ -39,9 +40,8 @@ export const CLEF_PITCH_RANGES: Record<Clef, ClefPitchConfig> = {
       'a/4', 'b/4', 'c/5', 'd/5', 'e/5', 'f/5', 'g/5', 'a/5', 'b/5', 'c/6',
       'd/6', 'e/6', 'f/6',
     ],
-    minPitch: 'e/3',
-    maxPitch: 'f/6',
     defaultAnchor: 'c/4',
+    restPitch: 'b/4',
   },
   soprano: {
     // Staff lines: C4 to D5.
@@ -51,9 +51,8 @@ export const CLEF_PITCH_RANGES: Record<Clef, ClefPitchConfig> = {
       'f/4', 'g/4', 'a/4', 'b/4', 'c/5', 'd/5', 'e/5', 'f/5', 'g/5', 'a/5',
       'b/5', 'c/6', 'd/6',
     ],
-    minPitch: 'c/3',
-    maxPitch: 'd/6',
     defaultAnchor: 'c/4',
+    restPitch: 'g/4',
   },
   'mezzo-soprano': {
     // Staff lines: A3 to B4.
@@ -63,9 +62,8 @@ export const CLEF_PITCH_RANGES: Record<Clef, ClefPitchConfig> = {
       'd/4', 'e/4', 'f/4', 'g/4', 'a/4', 'b/4', 'c/5', 'd/5', 'e/5', 'f/5',
       'g/5', 'a/5', 'b/5',
     ],
-    minPitch: 'a/2',
-    maxPitch: 'b/5',
     defaultAnchor: 'c/4',
+    restPitch: 'e/4',
   },
   alto: {
     // Staff lines: F3 to G4.
@@ -75,9 +73,8 @@ export const CLEF_PITCH_RANGES: Record<Clef, ClefPitchConfig> = {
       'b/3', 'c/4', 'd/4', 'e/4', 'f/4', 'g/4', 'a/4', 'b/4', 'c/5', 'd/5',
       'e/5', 'f/5', 'g/5',
     ],
-    minPitch: 'f/2',
-    maxPitch: 'g/5',
     defaultAnchor: 'c/4',
+    restPitch: 'c/4',
   },
   tenor: {
     // Staff lines: D3 to E4.
@@ -87,9 +84,8 @@ export const CLEF_PITCH_RANGES: Record<Clef, ClefPitchConfig> = {
       'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4', 'f/4', 'g/4', 'a/4', 'b/4',
       'c/5', 'd/5', 'e/5',
     ],
-    minPitch: 'd/2',
-    maxPitch: 'e/5',
     defaultAnchor: 'c/4',
+    restPitch: 'a/3',
   },
   'baritone-f': {
     // Staff lines: B2 to C4.
@@ -99,9 +95,8 @@ export const CLEF_PITCH_RANGES: Record<Clef, ClefPitchConfig> = {
       'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4', 'f/4', 'g/4',
       'a/4', 'b/4', 'c/5',
     ],
-    minPitch: 'b/1',
-    maxPitch: 'c/5',
     defaultAnchor: 'c/3',
+    restPitch: 'f/3',
   },
   'baritone-c': {
     // Staff lines: B2 to C4.
@@ -111,9 +106,8 @@ export const CLEF_PITCH_RANGES: Record<Clef, ClefPitchConfig> = {
       'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4', 'f/4', 'g/4',
       'a/4', 'b/4', 'c/5',
     ],
-    minPitch: 'b/1',
-    maxPitch: 'c/5',
     defaultAnchor: 'c/3',
+    restPitch: 'f/3',
   },
   bass: {
     // Staff lines: G2 to A3.
@@ -123,11 +117,18 @@ export const CLEF_PITCH_RANGES: Record<Clef, ClefPitchConfig> = {
       'c/3', 'd/3', 'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4',
       'f/4', 'g/4', 'a/4',
     ],
-    minPitch: 'g/1',
-    maxPitch: 'a/4',
     defaultAnchor: 'c/3',
+    restPitch: 'd/3',
   },
 };
+
+/** Human-readable range label for the clef hint, derived from the pitch pool bounds. */
+export const CLEF_RANGE_DISPLAY = Object.fromEntries(
+  Object.entries(CLEF_PITCH_RANGES).map(([clef, { pitches }]) => {
+    const label = (p: string): string => p.replace('/', '').toUpperCase();
+    return [clef, `${label(pitches[0])} – ${label(pitches[pitches.length - 1])} (±3 ledger lines)`];
+  })
+) as Record<Clef, string>;
 
 export class MusicGenerator {
   private lastPitchIndex: Map<Clef, number> = new Map();
@@ -155,7 +156,7 @@ export class MusicGenerator {
    */
   public generateMeasure(measureIndex: number, settings: AppSettings, startBeat: number): MeasureData {
     const { timeSignature, clef, subdivisions, tuplets, rests, ties, intervals } = settings;
-    const { beatsPerMeasure, beatValue } = this.getMeterConfig(timeSignature);
+    const { beatsPerMeasure, beatValue } = METER[timeSignature];
     const beatWidth = computeBeatWidth(subdivisions, timeSignature, tuplets);
     const measureWidth = beatsPerMeasure * beatWidth;
 
@@ -174,7 +175,7 @@ export class MusicGenerator {
     for (const item of rawRhythms) {
       let pitch: string;
       if (item.isRest) {
-        pitch = this.getRestDefaultPitch(clef);
+        pitch = CLEF_PITCH_RANGES[clef].restPitch;
       } else if (item.tieEnd && prevPitch !== null) {
         // Tied note strictly maintains the pitch of the note it is tied from
         pitch = prevPitch;
@@ -222,28 +223,6 @@ export class MusicGenerator {
       width: measureWidth,
       startBeat,
     };
-  }
-
-  private getMeterConfig(ts: TimeSignature): { beatsPerMeasure: number; beatValue: number } {
-    switch (ts) {
-      case '2/4': return { beatsPerMeasure: 2, beatValue: 4 };
-      case '3/4': return { beatsPerMeasure: 3, beatValue: 4 };
-      case '4/4': return { beatsPerMeasure: 4, beatValue: 4 };
-      case '6/8': return { beatsPerMeasure: 6, beatValue: 8 };
-    }
-  }
-
-  private getRestDefaultPitch(clef: Clef): string {
-    switch (clef) {
-      case 'treble': return 'b/4';
-      case 'soprano': return 'g/4';
-      case 'mezzo-soprano': return 'e/4';
-      case 'alto': return 'c/4';
-      case 'tenor': return 'a/3';
-      case 'baritone-f':
-      case 'baritone-c': return 'f/3';
-      case 'bass': return 'd/3';
-    }
   }
 
   private sampleNextPitch(clef: Clef, intervals: IntervalOptions): string {
@@ -362,9 +341,6 @@ export class MusicGenerator {
   /**
    * Helper to generate an array of notes belonging to a single tuplet group.
    */
-  /**
-   * Helper to generate an array of notes belonging to a single tuplet group.
-   */
   private makeTupletItems(
     numNotes: number,
     notesOccupied: number,
@@ -412,8 +388,7 @@ export class MusicGenerator {
       subdiv.half ||
       subdiv.quarter ||
       subdiv.eighth ||
-      subdiv.sixteenth ||
-      Boolean(subdiv.triplets);
+      subdiv.sixteenth;
     const hasAnyTuplet = this.hasActiveTuplets(tuplets);
 
     // Fallback: if absolutely nothing is selected, default to quarter notes
@@ -711,7 +686,7 @@ export class MusicGenerator {
     }
 
     // 9. Single-beat tuplets
-    if (tuplets?.triplet['1/8'] || subdiv.triplets) {
+    if (tuplets?.triplet['1/8']) {
       candidates.push(() => this.makeTupletItems(3, 2, '8', 1));
     }
     if (tuplets?.quintuplet['1/16']) {

@@ -306,27 +306,7 @@ export class MeasureRenderer {
    * Renders the stationary clef and selected time signature glyphs onto an offscreen
    * canvas to pin at the left margin.
    */
-  public renderPinnedClef(clef: Clef, theme?: ThemeMode): HTMLCanvasElement;
-  public renderPinnedClef(clef: Clef, timeSignature: TimeSignature, theme?: ThemeMode): HTMLCanvasElement;
-  public renderPinnedClef(
-    clef: Clef,
-    timeSignatureOrTheme: TimeSignature | ThemeMode = '4/4',
-    maybeTheme: ThemeMode = 'auto'
-  ): HTMLCanvasElement {
-    let timeSignature: TimeSignature = '4/4';
-    let theme: ThemeMode = 'auto';
-
-    if (
-      timeSignatureOrTheme === 'auto' ||
-      timeSignatureOrTheme === 'light' ||
-      timeSignatureOrTheme === 'dark'
-    ) {
-      theme = timeSignatureOrTheme;
-    } else {
-      timeSignature = timeSignatureOrTheme;
-      theme = maybeTheme;
-    }
-
+  public renderPinnedClef(clef: Clef, timeSignature: TimeSignature, theme: ThemeMode): HTMLCanvasElement {
     const dpr = this.dpr;
     const zoom = this.zoom;
     const width = PINNED_HEADER_WIDTH;
@@ -366,14 +346,6 @@ export class MeasureRenderer {
     stave.setContext(ctx).draw();
 
     return canvas;
-  }
-
-  public renderPinnedHeader(
-    clef: Clef,
-    timeSignature: TimeSignature,
-    theme: ThemeMode = 'auto'
-  ): HTMLCanvasElement {
-    return this.renderPinnedClef(clef, timeSignature, theme);
   }
 
   private createStaveNote(
