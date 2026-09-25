@@ -1,7 +1,54 @@
 import { describe, it, expect } from 'vitest';
 import { MusicGenerator, CLEF_PITCH_RANGES } from '../src/notation/generator';
-import { AppSettings, Clef, TimeSignature } from '../src/notation/types';
+import {
+  AppSettings,
+  Clef,
+  MeasureData,
+  TUPLET_NAMES,
+  TUPLET_SUPPORT,
+  TUPLET_VALUES,
+  TimeSignature,
+  TupletCell,
+  TupletName,
+  TupletValue,
+} from '../src/notation/types';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
+
+const N = 2000;
+
+const NO_INTERVALS: AppSettings['intervals'] = {
+  unison: false,
+  second: false,
+  third: false,
+  fourth: false,
+  fifth: false,
+  sixth: false,
+  seventh: false,
+  octave: false,
+  ninthPlus: false,
+};
+
+const EXPECTED_TUPLET_SHAPE: Record<TupletName, number> = {
+  duplet: 2,
+  triplet: 3,
+  quadruplet: 4,
+  quintuplet: 5,
+  sextuplet: 6,
+  septuplet: 7,
+};
+const EXPECTED_TUPLET_DURATION: Record<TupletValue, string> = { '1/4': 'q', '1/8': '8', '1/16': '16' };
+
+function generateMany(settings: AppSettings, count: number = N): MeasureData[] {
+  const generator = new MusicGenerator();
+  const measures: MeasureData[] = [];
+  let startBeat = 0;
+  for (let m = 0; m < count; m++) {
+    const measure = generator.generateMeasure(m, settings, startBeat);
+    measures.push(measure);
+    startBeat += measure.beatsPerMeasure;
+  }
+  return measures;
+}
 
 describe('MusicGenerator', () => {
   const timeSignatures: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
@@ -84,44 +131,40 @@ describe('MusicGenerator', () => {
     }
   });
 
-  it('limits consecutive unisons to no more than 2 when other intervals are active', () => {
+  it('down-weights repeated notes softly without capping them (ergodic unisons)', () => {
     const generator = new MusicGenerator();
     const settings: AppSettings = {
       ...DEFAULT_APP_SETTINGS,
-      intervals: {
-        unison: true,
-        second: true,
-        third: false,
-        fourth: false,
-        fifth: false,
-        sixth: false,
-        seventh: false,
-        octave: false,
-        ninthPlus: false,
-      },
+      intervals: { ...NO_INTERVALS, unison: true, second: true },
       rests: false,
     };
 
     let maxConsecutive = 0;
     let currentConsecutive = 0;
+    let repeats = 0;
+    let transitions = 0;
     let prevPitch: string | null = null;
 
-    for (let m = 0; m < 50; m++) {
+    for (let m = 0; m < N; m++) {
       const measure = generator.generateMeasure(m, settings, m * 4);
       for (const note of measure.notes) {
-        if (prevPitch !== null && note.keys[0] === prevPitch) {
-          currentConsecutive++;
-          if (currentConsecutive > maxConsecutive) {
-            maxConsecutive = currentConsecutive;
+        if (prevPitch !== null) {
+          transitions++;
+          if (note.keys[0] === prevPitch) {
+            repeats++;
+            currentConsecutive++;
+            maxConsecutive = Math.max(maxConsecutive, currentConsecutive);
+          } else {
+            currentConsecutive = 0;
           }
-        } else {
-          currentConsecutive = 0;
         }
         prevPitch = note.keys[0];
       }
     }
 
-    expect(maxConsecutive).toBeLessThanOrEqual(2);
+    // 4+ consecutive unisons are reachable, yet unisons stay below their uniform 1/2 share
+    expect(maxConsecutive).toBeGreaterThanOrEqual(4);
+    expect(repeats / transitions).toBeLessThan(0.45);
   });
 
   it('generates well-formed tuplets satisfying group constraints', () => {
@@ -415,5 +458,173 @@ describe('MusicGenerator', () => {
       }
       expect(foundRest).toBe(true);
     }
+  });
+
+  describe('ergodic reachability (P > 0 for previously unreachable figures)', () => {
+    const noTupletSubdiv = {
+      whole: false,
+      half: true,
+      quarter: true,
+      eighth: true,
+      sixteenth: false,
+      dotted: false,
+    };
+
+    it('reaches q h q in 4/4 (a 2-beat value starting on beat 2)', () => {
+      const measures = generateMany({
+        ...DEFAULT_APP_SETTINGS,
+        timeSignature: '4/4',
+        subdivisions: noTupletSubdiv,
+        rests: false,
+      });
+      const found = measures.some(
+        (m) => m.notes.map((n) => n.duration).join(' ') === 'q h q'
+      );
+      expect(found).toBe(true);
+    });
+
+    it('reaches 8 q 8 in 3/4 with half and dotted notes disabled', () => {
+      const measures = generateMany({
+        ...DEFAULT_APP_SETTINGS,
+        timeSignature: '3/4',
+        subdivisions: { ...noTupletSubdiv, half: false },
+        rests: false,
+      });
+      const found = measures.some((m) =>
+        m.notes.some(
+          (n, i) =>
+            n.duration === '8' &&
+            m.notes[i + 1]?.duration === 'q' &&
+            m.notes[i + 2]?.duration === '8' &&
+            m.notes[i + 1].beatOffset % 1 === 0.5
+        )
+      );
+      expect(found).toBe(true);
+    });
+
+    it('reaches leaps of 12+ diatonic steps with ninthPlus', () => {
+      const pitches = CLEF_PITCH_RANGES.treble.pitches;
+      const measures = generateMany({
+        ...DEFAULT_APP_SETTINGS,
+        clef: 'treble',
+        intervals: { ...NO_INTERVALS, ninthPlus: true },
+        rests: false,
+      });
+      const keys = measures.flatMap((m) => m.notes.map((n) => n.keys[0]));
+      let maxLeap = 0;
+      for (let i = 1; i < keys.length; i++) {
+        const leap = Math.abs(pitches.indexOf(keys[i]) - pitches.indexOf(keys[i - 1]));
+        expect(leap).toBeGreaterThanOrEqual(8);
+        maxLeap = Math.max(maxLeap, leap);
+      }
+      expect(maxLeap).toBeGreaterThanOrEqual(12);
+    });
+
+    it('ties arbitrary figures across inner beats, never inside a beat or into tuplets/rests', () => {
+      for (const ts of ['4/4', '3/4', '6/8'] as const) {
+        const beatUnit = ts === '6/8' ? 3 : 1;
+        const measures = generateMany({
+          ...DEFAULT_APP_SETTINGS,
+          timeSignature: ts,
+          subdivisions: { ...noTupletSubdiv, sixteenth: true, dotted: true },
+          tuplets: {
+            ...DEFAULT_APP_SETTINGS.tuplets,
+            triplet: { '1/4': false, '1/8': true, '1/16': true },
+          },
+          ties: true,
+          rests: true,
+        });
+        const tiedFirstDurations = new Set<string>();
+        for (const m of measures) {
+          m.notes.forEach((n, i) => {
+            if (!n.tieStart) return;
+            const next = m.notes[i + 1];
+            expect(next?.tieEnd).toBe(true);
+            expect(Boolean(n.isRest || next.isRest || n.isTuplet || next.isTuplet)).toBe(false);
+            expect(next.keys[0]).toBe(n.keys[0]);
+            const boundary = (n.beatOffset + n.beatDuration) / beatUnit;
+            expect(Math.abs(boundary - Math.round(boundary))).toBeLessThan(1e-9);
+            tiedFirstDurations.add(n.duration);
+          });
+        }
+        // Ties are no longer limited to hard-coded q~q / qd~qd
+        expect(tiedFirstDurations.size).toBeGreaterThan(2);
+      }
+    });
+
+    it('reaches tie chains (a~b~c) within the measure', () => {
+      const measures = generateMany({
+        ...DEFAULT_APP_SETTINGS,
+        timeSignature: '4/4',
+        subdivisions: { ...noTupletSubdiv, half: false, eighth: false },
+        ties: true,
+        rests: false,
+      });
+      const found = measures.some((m) => m.notes.some((n) => n.tieStart && n.tieEnd));
+      expect(found).toBe(true);
+    });
+  });
+
+  describe('per-meter tuplet table (TUPLET_SUPPORT)', () => {
+    const subdiv = {
+      whole: false,
+      half: false,
+      quarter: true,
+      eighth: true,
+      sixteenth: false,
+      dotted: true,
+    };
+
+    for (const ts of ['4/4', '3/4', '2/4', '6/8'] as const) {
+      for (const cell of TUPLET_SUPPORT[ts]) {
+        it(`${ts}: ${cell} generates its tuplet and conserves beat totals`, () => {
+          const [name, value] = cell.split(':') as [TupletName, TupletValue];
+          const tuplets = structuredClone(DEFAULT_APP_SETTINGS.tuplets);
+          tuplets[name][value] = true;
+          const measures = generateMany(
+            { ...DEFAULT_APP_SETTINGS, timeSignature: ts, subdivisions: subdiv, tuplets, ties: true },
+            400
+          );
+          let found = false;
+          for (const m of measures) {
+            const total = m.notes.reduce((sum, n) => sum + n.beatDuration, 0);
+            expect(total).toBeCloseTo(m.beatsPerMeasure, 9);
+            for (const n of m.notes) {
+              if (!n.isTuplet) continue;
+              expect(n.tupletNumNotes).toBe(EXPECTED_TUPLET_SHAPE[name]);
+              expect(n.duration).toBe(EXPECTED_TUPLET_DURATION[value]);
+              found = true;
+            }
+          }
+          expect(found).toBe(true);
+        });
+      }
+    }
+
+    it('never generates tuplets unsupported by the current meter', () => {
+      const allOn = structuredClone(DEFAULT_APP_SETTINGS.tuplets);
+      for (const name of TUPLET_NAMES) {
+        for (const value of TUPLET_VALUES) allOn[name][value] = true;
+      }
+      for (const ts of ['4/4', '3/4', '2/4', '6/8'] as const) {
+        const measures = generateMany(
+          { ...DEFAULT_APP_SETTINGS, timeSignature: ts, subdivisions: subdiv, tuplets: allOn },
+          400
+        );
+        const shapeToName = Object.fromEntries(
+          Object.entries(EXPECTED_TUPLET_SHAPE).map(([k, v]) => [v, k])
+        ) as Record<number, TupletName>;
+        const durationToValue = Object.fromEntries(
+          Object.entries(EXPECTED_TUPLET_DURATION).map(([k, v]) => [v, k])
+        ) as Record<string, TupletValue>;
+        for (const m of measures) {
+          for (const n of m.notes) {
+            if (!n.isTuplet || n.tupletNumNotes === undefined) continue;
+            const cell: TupletCell = `${shapeToName[n.tupletNumNotes]}:${durationToValue[n.duration]}`;
+            expect(TUPLET_SUPPORT[ts].has(cell)).toBe(true);
+          }
+        }
+      }
+    });
   });
 });
