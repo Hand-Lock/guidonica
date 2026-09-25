@@ -49,9 +49,13 @@ The user must have full control over the generation engine prior to and during a
      - Quarter notes (`1/4`)
      - Eighth notes (`1/8`)
      - Sixteenth notes (`1/16`)
-     - Triplets (eighth-note tuplets `3:2`)
+     - Tuplets via a name × value matrix (duplet … septuplet × ¼, ⅛, 1/16). Only cells that make metric sense in the current meter are enabled (`TUPLET_SUPPORT` in `src/notation/types.ts`); the rest are greyed out and ignored by the generator:
+       - **2/4, 3/4, 4/4**: triplet ¼/⅛/1/16; quintuplet, sextuplet, septuplet ⅛/1/16.
+       - **3/4 only**: duplet ¼ (2:3 across the bar), quadruplet ¼ and ⅛ (4:3).
+       - **4/4 only**: quintuplet, sextuplet, septuplet ¼ (across the whole bar).
+       - **6/8**: duplet and quadruplet ¼ (across the bar), ⅛ (per compound beat) and 1/16 (per half compound beat); triplet 1/16.
    - **Dotted notes modifier**: Explicit toggle allowing dotted durations (`hd`, `qd`, `8d`) when combined with enabled base durations.
-   - **Tied notes toggle**: Explicit toggle allowing cross-beat ties with pitch preservation.
+   - **Tied notes toggle**: Explicit toggle allowing ties with pitch preservation across beat boundaries inside the measure (chains allowed).
    - **Rest toggle**: Option to enable/disable rhythmic rests (quarter rests, eighth rests).
 5. **Melodic Intervals & Pitch Transitions**:
    - Selectable transition constraints:
@@ -117,17 +121,17 @@ Rhythm generation decomposes each measure top-down through a metric tree structu
 2. **Simple Triple Meter Partitioning (3/4)**:
    - A 3/4 measure consists of 3 quarter beats ($1+1+1 = 3$).
    - Allowed macro-partitions:
-     $$\mathcal{P}_{3/4} = \{ [hd], [h, q], [q, h], [1+1+1 \text{ beats}] \}$$
-   - Any active combination (e.g. half + quarter notes) generates both $[h, q]$ and $[q, h]$ with non-zero probability. Dotted half $[hd]$ requires both `subdiv.half` and `subdiv.dotted`.
+     $$\mathcal{P}_{3/4} = \{ [hd], [2+1 \text{ beats}], [1+2 \text{ beats}], [1+1+1 \text{ beats}] \}$$
+   - The three beat structures are always sampled uniformly (not gated on `half`), so off-beat figures like $[8, q, 8]$ are reachable with any subdivision set. Dotted half $[hd]$ requires both `subdiv.half` and `subdiv.dotted`.
 
 3. **Simple Quadruple & Duple Partitioning (4/4, 2/4)**:
-   - In 4/4, partitions preserve the metric half-bar (beats 1-2 and beats 3-4):
-     $$\mathcal{P}_{4/4} = \{ [w], [h, h], [qd, 8 \text{ across 2 beats}], [8, qd \text{ across 2 beats}], [1+1+1+1 \text{ beats}] \}$$
+   - In 4/4, the bar is split uniformly into either the half-bar structure $[2+2]$ or the syncopated structure $[1+2+1]$, so figures like $[q, h, q]$ are reachable:
+     $$\mathcal{P}_{4/4} = \{ [w], [hd, 1 \text{ beat}], [1 \text{ beat}, hd], [2+2 \text{ beats}], [1+2+1 \text{ beats}] \}$$
    - Two-beat groups evaluate $[h]$, $[qd, 8]$, $[8, qd]$, or independent 1-beat subdivisions.
    - One-beat units evaluate $[q]$, $[8d, 16]$, $[8, 8]$, or 16th-note groupings.
 
 4. **Tied Notes Engine**:
-   - When `settings.ties` is active, candidate rhythmic events spanning metric beat boundaries are linked via `tieStart` and `tieEnd` flags.
+   - Ties are a post-pass over the partitioned measure (`applyTies`), not hard-coded candidates. Each adjacent pair of non-rest, non-tuplet notes whose shared boundary lies on the beat grid (every beat in simple meters, every 3-eighth group in 6/8) is tied with probability $p_{\text{tie}} = 0.25$ via `tieStart`/`tieEnd`. Chains ($a \frown b \frown c$) are allowed. Ties never cross the barline.
    - Ties strictly preserve pitch identity across noteheads ($p_{i+1} = p_i$) and are rendered via VexFlow `StaveTie`.
 
 ### Melodic Generator (Ergodic Markov Random Walk)
@@ -135,6 +139,8 @@ Rhythm generation decomposes each measure top-down through a metric tree structu
    - The allowed pitches within the clef's range forms a finite state graph $V$.
    - Edges $E$ are defined by active interval constraints ($\pm 1$ step, skips, leaps).
    - Because the graph is undirected (or symmetric) and strongly connected, the Markov chain is irreducible and recurrent.
+   - Repeated notes are damped, not capped: after $u$ consecutive unisons the unison weight is $1/(1+u)$ against 1 for every other interval class, so any run length stays reachable.
+   - The `9+` interval class samples any step in $[8, \text{maxStep}]$ in a direction with enough room, so every leap up to the full clef range is reachable.
 2. **Boundary Reflection Bias**:
    - As pitch approaches upper/lower ledger limits ($\ge 2$ ledger lines), transition weights bias inward to prevent clipping without truncating state reachability.
 3. **Scale Degrees & Accidentals**:
@@ -148,9 +154,10 @@ Rhythm generation decomposes each measure top-down through a metric tree structu
 ### Drift-Free Clock Architecture
 - The audio engine is built directly on the browser's native **Web Audio API**.
 - `AudioContext.currentTime` serves as the authoritative, hardware-synchronized clock for both audio scheduling and visual scroll offsets.
-- Formula for scroll offset at any frame:
-  $$\text{elapsedSeconds} = \text{AudioContext.currentTime} - t_{\text{start}}$$
+- Formula for scroll offset at any frame (output latency $\lambda$ = `outputLatency || baseLatency`, so notes cross the playhead when the click is *heard*):
+  $$\text{elapsedSeconds} = \text{AudioContext.currentTime} - \lambda - t_{\text{start}}$$
   $$\text{scrollX} = \text{elapsedSeconds} \times v$$
+- The beat indicator is derived from the same clock inside the single rAF loop (`getBeatInfo()`); there are no `setTimeout` visual clocks.
 - Because the animation loop calculates position directly from `AudioContext.currentTime`, visual jitter and audio drift are mathematically eliminated, even under CPU load spikes or background tab throttling.
 
 ### Metronome Synthesis
