@@ -195,4 +195,93 @@ describe('MetronomeEngine', () => {
       metronome.destroy();
     }).not.toThrow();
   });
+
+  describe('hardware-clock beat info and latency compensation', () => {
+    const makeCtx = (outputLatency = 0) => ({
+      currentTime: 10.0,
+      outputLatency,
+      baseLatency: 0,
+      state: 'running',
+      destination: {},
+      createGain: () => ({
+        connect: () => {},
+        disconnect: () => {},
+        gain: {
+          setValueAtTime: () => {},
+          exponentialRampToValueAtTime: () => {},
+          cancelScheduledValues: () => {},
+        },
+      }),
+      createOscillator: () => ({
+        type: 'sine',
+        connect: () => {},
+        disconnect: () => {},
+        frequency: { setValueAtTime: () => {}, exponentialRampToValueAtTime: () => {} },
+        start: () => {},
+        stop: () => {},
+      }),
+      resume: () => Promise.resolve(),
+      close: () => Promise.resolve(),
+    });
+
+    const withCtx = (ctx: ReturnType<typeof makeCtx>, fn: () => void): void => {
+      const Original = window.AudioContext;
+      window.AudioContext = function () {
+        return ctx as unknown as AudioContext;
+      } as unknown as typeof AudioContext;
+      try {
+        fn();
+      } finally {
+        window.AudioContext = Original;
+      }
+    };
+
+    it('derives beat number and count-in state from the clock across the count-in boundary', () => {
+      const ctx = makeCtx();
+      withCtx(ctx, () => {
+        metronome = new MetronomeEngine(60, '3/4');
+        metronome.start(true);
+        // startTime = 10.05, count-in = 3 beats → measure 0 at 13.05
+        expect(metronome.getBeatInfo()).toBeNull(); // before the first click
+
+        ctx.currentTime = 10.06;
+        expect(metronome.getBeatInfo()).toMatchObject({ beatNumber: 1, isDownbeat: true, isCountIn: true });
+        ctx.currentTime = 12.1;
+        expect(metronome.getBeatInfo()).toMatchObject({ beatNumber: 3, isCountIn: true });
+        ctx.currentTime = 13.1;
+        expect(metronome.getBeatInfo()).toMatchObject({ beatIndex: 0, beatNumber: 1, isCountIn: false });
+        ctx.currentTime = 17.1; // beat index 4 → second beat of measure 1
+        expect(metronome.getBeatInfo()).toMatchObject({ beatIndex: 4, beatNumber: 2, isDownbeat: false });
+
+        metronome.stop();
+        expect(metronome.getBeatInfo()).toBeNull();
+      });
+    });
+
+    it('delays visual time by the device output latency', () => {
+      const ctx = makeCtx(0.2);
+      withCtx(ctx, () => {
+        metronome = new MetronomeEngine(60, '4/4');
+        metronome.start(false);
+        // measure 0 click scheduled at 10.05, heard at 10.25
+        ctx.currentTime = 11.05;
+        expect(metronome.getCurrentGlobalBeat()).toBeCloseTo(0.8, 5);
+      });
+    });
+
+    it('keeps the visual position continuous across pause and resume with latency', () => {
+      const ctx = makeCtx(0.15);
+      withCtx(ctx, () => {
+        metronome = new MetronomeEngine(60, '4/4');
+        metronome.start(false);
+        ctx.currentTime = 12.0;
+        const before = metronome.getCurrentGlobalBeat();
+        metronome.pause();
+        ctx.currentTime = 30.0;
+        expect(metronome.getCurrentGlobalBeat()).toBeCloseTo(before, 5);
+        metronome.resume();
+        expect(metronome.getCurrentGlobalBeat()).toBeCloseTo(before, 5);
+      });
+    });
+  });
 });

@@ -7,14 +7,13 @@ import {
   clampTempo,
 } from '../notation/types';
 
-export interface BeatEvent {
+/** Beat currently being heard, derived from the hardware audio clock (no timers). */
+export interface BeatInfo {
+  beatIndex: number; // Global integer beat (negative during count-in)
   beatNumber: number; // 1-based index within the measure
   isDownbeat: boolean;
   isCountIn: boolean;
-  time: number;
 }
-
-export type BeatCallback = (event: BeatEvent) => void;
 
 export class MetronomeEngine {
   private ctx: AudioContext | null = null;
@@ -45,9 +44,6 @@ export class MetronomeEngine {
   private readonly lookaheadMs: number = 25;
   private readonly scheduleAheadSeconds: number = 0.1;
 
-  // Beat dispatch tracking
-  private pendingBeatTimeouts: Set<number> = new Set();
-  private beatCallbacks: Set<BeatCallback> = new Set();
   private interruptionCallbacks: Set<() => void> = new Set();
 
   constructor(initialTempo: number = 60, initialTimeSignature: TimeSignature = '4/4') {
@@ -94,13 +90,6 @@ export class MetronomeEngine {
         void this.ctx.close();
       }
     }
-  }
-
-  public onBeat(callback: BeatCallback): () => void {
-    this.beatCallbacks.add(callback);
-    return () => {
-      this.beatCallbacks.delete(callback);
-    };
   }
 
   /**
@@ -163,7 +152,7 @@ export class MetronomeEngine {
       const currentBeat = this.getCurrentGlobalBeat();
       this.tempo = clamped;
       this.updateMeterParams();
-      this.measureZeroStartTime = this.ctx.currentTime - currentBeat * this.secondsPerBeat;
+      this.measureZeroStartTime = this.audibleTime() - currentBeat * this.secondsPerBeat;
 
       // Accurately align to the next unplayed beat boundary to avoid duplicate or clashing clicks
       const nextGlobalBeatIndex = Math.ceil(
@@ -267,7 +256,8 @@ export class MetronomeEngine {
 
   public pause(): void {
     if (!this.isRunning || this.isPaused) return;
-    this.pausedElapsedSeconds = this.ctx ? this.ctx.currentTime - this.measureZeroStartTime : 0;
+    // Snapshot the *audible* position so resume continues exactly where the ear left off
+    this.pausedElapsedSeconds = this.getElapsedPlaybackSeconds();
     this.isPaused = true;
     this.setAudioSessionCategory('ambient');
     if (this.timerId !== null) {
@@ -280,9 +270,6 @@ export class MetronomeEngine {
       this.masterGainNode.gain.cancelScheduledValues(this.ctx.currentTime);
       this.masterGainNode.gain.setValueAtTime(0, this.ctx.currentTime);
     }
-
-    // Cancel all pending visual beat dispatches
-    this.clearPendingBeatTimeouts();
   }
 
   public resume(): void {
@@ -297,7 +284,7 @@ export class MetronomeEngine {
     this.updateMasterGain();
 
     const currentAudioTime = this.ctx ? this.ctx.currentTime : 0;
-    this.measureZeroStartTime = currentAudioTime - this.pausedElapsedSeconds;
+    this.measureZeroStartTime = this.audibleTime() - this.pausedElapsedSeconds;
 
     // Accurately align to the next unplayed beat boundary to avoid duplicate or clashing clicks
     const nextGlobalBeatIndex = Math.ceil(
@@ -327,16 +314,8 @@ export class MetronomeEngine {
       this.masterGainNode.gain.setValueAtTime(0, this.ctx.currentTime);
     }
 
-    this.clearPendingBeatTimeouts();
     this.scheduledBeatCount = 0;
     this.pausedElapsedSeconds = 0;
-  }
-
-  private clearPendingBeatTimeouts(): void {
-    for (const timeoutId of this.pendingBeatTimeouts) {
-      window.clearTimeout(timeoutId);
-    }
-    this.pendingBeatTimeouts.clear();
   }
 
   private scheduler(): void {
@@ -346,17 +325,10 @@ export class MetronomeEngine {
       const beatTime = this.nextBeatTime;
       const isCountIn = this.hasCountIn && this.scheduledBeatCount < this.countInBeatsTotal;
 
-      let beatNumber: number;
-      let isDownbeat: boolean;
-
-      if (isCountIn) {
-        beatNumber = (this.scheduledBeatCount % this.beatsPerMeasure) + 1;
-        isDownbeat = beatNumber === 1;
-      } else {
-        const playbackBeatIndex = this.scheduledBeatCount - this.countInBeatsTotal;
-        beatNumber = (playbackBeatIndex % this.beatsPerMeasure) + 1;
-        isDownbeat = beatNumber === 1;
-      }
+      const beatIndex = isCountIn
+        ? this.scheduledBeatCount
+        : this.scheduledBeatCount - this.countInBeatsTotal;
+      const beatNumber = (beatIndex % this.beatsPerMeasure) + 1;
 
       const isCompound68 = this.timeSignature === '6/8' && this.pulse68 === 'dotted-quarter';
       const shouldClick = !isCompound68 || beatNumber === 1 || beatNumber === 4;
@@ -369,7 +341,6 @@ export class MetronomeEngine {
         );
       }
 
-      this.dispatchBeat(beatNumber, isDownbeat, isCountIn, beatTime);
 
       this.scheduledBeatCount++;
       this.nextBeatTime += this.secondsPerBeat;
@@ -451,38 +422,32 @@ export class MetronomeEngine {
     };
   }
 
-  private dispatchBeat(beatNumber: number, isDownbeat: boolean, isCountIn: boolean, audioTime: number): void {
-    if (!this.ctx) return;
-    const delayMs = Math.max(0, (audioTime - this.ctx.currentTime) * 1000);
+  /**
+   * Output latency of the audio device (seconds): the delay between a sample's
+   * context time and when it leaves the speaker (large on Bluetooth).
+   */
+  private outputLatency(): number {
+    if (!this.ctx) return 0;
+    return this.ctx.outputLatency || this.ctx.baseLatency || 0;
+  }
 
-    const timeoutId = window.setTimeout(() => {
-      this.pendingBeatTimeouts.delete(timeoutId);
-      if (!this.isRunning || this.isPaused) return;
-
-      const event: BeatEvent = {
-        beatNumber,
-        isDownbeat,
-        isCountIn,
-        time: audioTime,
-      };
-      for (const cb of this.beatCallbacks) {
-        cb(event);
-      }
-    }, delayMs);
-
-    this.pendingBeatTimeouts.add(timeoutId);
+  /** Context time of the sample currently reaching the listener's ear. */
+  private audibleTime(): number {
+    return this.ctx ? this.ctx.currentTime - this.outputLatency() : 0;
   }
 
   /**
    * Returns elapsed seconds relative to Measure 0.
    * When stopped, returns 0.
    * During count-in, this value is negative (-countInDuration to 0).
+   * Compensated for output latency so visuals track what is *heard*, not what
+   * has merely been handed to the audio device.
    */
   public getElapsedPlaybackSeconds(): number {
     if (!this.isRunning) return 0;
     if (this.isPaused) return this.pausedElapsedSeconds;
     if (!this.ctx) return 0;
-    return this.ctx.currentTime - this.measureZeroStartTime;
+    return this.audibleTime() - this.measureZeroStartTime;
   }
 
   /**
@@ -502,6 +467,25 @@ export class MetronomeEngine {
    */
   public getVisualBeat(): number {
     return Math.max(0, this.getCurrentGlobalBeat());
+  }
+
+  /**
+   * Returns the beat currently being heard, derived purely from the hardware clock,
+   * or null when stopped or before the first click has sounded. Polled once per
+   * rAF frame by the UI: no independent timers, so the indicator cannot drift.
+   */
+  public getBeatInfo(): BeatInfo | null {
+    if (!this.isRunning) return null;
+    const beatIndex = Math.floor(this.getCurrentGlobalBeat());
+    if (beatIndex < -this.countInBeatsTotal) return null;
+    const n = this.beatsPerMeasure;
+    const beatNumber = (((beatIndex % n) + n) % n) + 1;
+    return {
+      beatIndex,
+      beatNumber,
+      isDownbeat: beatNumber === 1,
+      isCountIn: beatIndex < 0,
+    };
   }
 
   public getIsRunning(): boolean {

@@ -41,6 +41,7 @@ export class ScrollerView {
   private metronome: MetronomeEngine;
   private renderer: MeasureRenderer;
   private getSettings: () => AppSettings;
+  private frameCallback: (() => void) | null = null;
 
   private dpr: number = 1;
   private zoom: number = DEFAULT_ZOOM;
@@ -163,6 +164,15 @@ export class ScrollerView {
     this.rafId = requestAnimationFrame(loop);
   }
 
+  /**
+   * Registers a hook invoked at the end of every rendered frame. Lets UI that must
+   * follow the audio clock (beat indicator) ride the single rAF loop instead of
+   * spawning its own timers.
+   */
+  public onFrame(callback: (() => void) | null): void {
+    this.frameCallback = callback;
+  }
+
   public stopLoop(): void {
     this.isLoopRunning = false;
     if (this.rafId !== null) {
@@ -245,6 +255,8 @@ export class ScrollerView {
     }
 
     ctx.restore();
+
+    this.frameCallback?.();
   }
 
   private drawStaffLines(

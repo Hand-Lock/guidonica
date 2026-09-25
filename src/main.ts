@@ -56,6 +56,7 @@ class GuidonicaApp {
   private buffer: MeasureBuffer;
   private scroller: ScrollerView;
   private wakeLock: ScreenWakeLockController = new ScreenWakeLockController();
+  private lastBeatIndex: number | null = null;
   private isAutoPaused: boolean = false;
   private fontInitPromise: Promise<void> | null = null;
 
@@ -1087,16 +1088,7 @@ class GuidonicaApp {
   }
 
   private bindAudioEvents(): void {
-    this.metronome.onBeat((event) => {
-      globalState.setBeat(event.beatNumber, event.isDownbeat, event.isCountIn);
-
-      // Transition from count-in to playing when count-in concludes
-      if (!event.isCountIn && globalState.playbackState === 'counting-in') {
-        globalState.setPlaybackState('playing');
-      }
-
-      this.highlightBeatDot(event.beatNumber, event.isDownbeat);
-    });
+    this.scroller.onFrame(() => this.syncBeatIndicator());
 
     // Handle OS-level audio interruptions (system sleep, Bluetooth disconnect, phone call)
     this.metronome.onInterruption(() => {
@@ -1231,6 +1223,28 @@ class GuidonicaApp {
     }
   }
 
+  /**
+   * Polled once per rendered frame: derives the audible beat from the hardware
+   * clock and updates the indicator only when the integer beat changes.
+   */
+  private syncBeatIndicator(): void {
+    const info = this.metronome.getBeatInfo();
+    const beatIndex = info ? info.beatIndex : null;
+    if (beatIndex === this.lastBeatIndex) return;
+    this.lastBeatIndex = beatIndex;
+
+    if (!info) {
+      this.resetBeatDots();
+      return;
+    }
+
+    globalState.setBeat(info.beatNumber, info.isDownbeat, info.isCountIn);
+    if (!info.isCountIn && globalState.playbackState === 'counting-in') {
+      globalState.setPlaybackState('playing');
+    }
+    this.highlightBeatDot(info.beatNumber, info.isDownbeat);
+  }
+
   private highlightBeatDot(beatNumber: number, isDownbeat: boolean): void {
     const dots = this.beatDotsContainer.querySelectorAll('.beat-dot');
     dots.forEach((dot) => dot.classList.remove('active', 'downbeat'));
@@ -1245,6 +1259,7 @@ class GuidonicaApp {
   }
 
   private resetBeatDots(): void {
+    this.lastBeatIndex = null;
     const dots = this.beatDotsContainer.querySelectorAll('.beat-dot');
     dots.forEach((dot) => dot.classList.remove('active', 'downbeat'));
   }
