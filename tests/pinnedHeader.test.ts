@@ -61,18 +61,6 @@ describe('Stationary Clef and Time Signature Left Stave Header', () => {
     expect(MIN_PLAYHEAD_X).toBeGreaterThan(PINNED_HEADER_TOTAL_MARGIN);
   });
 
-  it('preserves backwards compatibility when renderPinnedClef is called without time signature', () => {
-    const renderer = new MeasureRenderer();
-    const canvasDefault = renderer.renderPinnedClef('treble', 'light');
-    const canvasExplicit = renderer.renderPinnedClef('treble', '4/4', 'light');
-    const canvasHeader = renderer.renderPinnedHeader('treble', '4/4', 'light');
-
-    expect(canvasDefault.width).toBe(PINNED_HEADER_WIDTH);
-    expect(canvasDefault.height).toBe(MEASURE_CANVAS_HEIGHT);
-    expect(canvasExplicit.width).toBe(PINNED_HEADER_WIDTH);
-    expect(canvasHeader.width).toBe(PINNED_HEADER_WIDTH);
-  });
-
   it('correctly rasterizes all combinations of clefs and time signatures', () => {
     const renderer = new MeasureRenderer();
     const clefs: Clef[] = [
@@ -89,8 +77,8 @@ describe('Stationary Clef and Time Signature Left Stave Header', () => {
 
     for (const clef of clefs) {
       for (const ts of timeSignatures) {
-        const lightCanvas = renderer.renderPinnedHeader(clef, ts, 'light');
-        const darkCanvas = renderer.renderPinnedHeader(clef, ts, 'dark');
+        const lightCanvas = renderer.renderPinnedClef(clef, ts, 'light');
+        const darkCanvas = renderer.renderPinnedClef(clef, ts, 'dark');
 
         expect(lightCanvas.width).toBe(PINNED_HEADER_WIDTH);
         expect(lightCanvas.height).toBe(MEASURE_CANVAS_HEIGHT);
@@ -105,17 +93,17 @@ describe('Stationary Clef and Time Signature Left Stave Header', () => {
     renderer.setDpr(2);
 
     renderer.setZoom(1.0);
-    const canvas100 = renderer.renderPinnedHeader('bass', '3/4', 'dark');
+    const canvas100 = renderer.renderPinnedClef('bass', '3/4', 'dark');
     expect(canvas100.width).toBe(PINNED_HEADER_WIDTH * 2 * 1.0);
     expect(canvas100.height).toBe(MEASURE_CANVAS_HEIGHT * 2 * 1.0);
 
     renderer.setZoom(0.5);
-    const canvas50 = renderer.renderPinnedHeader('bass', '3/4', 'dark');
+    const canvas50 = renderer.renderPinnedClef('bass', '3/4', 'dark');
     expect(canvas50.width).toBe(Math.floor(PINNED_HEADER_WIDTH * 2 * 0.5));
     expect(canvas50.height).toBe(Math.floor(MEASURE_CANVAS_HEIGHT * 2 * 0.5));
 
     renderer.setZoom(1.25);
-    const canvas125 = renderer.renderPinnedHeader('alto', '6/8', 'light');
+    const canvas125 = renderer.renderPinnedClef('alto', '6/8', 'light');
     expect(canvas125.width).toBe(Math.floor(PINNED_HEADER_WIDTH * 2 * 1.25));
     expect(canvas125.height).toBe(Math.floor(MEASURE_CANVAS_HEIGHT * 2 * 1.25));
   });

@@ -23,6 +23,17 @@ import { MeasureBuffer } from './buffer';
 import { MeasureRenderer } from '../notation/renderer';
 import { isMusicFontReady } from '../notation/fonts';
 
+interface ThemePalette {
+  background: string;
+  backgroundRgb: string;
+  staff: string;
+}
+
+const PALETTE: Record<ResolvedTheme, ThemePalette> = {
+  light: { background: '#ffffff', backgroundRgb: '255, 255, 255', staff: '#64748b' },
+  dark: { background: '#0f172a', backgroundRgb: '15, 23, 42', staff: '#475569' },
+};
+
 export class ScrollerView {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -81,10 +92,6 @@ export class ScrollerView {
     this.cachedClef = null;
     this.cachedTimeSignature = null;
     this.cachedClefTheme = null;
-  }
-
-  public invalidatePinnedHeader(): void {
-    this.invalidatePinnedClef();
   }
 
   public setZoom(zoom: number): void {
@@ -174,17 +181,17 @@ export class ScrollerView {
     const w = this.viewportWidth;
     const h = this.viewportHeight;
     const resolvedTheme = resolveTheme(settings.theme);
-    const isDark = resolvedTheme === 'dark';
+    const palette = PALETTE[resolvedTheme];
 
     ctx.save();
     ctx.scale(dpr, dpr);
 
     // 1. Clear viewport with theme-aware background
-    ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
+    ctx.fillStyle = palette.background;
     ctx.fillRect(0, 0, w, h);
 
     // 2. Draw continuous stationary staff lines across the entire viewport
-    this.drawStationaryStaffLines(ctx, w, isDark);
+    this.drawStaffLines(ctx, 0, w, palette);
 
     // 3. Obtain visual beat position from hardware audio clock (waits at 0 during count-in)
     const visualBeat = this.metronome.getVisualBeat();
@@ -225,7 +232,7 @@ export class ScrollerView {
     }
 
     // 6. Draw pinned clef & time signature at the left margin with clean gradient fade
-    this.drawPinnedClef(ctx, settings.clef, settings.timeSignature, h, isDark, resolvedTheme);
+    this.drawPinnedClef(ctx, settings.clef, settings.timeSignature, h, resolvedTheme);
 
     // 7. Draw fixed playhead guide line in high-contrast red accent (when enabled)
     if (settings.showPlayhead !== false) {
@@ -235,12 +242,13 @@ export class ScrollerView {
     ctx.restore();
   }
 
-  private drawStationaryStaffLines(
+  private drawStaffLines(
     ctx: CanvasRenderingContext2D,
-    width: number,
-    isDark: boolean = false
+    fromX: number,
+    toX: number,
+    palette: ThemePalette
   ): void {
-    ctx.strokeStyle = isDark ? '#475569' : '#64748b';
+    ctx.strokeStyle = palette.staff;
     ctx.lineWidth = 1;
     ctx.beginPath();
 
@@ -248,8 +256,8 @@ export class ScrollerView {
     const startY = Math.round(this.staveTopY);
     for (let line = 0; line < 5; line++) {
       const y = startY + line * lineSpacing + 0.5;
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
+      ctx.moveTo(fromX, y);
+      ctx.lineTo(toX, y);
     }
 
     ctx.stroke();
@@ -268,16 +276,15 @@ export class ScrollerView {
     const dpr = this.dpr;
     const w = this.viewportWidth;
     const h = this.viewportHeight;
-    const resolvedTheme = resolveTheme(settings.theme);
-    const isDark = resolvedTheme === 'dark';
+    const palette = PALETTE[resolveTheme(settings.theme)];
 
     ctx.save();
     ctx.scale(dpr, dpr);
 
-    ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
+    ctx.fillStyle = palette.background;
     ctx.fillRect(0, 0, w, h);
 
-    this.drawStationaryStaffLines(ctx, w, isDark);
+    this.drawStaffLines(ctx, 0, w, palette);
     if (settings.showPlayhead !== false) {
       this.drawPlayhead(ctx, h);
     }
@@ -290,7 +297,6 @@ export class ScrollerView {
     clef: Clef,
     timeSignature: TimeSignature,
     height: number,
-    isDark: boolean,
     theme: ResolvedTheme
   ): void {
     if (!isMusicFontReady()) {
@@ -316,28 +322,19 @@ export class ScrollerView {
     const totalMargin = PINNED_HEADER_TOTAL_MARGIN * zoom;
 
     // Full-height solid mask behind pinned header to prevent ledger lines/stems poking out
-    ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
+    const palette = PALETTE[theme];
+    ctx.fillStyle = palette.background;
     ctx.fillRect(0, 0, maskSolidWidth, height);
 
     // Graceful horizontal fade from solid to transparent so scrolling notes disappear smoothly
     const fadeGrad = ctx.createLinearGradient(maskSolidWidth, 0, totalMargin, 0);
-    fadeGrad.addColorStop(0, isDark ? 'rgba(15, 23, 42, 1)' : 'rgba(255, 255, 255, 1)');
-    fadeGrad.addColorStop(1, isDark ? 'rgba(15, 23, 42, 0)' : 'rgba(255, 255, 255, 0)');
+    fadeGrad.addColorStop(0, `rgba(${palette.backgroundRgb}, 1)`);
+    fadeGrad.addColorStop(1, `rgba(${palette.backgroundRgb}, 0)`);
     ctx.fillStyle = fadeGrad;
     ctx.fillRect(maskSolidWidth, 0, fadeWidth, height);
 
     // Re-draw staff lines across the masked & faded margin
-    ctx.strokeStyle = isDark ? '#475569' : '#64748b';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    const lineSpacing = Math.round(10 * zoom);
-    const startY = Math.round(this.staveTopY);
-    for (let line = 0; line < 5; line++) {
-      const y = startY + line * lineSpacing + 0.5;
-      ctx.moveTo(0, y);
-      ctx.lineTo(totalMargin, y);
-    }
-    ctx.stroke();
+    this.drawStaffLines(ctx, 0, totalMargin, palette);
 
     // Draw the pinned clef + time signature glyphs
     ctx.drawImage(

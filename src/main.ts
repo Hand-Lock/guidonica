@@ -3,8 +3,8 @@
 // Copyright (C) 2026 A. C. Lo Cascio
 
 import {
-  CLEF_RANGE_DISPLAY,
   Clef,
+  DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
   MAX_ZOOM,
   MIN_ZOOM,
@@ -21,17 +21,19 @@ import {
   TupletValue,
   ZOOM_STEP,
   ZoomMode,
+  clampTempo,
   computeOptimalZoom,
+  getBeatsPerMeasure,
   resolveTheme,
   subscribeSystemTheme,
 } from './notation/types';
 import { globalState, SessionState } from './state';
 import { MetronomeEngine } from './audio/metronome';
-import { MusicGenerator } from './notation/generator';
+import { CLEF_RANGE_DISPLAY, MusicGenerator } from './notation/generator';
 import { MeasureRenderer } from './notation/renderer';
 import { MeasureBuffer } from './scroller/buffer';
 import { ScrollerView } from './scroller/scroller';
-import { waitForMusicFonts } from './notation/fonts';
+import { isMusicFontReady, waitForMusicFonts } from './notation/fonts';
 import { ScreenWakeLockController } from './utils/wakeLock';
 
 interface WebKitDocument extends Document {
@@ -55,7 +57,6 @@ class GuidonicaApp {
   private scroller: ScrollerView;
   private wakeLock: ScreenWakeLockController = new ScreenWakeLockController();
   private isAutoPaused: boolean = false;
-  private fontsReady: boolean = false;
   private fontInitPromise: Promise<void> | null = null;
 
   // DOM Elements - Playback & Tempo
@@ -103,7 +104,6 @@ class GuidonicaApp {
   private pillZoomText: HTMLElement;
   private btnPillZoomIn: HTMLButtonElement;
 
-  private unsubscribeSystemTheme: (() => void) | null = null;
 
   // Intervals & Subdivisions
   private intervalUnison: HTMLInputElement;
@@ -437,7 +437,6 @@ class GuidonicaApp {
 
   private async initFonts(): Promise<void> {
     await waitForMusicFonts();
-    this.fontsReady = true;
     this.resetBuffer();
   }
 
@@ -474,7 +473,7 @@ class GuidonicaApp {
     });
 
     // Cross-Platform OS color scheme watcher
-    this.unsubscribeSystemTheme = subscribeSystemTheme((isDark) => {
+    subscribeSystemTheme((isDark) => {
       if (globalState.settings.theme === 'auto') {
         const resolved: ResolvedTheme = isDark ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', resolved);
@@ -534,37 +533,20 @@ class GuidonicaApp {
     });
 
     // Tempo controls
-    const applyTempo = (val: number): void => {
-      const clamped = Math.max(30, Math.min(240, val));
-      this.tempoSlider.value = String(clamped);
-      this.tempoNumber.value = String(clamped);
-      this.bpmDisplay.textContent = String(clamped);
-      this.metronome.setTempo(clamped);
-      globalState.updateSettings({ tempo: clamped });
-      if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
-        this.renderIdleFrame();
-      }
-    };
-
     this.tempoSlider.addEventListener('input', (e) => {
-      applyTempo(Number((e.target as HTMLInputElement).value));
+      this.setTempo(Number((e.target as HTMLInputElement).value));
     });
 
+    // While typing, only commit values already inside the valid range
     this.tempoNumber.addEventListener('input', (e) => {
       const val = Number((e.target as HTMLInputElement).value);
-      if (val >= 30 && val <= 240) {
-        this.tempoSlider.value = String(val);
-        this.bpmDisplay.textContent = String(val);
-        this.metronome.setTempo(val);
-        globalState.updateSettings({ tempo: val });
-        if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
-          this.renderIdleFrame();
-        }
+      if (val === clampTempo(val)) {
+        this.setTempo(val);
       }
     });
 
     this.tempoNumber.addEventListener('change', (e) => {
-      applyTempo(Number((e.target as HTMLInputElement).value));
+      this.setTempo(Number((e.target as HTMLInputElement).value));
     });
 
     // Time Signature
@@ -601,9 +583,7 @@ class GuidonicaApp {
     this.togglePlayhead.addEventListener('change', () => {
       const show = this.togglePlayhead.checked;
       globalState.updateSettings({ showPlayhead: show });
-      if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
-        this.renderIdleFrame();
-      }
+      this.renderIfIdle();
     });
 
     // Solfege Labels Mode
@@ -822,14 +802,7 @@ class GuidonicaApp {
   }
 
   private getTupletOptionsFromUI(): TupletOptions {
-    const options: TupletOptions = {
-      duplet: { '1/4': false, '1/8': false, '1/16': false },
-      triplet: { '1/4': false, '1/8': false, '1/16': false },
-      quadruplet: { '1/4': false, '1/8': false, '1/16': false },
-      quintuplet: { '1/4': false, '1/8': false, '1/16': false },
-      sextuplet: { '1/4': false, '1/8': false, '1/16': false },
-      septuplet: { '1/4': false, '1/8': false, '1/16': false },
-    };
+    const options: TupletOptions = structuredClone(DEFAULT_TUPLET_OPTIONS);
 
     for (const cb of this.tupletCheckboxes) {
       const tupletName = cb.dataset.tuplet as TupletName | undefined;
@@ -1019,17 +992,15 @@ class GuidonicaApp {
         const nextVal = !(globalState.settings.showPlayhead !== false);
         this.togglePlayhead.checked = nextVal;
         globalState.updateSettings({ showPlayhead: nextVal });
-        if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
-          this.renderIdleFrame();
-        }
+        this.renderIfIdle();
       } else if (e.code === 'ArrowUp') {
         e.preventDefault();
         const delta = e.shiftKey ? 1 : 5;
-        this.adjustTempo(delta);
+        this.setTempo(globalState.settings.tempo + delta);
       } else if (e.code === 'ArrowDown') {
         e.preventDefault();
         const delta = e.shiftKey ? -1 : -5;
-        this.adjustTempo(delta);
+        this.setTempo(globalState.settings.tempo + delta);
       } else if (e.key === '+' || e.key === '=') {
         e.preventDefault();
         this.adjustZoom(ZOOM_STEP);
@@ -1087,21 +1058,25 @@ class GuidonicaApp {
     canvas.addEventListener('touchcancel', endPinch);
   }
 
-  private adjustTempo(delta: number): void {
-    const current = globalState.settings.tempo;
-    const next = Math.max(30, Math.min(240, current + delta));
+  private setTempo(bpm: number): void {
+    const next = clampTempo(bpm);
     this.tempoSlider.value = String(next);
     this.tempoNumber.value = String(next);
     this.bpmDisplay.textContent = String(next);
     this.metronome.setTempo(next);
     globalState.updateSettings({ tempo: next });
+    this.renderIfIdle();
+  }
+
+  /** Repaints a single frame when the rAF loop is not running (paused/stopped). */
+  private renderIfIdle(): void {
     if (globalState.playbackState === 'paused' || globalState.playbackState === 'stopped') {
       this.renderIdleFrame();
     }
   }
 
   private renderIdleFrame(): void {
-    if (this.fontsReady) {
+    if (isMusicFontReady()) {
       this.scroller.renderFrame();
     } else {
       this.scroller.renderEmptyFrame();
@@ -1165,7 +1140,7 @@ class GuidonicaApp {
   }
 
   private async startPlayback(): Promise<void> {
-    if (!this.fontsReady && this.fontInitPromise) {
+    if (!isMusicFontReady() && this.fontInitPromise) {
       await this.fontInitPromise;
     }
     const hasCountIn = globalState.settings.countIn;
@@ -1183,7 +1158,7 @@ class GuidonicaApp {
   }
 
   private async resumePlayback(): Promise<void> {
-    if (!this.fontsReady && this.fontInitPromise) {
+    if (!isMusicFontReady() && this.fontInitPromise) {
       await this.fontInitPromise;
     }
     const nextState = this.metronome.isCountingIn() ? 'counting-in' : 'playing';
@@ -1227,7 +1202,7 @@ class GuidonicaApp {
   private resetBuffer(): void {
     this.scroller.invalidatePinnedClef();
     this.buffer.reset();
-    if (!this.fontsReady) {
+    if (!isMusicFontReady()) {
       this.scroller.renderEmptyFrame();
       return;
     }
@@ -1239,7 +1214,7 @@ class GuidonicaApp {
 
   private renderBeatDots(ts: TimeSignature): void {
     this.beatDotsContainer.innerHTML = '';
-    const dotsCount = ts === '6/8' ? 6 : ts === '3/4' ? 3 : ts === '2/4' ? 2 : 4;
+    const dotsCount = getBeatsPerMeasure(ts);
 
     for (let i = 1; i <= dotsCount; i++) {
       const dot = document.createElement('div');

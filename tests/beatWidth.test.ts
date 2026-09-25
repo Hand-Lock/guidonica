@@ -37,22 +37,21 @@ describe('computeBeatWidth', () => {
     expect(computeBeatWidth(subdiv, '4/4')).toBe(220);
   });
 
-  it('widens beat width for 1/8 triplets and 1/8 tuplets', () => {
+  it('widens beat width for 1/8 tuplets', () => {
     const subdiv = {
       whole: false,
       half: false,
       quarter: true,
       eighth: true,
       sixteenth: false,
-      triplets: true,
     };
-    expect(computeBeatWidth(subdiv, '4/4')).toBe(165);
+    expect(computeBeatWidth(subdiv, '4/4')).toBe(130);
 
     const tuplets = {
       ...DEFAULT_TUPLET_OPTIONS,
       triplet: { ...DEFAULT_TUPLET_OPTIONS.triplet, '1/8': true },
     };
-    expect(computeBeatWidth({ ...subdiv, triplets: false }, '4/4', tuplets)).toBe(165);
+    expect(computeBeatWidth(subdiv, '4/4', tuplets)).toBe(165);
   });
 
   it('provides extra spacing for fast 1/16 quintuplets, sextuplets, and septuplets', () => {
