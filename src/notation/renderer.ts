@@ -8,6 +8,7 @@ import {
   Stave,
   StaveNote,
   StaveTie,
+  Stem,
   Tuplet,
   Voice,
 } from 'vexflow';
@@ -68,6 +69,35 @@ const TIE_ANCHOR_LEFT_X = NOTE_START_OFFSET;
 /** Tie direction for a lone note: matches VexFlow's single-note auto stem (1 = below). */
 function tieDirection(note: StaveNote): number {
   return note.getKeyProps()[0].line >= 3 ? -1 : 1;
+}
+
+/** Distance from notehead center to label center: half head (5) + gap (~4) + half text height (~6). */
+export const SOLFEGE_LABEL_OFFSET = 15;
+const SOLFEGE_FONT_PX = 11;
+/** Labels stay at least this far from the measure canvas's top and bottom edges. */
+const SOLFEGE_CANVAS_MARGIN = 8;
+
+/**
+ * Where a note's solfège label is centered: on the notehead's x center, a fixed distance
+ * from the head on the side opposite the stem (stem up → below, stem down → above).
+ */
+export function solfegeLabelAnchor(
+  headBeginX: number,
+  headEndX: number,
+  headY: number,
+  stemDir: number
+): { x: number; y: number } {
+  return {
+    x: (headBeginX + headEndX) / 2,
+    y: headY + SOLFEGE_LABEL_OFFSET * (stemDir === Stem.UP ? 1 : -1),
+  };
+}
+
+function labelFor(mode: SolfegeLabelMode, key: string): string {
+  const pitchLetter = key.split('/')[0].toLowerCase();
+  const table =
+    mode === 'solfege' ? SOLFEGE_SYLLABLES : mode === 'italian' ? ITALIAN_SOLFEGE_SYLLABLES : NOTE_LETTER_NAMES;
+  return table[pitchLetter] || '';
 }
 
 export class MeasureRenderer {
@@ -316,41 +346,17 @@ export class MeasureRenderer {
       });
     }
 
-    // Draw pedagogical Solfège syllables or note names beneath notes
+    // Draw pedagogical Solfège syllables or note names beside noteheads
     if (solfegeMode !== 'none') {
       const rawCtx = canvas.getContext('2d');
       if (rawCtx) {
-        rawCtx.save();
-        // Reset transform to logical units scaled to device pixel ratio and zoom
-        rawCtx.setTransform(dpr * zoom, 0, 0, dpr * zoom, 0, 0);
-        rawCtx.fillStyle = solfegeColor;
-        rawCtx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        rawCtx.textAlign = 'center';
-        rawCtx.textBaseline = 'middle';
-
-        for (let i = 0; i < data.notes.length; i++) {
-          const nData = data.notes[i];
-          // Tie continuations are not re-articulated, so they get no syllable
-          if (nData.isRest || nData.tieEnd || !nData.keys || nData.keys.length === 0) continue;
-          const pitchLetter = nData.keys[0].split('/')[0].toLowerCase();
-          const label =
-            solfegeMode === 'solfege'
-              ? SOLFEGE_SYLLABLES[pitchLetter] || ''
-              : solfegeMode === 'italian'
-              ? ITALIAN_SOLFEGE_SYLLABLES[pitchLetter] || ''
-              : NOTE_LETTER_NAMES[pitchLetter] || '';
-          if (!label) continue;
-
-          const noteLinearX = NOTE_START_OFFSET + nData.beatOffset * beatWidth;
-          const staveNote = staveNotes[i];
-          const noteY = staveNote.getYs()?.[0] ?? 120;
-          // Position solfege syllables along a uniform baseline below the staff (148),
-          // while stepping down to clear lower ledger lines (e.g. C4 down to E3)
-          const baselineY = 148;
-          const labelY = Math.min(MEASURE_CANVAS_HEIGHT - 12, Math.max(baselineY, noteY + 20));
-          rawCtx.fillText(label, noteLinearX, labelY);
+        const tupletByNote = new Map<StaveNote, Tuplet>();
+        for (const tuplet of tuplets) {
+          for (const note of tuplet.getNotes()) {
+            if (note instanceof StaveNote) tupletByNote.set(note, tuplet);
+          }
         }
-        rawCtx.restore();
+        this.drawSolfegeLabels(rawCtx, data, staveNotes, tupletByNote, solfegeMode, solfegeColor);
       }
     }
 
@@ -406,6 +412,52 @@ export class MeasureRenderer {
     stave.setContext(ctx).draw();
 
     return canvas;
+  }
+
+  private drawSolfegeLabels(
+    rawCtx: CanvasRenderingContext2D,
+    data: MeasureData,
+    staveNotes: StaveNote[],
+    tupletByNote: Map<StaveNote, Tuplet>,
+    mode: SolfegeLabelMode,
+    color: string
+  ): void {
+    // Keep the context's current transform: it is exactly the one VexFlow drew the notes
+    // with (its own resize() dpr scale times our dpr·zoom), so notehead coordinates map
+    // 1:1. Never setTransform here — dropping VexFlow's hidden dpr factor halves every
+    // label coordinate on Retina (the drift ADR 0041 fixes).
+    rawCtx.save();
+    rawCtx.fillStyle = color;
+    rawCtx.font = `bold ${SOLFEGE_FONT_PX}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    rawCtx.textAlign = 'center';
+    rawCtx.textBaseline = 'middle';
+
+    for (let i = 0; i < data.notes.length; i++) {
+      const nData = data.notes[i];
+      // Tie continuations are not re-articulated, so they get no syllable
+      if (nData.isRest || nData.tieEnd || !nData.keys || nData.keys.length === 0) continue;
+      const label = labelFor(mode, nData.keys[0]);
+      if (!label) continue;
+
+      const staveNote = staveNotes[i];
+      // Stem direction is read after beaming, since Beam may have flipped it
+      const stemDir = staveNote.getStemDirection();
+      const anchor = solfegeLabelAnchor(
+        staveNote.getNoteHeadBeginX(),
+        staveNote.getNoteHeadEndX(),
+        staveNote.getYs()[0],
+        stemDir
+      );
+      let y = anchor.y;
+      const tuplet = tupletByNote.get(staveNote);
+      if (tuplet && stemDir !== Stem.UP) {
+        // Labels above a tuplet note clear its top bracket and number
+        y = Math.min(y, tuplet.getYPosition() - SOLFEGE_LABEL_OFFSET);
+      }
+      y = Math.max(SOLFEGE_CANVAS_MARGIN, Math.min(MEASURE_CANVAS_HEIGHT - SOLFEGE_CANVAS_MARGIN, y));
+      rawCtx.fillText(label, anchor.x, y);
+    }
+    rawCtx.restore();
   }
 
   private drawBarlineTie(

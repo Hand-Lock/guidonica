@@ -1,7 +1,7 @@
 # 0014: Solfège Label Context Transform & Vertical Clearance Architecture
 
 ## Status
-Accepted
+Accepted; superseded in part by [ADR 0041](0041-solfege-labels-notehead-anchored.md) (label transform and placement)
 
 ## Date
 2026-09-16
