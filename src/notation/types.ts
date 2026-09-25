@@ -287,6 +287,17 @@ export interface MeasureData {
   beatWidth: number; // Metric beat width (px) dynamically sized for active subdivisions
   width: number; // Measure pixel width
   startBeat: number; // Global start beat offset from beginning of piece
+  /**
+   * Tie arriving at notes[0] from the previous bar's last note. Self-contained (the
+   * previous note's layout, not a reference to that measure), so re-rendering and
+   * eviction never depend on a neighbouring measure.
+   */
+  tieIn?: {
+    beatOffset: number; // Previous note's beat offset within the previous bar
+    duration: string; // Previous note's VexFlow duration
+    beatWidth: number; // Previous bar's beat width (px)
+    measureWidth: number; // Previous bar's width (px)
+  };
 }
 
 export interface RenderedMeasure {

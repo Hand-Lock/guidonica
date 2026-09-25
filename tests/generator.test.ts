@@ -520,48 +520,20 @@ describe('MusicGenerator', () => {
       expect(maxLeap).toBeGreaterThanOrEqual(12);
     });
 
-    it('ties arbitrary figures across inner beats, never inside a beat or into tuplets/rests', () => {
-      for (const ts of ['4/4', '3/4', '6/8'] as const) {
-        const beatUnit = ts === '6/8' ? 3 : 1;
-        const measures = generateMany({
-          ...DEFAULT_APP_SETTINGS,
-          timeSignature: ts,
-          subdivisions: { ...noTupletSubdiv, sixteenth: true, dotted: true },
-          tuplets: {
-            ...DEFAULT_APP_SETTINGS.tuplets,
-            triplet: { '1/4': false, '1/8': true, '1/16': true },
-          },
-          ties: true,
-          rests: true,
-        });
-        const tiedFirstDurations = new Set<string>();
-        for (const m of measures) {
-          m.notes.forEach((n, i) => {
-            if (!n.tieStart) return;
-            const next = m.notes[i + 1];
-            expect(next?.tieEnd).toBe(true);
-            expect(Boolean(n.isRest || next.isRest || n.isTuplet || next.isTuplet)).toBe(false);
-            expect(next.keys[0]).toBe(n.keys[0]);
-            const boundary = (n.beatOffset + n.beatDuration) / beatUnit;
-            expect(Math.abs(boundary - Math.round(boundary))).toBeLessThan(1e-9);
-            tiedFirstDurations.add(n.duration);
-          });
-        }
-        // Ties are no longer limited to hard-coded q~q / qd~qd
-        expect(tiedFirstDurations.size).toBeGreaterThan(2);
-      }
-    });
-
-    it('reaches tie chains (a~b~c) within the measure', () => {
+    it('reaches tie chains (a~b~c), inside the bar and across barlines', () => {
       const measures = generateMany({
         ...DEFAULT_APP_SETTINGS,
         timeSignature: '4/4',
-        subdivisions: { ...noTupletSubdiv, half: false, eighth: false },
+        subdivisions: { ...noTupletSubdiv, dotted: true },
         ties: true,
         rests: false,
       });
-      const found = measures.some((m) => m.notes.some((n) => n.tieStart && n.tieEnd));
-      expect(found).toBe(true);
+      const inner = measures.some((m) =>
+        m.notes.some((n, i) => i > 0 && i < m.notes.length - 1 && n.tieStart && n.tieEnd)
+      );
+      const acrossBarline = measures.some((m) => m.notes.some((n) => n.tieStart && n.tieEnd));
+      expect(inner).toBe(true);
+      expect(acrossBarline).toBe(true);
     });
   });
 

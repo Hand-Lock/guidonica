@@ -45,6 +45,7 @@ guidonica/
     ├── notation/
     │   ├── generator.ts    # Procedural rhythm partitioner & pitch random-walk
     │   ├── renderer.ts     # VexFlow offscreen measure canvas builder
+    │   ├── ties.ts         # Tie grammar: notehead placement table & tie legality
     │   └── types.ts        # Musical data types (Note, Measure, Clef, TimeSignature)
     └── scroller/
         ├── scroller.ts     # Viewport canvas manager, rAF loop, measure blitting
