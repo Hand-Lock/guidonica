@@ -3,6 +3,7 @@ import {
   Dot,
   Formatter,
   Metrics,
+  ModifierContext,
   Renderer,
   Stave,
   StaveNote,
@@ -30,6 +31,44 @@ import {
   TimeSignature,
   resolveTheme,
 } from './types';
+
+const tieHeadOffsets = new Map<string, number>();
+
+/**
+ * Distance from a note's linear x to where its outgoing tie starts: notehead glyph width
+ * plus the dot's right shift (what StaveNote.getTieRightX adds). It depends only on the
+ * duration, so it is measured once per duration on a detached note and memoized.
+ */
+function tieHeadOffset(duration: string): number {
+  const cached = tieHeadOffsets.get(duration);
+  if (cached !== undefined) return cached;
+  const note = new StaveNote({ keys: ['b/4'], duration });
+  if (duration.endsWith('d')) {
+    Dot.buildAndAttach([note], { all: true });
+  }
+  const mc = new ModifierContext();
+  note.addToModifierContext(mc);
+  mc.preFormat();
+  const offset = note.getGlyphWidth() + mc.getRightShift();
+  tieHeadOffsets.set(duration, offset);
+  return offset;
+}
+
+/**
+ * X where a tie leaves a sounding note placed at `beatOffset` on the linear layout.
+ * Both halves of a cross-barline tie use this, so they compute the identical curve.
+ */
+export function tieAnchorRightX(beatOffset: number, duration: string, beatWidth: number): number {
+  return NOTE_START_OFFSET + beatOffset * beatWidth + tieHeadOffset(duration);
+}
+
+/** X where a tie arrives at a bar's first note (beat 0 of the linear layout). */
+const TIE_ANCHOR_LEFT_X = NOTE_START_OFFSET;
+
+/** Tie direction for a lone note: matches VexFlow's single-note auto stem (1 = below). */
+function tieDirection(note: StaveNote): number {
+  return note.getKeyProps()[0].line >= 3 ? -1 : 1;
+}
 
 export class MeasureRenderer {
   private dpr: number = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
@@ -257,6 +296,26 @@ export class MeasureRenderer {
       tie.setContext(ctx).draw();
     }
 
+    // Cross-barline ties: each measure draws the whole arc in its own coordinates and
+    // its canvas clips its half, so contiguous blitting joins one seamless tie over the barline
+    const lastIndex = data.notes.length - 1;
+    const lastData = data.notes[lastIndex];
+    if (lastData.tieStart && !lastData.isRest) {
+      const note = staveNotes[lastIndex];
+      this.drawBarlineTie(ctx, note, noteColor, {
+        firstX: tieAnchorRightX(lastData.beatOffset, lastData.duration, beatWidth),
+        lastX: data.width + TIE_ANCHOR_LEFT_X,
+      });
+    }
+    const firstData = data.notes[0];
+    if (data.tieIn && firstData.tieEnd && !firstData.isRest) {
+      const { beatOffset, duration, beatWidth: prevBeatWidth, measureWidth } = data.tieIn;
+      this.drawBarlineTie(ctx, staveNotes[0], noteColor, {
+        firstX: tieAnchorRightX(beatOffset, duration, prevBeatWidth) - measureWidth,
+        lastX: TIE_ANCHOR_LEFT_X,
+      });
+    }
+
     // Draw pedagogical Solfège syllables or note names beneath notes
     if (solfegeMode !== 'none') {
       const rawCtx = canvas.getContext('2d');
@@ -347,6 +406,28 @@ export class MeasureRenderer {
     stave.setContext(ctx).draw();
 
     return canvas;
+  }
+
+  private drawBarlineTie(
+    ctx: ReturnType<Renderer['getContext']>,
+    note: StaveNote,
+    noteColor: string,
+    span: { firstX: number; lastX: number }
+  ): void {
+    // Both ends share pitch and clef, so the note's own Ys serve both ends
+    const tie = new StaveTie({ firstNote: note, firstIndexes: [0], lastIndexes: [0] });
+    tie.setStyle({ fillStyle: noteColor, strokeStyle: noteColor });
+    tie.setContext(ctx);
+    ctx.save();
+    ctx.setFillStyle(noteColor);
+    tie.renderTie({
+      firstX: span.firstX,
+      lastX: span.lastX,
+      firstYs: note.getYs(),
+      lastYs: note.getYs(),
+      direction: tieDirection(note),
+    });
+    ctx.restore();
   }
 
   private createStaveNote(

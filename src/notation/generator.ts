@@ -14,9 +14,7 @@ import {
   computeBeatWidth,
   supportedTuplets,
 } from './types';
-
-/** Probability that an eligible on-beat note boundary is tied (see applyTies). */
-export const TIE_PROBABILITY = 0.25;
+import { TIE_PROBABILITY, applyTies, canTieAcrossBarline } from './ties';
 
 function pick<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)];
@@ -138,11 +136,24 @@ export const CLEF_RANGE_DISPLAY = Object.fromEntries(
   })
 ) as Record<Clef, string>;
 
+/** Last note of the previously generated measure, source of an incoming barline tie. */
+interface MeasureTail {
+  measureIndex: number;
+  beatOffset: number;
+  duration: string;
+  beatWidth: number;
+  width: number;
+}
+
 export class MusicGenerator {
   private lastPitchIndex: Map<Clef, number> = new Map();
   private tupletCounter: number = 0;
   private consecutiveUnisons: number = 0;
   private isFirstNoteOfSession: boolean = true;
+  /** Next measure's rhythm, composed one bar early so a barline tie sees both notes. */
+  private lookahead: PartitionItem[] | null = null;
+  private tail: MeasureTail | null = null;
+  private lastSoundingPitch: string | null = null;
 
   constructor() {
     this.resetPitch();
@@ -152,6 +163,9 @@ export class MusicGenerator {
     this.tupletCounter = 0;
     this.consecutiveUnisons = 0;
     this.isFirstNoteOfSession = true;
+    this.lookahead = null;
+    this.tail = null;
+    this.lastSoundingPitch = null;
     for (const clef of Object.keys(CLEF_PITCH_RANGES) as Clef[]) {
       const config = CLEF_PITCH_RANGES[clef];
       const anchorIdx = config.pitches.indexOf(config.defaultAnchor);
@@ -161,32 +175,46 @@ export class MusicGenerator {
 
   /**
    * Generates a procedurally composed measure satisfying metric linearity and rhythm/melody rules.
+   * With ties on, the following measure's rhythm is composed as a lookahead so the barline
+   * pair (last note here, first note there) can be tied with both notes known.
    */
   public generateMeasure(measureIndex: number, settings: AppSettings, startBeat: number): MeasureData {
-    const { timeSignature, clef, subdivisions, tuplets, rests, ties, intervals } = settings;
+    const { timeSignature, clef, subdivisions, tuplets, ties, intervals } = settings;
     const { beatsPerMeasure, beatValue } = METER[timeSignature];
     const beatWidth = computeBeatWidth(subdivisions, timeSignature, tuplets);
     const measureWidth = beatsPerMeasure * beatWidth;
 
-    const rawRhythms = this.partitionRhythm(
-      timeSignature,
-      beatsPerMeasure,
-      subdivisions,
-      tuplets,
-      rests,
-      ties
-    );
+    const rawRhythms = this.lookahead ?? this.composeRhythm(settings);
+    this.lookahead = null;
+
+    // An incoming barline tie survives only if the previous bar was generated right before
+    // this one (the buffer skips measures after a throttled background tab)
+    const tail = this.tail;
+    const first = rawRhythms[0];
+    if (first.tieEnd && (tail === null || measureIndex !== tail.measureIndex + 1)) {
+      first.tieEnd = false;
+    }
+
+    if (ties) {
+      this.lookahead = this.composeRhythm(settings);
+      const last = rawRhythms[rawRhythms.length - 1];
+      const next = this.lookahead[0];
+      if (canTieAcrossBarline(last, next) && Math.random() < TIE_PROBABILITY) {
+        last.tieStart = true;
+        next.tieEnd = true;
+      }
+    }
+
     const notes: NoteData[] = [];
 
     let currentOffset = 0;
-    let prevPitch: string | null = null;
     for (const item of rawRhythms) {
       let pitch: string;
       if (item.isRest) {
         pitch = CLEF_PITCH_RANGES[clef].restPitch;
-      } else if (item.tieEnd && prevPitch !== null) {
+      } else if (item.tieEnd && this.lastSoundingPitch !== null) {
         // Tied note strictly maintains the pitch of the note it is tied from
-        pitch = prevPitch;
+        pitch = this.lastSoundingPitch;
       } else if (this.isFirstNoteOfSession) {
         this.isFirstNoteOfSession = false;
         const config = CLEF_PITCH_RANGES[clef];
@@ -198,7 +226,7 @@ export class MusicGenerator {
       }
 
       if (!item.isRest) {
-        prevPitch = pitch;
+        this.lastSoundingPitch = pitch;
       }
 
       notes.push({
@@ -220,7 +248,7 @@ export class MusicGenerator {
       currentOffset += item.beatDuration;
     }
 
-    return {
+    const measure: MeasureData = {
       index: measureIndex,
       notes,
       clef,
@@ -231,6 +259,25 @@ export class MusicGenerator {
       width: measureWidth,
       startBeat,
     };
+    if (notes[0].tieEnd && tail !== null) {
+      measure.tieIn = {
+        beatOffset: tail.beatOffset,
+        duration: tail.duration,
+        beatWidth: tail.beatWidth,
+        measureWidth: tail.width,
+      };
+    }
+
+    const lastNote = notes[notes.length - 1];
+    this.tail = {
+      measureIndex,
+      beatOffset: lastNote.beatOffset,
+      duration: lastNote.duration,
+      beatWidth,
+      width: measureWidth,
+    };
+
+    return measure;
   }
 
   private sampleNextPitch(clef: Clef, intervals: IntervalOptions): string {
@@ -370,21 +417,15 @@ export class MusicGenerator {
   /**
    * Partitions the metric beats of a measure into rhythms strictly summing to beatsPerMeasure.
    * Employs an ergodic metric partition tree guaranteeing that every valid musical combination
-   * of active settings has a non-zero probability of being generated.
+   * of active settings has a non-zero probability of being generated, then applies the
+   * within-measure tie grammar (ties.ts) when ties are on.
    */
-  private partitionRhythm(
-    ts: TimeSignature,
-    beatsPerMeasure: number,
-    subdiv: SubdivisionOptions,
-    tuplets: TupletOptions | undefined,
-    allowRests: boolean,
-    allowTies: boolean = false
-  ): PartitionItem[] {
+  private composeRhythm(settings: AppSettings): PartitionItem[] {
+    const { timeSignature: ts, subdivisions, tuplets, rests, ties } = settings;
     // Only cells meaningful in this meter participate (TUPLET_SUPPORT)
     const activeTuplets = tuplets && supportedTuplets(ts, tuplets);
-    const items = this.partitionMeasure(ts, subdiv, activeTuplets, allowRests);
-    // Beat unit of the tie grid: the quarter in simple meters, the dotted-quarter group in 6/8
-    return allowTies ? applyTies(items, ts === '6/8' ? 3 : 1) : items;
+    const items = this.partitionMeasure(ts, subdivisions, activeTuplets, rests);
+    return ties ? applyTies(items, ts) : items;
   }
 
   private partitionMeasure(
@@ -937,8 +978,11 @@ export class MusicGenerator {
 
     // 4. Default 4/4 metric partition, chosen uniformly:
     //    2+2   : two 2-beat hyperbeats (beats 0..2 and 2..4)
-    //    1+2+1 : a 2-beat figure on beat 2 (q h q, q qd 8 q, 8 q 8 in the middle...)
-    if (Math.random() < 0.5) {
+    //    1+2+1 : Gould's tolerated syncopation [1 beat, h, 1 beat] (q h q). Every other
+    //            figure straddling the middle of the bar (q qd 8, 8 q 8 on beats 2-3...)
+    //            must show beat 3, so it is reached via 2+2 plus a middle tie (ties.ts).
+    //            Without `half` the branch falls back to 2+2.
+    if (!subdiv.half || Math.random() < 0.5) {
       return [
         ...this.partitionTwoBeats(subdiv, tuplets, allowRests, isDotted),
         ...this.partitionTwoBeats(subdiv, tuplets, allowRests, isDotted),
@@ -946,33 +990,8 @@ export class MusicGenerator {
     }
     return [
       ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-      ...this.partitionTwoBeats(subdiv, tuplets, allowRests, isDotted),
+      { duration: 'h', beatDuration: 2, isRest: allowRests && Math.random() < 0.15 },
       ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
     ];
   }
-}
-
-/**
- * Generic within-measure tie pass. Every adjacent pair of sounding, non-tuplet notes
- * whose shared boundary falls on a beat of the tie grid (integer quarter beats in simple
- * meters, dotted-quarter group boundaries in 6/8) is tied with probability
- * TIE_PROBABILITY. Pairs are decided independently, so chains (a~b~c) are reachable and
- * every rhythm the partition tree can produce may appear tied across any inner beat.
- * Ties never cross the barline, and durations are left untouched (beat sums conserved).
- */
-export function applyTies(items: PartitionItem[], beatUnit: number): PartitionItem[] {
-  let offset = 0;
-  for (let i = 0; i < items.length - 1; i++) {
-    offset += items[i].beatDuration;
-    const a = items[i];
-    const b = items[i + 1];
-    if (a.isRest || b.isRest || a.isTuplet || b.isTuplet) continue;
-    const beats = offset / beatUnit;
-    const onBeat = Math.abs(beats - Math.round(beats)) < 1e-9;
-    if (onBeat && Math.random() < TIE_PROBABILITY) {
-      a.tieStart = true;
-      b.tieEnd = true;
-    }
-  }
-  return items;
 }
