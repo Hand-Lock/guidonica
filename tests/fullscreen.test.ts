@@ -46,7 +46,8 @@ describe('Fullscreen Icon Matched Segmented-Square Pair', () => {
     `;
 
     const button = document.getElementById('btn-fullscreen-toggle') as HTMLButtonElement;
-    const pathElem = document.getElementById('fullscreen-icon-path') as SVGPathElement;
+    const pathElem = document.querySelector<SVGPathElement>('#fullscreen-icon-path');
+    if (!pathElem) throw new Error('fullscreen icon path missing');
 
     // Simulate syncFullscreenGlyph logic for entering fullscreen
     const syncState = (isFs: boolean): void => {
