@@ -111,8 +111,13 @@ export class ScrollerView {
   }
 
   private handleResize = (): void => {
+    const previousDpr = this.dpr;
     this.updateDimensions();
     this.invalidatePinnedClef(); // Invalidate cached clef for potential dpr changes
+    if (this.dpr !== previousDpr) {
+      // Moved to a monitor with a different pixel density: cached canvases would blit blurry
+      this.buffer.rerender(this.getSettings());
+    }
     this.renderFrame();
   };
 

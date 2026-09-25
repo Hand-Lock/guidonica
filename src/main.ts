@@ -396,7 +396,7 @@ class GuidonicaApp {
     globalState.updateSettings({ zoom: clamped, zoomMode: nextMode });
     this.renderer.setZoom(clamped);
     this.scroller.setZoom(clamped);
-    this.resetBuffer();
+    this.rerenderBuffer();
   }
 
   private adjustZoom(delta: number): void {
@@ -431,8 +431,7 @@ class GuidonicaApp {
     document.documentElement.setAttribute('data-theme', resolved);
     this.updateThemeUI(nextTheme, resolved);
     globalState.updateSettings({ theme: nextTheme });
-    this.scroller.invalidatePinnedClef();
-    this.resetBuffer();
+    this.rerenderBuffer();
   }
 
   private async initFonts(): Promise<void> {
@@ -478,8 +477,7 @@ class GuidonicaApp {
         const resolved: ResolvedTheme = isDark ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', resolved);
         this.updateThemeUI('auto', resolved);
-        this.scroller.invalidatePinnedClef();
-        this.resetBuffer();
+        this.rerenderBuffer();
       }
     });
 
@@ -590,7 +588,7 @@ class GuidonicaApp {
     this.selectSolfegeMode.addEventListener('change', (e) => {
       const mode = (e.target as HTMLSelectElement).value as SolfegeLabelMode;
       globalState.updateSettings({ solfegeLabelMode: mode });
-      this.resetBuffer();
+      this.rerenderBuffer();
     });
 
     // Sound Profile (Timbre)
@@ -1193,17 +1191,21 @@ class GuidonicaApp {
 
     if (globalState.settings.zoomMode === 'auto') {
       const optimal = this.getEffectiveAutoZoom();
-      if (Math.abs(globalState.settings.zoom - optimal) > 0.001) {
-        this.applyZoom(optimal, 'auto');
-        this.resetBeatDots();
-        return; // applyZoom calls resetBuffer()
-      }
+      this.applyZoom(optimal, 'auto');
     }
 
     this.resetBuffer();
     this.resetBeatDots();
   }
 
+  /** Visual-only change (theme, solfège, zoom): re-rasterize without regenerating music. */
+  private rerenderBuffer(): void {
+    this.scroller.invalidatePinnedClef();
+    this.buffer.rerender(globalState.settings);
+    this.renderIdleFrame();
+  }
+
+  /** Musical reset: discards generated measures and restarts the generator. */
   private resetBuffer(): void {
     this.scroller.invalidatePinnedClef();
     this.buffer.reset();
