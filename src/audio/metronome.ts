@@ -126,16 +126,12 @@ export class MetronomeEngine {
   };
 
   /**
-   * Attempts to resume an AudioContext that may have been suspended during sleep or backgrounding.
+   * Synchronously creates/resumes the AudioContext. Must be called directly inside
+   * a user gesture handler, before any `await`, so the browser's transient user
+   * activation is still valid (Safari/iOS drop it across microtask boundaries).
    */
-  public async ensureAudioContextActive(): Promise<void> {
-    if (this.ctx && (this.ctx.state === 'suspended' || (this.ctx.state as string) === 'interrupted')) {
-      try {
-        await this.ctx.resume();
-      } catch {
-        // Expected if platform demands direct user interaction
-      }
-    }
+  public unlock(): void {
+    this.ensureAudioContext();
   }
 
   private ensureAudioContext(): AudioContext | null {
@@ -242,7 +238,6 @@ export class MetronomeEngine {
   }
 
   public start(countIn: boolean = true): void {
-    this.setAudioSessionCategory('playback');
     const ctx = this.ensureAudioContext();
     this.stop();
 

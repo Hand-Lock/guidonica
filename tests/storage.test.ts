@@ -195,4 +195,59 @@ describe('storage module', () => {
     const fallbackLoaded = loadStoredSettings();
     expect(fallbackLoaded.clef).toBe(DEFAULT_APP_SETTINGS.clef);
   });
+
+  it('falls back per-field on corrupt or out-of-range values', () => {
+    window.localStorage.setItem(
+      'guidonica_settings_v1',
+      JSON.stringify({
+        timeSignature: '5/4',
+        tempo: 'fast',
+        volume: 7,
+        pulse68: 42,
+        clef: 'banjo',
+        subdivisions: { quarter: 'yes', eighth: false },
+        intervals: null,
+        tuplets: { triplet: { '1/8': 1, '1/4': true } },
+        injected: { evil: true },
+      })
+    );
+    const loaded = loadStoredSettings();
+    expect(loaded.timeSignature).toBe(DEFAULT_APP_SETTINGS.timeSignature);
+    expect(loaded.tempo).toBe(DEFAULT_APP_SETTINGS.tempo);
+    expect(loaded.volume).toBe(1);
+    expect(loaded.pulse68).toBe(DEFAULT_APP_SETTINGS.pulse68);
+    expect(loaded.clef).toBe(DEFAULT_APP_SETTINGS.clef);
+    expect(loaded.subdivisions.quarter).toBe(DEFAULT_APP_SETTINGS.subdivisions.quarter);
+    expect(loaded.subdivisions.eighth).toBe(false);
+    expect(loaded.intervals).toEqual(DEFAULT_APP_SETTINGS.intervals);
+    expect(loaded.tuplets.triplet['1/8']).toBe(false);
+    expect(loaded.tuplets.triplet['1/4']).toBe(true);
+    expect(Object.keys(loaded)).not.toContain('injected');
+    expect(Object.keys(loaded.subdivisions).sort()).toEqual(
+      Object.keys(DEFAULT_APP_SETTINGS.subdivisions).sort()
+    );
+  });
+
+  it('clamps stored tempo to the metronome range', () => {
+    window.localStorage.setItem('guidonica_settings_v1', JSON.stringify({ tempo: 999 }));
+    expect(loadStoredSettings().tempo).toBe(240);
+  });
+
+  it('migrates the removed subdivisions.triplets flag to the 1/8 triplet cell', () => {
+    window.localStorage.setItem(
+      'guidonica_settings_v1',
+      JSON.stringify({ subdivisions: { quarter: true, triplets: true } })
+    );
+    const loaded = loadStoredSettings();
+    expect(loaded.tuplets.triplet['1/8']).toBe(true);
+    expect(Object.keys(loaded.subdivisions)).not.toContain('triplets');
+  });
+
+  it('never shares nested default objects with the returned settings', () => {
+    const a = loadStoredSettings();
+    a.tuplets.triplet['1/4'] = true;
+    a.intervals.unison = true;
+    expect(DEFAULT_APP_SETTINGS.tuplets.triplet['1/4']).toBe(false);
+    expect(DEFAULT_APP_SETTINGS.intervals.unison).toBe(false);
+  });
 });
