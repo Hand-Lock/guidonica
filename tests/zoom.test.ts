@@ -21,7 +21,7 @@ describe('In-App Notation Zoom Pipeline', () => {
   const originalGetContext = HTMLCanvasElement.prototype.getContext;
 
   beforeEach(() => {
-    HTMLCanvasElement.prototype.getContext = function (contextId: string) {
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, contextId: string) {
       if (contextId === '2d') {
         return {
           scale: () => {},
@@ -51,7 +51,7 @@ describe('In-App Notation Zoom Pipeline', () => {
         } as unknown as CanvasRenderingContext2D;
       }
       return null;
-    };
+    } as unknown as typeof HTMLCanvasElement.prototype.getContext;
   });
 
   afterEach(() => {

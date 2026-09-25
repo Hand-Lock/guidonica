@@ -13,7 +13,7 @@
     "test:watch": "vitest"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.13"
   },
   "packageManager": "pnpm@11.8.0",
   "repository": {
@@ -37,6 +37,7 @@
     "vexflow": "^5.0.0"
   },
   "devDependencies": {
+    "@types/node": "^22.20.4",
     "happy-dom": "^20.14.5",
     "typescript": "^5.8.2",
     "vite": "^6.2.0",
