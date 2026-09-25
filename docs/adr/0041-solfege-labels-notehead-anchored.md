@@ -8,7 +8,7 @@
 
 On Retina displays, solfège and letter labels drifted further left the later a note sat in its measure. The drift reset at every barline, and the labels also sat too high.
 
-**Root cause.** `renderMeasure()` sizes the canvas to `width·dpr·zoom` and then calls `renderer.resize(canvas.width, canvas.height)`. VexFlow's `CanvasContext.resize` multiplies the size by `devicePixelRatio` **again** and applies `scale(dpr)`. The `ctx.scale(dpr·zoom)` that follows means VexFlow draws at **dpr²·zoom**. The scroller blits the whole canvas into `m.width`, so the notes still look correct.
+**Root cause** (historical; the hidden dpr factor was removed in [ADR 0042](0042-single-dpr-offscreen-backing-store.md)). `renderMeasure()` sizes the canvas to `width·dpr·zoom` and then calls `renderer.resize(canvas.width, canvas.height)`. VexFlow's `CanvasContext.resize` multiplies the size by `devicePixelRatio` **again** and applies `scale(dpr)`. The `ctx.scale(dpr·zoom)` that follows means VexFlow draws at **dpr²·zoom**. The scroller blits the whole canvas into `m.width`, so the notes still look correct.
 
 The label pass called `rawCtx.setTransform(dpr·zoom, …)`, which dropped VexFlow's hidden `dpr` factor. At dpr = 2, every label coordinate and the font size were halved: x → x/2, so the leftward drift grew with x and reset per measure canvas, and y → y/2, so labels rode up. ADR 0014 assumed the context carried only `dpr`, which was wrong.
 
@@ -16,7 +16,7 @@ Labels were also placed at the theoretical linear x (`NOTE_START_OFFSET + beatOf
 
 ## Decision & Implementation
 
-1. **Inherit the transform.** `drawSolfegeLabels()` never resets the transform. It draws inside `save()/restore()` with the context's current matrix, the one VexFlow used for the notes. Label coordinates then share the logical space of `getAbsoluteX()` / `getYs()` at any dpr, zoom, or internal VexFlow scaling.
+1. **Inherit the transform.** (Historical note: when written, this matrix carried VexFlow's hidden dpr factor. Since ADR 0042 it is exactly `dpr·zoom`.) `drawSolfegeLabels()` never resets the transform. It draws inside `save()/restore()` with the context's current matrix, the one VexFlow used for the notes. Label coordinates then share the logical space of `getAbsoluteX()` / `getYs()` at any dpr, zoom, or internal VexFlow scaling.
 2. **Anchor on the real notehead.** `solfegeLabelAnchor(headBeginX, headEndX, headY, stemDir)` (exported, pure):
    - `x = (getNoteHeadBeginX() + getNoteHeadEndX()) / 2`
    - `y = getYs()[0] + SOLFEGE_LABEL_OFFSET · (stemDir === Stem.UP ? +1 : −1)`
@@ -31,4 +31,4 @@ Labels were also placed at the theoretical linear x (`NOTE_START_OFFSET + beatOf
 
 - Labels stay centered on their noteheads at every dpr and zoom. `tests/solfege.test.ts` renders at dpr = 2 and checks each label's device-space x against its notehead's device-space x. The old code fails that test by exactly a factor of 2.
 - Labels inside the staff sit over staff lines, and an outgoing tie arc may touch a label's edge.
-- **Follow-up (not done here):** the dpr² backing store. Measure and pinned-header canvases are allocated at `dpr²·zoom` resolution, 4× the needed pixels on Retina. The fix is to pass `devicePixelRatio = 1` to `resize()` (or skip it), and it should come with its own ADR.
+- **Follow-up: resolved in [ADR 0042](0042-single-dpr-offscreen-backing-store.md).** The dpr² backing store is gone. VexFlow's `resize()` is no longer called, so canvases are allocated at `dpr·zoom`.

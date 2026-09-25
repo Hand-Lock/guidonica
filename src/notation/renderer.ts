@@ -141,7 +141,7 @@ export class MeasureRenderer {
     const solfegeColor = isDark ? '#00ffcc' : '#007a62';
 
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
-    renderer.resize(canvas.width, canvas.height);
+    // No renderer.resize(): VexFlow re-applies devicePixelRatio on top of our sizing (dpr²).
     const ctx = renderer.getContext();
     ctx.scale(dpr * zoom, dpr * zoom);
     ctx.setFillStyle(noteColor);
@@ -384,7 +384,7 @@ export class MeasureRenderer {
     const headerColor = isDark ? '#f8fafc' : '#000000';
 
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
-    renderer.resize(canvas.width, canvas.height);
+    // No renderer.resize(): VexFlow re-applies devicePixelRatio on top of our sizing (dpr²).
     const ctx = renderer.getContext();
     ctx.scale(dpr * zoom, dpr * zoom);
     ctx.setFillStyle(headerColor);
@@ -423,9 +423,8 @@ export class MeasureRenderer {
     color: string
   ): void {
     // Keep the context's current transform: it is exactly the one VexFlow drew the notes
-    // with (its own resize() dpr scale times our dpr·zoom), so notehead coordinates map
-    // 1:1. Never setTransform here — dropping VexFlow's hidden dpr factor halves every
-    // label coordinate on Retina (the drift ADR 0041 fixes).
+    // with (our dpr·zoom), so notehead coordinates map 1:1. Never setTransform here —
+    // labels must share whatever matrix the notes used (see ADR 0041, ADR 0042).
     rawCtx.save();
     rawCtx.fillStyle = color;
     rawCtx.font = `bold ${SOLFEGE_FONT_PX}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
