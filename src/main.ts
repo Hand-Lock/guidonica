@@ -927,6 +927,11 @@ class GuidonicaApp {
 
   private bindKeyboardShortcuts(): void {
     window.addEventListener('keydown', (e) => {
+      // Leave browser/OS chords (Cmd+R reload, Ctrl +/- zoom, Alt menus) untouched
+      if (e.metaKey || e.ctrlKey || e.altKey) {
+        return;
+      }
+
       // If About modal is open, ignore global app shortcuts
       if (this.modalAbout && this.modalAbout.open) {
         return;
@@ -1115,8 +1120,6 @@ class GuidonicaApp {
         // Tab returned to foreground
         if (this.isAutoPaused) {
           this.isAutoPaused = false;
-          // Ensure audio context is ready after sleep or backgrounding
-          void this.metronome.ensureAudioContextActive();
           // Render current paused frame cleanly
           this.renderIdleFrame();
         }
@@ -1169,6 +1172,8 @@ class GuidonicaApp {
   }
 
   private async togglePlayback(): Promise<void> {
+    // Unlock audio synchronously while the user gesture is still active
+    this.metronome.unlock();
     const state = globalState.playbackState;
     if (state === 'stopped') {
       await this.startPlayback();

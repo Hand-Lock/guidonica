@@ -4,12 +4,27 @@ import {
   Clef,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
+  MAX_TEMPO,
   MAX_ZOOM,
+  MIN_TEMPO,
   MIN_ZOOM,
+  Pulse68Mode,
+  SolfegeLabelMode,
   SoundProfile,
+  TIME_SIGNATURES,
+  TUPLET_NAMES,
   ThemeMode,
+  TimeSignature,
+  TupletOptions,
   ZoomMode,
+  clampTempo,
 } from './notation/types';
+
+const SOLFEGE_LABEL_MODES: readonly SolfegeLabelMode[] = ['none', 'solfege', 'italian', 'letters'];
+const SOUND_PROFILES: readonly SoundProfile[] = ['woodblock', 'triangle'];
+const PULSE_68_MODES: readonly Pulse68Mode[] = ['dotted-quarter', 'eighth'];
+const THEME_MODES: readonly ThemeMode[] = ['auto', 'light', 'dark'];
+const ZOOM_MODES: readonly ZoomMode[] = ['auto', 'manual'];
 
 export const STORAGE_KEY = 'guidonica_settings_v1';
 export const LEGACY_STORAGE_KEY_V2 = 'solfege_scroller_settings_v2';
@@ -53,12 +68,55 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   showPlayhead: true,
 };
 
+type Parsed = Record<string, unknown>;
+
+function isRecord(value: unknown): value is Parsed {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function pickEnum<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : fallback;
+}
+
+function pickBool(value: unknown, fallback: boolean): boolean {
+  return typeof value === 'boolean' ? value : fallback;
+}
+
+function pickNumber(value: unknown, min: number, max: number, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.max(min, Math.min(max, value))
+    : fallback;
+}
+
+/** Validates every boolean flag of a flat record against its defaults' key set. */
+function pickBoolRecord<T extends { [K in keyof T]: boolean }>(value: unknown, defaults: T): T {
+  const result = { ...defaults };
+  if (!isRecord(value)) return result;
+  for (const key of Object.keys(defaults) as (keyof T & string)[]) {
+    result[key] = pickBool(value[key], defaults[key]) as T[keyof T & string];
+  }
+  return result;
+}
+
+function pickTuplets(value: unknown): TupletOptions {
+  const tuplets = structuredClone(DEFAULT_APP_SETTINGS.tuplets);
+  if (!isRecord(value)) return tuplets;
+  for (const name of TUPLET_NAMES) {
+    tuplets[name] = pickBoolRecord(value[name], tuplets[name]);
+  }
+  return tuplets;
+}
+
 /**
- * Loads stored settings from localStorage with deep merging, validation, and legacy migrations.
+ * Loads stored settings from localStorage, validating every field individually
+ * (never spreading unvalidated JSON) and applying legacy migrations.
  */
 export function loadStoredSettings(): AppSettings {
+  const defaults = (): AppSettings => structuredClone(DEFAULT_APP_SETTINGS);
   if (typeof window === 'undefined' || !window.localStorage) {
-    return { ...DEFAULT_APP_SETTINGS };
+    return defaults();
   }
 
   try {
@@ -72,92 +130,61 @@ export function loadStoredSettings(): AppSettings {
       if (raw) isLegacyV1 = true;
     }
     if (!raw) {
-      return { ...DEFAULT_APP_SETTINGS };
+      return defaults();
     }
 
-    const parsed = JSON.parse(raw) as Partial<AppSettings>;
-
-    const clef: Clef =
-      typeof parsed.clef === 'string' && (CLEFS as readonly string[]).includes(parsed.clef)
-        ? (parsed.clef as Clef)
-        : DEFAULT_APP_SETTINGS.clef;
-
-    const solfegeLabelMode =
-      parsed.solfegeLabelMode === 'none' ||
-      parsed.solfegeLabelMode === 'solfege' ||
-      parsed.solfegeLabelMode === 'italian' ||
-      parsed.solfegeLabelMode === 'letters'
-        ? parsed.solfegeLabelMode
-        : DEFAULT_APP_SETTINGS.solfegeLabelMode;
-
-    let soundProfile: SoundProfile = DEFAULT_APP_SETTINGS.soundProfile;
-    if (parsed.soundProfile === 'woodblock') {
-      soundProfile = 'woodblock';
-    } else if (parsed.soundProfile === 'triangle') {
-      soundProfile = isLegacyV1 ? 'woodblock' : 'triangle';
+    const parsed: unknown = JSON.parse(raw);
+    if (!isRecord(parsed)) {
+      return defaults();
     }
+    const d = DEFAULT_APP_SETTINGS;
 
-    let theme: ThemeMode = DEFAULT_APP_SETTINGS.theme;
-    if (parsed.theme === 'dark') {
-      theme = 'dark';
-    } else if (parsed.theme === 'light') {
-      theme = isLegacyV1 ? 'auto' : 'light';
-    } else if (parsed.theme === 'auto') {
-      theme = 'auto';
+    // Legacy v1 'triangle' / 'light' predate the woodblock profile and auto theme
+    let soundProfile = pickEnum<SoundProfile>(parsed.soundProfile, SOUND_PROFILES, d.soundProfile);
+    if (isLegacyV1 && soundProfile === 'triangle') soundProfile = 'woodblock';
+    let theme = pickEnum<ThemeMode>(parsed.theme, THEME_MODES, d.theme);
+    if (isLegacyV1 && theme === 'light') theme = 'auto';
+
+    const zoom = pickNumber(parsed.zoom, MIN_ZOOM, MAX_ZOOM, d.zoom);
+    // Settings saved before zoomMode existed: a non-default zoom was a manual choice
+    const zoomMode = pickEnum<ZoomMode>(
+      parsed.zoomMode,
+      ZOOM_MODES,
+      Math.abs(zoom - DEFAULT_ZOOM) > 0.001 ? 'manual' : d.zoomMode
+    );
+
+    const tuplets = pickTuplets(parsed.tuplets);
+    // Migrate the removed hidden `subdivisions.triplets` flag to its visible tuplet cell
+    if (isRecord(parsed.subdivisions) && parsed.subdivisions.triplets === true) {
+      tuplets.triplet['1/8'] = true;
     }
-
-    let zoom = DEFAULT_APP_SETTINGS.zoom;
-    if (typeof parsed.zoom === 'number' && !isNaN(parsed.zoom)) {
-      zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, parsed.zoom));
-    }
-
-    let zoomMode: ZoomMode = DEFAULT_APP_SETTINGS.zoomMode;
-    if (parsed.zoomMode === 'auto' || parsed.zoomMode === 'manual') {
-      zoomMode = parsed.zoomMode;
-    } else if (
-      typeof parsed.zoom === 'number' &&
-      !isNaN(parsed.zoom) &&
-      Math.abs(parsed.zoom - DEFAULT_ZOOM) > 0.001
-    ) {
-      zoomMode = 'manual';
-    }
-
-    const ties = typeof parsed.ties === 'boolean' ? parsed.ties : DEFAULT_APP_SETTINGS.ties;
-    const showPlayhead =
-      typeof parsed.showPlayhead === 'boolean'
-        ? parsed.showPlayhead
-        : DEFAULT_APP_SETTINGS.showPlayhead;
 
     return {
-      ...DEFAULT_APP_SETTINGS,
-      ...parsed,
-      clef,
-      solfegeLabelMode,
+      tempo: clampTempo(pickNumber(parsed.tempo, MIN_TEMPO, MAX_TEMPO, d.tempo)),
+      timeSignature: pickEnum<TimeSignature>(parsed.timeSignature, TIME_SIGNATURES, d.timeSignature),
+      clef: pickEnum<Clef>(parsed.clef, CLEFS, d.clef),
+      subdivisions: pickBoolRecord(parsed.subdivisions, d.subdivisions),
+      tuplets,
+      rests: pickBool(parsed.rests, d.rests),
+      ties: pickBool(parsed.ties, d.ties),
+      intervals: pickBoolRecord(parsed.intervals, d.intervals),
+      solfegeLabelMode: pickEnum<SolfegeLabelMode>(
+        parsed.solfegeLabelMode,
+        SOLFEGE_LABEL_MODES,
+        d.solfegeLabelMode
+      ),
       soundProfile,
+      pulse68: pickEnum<Pulse68Mode>(parsed.pulse68, PULSE_68_MODES, d.pulse68),
+      countIn: pickBool(parsed.countIn, d.countIn),
       theme,
+      volume: pickNumber(parsed.volume, 0, 1, d.volume),
+      isMuted: pickBool(parsed.isMuted, d.isMuted),
       zoom,
       zoomMode,
-      ties,
-      showPlayhead,
-      subdivisions: {
-        ...DEFAULT_APP_SETTINGS.subdivisions,
-        ...(parsed.subdivisions || {}),
-      },
-      tuplets: {
-        duplet: { ...DEFAULT_APP_SETTINGS.tuplets.duplet, ...(parsed.tuplets?.duplet || {}) },
-        triplet: { ...DEFAULT_APP_SETTINGS.tuplets.triplet, ...(parsed.tuplets?.triplet || {}) },
-        quadruplet: { ...DEFAULT_APP_SETTINGS.tuplets.quadruplet, ...(parsed.tuplets?.quadruplet || {}) },
-        quintuplet: { ...DEFAULT_APP_SETTINGS.tuplets.quintuplet, ...(parsed.tuplets?.quintuplet || {}) },
-        sextuplet: { ...DEFAULT_APP_SETTINGS.tuplets.sextuplet, ...(parsed.tuplets?.sextuplet || {}) },
-        septuplet: { ...DEFAULT_APP_SETTINGS.tuplets.septuplet, ...(parsed.tuplets?.septuplet || {}) },
-      },
-      intervals: {
-        ...DEFAULT_APP_SETTINGS.intervals,
-        ...(parsed.intervals || {}),
-      },
+      showPlayhead: pickBool(parsed.showPlayhead, d.showPlayhead),
     };
   } catch {
-    return { ...DEFAULT_APP_SETTINGS };
+    return defaults();
   }
 }
 
