@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   Clef,
   DEFAULT_ZOOM,
@@ -15,6 +15,7 @@ import {
   computeBeatWidth,
   computeOptimalZoom,
 } from '../src/notation/types';
+import type { MeasureData } from '../src/notation/types';
 import { MeasureRenderer } from '../src/notation/renderer';
 
 describe('In-App Notation Zoom Pipeline', () => {
@@ -56,6 +57,7 @@ describe('In-App Notation Zoom Pipeline', () => {
 
   afterEach(() => {
     HTMLCanvasElement.prototype.getContext = originalGetContext;
+    vi.unstubAllGlobals();
   });
 
   it('defines valid zoom boundary and step constants', () => {
@@ -104,6 +106,35 @@ describe('In-App Notation Zoom Pipeline', () => {
     // At dpr=2, zoom=1.5: width = 115 * 2 * 1.5 = 345, height = 220 * 2 * 1.5 = 660
     expect(canvas150.width).toBe(Math.floor(PINNED_HEADER_WIDTH * 2 * 1.5));
     expect(canvas150.height).toBe(660);
+  });
+
+  it('allocates a single-dpr backing store even when VexFlow sees devicePixelRatio (ADR 0042)', () => {
+    // VexFlow's resize() reads globalThis.devicePixelRatio and would double it (dpr²·zoom)
+    vi.stubGlobal('devicePixelRatio', 2);
+    const renderer = new MeasureRenderer();
+    renderer.setDpr(2);
+    const data: MeasureData = {
+      index: 0,
+      notes: [{ keys: ['c/4'], duration: 'w', isRest: false, beatOffset: 0, beatDuration: 4 }],
+      clef: 'treble',
+      timeSignature: '4/4',
+      beatsPerMeasure: 4,
+      beatValue: 4,
+      beatWidth: 110,
+      width: 440,
+      startBeat: 0,
+    };
+
+    for (const zoom of [0.75, 1.0, 1.5]) {
+      renderer.setZoom(zoom);
+      const { canvas } = renderer.renderMeasure(data, 'light', 'none');
+      expect(canvas.width).toBe(Math.floor(data.width * 2 * zoom));
+      expect(canvas.height).toBe(Math.floor(MEASURE_CANVAS_HEIGHT * 2 * zoom));
+
+      const pinned = renderer.renderPinnedClef('treble', '4/4', 'light');
+      expect(pinned.width).toBe(Math.floor(PINNED_HEADER_WIDTH * 2 * zoom));
+      expect(pinned.height).toBe(Math.floor(MEASURE_CANVAS_HEIGHT * 2 * zoom));
+    }
   });
 
   it('rasterizes pinned header across all time signatures and clefs', () => {

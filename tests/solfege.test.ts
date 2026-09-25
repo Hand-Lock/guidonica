@@ -185,8 +185,9 @@ describe('Solfège labels at devicePixelRatio 2 (drift regression)', () => {
 
     expect(labels.map((l) => l.text)).toEqual(['C', 'E', 'G', 'B', 'D', 'F', 'A', 'C']);
     expect(heads).toHaveLength(keys.length);
-    // Device scale of VexFlow's drawing (its resize dpr × our dpr·zoom)
+    // Device scale of VexFlow's drawing is exactly our dpr·zoom = 2 (no hidden resize dpr, ADR 0042)
     const scale = Math.abs(heads[1].deviceCenterX - heads[0].deviceCenterX) / 55;
+    expect(scale).toBeCloseTo(2, 6);
     for (let i = 0; i < keys.length; i++) {
       expect(labels[i].deviceX).toBeCloseTo(heads[i].deviceCenterX, 6);
       expect(Math.abs(labels[i].deviceY - heads[i].deviceY)).toBeGreaterThanOrEqual(SOLFEGE_LABEL_OFFSET * scale - 1e-6);
