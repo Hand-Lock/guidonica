@@ -77,6 +77,71 @@ export const DEFAULT_TUPLET_OPTIONS: Readonly<TupletOptions> = {
   septuplet: { '1/4': false, '1/8': false, '1/16': false },
 };
 
+export type TupletCell = `${TupletName}:${TupletValue}`;
+
+// Tuplets available in every simple meter (per-beat and 2-beat groups)
+const SIMPLE_METER_TUPLETS: readonly TupletCell[] = [
+  'triplet:1/4',
+  'triplet:1/8',
+  'triplet:1/16',
+  'quintuplet:1/8',
+  'quintuplet:1/16',
+  'sextuplet:1/8',
+  'sextuplet:1/16',
+  'septuplet:1/8',
+  'septuplet:1/16',
+];
+
+/**
+ * Single source of truth for which tuplet cells are musically meaningful per meter.
+ * The generator only draws from supported cells and the UI disables the rest, so
+ * every enabled cell is reachable (P > 0) and no checked cell is silently ignored.
+ * - Quint/sext/septuplet ¼ span a whole 4/4 bar (5/6/7:4).
+ * - Duplet ¼ and quadruplet ¼/⅛ divide the 3-beat 3/4 bar (2:3, 4:3, 4:6).
+ * - 6/8 uses duple divisions of its dotted groups: duplet/quadruplet ¼ across the bar,
+ *   ⅛ across one dotted-quarter group, 1/16 across each dotted-eighth half-group;
+ *   triplet 1/16 divides a single eighth.
+ */
+export const TUPLET_SUPPORT: Record<TimeSignature, ReadonlySet<TupletCell>> = {
+  '2/4': new Set(SIMPLE_METER_TUPLETS),
+  '3/4': new Set<TupletCell>([
+    ...SIMPLE_METER_TUPLETS,
+    'duplet:1/4',
+    'quadruplet:1/4',
+    'quadruplet:1/8',
+  ]),
+  '4/4': new Set<TupletCell>([
+    ...SIMPLE_METER_TUPLETS,
+    'quintuplet:1/4',
+    'sextuplet:1/4',
+    'septuplet:1/4',
+  ]),
+  '6/8': new Set<TupletCell>([
+    'duplet:1/4',
+    'duplet:1/8',
+    'duplet:1/16',
+    'triplet:1/16',
+    'quadruplet:1/4',
+    'quadruplet:1/8',
+    'quadruplet:1/16',
+  ]),
+};
+
+export function isTupletSupported(ts: TimeSignature, name: TupletName, value: TupletValue): boolean {
+  return TUPLET_SUPPORT[ts].has(`${name}:${value}`);
+}
+
+/** Returns a copy of `tuplets` with every cell unsupported by `ts` switched off. */
+export function supportedTuplets(ts: TimeSignature, tuplets: TupletOptions): TupletOptions {
+  const result = structuredClone(DEFAULT_TUPLET_OPTIONS) as TupletOptions;
+  for (const name of TUPLET_NAMES) {
+    for (const value of TUPLET_VALUES) {
+      result[name][value] = tuplets[name][value] && isTupletSupported(ts, name, value);
+    }
+  }
+  return result;
+}
+
 export interface SubdivisionOptions {
   whole: boolean;
   half: boolean;
@@ -257,8 +322,10 @@ export const MIN_PLAYHEAD_X = PINNED_HEADER_TOTAL_MARGIN + PLAYHEAD_MIN_CLEARANC
 export function computeBeatWidth(
   subdivisions: SubdivisionOptions,
   timeSignature: TimeSignature,
-  tuplets?: TupletOptions
+  requestedTuplets?: TupletOptions
 ): number {
+  // Cells unsupported by this meter never generate, so they must not widen spacing
+  const tuplets = requestedTuplets && supportedTuplets(timeSignature, requestedTuplets);
   const has16thTuplet =
     tuplets &&
     (tuplets.septuplet['1/16'] ||

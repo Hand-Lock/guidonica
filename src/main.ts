@@ -24,6 +24,7 @@ import {
   clampTempo,
   computeOptimalZoom,
   getBeatsPerMeasure,
+  isTupletSupported,
   resolveTheme,
   subscribeSystemTheme,
 } from './notation/types';
@@ -344,7 +345,7 @@ class GuidonicaApp {
         cb.checked = settings.tuplets[tName][tVal];
       }
     }
-    this.updateTupletsUI();
+    this.applyTupletAvailability(settings.timeSignature);
 
     // Zoom
     const isAuto = settings.zoomMode === 'auto';
@@ -555,6 +556,13 @@ class GuidonicaApp {
       this.metronome.setTimeSignature(ts);
       this.renderBeatDots(ts);
       globalState.updateSettings({ timeSignature: ts });
+      this.applyTupletAvailability(ts);
+      if (this.getBaseSubdivCount() === 0 && this.getActiveTupletCount() === 0) {
+        this.subdivQuarter.checked = true;
+        globalState.updateSettings({
+          subdivisions: { ...globalState.settings.subdivisions, quarter: true },
+        });
+      }
       this.resetSession();
     });
 
@@ -796,8 +804,28 @@ class GuidonicaApp {
     this.btnTupletsToggle.setAttribute('aria-expanded', 'false');
   }
 
+  /** Counts checked tuplet cells that the current meter can actually generate. */
   private getActiveTupletCount(): number {
-    return this.tupletCheckboxes.filter((cb) => cb.checked).length;
+    return this.tupletCheckboxes.filter((cb) => cb.checked && !cb.disabled).length;
+  }
+
+  /**
+   * Disables tuplet cells the generator cannot realise in `ts` (see TUPLET_SUPPORT).
+   * The stored checked state is preserved so it reactivates when switching back.
+   */
+  private applyTupletAvailability(ts: TimeSignature): void {
+    for (const cb of this.tupletCheckboxes) {
+      const tName = cb.dataset.tuplet as TupletName | undefined;
+      const tVal = cb.dataset.value as TupletValue | undefined;
+      const supported = !!tName && !!tVal && isTupletSupported(ts, tName, tVal);
+      cb.disabled = !supported;
+      const label = cb.closest('label');
+      if (label) {
+        label.dataset.baseTitle ??= label.title;
+        label.title = supported ? label.dataset.baseTitle : `Not available in ${ts}`;
+      }
+    }
+    this.updateTupletsUI();
   }
 
   private getTupletOptionsFromUI(): TupletOptions {

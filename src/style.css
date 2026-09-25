@@ -1142,6 +1142,17 @@ code, kbd, pre, samp {
   cursor: pointer;
 }
 
+/* Cells the current meter cannot realise: dimmed, inert, no hover glow */
+.tuplet-cell-label:has(input:disabled) {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tuplet-cell-label input[type='checkbox']:disabled {
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
 .tuplets-popover-footer {
   font-size: 11px;
   color: var(--text-muted);
