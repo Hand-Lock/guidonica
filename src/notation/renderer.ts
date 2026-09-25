@@ -271,7 +271,8 @@ export class MeasureRenderer {
 
         for (let i = 0; i < data.notes.length; i++) {
           const nData = data.notes[i];
-          if (nData.isRest || !nData.keys || nData.keys.length === 0) continue;
+          // Tie continuations are not re-articulated, so they get no syllable
+          if (nData.isRest || nData.tieEnd || !nData.keys || nData.keys.length === 0) continue;
           const pitchLetter = nData.keys[0].split('/')[0].toLowerCase();
           const label =
             solfegeMode === 'solfege'

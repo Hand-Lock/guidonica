@@ -36,6 +36,22 @@ export class MeasureBuffer {
   }
 
   /**
+   * Re-rasterizes the kept measures with the renderer's current zoom/DPR and the
+   * given visual settings (theme, solfège). The musical content (MeasureData) and
+   * the generator state are untouched, so the notes under the playhead never change.
+   */
+  public rerender(settings: AppSettings): void {
+    if (!isMusicFontReady()) {
+      return;
+    }
+    this.measures = this.measures.map((m) => {
+      m.canvas.width = 0;
+      m.canvas.height = 0;
+      return this.renderer.renderMeasure(m.data, settings.theme, settings.solfegeLabelMode);
+    });
+  }
+
+  /**
    * Ensures measures are rendered far enough ahead of the viewport playhead.
    * Includes background-tab catch-up protection to avoid large loops.
    */
