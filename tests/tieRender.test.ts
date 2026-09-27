@@ -6,7 +6,7 @@ import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import { AppSettings, MeasureData, NOTE_START_OFFSET, TimeSignature } from '../src/notation/types';
 
 const SIMPLE_BEATS: Record<string, number> = {
-  w: 4, hd: 3, h: 2, qd: 1.5, q: 1, '8d': 0.75, '8': 0.5, '16': 0.25,
+  w: 4, hd: 3, h: 2, qd: 1.5, q: 1, '8d': 0.75, '8': 0.5, '16d': 0.375, '16': 0.25, '32': 0.125,
 };
 
 function measure(notes: MeasureData['notes'], extra: Partial<MeasureData> = {}): MeasureData {
@@ -55,7 +55,7 @@ describe('Cross-barline tie rendering', () => {
       const settings: AppSettings = {
         ...structuredClone(DEFAULT_APP_SETTINGS),
         timeSignature: ts,
-        subdivisions: { whole: true, half: true, quarter: true, eighth: true, sixteenth: true, dotted: true },
+        subdivisions: { whole: true, half: true, quarter: true, eighth: true, sixteenth: true, thirtySecond: true, dotted: true },
         ties: true,
       };
       const generator = new MusicGenerator();

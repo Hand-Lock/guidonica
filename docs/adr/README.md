@@ -48,6 +48,7 @@ This directory documents the core architectural decisions, implementation method
 | [0040](0040-engraving-grammar-for-ties-and-cross-barline-ties.md) | Engraving Grammar for Ties and Cross-Barline Ties | Accepted | 2026-09-25 |
 | [0041](0041-solfege-labels-notehead-anchored.md) | Solfège Labels Anchored to Noteheads (dpr² Transform Fix) | Accepted | 2026-09-25 |
 | [0042](0042-single-dpr-offscreen-backing-store.md) | Single-dpr Offscreen Backing Store (drop VexFlow `resize()`) | Accepted | 2026-09-25 |
+| [0043](0043-thirty-second-notes.md) | Thirty-Second Notes & Dotted Sixteenths | Accepted | 2026-09-27 |
 
 ---
 

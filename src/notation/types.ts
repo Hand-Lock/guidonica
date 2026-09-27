@@ -148,6 +148,8 @@ export interface SubdivisionOptions {
   quarter: boolean;
   eighth: boolean;
   sixteenth: boolean;
+  /** 32nd notes (and, with dotted, the dotted 16th). Missing = off. */
+  thirtySecond?: boolean;
   dotted?: boolean;
 }
 
@@ -361,6 +363,10 @@ export function computeBeatWidth(
 
   if (timeSignature === '6/8') {
     // 6/8 compound meter: 6 eighth-note beats per measure.
+    if (subdivisions.thirtySecond) {
+      // 32nd note = 0.25 eighth beat -> 45px spacing per 32nd (180px per eighth beat)
+      return 180;
+    }
     if (subdivisions.sixteenth || has16thTuplet) {
       return 110;
     }
@@ -372,6 +378,11 @@ export function computeBeatWidth(
   }
 
   // Simple meters (4/4, 3/4, 2/4): 1 beat = 1 quarter note.
+  if (subdivisions.thirtySecond) {
+    // 32nd note = 0.125 beat -> 45px spacing per 32nd (360px per quarter beat),
+    // wider than every 16th-tuplet spacing below
+    return 360;
+  }
   if (hasSeptuplet16) {
     // 7 sixteenth notes in 1 beat -> 40px spacing per note (280px per beat)
     return 280;

@@ -11,10 +11,10 @@ const EPS = 1e-9;
  * (quarters in simple meters, eighths in 6/8) and mapped to their VexFlow duration.
  */
 export const NOTE_VALUES: Record<TimeSignature, Record<number, string>> = {
-  '4/4': { 4: 'w', 3: 'hd', 2: 'h', 1.5: 'qd', 1: 'q', 0.75: '8d', 0.5: '8', 0.25: '16' },
-  '3/4': { 4: 'w', 3: 'hd', 2: 'h', 1.5: 'qd', 1: 'q', 0.75: '8d', 0.5: '8', 0.25: '16' },
-  '2/4': { 4: 'w', 3: 'hd', 2: 'h', 1.5: 'qd', 1: 'q', 0.75: '8d', 0.5: '8', 0.25: '16' },
-  '6/8': { 6: 'hd', 4: 'h', 3: 'qd', 2: 'q', 1.5: '8d', 1: '8', 0.5: '16' },
+  '4/4': { 4: 'w', 3: 'hd', 2: 'h', 1.5: 'qd', 1: 'q', 0.75: '8d', 0.5: '8', 0.375: '16d', 0.25: '16', 0.125: '32' },
+  '3/4': { 4: 'w', 3: 'hd', 2: 'h', 1.5: 'qd', 1: 'q', 0.75: '8d', 0.5: '8', 0.375: '16d', 0.25: '16', 0.125: '32' },
+  '2/4': { 4: 'w', 3: 'hd', 2: 'h', 1.5: 'qd', 1: 'q', 0.75: '8d', 0.5: '8', 0.375: '16d', 0.25: '16', 0.125: '32' },
+  '6/8': { 6: 'hd', 4: 'h', 3: 'qd', 2: 'q', 1.5: '8d', 1: '8', 0.75: '16d', 0.5: '16', 0.25: '32' },
 };
 
 export interface Placement {
@@ -32,7 +32,9 @@ export interface Placement {
  * - 4/4: the middle of the bar stays visible. Nothing canonical crosses beat 3 except
  *   w (and hd from beat 1). The syncopations `q h q` and `q h.` are tolerated exceptions
  *   (h@1, hd@1): written as single notes or tied across the middle.
- * - Simple meters: sub-beat values never cross a beat (8 at .25 = the `16 8 16` figure).
+ * - Simple meters: sub-beat values never cross their parent (8 at .25 = the `16 8 16`
+ *   figure; 16 at .125 = `32 16 32` inside one eighth; 16d/32 never cross an eighth).
+ * - 6/8: the same eighth-level rule one level down (16, 16d, 32 stay inside one eighth).
  * - 3/4: the bar is one undivided unit, so q, qd and h may sit on any eighth / beat.
  * - 6/8: the dotted-quarter beat stays visible; a 4-eighth sound (h) has no placement
  *   and is always spelled tied.
@@ -46,7 +48,9 @@ export const NOTEHEAD_PLACEMENTS: Record<TimeSignature, Record<string, Placement
     q: { period: 2, offsets: [0, 0.5, 1] },
     '8d': { period: 1, offsets: [0, 0.25] },
     '8': { period: 1, offsets: [0, 0.25, 0.5] },
-    '16': { period: 0.25, offsets: [0] },
+    '16': { period: 0.5, offsets: [0, 0.125, 0.25] },
+    '16d': { period: 0.5, offsets: [0, 0.125] },
+    '32': { period: 0.125, offsets: [0] },
   },
   '2/4': {
     h: { period: 2, offsets: [0] },
@@ -54,7 +58,9 @@ export const NOTEHEAD_PLACEMENTS: Record<TimeSignature, Record<string, Placement
     q: { period: 2, offsets: [0, 0.5, 1] },
     '8d': { period: 1, offsets: [0, 0.25] },
     '8': { period: 1, offsets: [0, 0.25, 0.5] },
-    '16': { period: 0.25, offsets: [0] },
+    '16': { period: 0.5, offsets: [0, 0.125, 0.25] },
+    '16d': { period: 0.5, offsets: [0, 0.125] },
+    '32': { period: 0.125, offsets: [0] },
   },
   '3/4': {
     hd: { period: 3, offsets: [0] },
@@ -63,7 +69,9 @@ export const NOTEHEAD_PLACEMENTS: Record<TimeSignature, Record<string, Placement
     q: { period: 0.5, offsets: [0] },
     '8d': { period: 1, offsets: [0, 0.25] },
     '8': { period: 1, offsets: [0, 0.25, 0.5] },
-    '16': { period: 0.25, offsets: [0] },
+    '16': { period: 0.5, offsets: [0, 0.125, 0.25] },
+    '16d': { period: 0.5, offsets: [0, 0.125] },
+    '32': { period: 0.125, offsets: [0] },
   },
   '6/8': {
     hd: { period: 6, offsets: [0] },
@@ -71,7 +79,9 @@ export const NOTEHEAD_PLACEMENTS: Record<TimeSignature, Record<string, Placement
     q: { period: 3, offsets: [0, 1] },
     '8d': { period: 3, offsets: [0, 1] },
     '8': { period: 1, offsets: [0] },
-    '16': { period: 0.5, offsets: [0] },
+    '16': { period: 1, offsets: [0, 0.25, 0.5] },
+    '16d': { period: 1, offsets: [0, 0.25] },
+    '32': { period: 0.25, offsets: [0] },
   },
 };
 

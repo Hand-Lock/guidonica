@@ -439,7 +439,8 @@ export class MusicGenerator {
       subdiv.half ||
       subdiv.quarter ||
       subdiv.eighth ||
-      subdiv.sixteenth;
+      subdiv.sixteenth ||
+      subdiv.thirtySecond;
     const hasAnyTuplet = this.hasActiveTuplets(tuplets);
 
     // Fallback: if absolutely nothing is selected, default to quarter notes
@@ -460,6 +461,63 @@ export class MusicGenerator {
 
     // 4/4 meter
     return this.partitionFourFourMeasure(effectiveSubdiv, tuplets, allowRests, isDotted);
+  }
+
+  /**
+   * Fills one sixteenth's worth of time (`unit / 2` beats, where `unit` is the beat span of
+   * an eighth: 0.5 in simple meters, 1 in 6/8) with a 16 or two 32nds, uniformly among the
+   * enabled values. Only called when thirtySecond is on.
+   */
+  private partitionSixteenthSpan(subdiv: SubdivisionOptions, allowRests: boolean, unit: number): PartitionItem[] {
+    const candidates: Array<() => PartitionItem[]> = [];
+    if (subdiv.sixteenth) {
+      candidates.push(() => [{ duration: '16', beatDuration: unit / 2, isRest: allowRests && Math.random() < 0.12 }]);
+    }
+    candidates.push(() => [
+      { duration: '32', beatDuration: unit / 4, isRest: allowRests && Math.random() < 0.12 },
+      { duration: '32', beatDuration: unit / 4, isRest: allowRests && Math.random() < 0.12 },
+    ]);
+    return pick(candidates)();
+  }
+
+  /**
+   * Fills one eighth's worth of time (`unit` beats) with every placement-legal figure built
+   * from 8, 16, 16d and 32 (ties.ts: sub-eighth values never cross the eighth):
+   * 8 | {16, 32 32} x {16, 32 32} | 16d 32 | 32 16d | 32 16 32. Only called when thirtySecond is on.
+   */
+  private partitionEighthSpan(
+    subdiv: SubdivisionOptions,
+    allowRests: boolean,
+    isDotted: boolean,
+    unit: number
+  ): PartitionItem[] {
+    const rest = (): boolean => allowRests && Math.random() < 0.12;
+    const candidates: Array<() => PartitionItem[]> = [];
+    if (subdiv.eighth) {
+      candidates.push(() => [{ duration: '8', beatDuration: unit, isRest: allowRests && Math.random() < 0.15 }]);
+    }
+    candidates.push(() => [
+      ...this.partitionSixteenthSpan(subdiv, allowRests, unit),
+      ...this.partitionSixteenthSpan(subdiv, allowRests, unit),
+    ]);
+    if (subdiv.sixteenth && isDotted) {
+      candidates.push(() => [
+        { duration: '16d', beatDuration: (unit * 3) / 4, isRest: rest() },
+        { duration: '32', beatDuration: unit / 4, isRest: rest() },
+      ]);
+      candidates.push(() => [
+        { duration: '32', beatDuration: unit / 4, isRest: rest() },
+        { duration: '16d', beatDuration: (unit * 3) / 4, isRest: rest() },
+      ]);
+    }
+    if (subdiv.sixteenth) {
+      candidates.push(() => [
+        { duration: '32', beatDuration: unit / 4, isRest: rest() },
+        { duration: '16', beatDuration: unit / 2, isRest: rest() },
+        { duration: '32', beatDuration: unit / 4, isRest: rest() },
+      ]);
+    }
+    return pick(candidates)();
   }
 
   /**
@@ -575,8 +633,22 @@ export class MusicGenerator {
       });
     }
 
+    // Candidates 5b/5c: Quarter + any 32nd-bearing eighth figure, and its mirror
+    if (subdiv.quarter && subdiv.thirtySecond) {
+      candidates.push(() => [
+        { duration: 'q', beatDuration: 2, isRest: allowRests && Math.random() < 0.15 },
+        ...this.partitionEighthSpan(subdiv, allowRests, isDotted, 1),
+      ]);
+      candidates.push(() => [
+        ...this.partitionEighthSpan(subdiv, allowRests, isDotted, 1),
+        { duration: 'q', beatDuration: 2, isRest: allowRests && Math.random() < 0.15 },
+      ]);
+    }
+
     // Candidate 6: Eighth-level subdivisions (three eighth units: 1 + 1 + 1)
-    if (subdiv.eighth || subdiv.sixteenth) {
+    // With 32nds on, each eighth may also be any partitionEighthSpan figure, and the 8d pair
+    // may end in 32 32 instead of 16.
+    if (subdiv.eighth || subdiv.sixteenth || subdiv.thirtySecond) {
       candidates.push(() => {
         const items: PartitionItem[] = [];
         let beat = 0;
@@ -593,6 +665,16 @@ export class MusicGenerator {
               { duration: '16', beatDuration: 0.5, isRest: r2 }
             );
             beat += 2;
+          } else if (subdiv.thirtySecond && subdiv.eighth && isDotted && beat <= 1 && Math.random() < 0.15) {
+            // Dotted eighth + a sixteenth's span of 32nds (8d 32 32)
+            items.push(
+              { duration: '8d', beatDuration: 1.5, isRest: allowRests && Math.random() < 0.12 },
+              ...this.partitionSixteenthSpan(subdiv, allowRests, 1)
+            );
+            beat += 2;
+          } else if (subdiv.thirtySecond && (Math.random() < 0.45 || (!subdiv.eighth && !subdiv.sixteenth))) {
+            items.push(...this.partitionEighthSpan(subdiv, allowRests, isDotted, 1));
+            beat++;
           } else if (subdiv.sixteenth && (Math.random() < 0.45 || !subdiv.eighth)) {
             const restIdx = allowRests && Math.random() < 0.15 ? Math.floor(Math.random() * 2) : -1;
             items.push(
@@ -749,7 +831,34 @@ export class MusicGenerator {
       });
     }
 
-    // 9. Single-beat tuplets
+    // 9. 32nd-note figures: each eighth half of the beat is any partitionEighthSpan figure,
+    // plus the figures whose middle crosses the half-beat (8d | 16-span, 16-span | 8d,
+    // 16-span 8 16-span), so every placement-legal 8/8d/16/16d/32 beat is reachable.
+    if (subdiv.thirtySecond) {
+      candidates.push(() => [
+        ...this.partitionEighthSpan(subdiv, allowRests, isDotted, 0.5),
+        ...this.partitionEighthSpan(subdiv, allowRests, isDotted, 0.5),
+      ]);
+      if (subdiv.eighth && isDotted) {
+        candidates.push(() => [
+          { duration: '8d', beatDuration: 0.75, isRest: allowRests && Math.random() < 0.12 },
+          ...this.partitionSixteenthSpan(subdiv, allowRests, 0.5),
+        ]);
+        candidates.push(() => [
+          ...this.partitionSixteenthSpan(subdiv, allowRests, 0.5),
+          { duration: '8d', beatDuration: 0.75, isRest: allowRests && Math.random() < 0.12 },
+        ]);
+      }
+      if (subdiv.eighth) {
+        candidates.push(() => [
+          ...this.partitionSixteenthSpan(subdiv, allowRests, 0.5),
+          { duration: '8', beatDuration: 0.5, isRest: allowRests && Math.random() < 0.12 },
+          ...this.partitionSixteenthSpan(subdiv, allowRests, 0.5),
+        ]);
+      }
+    }
+
+    // 10. Single-beat tuplets
     if (tuplets?.triplet['1/8']) {
       candidates.push(() => this.makeTupletItems(3, 2, '8', 1));
     }

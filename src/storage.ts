@@ -40,6 +40,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     quarter: true,
     eighth: true,
     sixteenth: false,
+    thirtySecond: false,
     dotted: true,
   },
   tuplets: structuredClone(DEFAULT_TUPLET_OPTIONS),

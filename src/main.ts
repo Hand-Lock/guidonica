@@ -124,6 +124,7 @@ class GuidonicaApp {
   private subdivHalf: HTMLInputElement;
   private subdivWhole: HTMLInputElement;
   private subdivSixteenth: HTMLInputElement;
+  private subdivThirtySecond: HTMLInputElement;
   private subdivDotted: HTMLInputElement;
   private subdivCheckboxes: HTMLInputElement[];
   private toggleTies: HTMLInputElement;
@@ -215,6 +216,7 @@ class GuidonicaApp {
     this.subdivHalf = document.getElementById('subdiv-half') as HTMLInputElement;
     this.subdivWhole = document.getElementById('subdiv-whole') as HTMLInputElement;
     this.subdivSixteenth = document.getElementById('subdiv-sixteenth') as HTMLInputElement;
+    this.subdivThirtySecond = document.getElementById('subdiv-thirty-second') as HTMLInputElement;
     this.subdivDotted = document.getElementById('subdiv-dotted') as HTMLInputElement;
 
     this.subdivCheckboxes = [
@@ -223,6 +225,7 @@ class GuidonicaApp {
       this.subdivHalf,
       this.subdivWhole,
       this.subdivSixteenth,
+      this.subdivThirtySecond,
       this.subdivDotted,
     ];
 
@@ -335,6 +338,7 @@ class GuidonicaApp {
     this.subdivHalf.checked = settings.subdivisions.half;
     this.subdivWhole.checked = settings.subdivisions.whole;
     this.subdivSixteenth.checked = settings.subdivisions.sixteenth;
+    this.subdivThirtySecond.checked = settings.subdivisions.thirtySecond === true;
     this.subdivDotted.checked = settings.subdivisions.dotted !== false;
 
     // Tuplets
@@ -720,6 +724,7 @@ class GuidonicaApp {
           half: this.subdivHalf.checked,
           whole: this.subdivWhole.checked,
           sixteenth: this.subdivSixteenth.checked,
+          thirtySecond: this.subdivThirtySecond.checked,
           dotted: this.subdivDotted.checked,
         },
       });
@@ -861,6 +866,7 @@ class GuidonicaApp {
       this.subdivHalf,
       this.subdivWhole,
       this.subdivSixteenth,
+      this.subdivThirtySecond,
     ].filter((cb) => cb.checked).length;
   }
 
