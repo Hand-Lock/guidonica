@@ -727,6 +727,11 @@ code, kbd, pre, samp {
   vertical-align: -0.06em;
 }
 
+/* Same font-unit scale as the 16th: the viewBox is 1227 units tall instead of 1022 */
+.music-icon.icon-thirty-second {
+  height: 1.38em;
+}
+
 .music-icon.icon-rest {
   height: 1.05em;
   vertical-align: -0.16em;

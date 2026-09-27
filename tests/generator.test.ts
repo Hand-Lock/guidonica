@@ -600,3 +600,50 @@ describe('MusicGenerator', () => {
     });
   });
 });
+
+describe('MusicGenerator 32nd notes', () => {
+  const SUBDIV_32 = { whole: true, half: true, quarter: true, eighth: true, sixteenth: true, thirtySecond: true, dotted: true };
+  const ONLY_32 = { whole: false, half: false, quarter: false, eighth: false, sixteenth: false, thirtySecond: true, dotted: true };
+  const METERS: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
+
+  function generate(ts: TimeSignature, subdivisions: AppSettings['subdivisions'], count: number): MeasureData[] {
+    const generator = new MusicGenerator();
+    const settings: AppSettings = { ...DEFAULT_APP_SETTINGS, timeSignature: ts, subdivisions, rests: true };
+    return Array.from({ length: count }, (_, i) => generator.generateMeasure(i, settings, 0));
+  }
+
+  it('conserves metric beat totals with 32nds on', () => {
+    for (const ts of METERS) {
+      for (const m of generate(ts, SUBDIV_32, 300)) {
+        const total = m.notes.reduce((sum, n) => sum + n.beatDuration, 0);
+        expect(Math.abs(total - m.beatsPerMeasure)).toBeLessThan(1e-9);
+      }
+    }
+  });
+
+  it('32nd-only configuration produces only 32nds', () => {
+    for (const ts of METERS) {
+      const durations = new Set(generate(ts, ONLY_32, 200).flatMap((m) => m.notes.map((n) => n.duration)));
+      expect([...durations]).toEqual(['32']);
+    }
+  });
+
+  it('reaches 32, 16d, 32 16 32 and 8d 32 32 (P > 0)', () => {
+    for (const ts of ['4/4', '6/8'] as TimeSignature[]) {
+      // Beat span of one eighth note in this meter
+      const unit = ts === '6/8' ? 1 : 0.5;
+      const seen = { thirtySecond: false, dottedSixteenth: false, middleSixteenth: false, dottedEighth32: false };
+      for (const m of generate(ts, SUBDIV_32, N)) {
+        m.notes.forEach((n, i) => {
+          const next = m.notes[i + 1];
+          if (n.duration === '32') seen.thirtySecond = true;
+          if (n.duration === '16d') seen.dottedSixteenth = true;
+          // A 16 starting a 32nd into an eighth is only possible inside `32 16 32`
+          if (n.duration === '16' && Math.abs((n.beatOffset % unit) - unit / 4) < 1e-9) seen.middleSixteenth = true;
+          if (n.duration === '8d' && next?.duration === '32') seen.dottedEighth32 = true;
+        });
+      }
+      expect(seen, ts).toEqual({ thirtySecond: true, dottedSixteenth: true, middleSixteenth: true, dottedEighth32: true });
+    }
+  });
+});

@@ -8,10 +8,10 @@ const N = 2000;
 const METERS: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
 
 const SIMPLE_BEATS: Record<string, number> = {
-  w: 4, hd: 3, h: 2, qd: 1.5, q: 1, '8d': 0.75, '8': 0.5, '16': 0.25,
+  w: 4, hd: 3, h: 2, qd: 1.5, q: 1, '8d': 0.75, '8': 0.5, '16d': 0.375, '16': 0.25, '32': 0.125,
 };
 const COMPOUND_BEATS: Record<string, number> = {
-  hd: 6, qd: 3, q: 2, '8d': 1.5, '8': 1, '16': 0.5,
+  hd: 6, qd: 3, q: 2, '8d': 1.5, '8': 1, '16d': 0.75, '16': 0.5, '32': 0.25,
 };
 
 /** Builds partition items from a spec like 'q q r8 t8 t8 t8' (r = rest, t = triplet group). */
@@ -55,12 +55,13 @@ function generateMany(settings: AppSettings, count: number = N): MeasureData[] {
 }
 
 const ALL_SUBDIV = { whole: true, half: true, quarter: true, eighth: true, sixteenth: true, dotted: true };
+const ALL_SUBDIV_32 = { ...ALL_SUBDIV, thirtySecond: true };
 
-function richSettings(ts: TimeSignature): AppSettings {
+function richSettings(ts: TimeSignature, subdivisions: AppSettings['subdivisions'] = ALL_SUBDIV): AppSettings {
   const tuplets = structuredClone(DEFAULT_APP_SETTINGS.tuplets);
   tuplets.triplet['1/8'] = true;
   tuplets.duplet['1/8'] = true;
-  return { ...DEFAULT_APP_SETTINGS, timeSignature: ts, subdivisions: ALL_SUBDIV, tuplets, ties: true, rests: true };
+  return { ...DEFAULT_APP_SETTINGS, timeSignature: ts, subdivisions, tuplets, ties: true, rests: true };
 }
 
 function tiedPair(m: MeasureData, pred: (a: NoteData, b: NoteData) => boolean): boolean {
@@ -133,12 +134,14 @@ describe('isLegalInnerTie (tie grammar)', () => {
 describe('generated tie grammar', () => {
   it('vocabulary ⊆ placement table: every non-tuplet item is canonical or tolerated', () => {
     for (const ts of METERS) {
-      for (const m of generateMany(richSettings(ts))) {
-        for (const n of m.notes) {
-          if (n.isTuplet) continue;
-          expect(placementOf(ts, n.beatOffset, n.beatDuration), `${ts} ${n.duration}@${n.beatOffset}`).not.toBe(
-            null
-          );
+      for (const subdiv of [ALL_SUBDIV, ALL_SUBDIV_32]) {
+        for (const m of generateMany(richSettings(ts, subdiv))) {
+          for (const n of m.notes) {
+            if (n.isTuplet) continue;
+            expect(placementOf(ts, n.beatOffset, n.beatDuration), `${ts} ${n.duration}@${n.beatOffset}`).not.toBe(
+              null
+            );
+          }
         }
       }
     }

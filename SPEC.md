@@ -49,12 +49,13 @@ The user must have full control over the generation engine prior to and during a
      - Quarter notes (`1/4`)
      - Eighth notes (`1/8`)
      - Sixteenth notes (`1/16`)
+     - Thirty-second notes (`1/32`); no 32nd-note tuplets
      - Tuplets via a name × value matrix (duplet … septuplet × ¼, ⅛, 1/16). Only cells that make metric sense in the current meter are enabled (`TUPLET_SUPPORT` in `src/notation/types.ts`); the rest are greyed out and ignored by the generator:
        - **2/4, 3/4, 4/4**: triplet ¼/⅛/1/16; quintuplet, sextuplet, septuplet ⅛/1/16.
        - **3/4 only**: duplet ¼ (2:3 across the bar), quadruplet ¼ and ⅛ (4:3).
        - **4/4 only**: quintuplet, sextuplet, septuplet ¼ (across the whole bar).
        - **6/8**: duplet and quadruplet ¼ (across the bar), ⅛ (per compound beat) and 1/16 (per half compound beat); triplet 1/16.
-   - **Dotted notes modifier**: Explicit toggle allowing dotted durations (`hd`, `qd`, `8d`) when combined with enabled base durations.
+   - **Dotted notes modifier**: Explicit toggle allowing dotted durations (`hd`, `qd`, `8d`, `16d`) when combined with enabled base durations.
    - **Tied notes toggle**: Explicit toggle allowing ties with pitch preservation wherever engraving requires one: across beats no single notehead can span (e.g. the middle of a 4/4 bar, the dotted beat in 6/8), across tuplet boundaries, and across the barline (chains allowed). Redundant ties that a single note already expresses (`q~q` on beat 1 = `h`) never appear.
    - **Rest toggle**: Option to enable/disable rhythmic rests (quarter rests, eighth rests).
 5. **Melodic Intervals & Pitch Transitions**:
@@ -128,15 +129,15 @@ Rhythm generation decomposes each measure top-down through a metric tree structu
    - In 4/4, the bar is split uniformly into either the half-bar structure $[2+2]$ or Gould's tolerated syncopation $[1, h, 1]$ (only when `half` is on; otherwise $[2+2]$). Every other figure straddling the middle of the bar (`q qd 8`, `8 q 8` on beats 2–3) must show beat 3, so it is reached through $[2+2]$ plus a middle tie:
      $$\mathcal{P}_{4/4} = \{ [w], [hd, 1 \text{ beat}], [1 \text{ beat}, hd], [2+2 \text{ beats}], [1 \text{ beat}, h, 1 \text{ beat}] \}$$
    - Two-beat groups evaluate $[h]$, $[qd, 8]$, $[8, qd]$, or independent 1-beat subdivisions.
-   - One-beat units evaluate $[q]$, $[8d, 16]$, $[8, 8]$, or 16th-note groupings.
+   - One-beat units evaluate $[q]$, $[8d, 16]$, $[8, 8]$, or 16th-note groupings. With 32nds on, a beat can also be two eighth spans, $[8d, S]$, $[S, 8d]$ or $[S, 8, S]$, where a sixteenth span $S$ is $[16]$ or $[32, 32]$. An eighth span is $[8]$, $[S, S]$, $[16d, 32]$, $[32, 16d]$ or $[32, 16, 32]$. In 6/8 the same eighth span fills any eighth of a compound group, including $[q, \text{eighth span}]$ and its mirror, and $[8d, 32, 32]$.
 
 4. **Tied Notes Engine**:
    - Ties are **notation, not decoration**: a tie appears only where no single well-placed notehead can express the sound. The grammar lives in `src/notation/ties.ts` and is independent of the subdivision/dotted toggles.
    - **Notehead placement table** (`NOTEHEAD_PLACEMENTS`, units = metric beats: quarters in simple meters, eighths in 6/8). Each value lists a period and the offsets where one notehead may start; a note must also fit in the bar. Placements are *canonical* or *tolerated*:
-     - 4/4: w:4→[0]; hd:4→[0] (+tolerated 1); h:2→[0] (+tolerated 1); qd:2→[0,.5]; q:2→[0,.5,1]; 8d:1→[0,.25]; 8:1→[0,.25,.5]; 16:.25→[0].
-     - 2/4: h:2→[0]; qd, q, 8d, 8, 16 as in 4/4.
-     - 3/4: hd:3→[0]; h:3→[0,1]; qd:.5→[0]; q:.5→[0]; 8d, 8, 16 as in 4/4.
-     - 6/8: hd:6→[0]; qd:3→[0]; q:3→[0,1]; 8d:3→[0,1]; 8:1→[0]; 16:.5→[0]. `h` (4 eighths) has no placement, so that sound is always tied.
+     - 4/4: w:4→[0]; hd:4→[0] (+tolerated 1); h:2→[0] (+tolerated 1); qd:2→[0,.5]; q:2→[0,.5,1]; 8d:1→[0,.25]; 8:1→[0,.25,.5]; 16:.5→[0,.125,.25]; 16d:.5→[0,.125]; 32:.125→[0].
+     - 2/4: h:2→[0]; qd, q, 8d, 8, 16, 16d, 32 as in 4/4.
+     - 3/4: hd:3→[0]; h:3→[0,1]; qd:.5→[0]; q:.5→[0]; 8d, 8, 16, 16d, 32 as in 4/4.
+     - 6/8: hd:6→[0]; qd:3→[0]; q:3→[0,1]; 8d:3→[0,1]; 8:1→[0]; 16:1→[0,.25,.5]; 16d:1→[0,.25]; 32:.25→[0]. Sub-eighth values (16, 16d, 32) never cross their eighth; 16 on the middle 32nd is the `32 16 32` figure. `h` (4 eighths) has no placement, so that sound is always tied.
    - Every non-tuplet item the partition tree produces is canonical or tolerated.
    - **Legality.** A tie $a \frown b$ is legal iff both are sounding (never rests), they are not in the same tuplet group, and either the boundary is the **barline**, or $a$/$b$ belong to different tuplet contexts (no notehead spans tuplet and non-tuplet time), or the merged span $(\text{offset}(a), d_a + d_b)$ is **not canonical** (not a note value, misplaced, or only tolerated). Consequently ties never fall strictly inside a beat, `q~q` on beat 1, `qd~8`, `h~h` and 6/8 `qd~qd` never appear, while `q q~q q` and `8 qd~8` across the 4/4 middle and 6/8 `8~8` across the dotted beat do.
    - **Chain minimality.** When $b$ extends a chain $c_1 \frown \dots \frown a$ inside the bar, no suffix merge $(c_i \dots a) + b$ may be canonical, so every chain is the shortest spelling.

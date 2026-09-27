@@ -89,4 +89,16 @@ describe('computeBeatWidth', () => {
     const subdiv16 = { ...subdiv, sixteenth: true };
     expect(computeBeatWidth(subdiv16, '6/8')).toBe(110);
   });
+
+  it('widens beat width for 32nd notes (45px per 32nd) in simple and compound meters', () => {
+    const subdiv32 = { whole: false, half: false, quarter: true, eighth: true, sixteenth: true, thirtySecond: true };
+    expect(computeBeatWidth(subdiv32, '4/4')).toBe(360);
+    expect(computeBeatWidth(subdiv32, '2/4')).toBe(360);
+    expect(computeBeatWidth(subdiv32, '6/8')).toBe(180);
+    const septuplets = {
+      ...DEFAULT_TUPLET_OPTIONS,
+      septuplet: { ...DEFAULT_TUPLET_OPTIONS.septuplet, '1/16': true },
+    };
+    expect(computeBeatWidth(subdiv32, '4/4', septuplets)).toBe(360);
+  });
 });
