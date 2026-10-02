@@ -7,7 +7,7 @@ import {
   SOLFEGE_SYLLABLES,
   STAVE_TOP_LINE_Y,
 } from '../src/notation/types';
-import { CLEF_PITCH_RANGES } from '../src/notation/generator';
+import { pitchPool } from '../src/notation/generator';
 import { MeasureRenderer, SOLFEGE_LABEL_OFFSET, solfegeLabelAnchor } from '../src/notation/renderer';
 import type { MeasureData } from '../src/notation/types';
 
@@ -73,7 +73,7 @@ describe('Solfège and Note Label Geometry', () => {
       'bass',
     ] as const;
     for (const clef of clefs) {
-      const pitchList = CLEF_PITCH_RANGES[clef].pitches;
+      const pitchList = pitchPool(clef, { above: 3, below: 3 });
       expect(pitchList.length).toBeGreaterThan(0);
       for (const pitch of pitchList) {
         const letter = pitch.split('/')[0].toLowerCase();

@@ -47,8 +47,16 @@ export interface IntervalOptions {
   ninthPlus: boolean; // 9+: ninth and plus / compound intervals (8+ steps)
 }
 
+/** Ledger lines reachable above / below the staff (0 to MAX_LEDGER_LINES each). */
+export const MAX_LEDGER_LINES = 3; // Bounded by the MEASURE_CANVAS_HEIGHT geometry
+
+export interface LedgerLineOptions {
+  above: number;
+  below: number;
+}
+
 export interface ClefPitchConfig {
-  pitches: string[]; // Ascending diatonic pool; first and last entries are the range bounds
+  bottomLine: string; // Bottom staff line; pitch bounds derive from it and the ledger-line setting
   defaultAnchor: string;
   restPitch: string; // Middle staff line, where rests are positioned
 }
@@ -239,6 +247,7 @@ export interface AppSettings {
   tempo: number; // MIN_TEMPO-MAX_TEMPO BPM
   timeSignature: TimeSignature;
   clef: Clef;
+  ledgerLines: LedgerLineOptions;
   subdivisions: SubdivisionOptions;
   tuplets: TupletOptions;
   rests: boolean;

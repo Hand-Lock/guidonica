@@ -33,15 +33,16 @@ The user must have full control over the generation engine prior to and during a
    - The generator ensures each measure strictly satisfies the metric beat count and beaming conventions of the selected meter.
 3. **Clef**:
    - Complete **Setticlavio** system (8 historical vocal/instrumental clefs):
-     - **Treble (G2)** (`treble`): G clef on line 2, range E3 – F6 (±3 ledger lines).
-     - **Soprano (C1)** (`soprano`): C clef on line 1, range C3 – D6 (±3 ledger lines).
-     - **Mezzo-Soprano (C2)** (`mezzo-soprano`): C clef on line 2, range A2 – B5 (±3 ledger lines).
-     - **Alto (C3)** (`alto`): C clef on line 3, range F2 – G5 (±3 ledger lines).
-     - **Tenor (C4)** (`tenor`): C clef on line 4, range D2 – E5 (±3 ledger lines).
-     - **Baritone (F3)** (`baritone-f`): F clef on line 3, range B1 – C5 (±3 ledger lines).
-     - **Baritone (C5)** (`baritone-c`): C clef on line 5, range B1 – C5 (±3 ledger lines).
-     - **Bass (F4)** (`bass`): F clef on line 4, range G1 – A4 (±3 ledger lines).
-   - Pitches are strictly constrained to the reading range of the chosen clef (standard staff lines plus up to 3 ledger lines above/below, spanning exactly 23 diatonic pitches).
+     - **Treble (G2)** (`treble`): G clef on line 2, range E3 – F6 at the default ±3 ledger lines.
+     - **Soprano (C1)** (`soprano`): C clef on line 1, range C3 – D6 at the default ±3 ledger lines.
+     - **Mezzo-Soprano (C2)** (`mezzo-soprano`): C clef on line 2, range A2 – B5 at the default ±3 ledger lines.
+     - **Alto (C3)** (`alto`): C clef on line 3, range F2 – G5 at the default ±3 ledger lines.
+     - **Tenor (C4)** (`tenor`): C clef on line 4, range D2 – E5 at the default ±3 ledger lines.
+     - **Baritone (F3)** (`baritone-f`): F clef on line 3, range B1 – C5 at the default ±3 ledger lines.
+     - **Baritone (C5)** (`baritone-c`): C clef on line 5, range B1 – C5 at the default ±3 ledger lines.
+     - **Bass (F4)** (`bass`): F clef on line 4, range G1 – A4 at the default ±3 ledger lines.
+   - **Ledger lines** (`ledgerLines: { above, below }`): two selectors next to the clef choose how many ledger lines appear above and below the staff, 0–3 each (default 3/3). $n$ ledger lines on a side reach the space beyond the $n$-th ledger line, so 0 still allows the space just outside the staff. The range hint under the clef shows the resulting bounds (e.g. `E3 – F6`).
+   - Pitches are strictly constrained to the chosen range: the staff plus the selected ledger lines, $11 + 2(	ext{above} + 	ext{below})$ diatonic pitches (23 at the default ±3, 11 at 0/0). The 0–3 cap fits the fixed 220 px measure canvas.
 4. **Subdivisions & Rhythmic Vocabulary**:
    - Granular toggles allowing any combination of:
      - Whole notes (`1`)
@@ -152,8 +153,11 @@ Rhythm generation decomposes each measure top-down through a metric tree structu
    - Because the graph is undirected (or symmetric) and strongly connected, the Markov chain is irreducible and recurrent.
    - Repeated notes are damped, not capped: after $u$ consecutive unisons the unison weight is $1/(1+u)$ against 1 for every other interval class, so any run length stays reachable.
    - The `9+` interval class samples any step in $[8, \text{maxStep}]$ in a direction with enough room, so every leap up to the full clef range is reachable.
+   - **Pitch bounds** are diatonic step arithmetic ($\text{step} = 7 \cdot \text{octave} + \text{letter index}$) from the clef's bottom staff line $b$: $\text{low} = b - (2 \cdot \text{below} + 1)$, $\text{high} = b + 8 + (2 \cdot \text{above} + 1)$. The session's first note is the clef's default anchor clamped into $[\text{low}, \text{high}]$.
+   - **Feasibility filter**: before the weighted pick, interval classes that fit in neither direction from the current pitch are dropped (a step $s$ fits if $i + s \le n - 1$ or $i - s \ge 0$; `9+` fits if the larger room is $\ge 8$; unison always fits) and the weights renormalize, so every in-range move keeps $P > 0$ and no interval is mislabeled by clamping. At the default ±3 (23 notes) the filter never removes anything.
+   - **Fallback**: if no selected interval fits (only possible with a small pool and wide intervals, e.g. octaves only at 0/0 from mid-staff), the pitch moves by the largest step that fits toward the side with more room.
 2. **Boundary Reflection Bias**:
-   - As pitch approaches upper/lower ledger limits ($\ge 2$ ledger lines), transition weights bias inward to prevent clipping without truncating state reachability.
+   - Inside the ledger-line zone, transition weights bias inward (85% toward the staff) to prevent clipping without truncating state reachability. The zone per side is $\min(4, 2n)$ pool notes from the edge for $n$ ledger lines on that side: 4 at the default ±3, none at 0, so a staff-only drill walks the staff uniformly.
 3. **Scale Degrees & Accidentals**:
    - Natural diatonic scales (C Major / A Minor) map cleanly to staff lines/spaces.
    - When chromatic accidentals are enabled, inflected pitches are sampled uniformly over the chromatic gamut.

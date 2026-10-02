@@ -4,6 +4,8 @@ import {
   Clef,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
+  LedgerLineOptions,
+  MAX_LEDGER_LINES,
   MAX_TEMPO,
   MAX_ZOOM,
   MIN_TEMPO,
@@ -34,6 +36,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   tempo: 60,
   timeSignature: '4/4',
   clef: 'treble',
+  ledgerLines: { above: 3, below: 3 },
   subdivisions: {
     whole: true,
     half: true,
@@ -101,6 +104,14 @@ function pickBoolRecord<T extends { [K in keyof T]: boolean }>(value: unknown, d
   return result;
 }
 
+function pickLedgerLines(value: unknown): LedgerLineOptions {
+  const d = DEFAULT_APP_SETTINGS.ledgerLines;
+  if (!isRecord(value)) return { ...d };
+  const count = (v: unknown, fallback: number): number =>
+    Math.round(pickNumber(v, 0, MAX_LEDGER_LINES, fallback));
+  return { above: count(value.above, d.above), below: count(value.below, d.below) };
+}
+
 function pickTuplets(value: unknown): TupletOptions {
   const tuplets = structuredClone(DEFAULT_APP_SETTINGS.tuplets);
   if (!isRecord(value)) return tuplets;
@@ -164,6 +175,7 @@ export function loadStoredSettings(): AppSettings {
       tempo: clampTempo(pickNumber(parsed.tempo, MIN_TEMPO, MAX_TEMPO, d.tempo)),
       timeSignature: pickEnum<TimeSignature>(parsed.timeSignature, TIME_SIGNATURES, d.timeSignature),
       clef: pickEnum<Clef>(parsed.clef, CLEFS, d.clef),
+      ledgerLines: pickLedgerLines(parsed.ledgerLines),
       subdivisions: pickBoolRecord(parsed.subdivisions, d.subdivisions),
       tuplets,
       rests: pickBool(parsed.rests, d.rests),
