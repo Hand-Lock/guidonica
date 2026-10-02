@@ -243,6 +243,23 @@ describe('storage module', () => {
     expect(Object.keys(loaded.subdivisions)).not.toContain('triplets');
   });
 
+  it('validates ledger lines: defaults to 3/3, rounds and clamps to 0–3', () => {
+    window.localStorage.setItem('guidonica_settings_v1', JSON.stringify({ clef: 'bass' }));
+    expect(loadStoredSettings().ledgerLines).toEqual({ above: 3, below: 3 });
+
+    window.localStorage.setItem(
+      'guidonica_settings_v1',
+      JSON.stringify({ ledgerLines: { above: 1.6, below: -4 } })
+    );
+    expect(loadStoredSettings().ledgerLines).toEqual({ above: 2, below: 0 });
+
+    window.localStorage.setItem(
+      'guidonica_settings_v1',
+      JSON.stringify({ ledgerLines: { above: 'many', below: 9 } })
+    );
+    expect(loadStoredSettings().ledgerLines).toEqual({ above: 3, below: 3 });
+  });
+
   it('never shares nested default objects with the returned settings', () => {
     const a = loadStoredSettings();
     a.tuplets.triplet['1/4'] = true;

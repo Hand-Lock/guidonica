@@ -665,6 +665,27 @@ code, kbd, pre, samp {
   gap: 2px;
 }
 
+.ledger-select-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ledger-select-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-shadow: var(--text-emboss);
+}
+
+.control-group .ledger-select-row select {
+  height: 24px;
+  padding: 0 4px;
+  font-size: 12px;
+}
+
 .clef-range-hint {
   font-size: 10px;
   color: var(--text-muted);

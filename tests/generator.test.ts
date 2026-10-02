@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { MusicGenerator, CLEF_PITCH_RANGES } from '../src/notation/generator';
+import {
+  MusicGenerator,
+  CLEF_PITCH_RANGES,
+  clefRangeLabel,
+  pitchBounds,
+  pitchPool,
+} from '../src/notation/generator';
 import {
   AppSettings,
   Clef,
@@ -102,7 +108,7 @@ describe('MusicGenerator', () => {
   it('strictly constrains pitches within clef pitch ranges (+/- 3 ledger lines)', () => {
     for (const clef of clefs) {
       const generator = new MusicGenerator();
-      const allowedPool = CLEF_PITCH_RANGES[clef].pitches;
+      const allowedPool = pitchPool(clef, DEFAULT_APP_SETTINGS.ledgerLines);
 
       const settings: AppSettings = {
         ...DEFAULT_APP_SETTINGS,
@@ -406,10 +412,11 @@ describe('MusicGenerator', () => {
   it('configures all 8 Setticlavio clefs with exactly 23 diatonic pitches (±3 ledger lines)', () => {
     for (const clef of clefs) {
       const config = CLEF_PITCH_RANGES[clef];
-      expect(config.pitches.length).toBe(23);
+      const pitches = pitchPool(clef, { above: 3, below: 3 });
+      expect(pitches.length).toBe(23);
       // Rest pitch sits on the centre staff line, the midpoint of the ±3-ledger pool
-      expect(config.pitches[11]).toBe(config.restPitch);
-      expect(config.pitches).toContain(config.defaultAnchor);
+      expect(pitches[11]).toBe(config.restPitch);
+      expect(pitches).toContain(config.defaultAnchor);
     }
   });
 
@@ -503,7 +510,7 @@ describe('MusicGenerator', () => {
     });
 
     it('reaches leaps of 12+ diatonic steps with ninthPlus', () => {
-      const pitches = CLEF_PITCH_RANGES.treble.pitches;
+      const pitches = pitchPool('treble', DEFAULT_APP_SETTINGS.ledgerLines);
       const measures = generateMany({
         ...DEFAULT_APP_SETTINGS,
         clef: 'treble',
@@ -646,4 +653,135 @@ describe('MusicGenerator 32nd notes', () => {
       expect(seen, ts).toEqual({ thirtySecond: true, dottedSixteenth: true, middleSixteenth: true, dottedEighth32: true });
     }
   });
+});
+
+describe('User-selectable ledger lines', () => {
+  const ALL_CLEFS: readonly Clef[] = [
+    'treble',
+    'soprano',
+    'mezzo-soprano',
+    'alto',
+    'tenor',
+    'baritone-f',
+    'baritone-c',
+    'bass',
+  ];
+
+  // Pre-0044 hardcoded ±3-ledger pools (first and last of each 23-note array)
+  const LEGACY_BOUNDS: Record<Clef, [string, string]> = {
+    treble: ['e/3', 'f/6'],
+    soprano: ['c/3', 'd/6'],
+    'mezzo-soprano': ['a/2', 'b/5'],
+    alto: ['f/2', 'g/5'],
+    tenor: ['d/2', 'e/5'],
+    'baritone-f': ['b/1', 'c/5'],
+    'baritone-c': ['b/1', 'c/5'],
+    bass: ['g/1', 'a/4'],
+  };
+
+  it('reproduces the legacy 23-note pools at 3/3 for every clef', () => {
+    for (const clef of ALL_CLEFS) {
+      const pool = pitchPool(clef, { above: 3, below: 3 });
+      expect(pool.length).toBe(23);
+      expect([pool[0], pool[22]]).toEqual(LEGACY_BOUNDS[clef]);
+      const { low, high } = pitchBounds(clef, { above: 3, below: 3 });
+      expect(high - low).toBe(22);
+    }
+    expect(pitchPool('treble', { above: 3, below: 3 }).slice(0, 8)).toEqual([
+      'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4',
+    ]);
+  });
+
+  it('derives range labels and pool sizes from the ledger counts', () => {
+    expect(clefRangeLabel('treble', { above: 3, below: 3 })).toBe('E3 – F6');
+    expect(clefRangeLabel('treble', { above: 0, below: 0 })).toBe('D4 – G5');
+    expect(clefRangeLabel('bass', { above: 1, below: 2 })).toBe('B1 – D4');
+    expect(pitchPool('alto', { above: 0, below: 0 }).length).toBe(11);
+  });
+
+  it('clamps the session anchor into the pool', () => {
+    const generator = new MusicGenerator();
+    const measure = generator.generateMeasure(
+      0,
+      { ...DEFAULT_APP_SETTINGS, clef: 'treble', ledgerLines: { above: 3, below: 0 } },
+      0
+    );
+    expect(measure.notes[0].keys[0]).toBe('d/4');
+  });
+
+  const INTERVAL_SETS: Record<string, AppSettings['intervals']> = {
+    seconds: { ...NO_INTERVALS, second: true },
+    octaves: { ...NO_INTERVALS, octave: true },
+    ninthPlus: { ...NO_INTERVALS, ninthPlus: true },
+    all: {
+      unison: true,
+      second: true,
+      third: true,
+      fourth: true,
+      fifth: true,
+      sixth: true,
+      seventh: true,
+      octave: true,
+      ninthPlus: true,
+    },
+  };
+
+  const selectedFits = (intervals: AppSettings['intervals'], up: number, down: number): number[] => {
+    const steps: number[] = [];
+    const flags = [
+      intervals.unison,
+      intervals.second,
+      intervals.third,
+      intervals.fourth,
+      intervals.fifth,
+      intervals.sixth,
+      intervals.seventh,
+      intervals.octave,
+    ];
+    flags.forEach((on, s) => {
+      if (on && (s <= up || s <= down)) steps.push(s);
+    });
+    return steps;
+  };
+
+  it('stays in bounds, reaches both edges and moves only by selected intervals or the fallback', () => {
+    const violations: string[] = [];
+    for (const clef of ALL_CLEFS) {
+      for (let above = 0; above <= 3; above++) {
+        for (let below = 0; below <= 3; below++) {
+          const ledgerLines = { above, below };
+          const pool = pitchPool(clef, ledgerLines);
+          for (const [name, intervals] of Object.entries(INTERVAL_SETS)) {
+            const label = `${clef} ${above}/${below} ${name}`;
+            const generator = new MusicGenerator();
+            const settings: AppSettings = { ...DEFAULT_APP_SETTINGS, clef, ledgerLines, intervals };
+            const idxs: number[] = [];
+            for (let m = 0; m < 300; m++) {
+              for (const note of generator.generateMeasure(m, settings, m * 4).notes) {
+                idxs.push(pool.indexOf(note.keys[0]));
+              }
+            }
+            if (idxs.includes(-1)) violations.push(`${label}: out of bounds`);
+            if (name === 'all' && !(idxs.includes(0) && idxs.includes(pool.length - 1))) {
+              violations.push(`${label}: edge not reached`);
+            }
+            for (let i = 1; i < idxs.length; i++) {
+              const prev = idxs[i - 1];
+              const up = pool.length - 1 - prev;
+              const down = prev;
+              const leap = Math.abs(idxs[i] - prev);
+              const fitting = selectedFits(intervals, up, down);
+              const ninthFits = intervals.ninthPlus && Math.max(up, down) >= 8;
+              const ok =
+                fitting.length === 0 && !ninthFits
+                  ? leap === Math.max(up, down) // Documented fallback
+                  : fitting.includes(leap) || (ninthFits && leap >= 8);
+              if (!ok) violations.push(`${label}: ${prev} -> ${idxs[i]}`);
+            }
+          }
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  }, 20000);
 });

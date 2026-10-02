@@ -122,7 +122,22 @@
                 <option value="baritone-c">Baritone (C5)</option>
                 <option value="bass">Bass (F)</option>
               </select>
-              <span id="clef-range-hint" class="clef-range-hint">E3 – F6 (±3 ledger lines)</span>
+              <div class="ledger-select-row">
+                <span class="ledger-select-label">Ledger</span>
+                <select id="select-ledger-above" aria-label="Ledger lines above the staff" title="Ledger lines above the staff">
+                  <option value="0">↑ 0</option>
+                  <option value="1">↑ 1</option>
+                  <option value="2">↑ 2</option>
+                  <option value="3" selected>↑ 3</option>
+                </select>
+                <select id="select-ledger-below" aria-label="Ledger lines below the staff" title="Ledger lines below the staff">
+                  <option value="0">↓ 0</option>
+                  <option value="1">↓ 1</option>
+                  <option value="2">↓ 2</option>
+                  <option value="3" selected>↓ 3</option>
+                </select>
+              </div>
+              <span id="clef-range-hint" class="clef-range-hint">E3 – F6</span>
             </div>
           </div>
 

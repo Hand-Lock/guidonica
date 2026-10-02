@@ -30,7 +30,7 @@ import {
 } from './notation/types';
 import { globalState, SessionState } from './state';
 import { MetronomeEngine } from './audio/metronome';
-import { CLEF_RANGE_DISPLAY, MusicGenerator } from './notation/generator';
+import { MusicGenerator, clefRangeLabel } from './notation/generator';
 import { MeasureRenderer } from './notation/renderer';
 import { MeasureBuffer } from './scroller/buffer';
 import { ScrollerView } from './scroller/scroller';
@@ -85,6 +85,8 @@ class GuidonicaApp {
   private selectPulse68: HTMLSelectElement;
   private selectClef: HTMLSelectElement;
   private clefRangeHint: HTMLElement;
+  private selectLedgerAbove: HTMLSelectElement;
+  private selectLedgerBelow: HTMLSelectElement;
   private toggleRests: HTMLInputElement;
   private toggleCountIn: HTMLInputElement;
   private togglePlayhead: HTMLInputElement;
@@ -168,6 +170,8 @@ class GuidonicaApp {
     this.selectPulse68 = document.getElementById('select-pulse-68') as HTMLSelectElement;
     this.selectClef = document.getElementById('select-clef') as HTMLSelectElement;
     this.clefRangeHint = document.getElementById('clef-range-hint') as HTMLElement;
+    this.selectLedgerAbove = document.getElementById('select-ledger-above') as HTMLSelectElement;
+    this.selectLedgerBelow = document.getElementById('select-ledger-below') as HTMLSelectElement;
     this.toggleRests = document.getElementById('toggle-rests') as HTMLInputElement;
     this.toggleTies = document.getElementById('toggle-ties') as HTMLInputElement;
     this.toggleCountIn = document.getElementById('toggle-count-in') as HTMLInputElement;
@@ -305,9 +309,11 @@ class GuidonicaApp {
     this.groupPulse68.classList.toggle('hidden', settings.timeSignature !== '6/8');
     this.selectPulse68.value = settings.pulse68;
 
-    // Clef & hint
+    // Clef, ledger lines & range hint
     this.selectClef.value = settings.clef;
-    this.clefRangeHint.textContent = CLEF_RANGE_DISPLAY[settings.clef];
+    this.selectLedgerAbove.value = String(settings.ledgerLines.above);
+    this.selectLedgerBelow.value = String(settings.ledgerLines.below);
+    this.updateClefRangeHint();
 
     // Rests, Ties, Count-In & Playhead
     this.toggleRests.checked = settings.rests;
@@ -580,10 +586,24 @@ class GuidonicaApp {
     // Clef
     this.selectClef.addEventListener('change', (e) => {
       const clef = (e.target as HTMLSelectElement).value as Clef;
-      this.clefRangeHint.textContent = CLEF_RANGE_DISPLAY[clef];
       globalState.updateSettings({ clef });
+      this.updateClefRangeHint();
       this.resetSession();
     });
+
+    // Ledger lines above / below the staff
+    const onLedgerChange = (): void => {
+      globalState.updateSettings({
+        ledgerLines: {
+          above: Number(this.selectLedgerAbove.value),
+          below: Number(this.selectLedgerBelow.value),
+        },
+      });
+      this.updateClefRangeHint();
+      this.resetSession();
+    };
+    this.selectLedgerAbove.addEventListener('change', onLedgerChange);
+    this.selectLedgerBelow.addEventListener('change', onLedgerChange);
 
     // Count-In
     this.toggleCountIn.addEventListener('change', () => {
@@ -1206,6 +1226,11 @@ class GuidonicaApp {
     } else if (state === 'paused') {
       await this.resumePlayback();
     }
+  }
+
+  private updateClefRangeHint(): void {
+    const { clef, ledgerLines } = globalState.settings;
+    this.clefRangeHint.textContent = clefRangeLabel(clef, ledgerLines);
   }
 
   private resetSession(): void {

@@ -3,6 +3,7 @@ import {
   Clef,
   ClefPitchConfig,
   IntervalOptions,
+  LedgerLineOptions,
   METER,
   MeasureData,
   NoteData,
@@ -34,107 +35,55 @@ export interface PartitionItem {
   tieEnd?: boolean;
 }
 
-// Diatonic scales (C Major / A Minor baseline) per clef reaching 3 ledger lines outside staff both up and down.
-// In every clef, the note pool spans 23 diatonic notes: from the space below the 3rd ledger line below,
-// to the space above the 3rd ledger line above.
+// Diatonic pitch pools (C Major / A Minor baseline), derived per clef from the bottom staff line.
+// Diatonic step arithmetic: step = octave * 7 + letter index (c = 0 ... b = 6).
+const LETTERS = 'cdefgab';
+
+function toStep(key: string): number {
+  const [letter, octave] = key.split('/');
+  return Number(octave) * 7 + LETTERS.indexOf(letter);
+}
+
+function toKey(step: number): string {
+  return `${LETTERS[((step % 7) + 7) % 7]}/${Math.floor(step / 7)}`;
+}
+
 export const CLEF_PITCH_RANGES: Record<Clef, ClefPitchConfig> = {
-  treble: {
-    // Staff lines: E4 to F5.
-    // 3 ledger lines below: F3 (space E3). 3 ledger lines above: E6 (space F6). Center line: B4.
-    pitches: [
-      'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4', 'f/4', 'g/4',
-      'a/4', 'b/4', 'c/5', 'd/5', 'e/5', 'f/5', 'g/5', 'a/5', 'b/5', 'c/6',
-      'd/6', 'e/6', 'f/6',
-    ],
-    defaultAnchor: 'c/4',
-    restPitch: 'b/4',
-  },
-  soprano: {
-    // Staff lines: C4 to D5.
-    // 3 ledger lines below: D3 (space C3). 3 ledger lines above: C6 (space D6). Center line: G4.
-    pitches: [
-      'c/3', 'd/3', 'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4',
-      'f/4', 'g/4', 'a/4', 'b/4', 'c/5', 'd/5', 'e/5', 'f/5', 'g/5', 'a/5',
-      'b/5', 'c/6', 'd/6',
-    ],
-    defaultAnchor: 'c/4',
-    restPitch: 'g/4',
-  },
-  'mezzo-soprano': {
-    // Staff lines: A3 to B4.
-    // 3 ledger lines below: B2 (space A2). 3 ledger lines above: A5 (space B5). Center line: E4.
-    pitches: [
-      'a/2', 'b/2', 'c/3', 'd/3', 'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4',
-      'd/4', 'e/4', 'f/4', 'g/4', 'a/4', 'b/4', 'c/5', 'd/5', 'e/5', 'f/5',
-      'g/5', 'a/5', 'b/5',
-    ],
-    defaultAnchor: 'c/4',
-    restPitch: 'e/4',
-  },
-  alto: {
-    // Staff lines: F3 to G4.
-    // 3 ledger lines below: G2 (space F2). 3 ledger lines above: F5 (space G5). Center line: C4.
-    pitches: [
-      'f/2', 'g/2', 'a/2', 'b/2', 'c/3', 'd/3', 'e/3', 'f/3', 'g/3', 'a/3',
-      'b/3', 'c/4', 'd/4', 'e/4', 'f/4', 'g/4', 'a/4', 'b/4', 'c/5', 'd/5',
-      'e/5', 'f/5', 'g/5',
-    ],
-    defaultAnchor: 'c/4',
-    restPitch: 'c/4',
-  },
-  tenor: {
-    // Staff lines: D3 to E4.
-    // 3 ledger lines below: E2 (space D2). 3 ledger lines above: D5 (space E5). Center line: A3.
-    pitches: [
-      'd/2', 'e/2', 'f/2', 'g/2', 'a/2', 'b/2', 'c/3', 'd/3', 'e/3', 'f/3',
-      'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4', 'f/4', 'g/4', 'a/4', 'b/4',
-      'c/5', 'd/5', 'e/5',
-    ],
-    defaultAnchor: 'c/4',
-    restPitch: 'a/3',
-  },
-  'baritone-f': {
-    // Staff lines: B2 to C4.
-    // 3 ledger lines below: C2 (space B1). 3 ledger lines above: B4 (space C5). Center line: F3.
-    pitches: [
-      'b/1', 'c/2', 'd/2', 'e/2', 'f/2', 'g/2', 'a/2', 'b/2', 'c/3', 'd/3',
-      'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4', 'f/4', 'g/4',
-      'a/4', 'b/4', 'c/5',
-    ],
-    defaultAnchor: 'c/3',
-    restPitch: 'f/3',
-  },
-  'baritone-c': {
-    // Staff lines: B2 to C4.
-    // 3 ledger lines below: C2 (space B1). 3 ledger lines above: B4 (space C5). Center line: F3.
-    pitches: [
-      'b/1', 'c/2', 'd/2', 'e/2', 'f/2', 'g/2', 'a/2', 'b/2', 'c/3', 'd/3',
-      'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4', 'f/4', 'g/4',
-      'a/4', 'b/4', 'c/5',
-    ],
-    defaultAnchor: 'c/3',
-    restPitch: 'f/3',
-  },
-  bass: {
-    // Staff lines: G2 to A3.
-    // 3 ledger lines below: A1 (space G1). 3 ledger lines above: G4 (space A4). Center line: D3.
-    pitches: [
-      'g/1', 'a/1', 'b/1', 'c/2', 'd/2', 'e/2', 'f/2', 'g/2', 'a/2', 'b/2',
-      'c/3', 'd/3', 'e/3', 'f/3', 'g/3', 'a/3', 'b/3', 'c/4', 'd/4', 'e/4',
-      'f/4', 'g/4', 'a/4',
-    ],
-    defaultAnchor: 'c/3',
-    restPitch: 'd/3',
-  },
+  treble: { bottomLine: 'e/4', defaultAnchor: 'c/4', restPitch: 'b/4' }, // Staff E4–F5
+  soprano: { bottomLine: 'c/4', defaultAnchor: 'c/4', restPitch: 'g/4' }, // Staff C4–D5
+  'mezzo-soprano': { bottomLine: 'a/3', defaultAnchor: 'c/4', restPitch: 'e/4' }, // Staff A3–B4
+  alto: { bottomLine: 'f/3', defaultAnchor: 'c/4', restPitch: 'c/4' }, // Staff F3–G4
+  tenor: { bottomLine: 'd/3', defaultAnchor: 'c/4', restPitch: 'a/3' }, // Staff D3–E4
+  'baritone-f': { bottomLine: 'b/2', defaultAnchor: 'c/3', restPitch: 'f/3' }, // Staff B2–C4
+  'baritone-c': { bottomLine: 'b/2', defaultAnchor: 'c/3', restPitch: 'f/3' }, // Staff B2–C4
+  bass: { bottomLine: 'g/2', defaultAnchor: 'c/3', restPitch: 'd/3' }, // Staff G2–A3
 };
 
-/** Human-readable range label for the clef hint, derived from the pitch pool bounds. */
-export const CLEF_RANGE_DISPLAY = Object.fromEntries(
-  Object.entries(CLEF_PITCH_RANGES).map(([clef, { pitches }]) => {
-    const label = (p: string): string => p.replace('/', '').toUpperCase();
-    return [clef, `${label(pitches[0])} – ${label(pitches[pitches.length - 1])} (±3 ledger lines)`];
-  })
-) as Record<Clef, string>;
+/**
+ * Inclusive diatonic step bounds of a clef's pitch pool. n ledger lines on a side reach the
+ * space beyond the n-th ledger line (2n + 1 steps past the outer staff line), so 0 still
+ * allows the space just outside the staff. At 3/3 the pool is 23 notes, at 0/0 it is 11.
+ */
+export function pitchBounds(clef: Clef, ledger: LedgerLineOptions): { low: number; high: number } {
+  const bottom = toStep(CLEF_PITCH_RANGES[clef].bottomLine);
+  return {
+    low: bottom - (2 * ledger.below + 1),
+    high: bottom + 8 + (2 * ledger.above + 1),
+  };
+}
+
+/** Ascending diatonic pitch pool (VexFlow keys) for a clef and ledger-line setting. */
+export function pitchPool(clef: Clef, ledger: LedgerLineOptions): string[] {
+  const { low, high } = pitchBounds(clef, ledger);
+  return Array.from({ length: high - low + 1 }, (_, i) => toKey(low + i));
+}
+
+/** Human-readable range label for the clef hint, e.g. "E3 – F6". */
+export function clefRangeLabel(clef: Clef, ledger: LedgerLineOptions): string {
+  const { low, high } = pitchBounds(clef, ledger);
+  const label = (step: number): string => toKey(step).replace('/', '').toUpperCase();
+  return `${label(low)} – ${label(high)}`;
+}
 
 /** Last note of the previously generated measure, source of an incoming barline tie. */
 interface MeasureTail {
@@ -146,7 +95,8 @@ interface MeasureTail {
 }
 
 export class MusicGenerator {
-  private lastPitchIndex: Map<Clef, number> = new Map();
+  /** Absolute diatonic step of the last sampled pitch (null until the session's first note). */
+  private lastStep: number | null = null;
   private tupletCounter: number = 0;
   private consecutiveUnisons: number = 0;
   private isFirstNoteOfSession: boolean = true;
@@ -166,11 +116,7 @@ export class MusicGenerator {
     this.lookahead = null;
     this.tail = null;
     this.lastSoundingPitch = null;
-    for (const clef of Object.keys(CLEF_PITCH_RANGES) as Clef[]) {
-      const config = CLEF_PITCH_RANGES[clef];
-      const anchorIdx = config.pitches.indexOf(config.defaultAnchor);
-      this.lastPitchIndex.set(clef, anchorIdx >= 0 ? anchorIdx : Math.floor(config.pitches.length / 2));
-    }
+    this.lastStep = null;
   }
 
   /**
@@ -179,7 +125,8 @@ export class MusicGenerator {
    * pair (last note here, first note there) can be tied with both notes known.
    */
   public generateMeasure(measureIndex: number, settings: AppSettings, startBeat: number): MeasureData {
-    const { timeSignature, clef, subdivisions, tuplets, ties, intervals } = settings;
+    const { timeSignature, clef, subdivisions, tuplets, ties, intervals, ledgerLines } = settings;
+    const { low, high } = pitchBounds(clef, ledgerLines);
     const { beatsPerMeasure, beatValue } = METER[timeSignature];
     const beatWidth = computeBeatWidth(subdivisions, timeSignature, tuplets);
     const measureWidth = beatsPerMeasure * beatWidth;
@@ -215,14 +162,14 @@ export class MusicGenerator {
       } else if (item.tieEnd && this.lastSoundingPitch !== null) {
         // Tied note strictly maintains the pitch of the note it is tied from
         pitch = this.lastSoundingPitch;
-      } else if (this.isFirstNoteOfSession) {
+      } else if (this.isFirstNoteOfSession || this.lastStep === null) {
         this.isFirstNoteOfSession = false;
-        const config = CLEF_PITCH_RANGES[clef];
-        pitch = config.defaultAnchor;
-        const anchorIdx = config.pitches.indexOf(config.defaultAnchor);
-        this.lastPitchIndex.set(clef, anchorIdx >= 0 ? anchorIdx : Math.floor(config.pitches.length / 2));
+        // Anchor clamped into the pool (treble with 0 ledger lines below starts on D4)
+        const anchor = toStep(CLEF_PITCH_RANGES[clef].defaultAnchor);
+        this.lastStep = Math.max(low, Math.min(high, anchor));
+        pitch = toKey(this.lastStep);
       } else {
-        pitch = this.sampleNextPitch(clef, intervals);
+        pitch = this.sampleNextPitch(intervals, this.lastStep, low, high, ledgerLines);
       }
 
       if (!item.isRest) {
@@ -280,11 +227,26 @@ export class MusicGenerator {
     return measure;
   }
 
-  private sampleNextPitch(clef: Clef, intervals: IntervalOptions): string {
-    const config = CLEF_PITCH_RANGES[clef];
-    const range = config.pitches;
-    const rangeLen = range.length;
-    const currentIdx = this.lastPitchIndex.get(clef) ?? Math.floor(rangeLen / 2);
+  /**
+   * Markov random-walk step over the diatonic pool [low, high]. Only interval choices that
+   * fit in at least one direction are drawn (weights renormalize over them), so every
+   * in-range move keeps P > 0 and no interval is ever mislabeled by clamping.
+   */
+  private sampleNextPitch(
+    intervals: IntervalOptions,
+    lastStep: number,
+    low: number,
+    high: number,
+    ledger: LedgerLineOptions
+  ): string {
+    const rangeLen = high - low + 1;
+    const currentIdx = Math.max(0, Math.min(rangeLen - 1, lastStep - low));
+    const upRoom = rangeLen - 1 - currentIdx;
+    const downRoom = currentIdx;
+    const commit = (idx: number): string => {
+      this.lastStep = low + idx;
+      return toKey(this.lastStep);
+    };
 
     // Collect all allowed diatonic steps from user-selected toggle checkboxes
     type IntervalChoice = number | '9+';
@@ -300,7 +262,21 @@ export class MusicGenerator {
     if (intervals.ninthPlus) candidateChoices.push('9+');
 
     // Fallback if all checkboxes are unchecked: default to seconds and thirds to avoid mono-interval exercises
-    const activeChoices = candidateChoices.length > 0 ? candidateChoices : [1, 2];
+    const selectedChoices = candidateChoices.length > 0 ? candidateChoices : [1, 2];
+
+    // Feasibility: keep choices that fit in at least one direction from the current pitch.
+    // With the default ±3 pool (23 notes) nothing is ever removed.
+    const fits = (c: IntervalChoice): boolean =>
+      c === '9+' ? Math.max(upRoom, downRoom) >= 8 : c <= upRoom || c <= downRoom;
+    const activeChoices = selectedChoices.filter(fits);
+
+    if (activeChoices.length === 0) {
+      // Tiny pool + wide intervals only (e.g. octaves at 0/0 from mid-staff): move by the
+      // largest step that fits, toward the side with more room
+      this.consecutiveUnisons = 0;
+      const direction = upRoom === downRoom ? pick([1, -1]) : upRoom > downRoom ? 1 : -1;
+      return commit(currentIdx + direction * (direction === 1 ? upRoom : downRoom));
+    }
 
     // Pick an interval step size from the active set. Unison is softly down-weighted
     // by 1 / (1 + run length) against weight 1 for every moving interval, so long
@@ -319,7 +295,7 @@ export class MusicGenerator {
 
     if (chosen === 0) {
       this.consecutiveUnisons++;
-      return range[currentIdx];
+      return commit(currentIdx);
     }
 
     this.consecutiveUnisons = 0;
@@ -329,28 +305,28 @@ export class MusicGenerator {
 
     if (chosen === '9+') {
       // Ninth and plus: every compound leap from a 9th (8 steps) up to the range edge
-      const upRoom = rangeLen - 1 - currentIdx;
-      const downRoom = currentIdx;
       const directions: number[] = [];
       if (upRoom >= 8) directions.push(1);
       if (downRoom >= 8) directions.push(-1);
-      direction = directions.length > 0 ? pick(directions) : upRoom >= downRoom ? 1 : -1;
-
+      direction = pick(directions);
       const maxStep = direction === 1 ? upRoom : downRoom;
-      chosenStep = maxStep >= 8 ? 8 + Math.floor(Math.random() * (maxStep - 7)) : maxStep;
+      chosenStep = 8 + Math.floor(Math.random() * (maxStep - 7));
     } else {
       chosenStep = chosen;
-      const canGoUp = currentIdx + chosenStep < rangeLen;
-      const canGoDown = currentIdx - chosenStep >= 0;
+      const canGoUp = chosenStep <= upRoom;
+      const canGoDown = chosenStep <= downRoom;
 
       if (canGoUp && canGoDown) {
-        // Both directions fit within the 3-ledger-line clef range.
-        // Apply boundary bias towards staff center when approaching range limits:
-        const margin = 4;
-        if (currentIdx >= rangeLen - margin) {
+        // Both directions fit within the pool.
+        // Apply boundary bias towards staff center when approaching range limits. The bias
+        // zone per side is min(4, 2n) pool notes for n ledger lines, so it only acts inside
+        // the ledger-line region (4 on both sides at the default ±3; none at 0).
+        const highMargin = Math.min(4, 2 * ledger.above);
+        const lowMargin = Math.min(4, 2 * ledger.below);
+        if (currentIdx >= rangeLen - highMargin) {
           // High register: 85% descend
           direction = Math.random() < 0.85 ? -1 : 1;
-        } else if (currentIdx <= margin) {
+        } else if (currentIdx <= lowMargin) {
           // Low register: 85% ascend
           direction = Math.random() < 0.85 ? 1 : -1;
         } else {
@@ -364,9 +340,7 @@ export class MusicGenerator {
       }
     }
 
-    const nextIdx = Math.max(0, Math.min(rangeLen - 1, currentIdx + direction * chosenStep));
-    this.lastPitchIndex.set(clef, nextIdx);
-    return range[nextIdx];
+    return commit(currentIdx + direction * chosenStep);
   }
 
   /**
