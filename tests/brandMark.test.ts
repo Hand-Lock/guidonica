@@ -52,8 +52,28 @@ describe('Guidonian Hand brand mark', () => {
     expect(touch.readUInt32BE(20)).toBe(180);
   });
 
-  it('walks all 19 on-hand gamut positions in historical order', () => {
+  it('keeps the 19 on-hand gamut positions in historical order', () => {
     const names = handGeometry().gamut.map((s) => s.name);
     expect(names).toEqual(['Γ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'aa', 'bb', 'cc', 'dd']);
+  });
+
+  it('threads the thumb stations it claims, in order, on the palm side', () => {
+    const { gamut, thread } = handGeometry();
+    expect(thread.stations).toEqual(['Γ', 'A', 'B']);
+    let from = 0;
+    for (const name of thread.stations) {
+      const station = gamut.find((s) => s.name === name);
+      expect(station).toBeDefined();
+      const hit = thread.points.findIndex((p, i) => i >= from && station !== undefined &&
+        p.every((v, j) => Math.abs(v - station.front[j]) < 0.01));
+      expect(hit).toBeGreaterThanOrEqual(from);
+      from = hit + 1;
+    }
+  });
+
+  it('wraps the thread in 3D: front runs over the hand, back runs beneath it', () => {
+    const runs = handGeometry().thread.runs;
+    expect(runs.some((r) => r.front)).toBe(true);
+    expect(runs.some((r) => !r.front)).toBe(true);
   });
 });
