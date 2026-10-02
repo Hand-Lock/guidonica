@@ -13,6 +13,7 @@ import {
   Voice,
 } from 'vexflow';
 import {
+  CANVAS_PALETTE,
   Clef,
   DEFAULT_ZOOM,
   ITALIAN_SOLFEGE_SYLLABLES,
@@ -134,11 +135,11 @@ export class MeasureRenderer {
     canvas.width = Math.max(1, Math.floor(data.width * dpr * zoom));
     canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr * zoom));
 
-    const isDark = resolveTheme(theme) === 'dark';
-    const noteColor = isDark ? '#f8fafc' : '#000000';
-    const staffColor = isDark ? '#94a3b8' : '#64748b';
-    const tupletColor = isDark ? '#cbd5e1' : '#334155';
-    const solfegeColor = isDark ? '#00ffcc' : '#007a62';
+    const palette = CANVAS_PALETTE[resolveTheme(theme)];
+    const noteColor = palette.ink;
+    const staffColor = palette.staff;
+    const tupletColor = palette.tuplet;
+    const solfegeColor = palette.solfege;
 
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     // No renderer.resize(): VexFlow re-applies devicePixelRatio on top of our sizing (dpr²).
@@ -380,8 +381,7 @@ export class MeasureRenderer {
     canvas.width = Math.max(1, Math.floor(width * dpr * zoom));
     canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr * zoom));
 
-    const isDark = resolveTheme(theme) === 'dark';
-    const headerColor = isDark ? '#f8fafc' : '#000000';
+    const headerColor = CANVAS_PALETTE[resolveTheme(theme)].ink;
 
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     // No renderer.resize(): VexFlow re-applies devicePixelRatio on top of our sizing (dpr²).
@@ -427,7 +427,7 @@ export class MeasureRenderer {
     // labels must share whatever matrix the notes used (see ADR 0041, ADR 0042).
     rawCtx.save();
     rawCtx.fillStyle = color;
-    rawCtx.font = `bold ${SOLFEGE_FONT_PX}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    rawCtx.font = `700 ${SOLFEGE_FONT_PX}px "Alegreya Sans", system-ui, sans-serif`;
     rawCtx.textAlign = 'center';
     rawCtx.textBaseline = 'middle';
 

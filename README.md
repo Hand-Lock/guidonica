@@ -58,7 +58,7 @@ Guidonica is constructed upon an uncompromising **suckless, ultra-lightweight, a
    - Written exclusively in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and the Web Audio API directly.
    - Zero React, Vue, Svelte, or Angular. Zero Virtual DOM reconciliation overhead.
    - Zero external state management libraries (no Redux, MobX, Zustand, or Pinia).
-   - Entire application JavaScript (excluding VexFlow) is only **~16.8 kB gzipped** (`67.6 kB` uncompressed).
+   - Entire application JavaScript (excluding VexFlow) is only **~19.3 kB gzipped** (`73.9 kB` uncompressed).
 2. **Single Authoritative Hardware Clock (`AudioContext.currentTime`)**:
    - Visual scroller movement and synthesized audio pulse scheduling are mathematically locked to the hardware audio clock (`AudioContext.currentTime`).
    - Zero `setInterval`, `setTimeout`, or visual delta-time accumulators.
@@ -80,7 +80,7 @@ Guidonica is constructed upon an uncompromising **suckless, ultra-lightweight, a
 7. **Pure CSS3 Liquid Glass UI (Zero CSS Frameworks)**:
    - The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed with 100% pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled glass borders, tactile inset/drop shadows).
    - Zero Tailwind runtime, zero CSS-in-JS runtimes, zero heavy sprite textures.
-   - Entire stylesheet is only **~5.9 kB gzipped** (`34.8 kB` uncompressed).
+   - Entire stylesheet is only **~6.5 kB gzipped** (`28.4 kB` minified).
 8. **Native Device & Lifecycle Resilience**:
    - Integrates modern Web APIs including Screen Wake Lock (`navigator.wakeLock`), Page Visibility lifecycle auto-pause, dynamic iOS `AVAudioSession` category switching (`playback` mode to bypass physical silent switches), and Fullscreen API.
 
@@ -186,7 +186,7 @@ Overhead syllable and letter indicators assist ear training and note identificat
 ### 9. Device-Adaptive Zoom & Sight-Reading Forereading
 - **Automatic Sight-Reading Forereading**: Sizing algorithms calculate the exact scale required to keep at least one full measure visible ahead of the playhead on any screen width (mobile, tablet, or desktop ultrawide).
 - **Integer Staff Quantization**: Zoom scales are quantized to integer tenths (`10 * Z \in \mathbb{Z}`) ensuring staff lines align cleanly with screen pixels without antialiasing blur.
-- **Manual Controls & Floating Pill**: On-canvas floating liquid glass zoom pill (`-`, `100%`, `+`) alongside header slider and keyboard shortcuts.
+- **Manual Controls & Floating Pill**: On-canvas floating liquid glass zoom pill (`-`, `100%`, `+`) alongside keyboard shortcuts and pinch-to-zoom (the redundant drawer zoom slider was removed in ADR 0045).
 
 ### 10. Unassisted Sight-Reading Mode (Toggleable Playhead)
 - A stationary red playhead cursor with top and bottom guide triangles marks the exact instant of downbeat arrival.

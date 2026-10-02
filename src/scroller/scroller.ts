@@ -1,5 +1,7 @@
 import {
   AppSettings,
+  CANVAS_PALETTE,
+  CanvasPalette,
   Clef,
   DEFAULT_ZOOM,
   MAX_ZOOM,
@@ -22,17 +24,6 @@ import { MetronomeEngine } from '../audio/metronome';
 import { MeasureBuffer } from './buffer';
 import { MeasureRenderer } from '../notation/renderer';
 import { isMusicFontReady } from '../notation/fonts';
-
-interface ThemePalette {
-  background: string;
-  backgroundRgb: string;
-  staff: string;
-}
-
-const PALETTE: Record<ResolvedTheme, ThemePalette> = {
-  light: { background: '#ffffff', backgroundRgb: '255, 255, 255', staff: '#64748b' },
-  dark: { background: '#0f172a', backgroundRgb: '15, 23, 42', staff: '#475569' },
-};
 
 export class ScrollerView {
   private canvas: HTMLCanvasElement;
@@ -59,6 +50,7 @@ export class ScrollerView {
 
   private rafId: number | null = null;
   private isLoopRunning: boolean = false;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -80,12 +72,25 @@ export class ScrollerView {
     this.zoom = getSettings().zoom || DEFAULT_ZOOM;
 
     this.updateDimensions();
-    window.addEventListener('resize', this.handleResize);
+    // Observe the wrapper, not the window: collapsing the settings drawer resizes the
+    // canvas area without any window resize. The window listener only catches dpr
+    // changes (dragging to a monitor of different density) the observer cannot see.
+    const parent = this.canvas.parentElement;
+    if (parent && typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(this.handleResize);
+      this.resizeObserver.observe(parent);
+      window.addEventListener('resize', this.handleDprChange);
+    } else {
+      window.addEventListener('resize', this.handleResize);
+    }
   }
 
   public destroy(): void {
     this.stopLoop();
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
     window.removeEventListener('resize', this.handleResize);
+    window.removeEventListener('resize', this.handleDprChange);
   }
 
   public invalidatePinnedClef(): void {
@@ -110,6 +115,10 @@ export class ScrollerView {
   public getViewportWidth(): number {
     return this.viewportWidth;
   }
+
+  private handleDprChange = (): void => {
+    if ((window.devicePixelRatio || 1) !== this.dpr) this.handleResize();
+  };
 
   private handleResize = (): void => {
     const previousDpr = this.dpr;
@@ -196,7 +205,7 @@ export class ScrollerView {
     const w = this.viewportWidth;
     const h = this.viewportHeight;
     const resolvedTheme = resolveTheme(settings.theme);
-    const palette = PALETTE[resolvedTheme];
+    const palette = CANVAS_PALETTE[resolvedTheme];
 
     ctx.save();
     ctx.scale(dpr, dpr);
@@ -251,7 +260,7 @@ export class ScrollerView {
 
     // 7. Draw fixed playhead guide line in high-contrast red accent (when enabled)
     if (settings.showPlayhead !== false) {
-      this.drawPlayhead(ctx, h);
+      this.drawPlayhead(ctx, h, palette);
     }
 
     ctx.restore();
@@ -263,7 +272,7 @@ export class ScrollerView {
     ctx: CanvasRenderingContext2D,
     fromX: number,
     toX: number,
-    palette: ThemePalette
+    palette: CanvasPalette
   ): void {
     ctx.strokeStyle = palette.staff;
     ctx.lineWidth = 1;
@@ -293,7 +302,7 @@ export class ScrollerView {
     const dpr = this.dpr;
     const w = this.viewportWidth;
     const h = this.viewportHeight;
-    const palette = PALETTE[resolveTheme(settings.theme)];
+    const palette = CANVAS_PALETTE[resolveTheme(settings.theme)];
 
     ctx.save();
     ctx.scale(dpr, dpr);
@@ -303,7 +312,7 @@ export class ScrollerView {
 
     this.drawStaffLines(ctx, 0, w, palette);
     if (settings.showPlayhead !== false) {
-      this.drawPlayhead(ctx, h);
+      this.drawPlayhead(ctx, h, palette);
     }
 
     ctx.restore();
@@ -339,7 +348,7 @@ export class ScrollerView {
     const totalMargin = PINNED_HEADER_TOTAL_MARGIN * zoom;
 
     // Full-height solid mask behind pinned header to prevent ledger lines/stems poking out
-    const palette = PALETTE[theme];
+    const palette = CANVAS_PALETTE[theme];
     ctx.fillStyle = palette.background;
     ctx.fillRect(0, 0, maskSolidWidth, height);
 
@@ -367,17 +376,17 @@ export class ScrollerView {
     );
   }
 
-  private drawPlayhead(ctx: CanvasRenderingContext2D, height: number): void {
+  private drawPlayhead(ctx: CanvasRenderingContext2D, height: number, palette: CanvasPalette): void {
     const zoom = this.zoom;
     const x = Math.round(this.playheadX) + 0.5;
 
     // Subtle background glow behind playhead line
     const gradient = ctx.createLinearGradient(x, 0, x, height);
-    gradient.addColorStop(0, 'rgba(220, 38, 38, 0)');
-    gradient.addColorStop(0.3, 'rgba(220, 38, 38, 0.08)');
-    gradient.addColorStop(0.5, 'rgba(220, 38, 38, 0.18)');
-    gradient.addColorStop(0.7, 'rgba(220, 38, 38, 0.08)');
-    gradient.addColorStop(1, 'rgba(220, 38, 38, 0)');
+    gradient.addColorStop(0, `rgba(${palette.playheadRgb}, 0)`);
+    gradient.addColorStop(0.3, `rgba(${palette.playheadRgb}, 0.08)`);
+    gradient.addColorStop(0.5, `rgba(${palette.playheadRgb}, 0.18)`);
+    gradient.addColorStop(0.7, `rgba(${palette.playheadRgb}, 0.08)`);
+    gradient.addColorStop(1, `rgba(${palette.playheadRgb}, 0)`);
 
     ctx.fillStyle = gradient;
     ctx.fillRect(x - 3, 0, 7, height);
@@ -385,7 +394,7 @@ export class ScrollerView {
     // Crisp playhead line spanning staff lines + clearance
     const topY = this.staveTopY - 35 * zoom;
     const bottomY = this.staveTopY + 75 * zoom;
-    ctx.strokeStyle = '#dc2626';
+    ctx.strokeStyle = palette.playhead;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(x, topY);
@@ -393,7 +402,7 @@ export class ScrollerView {
     ctx.stroke();
 
     // Accent pointers at top and bottom of playhead line
-    ctx.fillStyle = '#dc2626';
+    ctx.fillStyle = palette.playhead;
 
     const triW = 4 * Math.min(1.2, Math.max(0.75, zoom));
     const triH = 8 * Math.min(1.2, Math.max(0.75, zoom));

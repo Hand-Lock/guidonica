@@ -35,6 +35,29 @@ export function clampTempo(bpm: number): number {
   return Math.max(MIN_TEMPO, Math.min(MAX_TEMPO, Math.round(bpm)));
 }
 
+/** Upper-exclusive BPM bounds of the classical tempo markings, ascending. */
+const TEMPO_MARKINGS: ReadonlyArray<readonly [number, string]> = [
+  [40, 'Grave'],
+  [60, 'Largo'],
+  [66, 'Larghetto'],
+  [76, 'Adagio'],
+  [108, 'Andante'],
+  [120, 'Moderato'],
+  [156, 'Allegro'],
+  [176, 'Vivace'],
+  [200, 'Presto'],
+];
+
+/**
+ * Maps a BPM to its conventional Italian tempo marking (non-overlapping ranges).
+ */
+export function tempoMarking(bpm: number): string {
+  for (const [upper, name] of TEMPO_MARKINGS) {
+    if (bpm < upper) return name;
+  }
+  return 'Prestissimo';
+}
+
 export interface IntervalOptions {
   unison: boolean; // 1st: same note / repeat (0 steps)
   second: boolean; // 2nd: step (1 step)
@@ -166,6 +189,46 @@ export type SoundProfile = 'triangle' | 'woodblock';
 export type Pulse68Mode = 'dotted-quarter' | 'eighth';
 export type ThemeMode = 'auto' | 'light' | 'dark';
 export type ResolvedTheme = 'light' | 'dark';
+
+/**
+ * Single source of truth for every colour painted onto the notation canvas.
+ * Staff lines (scroller) and VexFlow ledger lines/barlines (renderer) share
+ * `staff`, so ledger lines never read brighter than the stave. `playhead`
+ * mirrors the CSS `--playhead-color` token of the same theme.
+ */
+export interface CanvasPalette {
+  background: string;
+  backgroundRgb: string;
+  staff: string;
+  ink: string;
+  tuplet: string;
+  solfege: string;
+  playhead: string;
+  playheadRgb: string;
+}
+
+export const CANVAS_PALETTE: Record<ResolvedTheme, CanvasPalette> = {
+  light: {
+    background: '#ffffff',
+    backgroundRgb: '255, 255, 255',
+    staff: '#64748b',
+    ink: '#000000',
+    tuplet: '#334155',
+    solfege: '#007a62',
+    playhead: '#e11d48',
+    playheadRgb: '225, 29, 72',
+  },
+  dark: {
+    background: '#0f172a',
+    backgroundRgb: '15, 23, 42',
+    staff: '#64748b',
+    ink: '#f8fafc',
+    tuplet: '#cbd5e1',
+    solfege: '#00ffcc',
+    playhead: '#f43f5e',
+    playheadRgb: '244, 63, 94',
+  },
+};
 
 export const SOLFEGE_SYLLABLES: Record<string, string> = {
   c: 'Do',

@@ -40,6 +40,8 @@ export async function waitForMusicFonts(): Promise<void> {
     await Promise.all([
       document.fonts.load('20px Bravura'),
       document.fonts.load('20px Academico'),
+      // Solfège label face (Google Fonts); a failed fetch falls back to system-ui silently
+      document.fonts.load('700 12px "Alegreya Sans"').catch(() => []),
       document.fonts.ready,
     ]);
   } catch {

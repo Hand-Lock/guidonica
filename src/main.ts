@@ -27,6 +27,7 @@ import {
   isTupletSupported,
   resolveTheme,
   subscribeSystemTheme,
+  tempoMarking,
 } from './notation/types';
 import { globalState, SessionState } from './state';
 import { MetronomeEngine } from './audio/metronome';
@@ -64,17 +65,15 @@ class GuidonicaApp {
   // DOM Elements - Playback & Tempo
   private btnPlayPause: HTMLButtonElement;
   private btnLabel: HTMLElement;
-  private btnIcon: HTMLElement;
   private btnReset: HTMLButtonElement;
   private tempoSlider: HTMLInputElement;
   private tempoNumber: HTMLInputElement;
-  private bpmDisplay: HTMLElement;
+  private tempoTerm: HTMLElement | null;
   private countInBadge: HTMLElement;
   private beatDotsContainer: HTMLElement;
 
   // Primary Header Utilities
   private btnThemeToggle: HTMLButtonElement;
-  private themeIcon: HTMLElement;
   private btnFullscreenToggle: HTMLButtonElement;
   private btnDrawerToggle: HTMLButtonElement;
   private controlsDrawer: HTMLElement;
@@ -95,11 +94,6 @@ class GuidonicaApp {
   private selectTheme: HTMLSelectElement;
   private volumeSlider: HTMLInputElement;
   private btnVolumeMute: HTMLButtonElement;
-  private zoomSlider: HTMLInputElement;
-  private zoomDisplay: HTMLElement;
-  private btnZoomOut: HTMLButtonElement;
-  private btnZoomIn: HTMLButtonElement;
-  private btnZoomReset: HTMLButtonElement;
 
   // Floating On-Canvas Zoom Pill
   private canvasZoomPill: HTMLElement;
@@ -144,23 +138,20 @@ class GuidonicaApp {
   private btnAboutToggle: HTMLButtonElement | null;
   private btnAboutClose: HTMLButtonElement | null;
   private btnAboutDismiss: HTMLButtonElement | null;
-  private btnDrawerAbout: HTMLButtonElement | null;
   private btnFooterAbout: HTMLButtonElement | null;
 
   constructor() {
     // 1. Query all UI DOM elements
     this.btnPlayPause = document.getElementById('btn-play-pause') as HTMLButtonElement;
     this.btnLabel = this.btnPlayPause.querySelector('.btn-label') as HTMLElement;
-    this.btnIcon = this.btnPlayPause.querySelector('.btn-icon') as HTMLElement;
     this.btnReset = document.getElementById('btn-reset') as HTMLButtonElement;
     this.tempoSlider = document.getElementById('tempo-slider') as HTMLInputElement;
     this.tempoNumber = document.getElementById('tempo-number') as HTMLInputElement;
-    this.bpmDisplay = document.getElementById('bpm-display') as HTMLElement;
+    this.tempoTerm = document.getElementById('tempo-term');
     this.countInBadge = document.getElementById('count-in-badge') as HTMLElement;
     this.beatDotsContainer = document.getElementById('beat-dots') as HTMLElement;
 
     this.btnThemeToggle = document.getElementById('btn-theme-toggle') as HTMLButtonElement;
-    this.themeIcon = document.getElementById('theme-icon') as HTMLElement;
     this.btnFullscreenToggle = document.getElementById('btn-fullscreen-toggle') as HTMLButtonElement;
     this.btnDrawerToggle = document.getElementById('btn-drawer-toggle') as HTMLButtonElement;
     this.controlsDrawer = document.getElementById('controls-drawer') as HTMLElement;
@@ -181,11 +172,6 @@ class GuidonicaApp {
     this.selectTheme = document.getElementById('select-theme') as HTMLSelectElement;
     this.volumeSlider = document.getElementById('volume-slider') as HTMLInputElement;
     this.btnVolumeMute = document.getElementById('btn-volume-mute') as HTMLButtonElement;
-    this.zoomSlider = document.getElementById('zoom-slider') as HTMLInputElement;
-    this.zoomDisplay = document.getElementById('zoom-display') as HTMLElement;
-    this.btnZoomOut = document.getElementById('btn-zoom-out') as HTMLButtonElement;
-    this.btnZoomIn = document.getElementById('btn-zoom-in') as HTMLButtonElement;
-    this.btnZoomReset = document.getElementById('btn-zoom-reset') as HTMLButtonElement;
 
     this.canvasZoomPill = document.getElementById('canvas-zoom-pill') as HTMLElement;
     this.btnPillZoomOut = document.getElementById('btn-pill-zoom-out') as HTMLButtonElement;
@@ -246,7 +232,6 @@ class GuidonicaApp {
     this.btnAboutToggle = document.getElementById('btn-about-toggle') as HTMLButtonElement | null;
     this.btnAboutClose = document.getElementById('btn-about-close') as HTMLButtonElement | null;
     this.btnAboutDismiss = document.getElementById('btn-about-dismiss') as HTMLButtonElement | null;
-    this.btnDrawerAbout = document.getElementById('btn-drawer-about') as HTMLButtonElement | null;
     this.btnFooterAbout = document.getElementById('btn-footer-about') as HTMLButtonElement | null;
 
     const canvas = document.getElementById('scroller-canvas') as HTMLCanvasElement;
@@ -302,7 +287,7 @@ class GuidonicaApp {
     // Tempo
     this.tempoSlider.value = String(settings.tempo);
     this.tempoNumber.value = String(settings.tempo);
-    this.bpmDisplay.textContent = String(settings.tempo);
+    this.updateTempoTerm(settings.tempo);
 
     // Time signature & 6/8 pulse
     this.selectTimeSig.value = settings.timeSignature;
@@ -325,7 +310,7 @@ class GuidonicaApp {
     this.selectSolfegeMode.value = settings.solfegeLabelMode;
     this.selectSoundProfile.value = settings.soundProfile;
     this.volumeSlider.value = String(settings.volume);
-    this.btnVolumeMute.textContent = settings.isMuted ? '🔇' : '🔊';
+    this.updateMuteUI(settings.isMuted);
 
     // Intervals
     this.intervalUnison.checked = settings.intervals.unison;
@@ -381,10 +366,7 @@ class GuidonicaApp {
 
   private updateZoomUI(mode: ZoomMode, zoomVal: number): void {
     const isAuto = mode === 'auto';
-    this.btnZoomReset.classList.toggle('active', isAuto);
-    this.btnZoomReset.title = isAuto
-      ? `Auto-fit active (${Math.round(zoomVal * 100)}%) - click to recalculate`
-      : `Auto-fit zoom to screen (resets to ${Math.round(this.getEffectiveAutoZoom() * 100)}%)`;
+    this.btnPillZoomReset.classList.toggle('active', isAuto);
     this.btnPillZoomReset.title = isAuto
       ? `Zoom: ${Math.round(zoomVal * 100)}% (Auto)`
       : `Zoom: ${Math.round(zoomVal * 100)}% (Click to reset to Auto)`;
@@ -395,8 +377,6 @@ class GuidonicaApp {
     const clamped = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, quantized));
     const nextMode: ZoomMode = mode ?? 'manual';
     const percentStr = `${Math.round(clamped * 100)}%`;
-    this.zoomSlider.value = String(Math.round(clamped * 100));
-    this.zoomDisplay.textContent = percentStr;
     this.pillZoomText.textContent = percentStr;
 
     this.updateZoomUI(nextMode, clamped);
@@ -417,19 +397,18 @@ class GuidonicaApp {
   }
 
   private updateThemeUI(theme: ThemeMode, resolved: ResolvedTheme): void {
+    // The button holds all three vector glyphs; CSS shows the one matching data-mode
+    this.btnThemeToggle.dataset.mode = theme;
     if (theme === 'auto') {
-      this.themeIcon.textContent = '🌓';
       this.btnThemeToggle.title = `Theme: Auto (OS: ${resolved === 'dark' ? 'Dark' : 'Light'}) - Click for Dark`;
       this.btnThemeToggle.setAttribute(
         'aria-label',
         `Theme: Auto (OS: ${resolved}). Click to cycle theme.`
       );
     } else if (theme === 'dark') {
-      this.themeIcon.textContent = '🌙';
       this.btnThemeToggle.title = 'Theme: Dark - Click for Light';
       this.btnThemeToggle.setAttribute('aria-label', 'Theme: Dark. Click to cycle theme.');
     } else {
-      this.themeIcon.textContent = '☀️';
       this.btnThemeToggle.title = 'Theme: Light - Click for Auto (OS)';
       this.btnThemeToggle.setAttribute('aria-label', 'Theme: Light. Click to cycle theme.');
     }
@@ -536,10 +515,13 @@ class GuidonicaApp {
       document.addEventListener('webkitfullscreenchange', syncFullscreenGlyph);
     }
 
-    // Mobile Settings Drawer Toggle
+    // Settings drawer: an in-flow card row on wide screens (open by default), an
+    // overlay sheet on narrow ones (closed by default, dismissed by tapping the staff)
+    const wideLayout = window.matchMedia?.('(min-width: 961px)');
+    this.setDrawerOpen(wideLayout?.matches === true);
+    wideLayout?.addEventListener?.('change', (e) => this.setDrawerOpen(e.matches));
     this.btnDrawerToggle.addEventListener('click', () => {
-      const isOpen = this.controlsDrawer.classList.toggle('open');
-      this.btnDrawerToggle.setAttribute('aria-expanded', String(isOpen));
+      this.setDrawerOpen(!this.controlsDrawer.classList.contains('open'));
     });
 
     // Tempo controls
@@ -641,7 +623,7 @@ class GuidonicaApp {
     this.btnVolumeMute.addEventListener('click', () => {
       const nextMuted = !globalState.settings.isMuted;
       this.metronome.setMuted(nextMuted);
-      this.btnVolumeMute.textContent = nextMuted ? '🔇' : '🔊';
+      this.updateMuteUI(nextMuted);
       globalState.updateSettings({ isMuted: nextMuted });
     });
 
@@ -650,25 +632,6 @@ class GuidonicaApp {
       if (globalState.settings.zoomMode === 'auto') {
         this.syncAutoZoom();
       }
-    });
-
-    // Zoom Controls (Settings Drawer)
-    this.zoomSlider.addEventListener('input', (e) => {
-      const percent = Number((e.target as HTMLInputElement).value);
-      this.applyZoom(percent / 100, 'manual');
-    });
-
-    this.btnZoomOut.addEventListener('click', () => {
-      this.adjustZoom(-ZOOM_STEP);
-    });
-
-    this.btnZoomIn.addEventListener('click', () => {
-      this.adjustZoom(ZOOM_STEP);
-    });
-
-    this.btnZoomReset.addEventListener('click', () => {
-      this.btnZoomReset.blur();
-      this.syncAutoZoom();
     });
 
     // Floating On-Canvas Zoom Pill
@@ -694,6 +657,11 @@ class GuidonicaApp {
     const canvas = document.getElementById('scroller-canvas') as HTMLCanvasElement;
     if (canvas) {
       this.bindCanvasPinchZoom(canvas);
+      canvas.addEventListener('pointerdown', () => {
+        if (wideLayout?.matches !== true && this.controlsDrawer.classList.contains('open')) {
+          this.setDrawerOpen(false);
+        }
+      });
     }
 
     // Intervals: ensure at least one interval remains checked
@@ -950,11 +918,6 @@ class GuidonicaApp {
       openModal();
     });
 
-    this.btnDrawerAbout?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openModal();
-    });
-
     this.btnFooterAbout?.addEventListener('click', (e) => {
       e.stopPropagation();
       openModal();
@@ -1120,10 +1083,27 @@ class GuidonicaApp {
     const next = clampTempo(bpm);
     this.tempoSlider.value = String(next);
     this.tempoNumber.value = String(next);
-    this.bpmDisplay.textContent = String(next);
+    this.updateTempoTerm(next);
     this.metronome.setTempo(next);
     globalState.updateSettings({ tempo: next });
     this.renderIfIdle();
+  }
+
+  private updateTempoTerm(bpm: number): void {
+    if (this.tempoTerm) {
+      this.tempoTerm.textContent = tempoMarking(bpm);
+    }
+  }
+
+  private updateMuteUI(isMuted: boolean): void {
+    // Speaker / muted glyphs are swapped by CSS on the .muted class
+    this.btnVolumeMute.classList.toggle('muted', isMuted);
+    this.btnVolumeMute.setAttribute('aria-pressed', String(isMuted));
+  }
+
+  private setDrawerOpen(isOpen: boolean): void {
+    this.controlsDrawer.classList.toggle('open', isOpen);
+    this.btnDrawerToggle.setAttribute('aria-expanded', String(isOpen));
   }
 
   /** Repaints a single frame when the rAF loop is not running (paused/stopped). */
@@ -1326,15 +1306,12 @@ class GuidonicaApp {
   private syncUI(state: SessionState): void {
     if (state.playbackState === 'counting-in' || state.playbackState === 'playing') {
       this.btnLabel.textContent = 'Pause';
-      this.btnIcon.textContent = '⏸';
       this.btnPlayPause.classList.add('playing');
     } else if (state.playbackState === 'paused') {
       this.btnLabel.textContent = 'Resume';
-      this.btnIcon.textContent = '▶';
       this.btnPlayPause.classList.remove('playing');
     } else {
       this.btnLabel.textContent = 'Start';
-      this.btnIcon.textContent = '▶';
       this.btnPlayPause.classList.remove('playing');
     }
 
