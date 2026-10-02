@@ -31,6 +31,9 @@ guidonica/
 ├── tsconfig.json           # Strict TypeScript configuration
 ├── vite.config.ts          # Minimal Vite configuration
 ├── index.html              # Minimal semantic HTML shell
+├── public/                 # Copied verbatim: favicon.svg/.ico, apple-touch-icon.png, CNAME
+├── scripts/
+│   └── build-icons.mjs     # Guidonian Hand mark generator (npm run icons; ADR 0046)
 ├── docs/
 │   ├── DESIGN_MANIFESTO.md # Aero-Guidonica design manifesto and visual rules
 │   └── adr/                # Architectural Decision Records & implementation notes
