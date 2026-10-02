@@ -51,6 +51,7 @@ This directory documents the core architectural decisions, implementation method
 | [0043](0043-thirty-second-notes.md) | Thirty-Second Notes & Dotted Sixteenths | Accepted | 2026-09-27 |
 | [0044](0044-user-selectable-ledger-lines.md) | User-Selectable Ledger Lines (Above / Below, 0–3) | Accepted | 2026-10-02 |
 | [0045](0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md) | Aero-Guidonica 2: Material Hierarchy & Responsive Redesign | Accepted | 2026-10-02 |
+| [0046](0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Accepted | 2026-10-02 |
 
 ---
 
