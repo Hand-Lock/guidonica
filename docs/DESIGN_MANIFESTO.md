@@ -1,5 +1,5 @@
 # The Guidonica Design Manifesto
-## Aero-Guidonica: Liquid Glass, Skeuomorphic Tactility & Suckless Engineering
+## Aero-Guidonica 2: Refined Liquid Glass, Skeuomorphic Tactility & Suckless Engineering
 
 > *"Music is the movement of sound to reach the soul for the education of its virtue."*  
 > — Guido d'Arezzo (c. 991–1050)
@@ -50,16 +50,17 @@ Guidonica uses two complementary typefaces designed by Huerta Tipográfica, marr
   ```
 - **Styling Rules**:
   - Headings feature subtle glass text emboss:
-    - *Light Mode*: `text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8), 0 0 12px rgba(0, 130, 105, 0.18);`
-    - *Dark Mode*: `text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 16px rgba(0, 255, 204, 0.35);`
+    - *Light Mode*: `text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);` (`--emboss`)
+    - *Dark Mode*: `text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);` (`--emboss`)
+  - Section titles (settings cards, popover, modal sub-heads) use Alegreya *italic* 700; the Italian tempo marking uses Alegreya italic 400.
 
 #### B. Interface & Body Text: *Alegreya Sans*
 - **Classification**: Humanist sans-serif counterpart to Alegreya.
-- **Role**: All interactive controls, button labels, dropdowns, tooltips, hints, and tabular data.
+- **Role**: All interactive controls, button labels, dropdowns, tooltips, hints, tabular data, and the canvas solfège labels (700).
 - **Rationale**: Retains the warmth and humanist proportion of the serif companion, ensuring prolonged sight-reading without visual fatigue.
 - **Font Stack**:
   ```css
-  --font-family: 'Alegreya Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Alegreya Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   ```
 
 #### C. Numeric & Monospace Data
@@ -73,103 +74,119 @@ Guidonica uses two complementary typefaces designed by Huerta Tipográfica, marr
 
 ---
 
-### 3. Lighting & Skeuomorphic Physics Model
+### 3. Lighting & the Material Hierarchy (Aero-Guidonica 2)
 
-Every interactive element in Guidonica exists in a coherent simulated physical lighting environment:
+Every element lives in one simulated lighting environment: the light source is fixed **top-left**, every raised surface has a crisp 1px top specular (`inset 0 1px 0 …`), and every recessed surface has an inner cavity shadow. On top of that physics, Aero-Guidonica 2 adds one rule: **material carries importance.** If everything shines equally, nothing reads as primary. Each surface therefore uses exactly one of four materials:
 
-1. **Light Source**: Fixed at **45° Top-Left**.
-2. **Surface Highlight (Top Inset)**: Every elevated surface features a crisp 1px specular reflection on its upper perimeter:
-   ```css
-   box-shadow: inset 0 1px 0 rgba(255, 255, 255, var(--sheen-opacity));
-   ```
-3. **Beveled Edge**: Borders are translucent and tinted to enhance dimensional thickness:
-   ```css
-   border: 1px solid rgba(255, 255, 255, 0.4);
-   ```
-4. **Sub-surface Specular Sheen (The Gel/Aqua Gloss)**:
-   A linear gradient with a sharp reflection line across the upper half of buttons:
-   ```css
-   background: linear-gradient(
-     180deg,
-     rgba(255, 255, 255, 0.35) 0%,
-     rgba(255, 255, 255, 0.08) 49%,
-     rgba(0, 0, 0, 0.05) 50%,
-     rgba(0, 0, 0, 0) 100%
-   );
-   ```
-5. **Tactile Depress (Active Physics)**:
-   When pressed, physical buttons must move downwards by 1px and trade their outer drop shadow for an internal ambient cavity shadow:
-   ```css
-   .btn:active {
-     transform: translateY(1px);
-     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
-   }
-   ```
+| Tier | Material | Physical recipe | Used for |
+|------|----------|-----------------|----------|
+| 1 | **Gel** | Saturated vertical gradient, `::before` specular gloss cap on the top half, coloured glow | Play/Pause hero, lit LEDs, slider beads, tuplet counter, checked tuplet cells |
+| 2 | **Acrylic** | `linear-gradient(180deg, #fff, #f1f5f9)` (dark: `#1e293b → #162033`), 1px bevel border, 1px top specular. **No half-split gloss.** | Secondary and icon buttons, chips, selects, keycaps |
+| 3 | **Glass** | Translucent fill plus `backdrop-filter: blur(16px) saturate(170–180%)`, 1px top specular, soft drop shadow. **No hard 50% sheen line.** | Header ribbon, overlay settings sheet, tuplets popover, zoom pill, modal, footer |
+| 4 | **Well** | Recessed fill, `inset` shadow, hairline border | Section cards, BPM readout, LED capsule, slider tracks, inputs |
+
+**Tactile depress**: pressed buttons move down by `translateY(1px)` and swap their outer shadow for an inset cavity shadow.
+
+**Backdrop roots**: the header glass is painted on `.control-panel::before` (`z-index: -1`) rather than on the header itself. A `backdrop-filter`, `filter`, `opacity < 1`, `mask` or `will-change` on `.control-panel` would make it a backdrop root, and the overlay settings sheet nested inside it could then no longer blur the canvas beneath.
 
 ---
 
-### 4. Color Palettes & Material Systems
+### 4. Colour Palettes & Contrast
+
+All colours are CSS custom properties defined in exactly two theme blocks (`:root, [data-theme='light']` and `[data-theme='dark']`). The inline head script always resolves `data-theme`, so there is **no** `prefers-color-scheme` duplicate block.
 
 #### Light Mode: *Liquid Crystal & Olo Viridian*
-- **Mood**: High-clarity optical glass, luminous clear water, crisp alpine sky with vibrant seafoam reflection.
-- **Background**: Subtle cool iridescent gradient (`#e3effb` to `#e8f2fc`).
-- **Glass Ribbon (Header)**: `rgba(255, 255, 255, 0.76)` with `backdrop-filter: blur(16px) saturate(180%)`.
-- **Primary Accent (Aqua-Olo Liquid Gel)**: Luminous spring-turquoise gel (`#00ffcc` specular cap down to `#00b894` and `#00705a` base).
-- **High-Contrast Accent (Deep Olo Viridian)**: Deep chromatic Olo (`#008269`, $4.6:1$ contrast) for text, interactive borders, and focus rings.
-- **Secondary Surfaces**: Frosted crystal acrylic (`linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%)`).
-- **Canvas Base**: Pure optical white (`#ffffff`) preserving optimal sheet music contrast, with Solfège labels in Deep Olo Viridian (`#007a62`).
+- **Background**: cool gradient around `#e9eef3`. **Glass**: `rgba(255, 255, 255, 0.74)`.
+- **Accent**: Deep Olo Viridian `#008269` (4.8:1 on white) for text, borders and checked chips; `#006652` for strong accent text on tints (6.2:1).
+- **Muted text**: `#4b5d75` (6.7:1).
+- **Hero gel**: body deepened to `#17a387 → #00826a → #006e58`, with **white ink** (≥ 4.8:1 at mid-body).
 
 #### Dark Mode: *Obsidian Aero & Olo Neon*
-- **Mood**: Sleek tinted smoked acrylic, deep space cobalt, incandescent neon Olo luminescence.
-- **Background**: Deep obsidian blue gradient (`#070b14` to `#0d1628`).
-- **Glass Ribbon (Header)**: `rgba(13, 22, 40, 0.78)` with `backdrop-filter: blur(16px) saturate(190%)` and subtle Olo refraction edge (`rgba(0, 255, 204, 0.22)`).
-- **Primary Accent (Olo Neon Gel)**: Pure electric Olo (`#00ffcc` specular cap to `#00bfa5` body and `#005a4e` base, $>13.5:1$ contrast).
-- **Secondary Surfaces**: Smoked midnight glass (`linear-gradient(180deg, #1e293b 0%, #0f172a 100%)`).
-- **Canvas Base**: Midnight slate (`#0f172a`) with cool steel staves and Solfège labels glowing in radiant pure Olo (`#00ffcc`).
+- **Background**: obsidian `#0b1220`. **Glass**: `rgba(13, 22, 40, 0.78)`.
+- **Accent**: pure Olo `#00ffcc`; muted text `#94a3b8` (7:1 on `#0f172a`).
+- **Hero gel**: bright Olo `#5dffe0 → #00f0c0 → #00c9a2`, with **deep ink `#00261e`** (≥ 8:1). White on bright Olo (≈ 2.3:1) is forbidden.
+
+#### Ink-on-gel rule
+The text on a gel must always reach ≥ 4.5:1 against the gel's mid-body colour. A deep gel takes white ink; a bright gel takes deep ink. The amber *Playing* gel (`#fcd34d → #f59e0b`) uses deep amber ink `#3a1d00` (≥ 7:1) in both themes. The COUNT-IN badge is white on `#e11d48` (4.7:1) in both themes.
+
+#### Canvas palette (single source of truth)
+The notation canvas cannot read CSS variables cheaply, so its colours live in one exported constant, `CANVAS_PALETTE` (`src/notation/types.ts`). Both the scroller (stationary staff, playhead) and the renderer (VexFlow ink, ledger lines, tuplets, solfège) use it:
+
+| | background | staff + ledger | ink | solfège | playhead |
+|---|---|---|---|---|---|
+| Light | `#ffffff` | `#64748b` | `#000000` | `#007a62` | `#e11d48` |
+| Dark | `#0f172a` | `#64748b` | `#f8fafc` | `#00ffcc` | `#f43f5e` |
+
+`--canvas-bg` and `--playhead-color` in CSS must equal these values; `tests/canvasPalette.test.ts` enforces it. Staff lines and ledger lines always share one colour.
+
+#### Font weights
+Only the loaded faces may be used: Alegreya 700 (plus italic 400/700), Alegreya Sans 400/500/700, Ubuntu Mono 400/700. **Never use `font-weight: 600`**: the browser would synthesize it.
 
 ---
 
-### 5. Component Archetypes & Construction Rules
+### 5. Component Archetypes & Layout Contract
 
-#### A. The Primary Gel Button (`#btn-play-pause`)
-- **Structure**: Rounded pill button ($R=6\text{px}$), high tactile presence.
-- **States**:
-  - *Rest*: Multi-layer gradient with top specular gloss arc reflecting `#00ffcc`, rich turquoise/teal body, and outer drop shadow.
-  - *Hover*: Luminescent Olo halo (`box-shadow: var(--btn-primary-sheen), 0 0 16px var(--accent-glow), 0 4px 10px rgba(0, 184, 148, 0.4)`).
-  - *Active / Pressed*: `transform: translateY(1px)`, inset cavity shadow.
-  - *Playing (State Shift)*: Transforms into a radiant Amber/Topaz gel button (`#fbbf24` to `#d97706`).
+#### A. Iconography
+- **No emoji in UI chrome.** Emoji render differently on every OS.
+- All icons are vector `<symbol>`s in one hidden sprite at the top of `<body>`, referenced with `<svg class="icon"><use href="#i-…"/></svg>`.
+- **UI icon grammar**: a 16-unit grid, `fill: none`, `stroke: currentColor`, stroke width 1.75, round caps and joins.
+- **Music glyphs** (`#g-quarter`, `#g-eighth`, …) are filled with `currentColor` and keep their original viewBoxes. Because `<use>` scales "meet" into its box, every `.icon-*` class sets an explicit `em` width and height matching the glyph's aspect ratio.
+- The fullscreen icon stays inline (ADR 0034).
+- State-driven icon swaps are pure CSS:
+  - play ↔ pause via `.playing`;
+  - theme via `[data-mode]`;
+  - speaker ↔ muted via `.muted`.
 
-#### B. Secondary Acrylic Buttons & Icon Controls
-- Crisp beveled border with frosted sub-surface reflection. Hover state highlights border in `var(--accent)` with a subtle Olo glow halo.
-- Icon controls (`#btn-theme-toggle`, `#btn-fullscreen-toggle`, etc.) are square glass gems with centered micro-glyphs.
+#### B. The Hero Gel Button (`#btn-play-pause`)
+- The only tier-1 button.
+- *Rest*: Olo gel with gloss cap.
+- *Playing*: amber gel.
+- *Pressed*: depress physics.
+- *Focus*: Olo ring.
 
-#### C. Skeuomorphic Sliders (Tempo & Volume)
-- **Track**: Sunken groove well (`box-shadow: inset 0 2px 4px rgba(0,0,0,0.25)`).
-- **Thumb**: Polished 3D glass bead or capsule with radial specular reflection hotspot at top-left:
-  - *Light Mode*: `radial-gradient(circle at 35% 35%, #ffffff 0%, #00ffcc 30%, #009e80 75%, #006652 100%)`
-  - *Dark Mode*: `radial-gradient(circle at 35% 35%, #ffffff 0%, #33ffdb 30%, #00bfa5 75%, #006954 100%)`
+#### C. Acrylic Buttons, Chips & Selects
+- **Buttons** are `--hit` tall.
+- **Chips** (`.checkbox-item`):
+  - The `<input>` is visually hidden but stays focusable (clip technique).
+  - The `<span>` is an acrylic pill with a 7px LED tell (`::before`).
+  - `:checked` gives it an Olo tint, an accent border and a lit LED; `:focus-visible` on the input draws the ring on the span.
+- **Selects** use `appearance: none` with a chevron built from two linear gradients (no image).
 
-#### D. Luminous LED Beat Indicators
-- Encased in a frosted glass capsule pill.
-- **Inactive Beads**: Softly recessed smoked pearls.
-- **Active Downbeat (Beat 1)**: Radiant ruby/coral laser gem with multi-stage radial bloom (`#f43f5e`), forming a complementary Teal & Ruby aesthetic with Olo.
-- **Active Sub-beats (2, 3, 4, etc.)**: Luminous Olo glowing sphere (`radial-gradient(...)` with `0 0 12px #00ffcc, 0 0 22px rgba(0, 255, 204, 0.65)`).
+#### D. Tempo Well & Sliders
+- **Tempo**: a well-recessed LCD readout (`#tempo-number`, Ubuntu Mono 22px, spinners hidden) with a "BPM" unit.
+  - Above it sits the label *Tempo* plus the Italian marking (`#tempo-term`, Alegreya italic in the accent colour), produced by `tempoMarking(bpm)`.
+- **Sliders**: one shared `input[type=range]` rule.
+  - Track: a 6px sunken well.
+  - Thumb: a glass bead, `radial-gradient(circle at 35% 35%, #fff, #00ffcc 30%, …)`, 18px (22px on coarse pointers).
 
-#### E. Floating Glass Sheets (Tuplets Popover & Modals)
-- Deep glass depth: `backdrop-filter: blur(20px)`, `border: 1px solid var(--panel-border-glass)`.
-- Smooth float-in animation with cubic-bezier spring curve.
-- Alternating frosted table rows with crisp hairline dividers.
+#### E. LED Beat Indicators
+- The beads sit in a well capsule.
+- Inactive beads are recessed pearls.
+- Active sub-beats are Olo spheres, scaled to 1.28.
+- The active downbeat is a ruby gem, scaled to 1.42.
+- The COUNT-IN badge floats absolutely above the capsule, so the capsule's width never changes.
 
-#### F. Mechanical Keycaps (`<kbd>`)
-- Styled as 3D injection-molded or acrylic keyboard keys:
-  ```css
-  kbd {
-    background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
-    border: 1px solid #cbd5e1;
-    border-bottom: 2px solid #94a3b8;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 #ffffff;
-  }
-  ```
+#### F. Settings: four titled sections
+The settings are grouped as **Staff** (clef, ledger lines, meter, 6/8 pulse) · **Rhythm** (note values, tuplets, rests, ties) · **Melody** (intervals) · **Practice** (labels, assists, click, volume, theme).
+- Each group is a `<section class="settings-section">` well card.
+- Each card has an Alegreya italic `<h2 class="section-title">` followed by a hairline rule.
+- New settings must join one of these sections, never float free.
+
+#### G. Glass Sheets
+- These are the tuplets popover, the About modal and the mobile settings sheet.
+- They float in with `pop` (opacity plus translate), on `cubic-bezier(0.16, 1, 0.3, 1)`.
+
+#### H. Responsive Layout Contract
+| Width | Header grid | Settings |
+|-------|-------------|----------|
+| > 960px | One row: `brand · transport · tempo · beats · utils` | In-flow card grid (4 columns, 2 columns between 961 and 1279px), open by default, collapsible |
+| ≤ 960px | Two rows: `brand · utils` / `transport · tempo · beats` | Absolutely positioned **glass sheet overlaying the canvas** (the canvas never reflows). It scrolls internally, closes on a canvas tap, and the tuplets popover becomes an in-flow accordion. Footer hidden. |
+| ≤ 600px | Three rows: `brand · utils` / `transport · beats` / `tempo` (full width, long slider track) | One column. The Settings and Reset labels collapse to icons. |
+
+The canvas wrapper is observed with a `ResizeObserver`, so any layout change (drawer collapse, rotation) resizes the backing store.
+
+#### I. Mechanical Keycaps (`<kbd>`)
+Acrylic keys with a 2px bottom border, used in the footer shortcut list.
 
 ---
 
@@ -177,11 +194,21 @@ Every interactive element in Guidonica exists in a coherent simulated physical l
 
 When introducing any future UI element, every developer and AI agent **MUST** verify compliance with these laws:
 
-1. **No External CSS Frameworks**: Absolutely no Tailwind, Bootstrap, Sass runtime, or CSS-in-JS libraries.
-2. **No Image Assets for UI Chrome**: Gradients, glass reflections, bevels, and shadows must be 100% vector CSS/SVG. No PNG/WebP background textures.
-3. **GPU Compositing Cleanliness**: Use `transform` and `opacity` for animations. Avoid animating layout-triggering properties (`width`, `height`, `margin`, `top`).
-4. **Frame Rate Inviolability**: The Web Audio clock and HTML5 Canvas notation scroller must maintain rock-solid 60 FPS / 120 FPS. CSS visual effects must not induce main-thread paint stalls.
-5. **Mobile-First Ergonomics**: All interactive elements must maintain a minimum touch target of $36\text{px} \times 36\text{px}$ (preferably $40\text{px}$ or larger on phones).
+1. **No external CSS frameworks**: no Tailwind, Bootstrap, Sass runtime or CSS-in-JS.
+2. **No image assets for UI chrome**: gradients, bevels, glass and icons are 100% CSS and inline SVG. There are no PNG/WebP textures, no icon fonts and no emoji.
+3. **GPU compositing only**: animate only `transform` and `opacity`. Transitions name explicit properties; **`transition: all` is forbidden**.
+4. **Frame-rate inviolability**: the Web Audio clock and the canvas scroller hold 60/120 FPS. CSS effects must not cause main-thread paint stalls. The canvas edge fade is a static `::after` gradient.
+5. **Touch ergonomics**:
+   - Every target is at least `--hit` (36px), which becomes 44px under `(pointer: coarse)`.
+   - Chips are 30px, or 40px on coarse pointers.
+   - On coarse pointers, form controls use ≥ 16px text, so iOS Safari never focus-zooms.
+6. **Hover gating**: every `:hover` rule lives inside `@media (hover: hover)`, so taps never leave sticky hover states.
+7. **Viewport safety**:
+   - `#app` uses `100dvh` (with a `100vh` fallback).
+   - The page declares `viewport-fit=cover`.
+   - Header, footer, sheet and zoom pill pad with `env(safe-area-inset-*)`.
+8. **Reduced motion**: `@media (prefers-reduced-motion: reduce)` disables every animation and transition.
+9. **Accessibility**: every control has a visible `:focus-visible` ring. Icon-only buttons carry `aria-label`. Toggle buttons expose `aria-pressed` or `aria-expanded`.
 
 ---
 
