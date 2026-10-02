@@ -53,6 +53,7 @@ This directory documents the core architectural decisions, implementation method
 | [0045](0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md) | Aero-Guidonica 2: Material Hierarchy & Responsive Redesign | Accepted | 2026-10-02 |
 | [0046](0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Superseded in part by [0047](0047-guidonian-hand-v2.md) | 2026-10-02 |
 | [0047](0047-guidonian-hand-v2.md) | Guidonian Hand v2: Anatomical Proportions, Volume Shading & 3D Thread | Accepted | 2026-10-02 |
+| [0048](0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted | 2026-10-03 |
 
 ---
 

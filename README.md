@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/brand/guidonica-mark.svg" width="128" height="128" alt="Guidonica logo: a Guidonian Hand wrapped by a gamut thread"></p>
+
 # Guidonica
 
 > **Guidonica** is a high-performance, client-only web engine for deliberate sight-reading and solfège practice, inspired by Guido d'Arezzo's historic pedagogical method. It continuously streams procedurally generated sheet music across a fixed playhead in sample-accurate synchronization with a Web Audio synthesized metronome—built with zero framework bloat in pure Vanilla TypeScript, pure CSS3 liquid glass, and 60/120 FPS GPU blitting.
@@ -37,7 +39,9 @@
 
 **Guidonica** takes its name from **Guido d'Arezzo** (c. 991 – after 1033), the Italian medieval Benedictine monk and music theorist whose treatises laid the bedrock of Western musical notation: the modern 4-line and 5-line staff notation, hexachordal solmization (*ut, re, mi, fa, sol, la*), and the celebrated **Manus Guidonica** (Guidonian Hand).
 
-The *manus guidonica* was history's first spatial visual-mnemonic sight-singing interface: choir apprentices mapped musical intervals, hexachords, and syllables directly to the joints and tips of the human hand to internalize real-time pitch recognition and eliminate rote memorization. Guidonica translates this historical pedagogical breakthrough into a modern, continuous digital medium:
+The *manus guidonica* was history's first spatial visual-mnemonic sight-singing interface: choir apprentices mapped musical intervals, hexachords, and syllables directly to the joints and tips of the human hand to internalize real-time pitch recognition and eliminate rote memorization. The project's logo *is* a Manus Guidonica: the student's own left palm, with the gamut thread starting at **Γ** (*gamma ut*) on the thumb tip and coiling down through **A** and **B**, the first steps of the hand's historical order ([ADR 0047](docs/adr/0047-guidonian-hand-v2.md)).
+
+Guidonica translates this historical pedagogical breakthrough into a modern, continuous digital medium:
 
 1. **Anticipatory Eye Scanning (Forereading)**:
    Traditional sheet music reading suffers from cognitive "page-turn panic", fixation stutter, and erratic eye wandering. Guidonica's unyielding, continuous horizontal tape trains the musician's eye to actively scan ahead of the playhead, recognizing upcoming interval patterns, melodic contours, and rhythmic groupings well before vocalizing or playing them.
@@ -207,6 +211,7 @@ Constructed strictly following the [Aero-Guidonica Design Manifesto](docs/DESIGN
   - **Alegreya**: Classic humanist serif with Renaissance calligraphic roots, used for brand identity and editorial titles.
   - **Alegreya Sans**: Ergonomic humanist sans-serif for UI labels, buttons, and settings controls.
   - **Ubuntu Mono**: Engineered monospace numerals for steady, non-jumping BPM and metric readouts.
+- **Guidonian Hand Brand Mark**: The logo, favicon, iOS touch icon, Android/Chrome install icons (web app manifest, including a maskable variant) and the flat header glyph (`currentColor` hand, `--accent` thread) are all generated from one deterministic, zero-dependency vector model by `scripts/build-icons.mjs` ([ADRs 0046–0048](docs/adr/0048-brand-mark-rollout-manifest-and-readme-logo.md)).
 - **Handcrafted Vector Music Icons**: Custom inlined SVG glyphs for quarter, eighth, half, whole, sixteenth, dotted, rest, tie, and playhead icons.
 - **Auto OS Night Mode**: Dynamically follows the user's operating system dark/light mode preference (`prefers-color-scheme`) with manual overrides.
 
@@ -276,10 +281,12 @@ Guidonica is fully tested and optimized for macOS and Apple Silicon:
 | :--- | :--- |
 | `pnpm dev` | Starts the Vite development server on `http://localhost:3000` with instant HMR. |
 | `pnpm typecheck` | Validates TypeScript types strictly (`tsc --noEmit`) with zero errors. |
-| `pnpm test` | Runs the Vitest automated test suite (71 tests across 11 test suites). |
+| `pnpm test` | Runs the Vitest automated test suite. |
 | `pnpm test:watch` | Runs Vitest in interactive watch mode for test-driven development. |
 | `pnpm build` | Executes strict typecheck and compiles production bundle into `dist/`. |
 | `pnpm preview` | Serves the production build locally for verification. |
+| `pnpm icons` | Regenerates the Guidonian Hand vector outputs (`favicon.svg`, the README logo, the header glyph) from `scripts/build-icons.mjs`. |
+| `pnpm icons -- --raster` | Also re-renders the PNG/ICO icons (touch, manifest and favicon) through headless Firefox (must be installed). |
 
 ---
 
@@ -319,8 +326,8 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0010](docs/adr/0010-separate-tuplet-subdivision-matrix-menu.md) | Separate Tuplet Subdivision Matrix Menu & Arbitrary n-Tuplet Engine | Accepted |
 | [0011](docs/adr/0011-tuplet-beam-stem-direction-unification.md) | Tuplet Beam Stem Direction Unification & Contiguous Non-Tuplet Grouping | Accepted |
 | [0012](docs/adr/0012-web-font-synchronization-and-clef-invalidation.md) | Web Font Loading Synchronization & Pinned Clef Cache Invalidation | Accepted |
-| [0013](docs/adr/0013-production-readiness-and-high-dpi-retina-pipeline.md) | Production Readiness, High-DPI Retina Pipeline & Audio Polish | Accepted |
-| [0014](docs/adr/0014-solfege-label-transform-and-vertical-clearance.md) | Solfège Label Context Transform & Vertical Clearance Architecture | Accepted |
+| [0013](docs/adr/0013-production-readiness-and-high-dpi-retina-pipeline.md) | Production Readiness, High-DPI Retina Pipeline & Audio Polish | Superseded in part by 0042 |
+| [0014](docs/adr/0014-solfege-label-transform-and-vertical-clearance.md) | Solfège Label Context Transform & Vertical Clearance Architecture | Superseded in part by 0041 |
 | [0015](docs/adr/0015-italian-solfege-and-cross-platform-auto-night-mode.md) | Italian Solfège Syllables and Cross-Platform OS-Aligned Auto Night Mode | Accepted |
 | [0016](docs/adr/0016-default-woodblock-metronome-and-auto-theme.md) | Default Woodblock Metronome Profile and Auto OS Theme Mode | Accepted |
 | [0017](docs/adr/0017-vector-music-icons-cross-platform-ui.md) | Vector Music Notation Icons for Cross-Platform UI Controls | Accepted |
@@ -345,6 +352,16 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0036](docs/adr/0036-ergodic-metric-tree-procedural-generation-and-dotted-rhythms.md) | Ergodic Metric Tree Procedural Generation, Dotted Rhythms & Tied Notes | Accepted |
 | [0037](docs/adr/0037-toggleable-playhead-mark-visibility.md) | Toggleable Playhead Mark Visibility & Unassisted Sight-Reading Mode | Accepted |
 | [0038](docs/adr/0038-setticlavio-complete-clef-system.md) | Setticlavio Complete Clef System: Soprano, Mezzo-Soprano, and Dual Baritone (F & C) Integration | Accepted |
+| [0039](docs/adr/0039-repository-audit-ergodicity-and-clock-unification.md) | Repository Audit: Ergodicity Restoration, Clock Unification, and Configuration Hygiene | Accepted |
+| [0040](docs/adr/0040-engraving-grammar-for-ties-and-cross-barline-ties.md) | Engraving Grammar for Ties and Cross-Barline Ties | Accepted |
+| [0041](docs/adr/0041-solfege-labels-notehead-anchored.md) | Solfège Labels Anchored to Noteheads (dpr² Transform Fix) | Accepted |
+| [0042](docs/adr/0042-single-dpr-offscreen-backing-store.md) | Single-dpr Offscreen Backing Store (drop VexFlow `resize()`) | Accepted |
+| [0043](docs/adr/0043-thirty-second-notes.md) | Thirty-Second Notes & Dotted Sixteenths | Accepted |
+| [0044](docs/adr/0044-user-selectable-ledger-lines.md) | User-Selectable Ledger Lines (Above / Below, 0–3) | Accepted |
+| [0045](docs/adr/0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md) | Aero-Guidonica 2: Material Hierarchy & Responsive Redesign | Accepted |
+| [0046](docs/adr/0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Superseded in part by 0047 |
+| [0047](docs/adr/0047-guidonian-hand-v2.md) | Guidonian Hand v2: Anatomical Proportions, Volume Shading & 3D Thread | Accepted |
+| [0048](docs/adr/0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted |
 
 ---
 
