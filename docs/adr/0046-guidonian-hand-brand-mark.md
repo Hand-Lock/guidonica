@@ -1,6 +1,6 @@
 # 0046. Guidonian Hand Brand Mark, Favicon & App Icon
 
-- **Status**: Accepted
+- **Status**: Superseded in part by [0047](0047-guidonian-hand-v2.md): geometry, spiral, detail levels and tile material. Orientation is also corrected: the thumb belongs on the **left**. The raster pipeline, drift guard and glyph contract still apply.
 - **Date**: 2026-10-02
 - **Author**: Claude & lauseta
 

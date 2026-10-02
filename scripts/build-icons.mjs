@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /*
- * Guidonian Hand brand mark: deterministic vector geometry (ADR 0046).
+ * Guidonian Hand brand mark: deterministic vector geometry (ADR 0046, ADR 0047).
  *
- * The hand is a union of primitives on a 64-unit grid: a palm path plus
- * capsule phalanges. One Catmull-Rom spline walks the 19 on-hand gamut
- * positions (Γ … dd) in their historical order.
+ * The hand is a union of primitives measured off a reference drawing (64-unit reference tile):
+ * one palm path plus tapered digits, authored thumb-right and mirrored when fitted. The thread is a 3D Catmull-Rom curve (z > 0 in front of
+ * the hand, z < 0 behind it) split into front and back runs where it crosses z = 0.
  *
  *   node scripts/build-icons.mjs            public/favicon.svg + #g-hand symbol in index.html
  *   node scripts/build-icons.mjs --raster   also apple-touch-icon.png + favicon.ico (Firefox headless)
@@ -20,208 +20,359 @@ import { deflateSync, inflateSync } from 'node:zlib';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const GRID = 64;
+const TAU = 2 * Math.PI;
 
 const r2 = (v) => Math.round(v * 100) / 100;
 const n = (v) => String(r2(v) === 0 ? 0 : r2(v));
 const pt = (p) => `${n(p[0])} ${n(p[1])}`;
-const add = (a, b) => [a[0] + b[0], a[1] + b[1]];
-const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
-const mul = (a, k) => [a[0] * k, a[1] * k];
+// Component-wise, so they work on 2D (x, y) and 3D (x, y, z) points alike.
+const add = (a, b) => a.map((v, i) => v + b[i]);
+const sub = (a, b) => a.map((v, i) => v - b[i]);
+const mul = (a, k) => a.map((v) => v * k);
 const lerp = (a, b, t) => add(a, mul(sub(b, a), t));
-const unit = (a) => mul(a, 1 / Math.hypot(a[0], a[1]));
-const dirOf = (deg) => [Math.sin((deg * Math.PI) / 180), -Math.cos((deg * Math.PI) / 180)];
+const unit = (a) => mul(a, 1 / Math.hypot(...a));
+const clamp01 = (t) => Math.min(Math.max(t, 0), 1);
 
 /* ---------------------------------------------------------------- geometry */
 
-// Left hand, palm towards the viewer: little finger on the left, thumb on the right.
-// root = base crease on the palm arc, angle = fan from vertical (+ leans right), len = root → tip.
-const MIDDLE = 27;
-const WIDTH = 5.8;
+// Authoring frame = the reference drawing: little finger on the left, thumb on the right.
+// fitter() mirrors it, so the icon shows the student's own left palm (thumb on the left).
+// Reference-tile units. root = axis point at the palm crease, tip = extreme tip point,
+// wb / wt = width at the root / across the tip, sink = how far the digit runs on under the palm.
 const FINGERS = [
-  { name: 'little', root: [20.2, 34.4], angle: -18, len: 0.74 * MIDDLE },
-  { name: 'ring', root: [26.8, 32.2], angle: -6, len: 0.92 * MIDDLE },
-  { name: 'middle', root: [33.4, 31.6], angle: 5, len: 1.0 * MIDDLE },
-  { name: 'index', root: [39.8, 32.6], angle: 16, len: 0.93 * MIDDLE },
+  { name: 'little', root: [17.6, 29.5], tip: [13.45, 15.57], wb: 4.4, wt: 3.5, sink: 3 },
+  { name: 'ring', root: [23.9, 27.5], tip: [20.69, 6.89], wb: 5, wt: 4, sink: 3 },
+  { name: 'middle', root: [30.8, 27], tip: [29.23, 3.2], wb: 5.3, wt: 4.4, sink: 3 },
+  { name: 'index', root: [37.97, 28], tip: [40.44, 7.38], wb: 5.2, wt: 4, sink: 3 },
 ];
-// Phalanx crease positions as a fraction of root → tip; the gamut sits on base, joints and tip.
-const T = { base: 0.04, mid: 0.42, upper: 0.7, tip: 0.9 };
-const THUMB = { base: [39.8, 50], joint: [47.2, 43], tip: [50.8, 35], width: [10.4, 8.6] };
-const PALM = 'M 17.8 34 C 16.6 42 17.4 50 20.6 54.6 C 24 59 35 59.2 38.8 55.4 C 41.4 53 45 50 45.8 46.4 C 45 41.6 43.2 37 42.4 34.4 C 41.9 33 41 32.6 40 32.4 L 21 33 Z';
+const THUMB = { name: 'thumb', root: [46, 39.5], tip: [55.8, 27.6], wb: 6, wt: 4, sink: 2.5 };
+// Stations (gamut positions) and joints as a fraction of root → tip.
+const T = { base: 0.06, mid: 0.4, upper: 0.675, tip: 0.86 };
+const TT = { base: 0.2, joint: 0.53, tip: 0.86 };
 
-/** Raw hand geometry before fitting into an icon box. */
-export function handGeometry() {
-  const fingers = FINGERS.map((f) => {
-    const d = dirOf(f.angle);
-    const r = WIDTH / 2;
-    const at = (t) => add(f.root, mul(d, t * f.len));
-    return {
-      name: f.name,
-      // Centre line: starts r below the crease (overlapping the palm), ends r short of the tip.
-      a: sub(f.root, mul(d, r)),
-      b: at(1 - r / f.len),
-      r,
-      angle: f.angle,
-      len: f.len,
-      joints: { base: at(T.base), mid: at(T.mid), upper: at(T.upper), tip: at(T.tip) },
-      creases: [T.mid, T.upper].map(at),
-      dir: d,
-    };
-  });
+/** Tapered digit: straight axis, slightly convex edges, semicircular tip. nl = unit normal towards the little-finger side. */
+function digit({ name, root, tip, wb, wt, sink }) {
+  const len = Math.hypot(tip[0] - root[0], tip[1] - root[1]);
+  const d = unit(sub(tip, root));
+  const nl = [d[1], -d[0]];
+  const rt = wt / 2;
+  const tc = 1 - rt / len; // tip-circle centre
+  const at = (t) => add(root, mul(d, t * len));
+  const half = (t) => (wb + (wt - wb) * clamp01(t / tc)) / 2;
+  const base = at(-sink / len);
+  const c = at(tc);
+  const bulge = wb * 0.07;
+  const mid = lerp(base, c, 0.5);
+  const hm = (wb + wt) / 4;
+  const path = `M ${pt(add(base, mul(nl, wb / 2)))} Q ${pt(add(mid, mul(nl, hm + bulge)))} ${pt(add(c, mul(nl, rt)))} ` +
+    `A ${n(rt)} ${n(rt)} 0 0 1 ${pt(sub(c, mul(nl, rt)))} Q ${pt(sub(mid, mul(nl, hm + bulge)))} ${pt(sub(base, mul(nl, wb / 2)))} Z`;
+  return { name, root, tip, wb, wt, len, d, nl, at, half, path, edge: (t, s) => add(at(t), mul(nl, s * half(t))) };
+}
+
+// Palm outline below the crease line, measured off the reference: hypothenar, wrist, thenar.
+const PALM_OUTLINE = 'C 16.3 35 17.1 41 18.2 46.2 C 18.9 49.6 19.9 52.6 21.9 54.9 L 21.9 59.3 Q 30.5 59.9 39.1 59.3 C 39.8 57.2 40.1 55.2 40.5 53.6 C 42.4 50.6 46 47.8 47.4 44.4';
+
+function palmPath(fingers, thumb) {
   const [little, ring, middle, index] = fingers;
-  const thumbTip = sub(THUMB.tip, mul(unit(sub(THUMB.tip, THUMB.joint)), THUMB.width[1] * 0.12));
-  const thumb = {
-    name: 'thumb',
-    segments: [
-      { a: THUMB.base, b: THUMB.joint, r: THUMB.width[0] / 2 },
-      { a: THUMB.joint, b: THUMB.tip, r: THUMB.width[1] / 2 },
-    ],
-    joints: { base: lerp(THUMB.base, THUMB.joint, 0.22), joint: THUMB.joint, tip: thumbTip },
-    creases: [THUMB.joint],
-    dir: unit(sub(THUMB.tip, THUMB.base)),
-  };
+  const valley = (a, b) => { const m = lerp(a.edge(0, -1), b.edge(0, 1), 0.5); return [m[0], m[1] + 1]; };
+  return `M ${pt(little.edge(0, 1))} ${PALM_OUTLINE} ` +
+    `L ${pt(thumb.edge(0, -1))} L ${pt(thumb.edge(0, 1))} ` +
+    `C ${pt(add(thumb.edge(0, 1), [-1.4, -0.4]))} ${pt(add(index.edge(0, -1), [1.6, 3.6]))} ${pt(index.edge(0, -1))} ` +
+    `L ${pt(index.edge(0, 1))} Q ${pt(valley(middle, index))} ${pt(middle.edge(0, -1))} ` +
+    `L ${pt(middle.edge(0, 1))} Q ${pt(valley(ring, middle))} ${pt(ring.edge(0, -1))} ` +
+    `L ${pt(ring.edge(0, 1))} Q ${pt(valley(little, ring))} ${pt(little.edge(0, -1))} Z`;
+}
+
+/* -------------------------------------------------------------------- thread */
+
+const GAP = 0.6; // thread clearance around a digit
+const SMALL_RUN = 7; // shortest front run kept at the small detail level
+
+// Helix around a digit axis from t0 to t1: offset nl·R·cos φ in the picture plane, z = R·sin φ.
+// phase π/2 starts on the front centre line; its projection is the familiar wrap ellipse.
+function coil(g, t0, t1, turns, phase = Math.PI / 2) {
+  const steps = Math.max(2, Math.ceil(Math.abs(turns) * 6));
+  return Array.from({ length: steps + 1 }, (_, i) => {
+    const s = i / steps;
+    const t = t0 + (t1 - t0) * s;
+    const phi = phase + TAU * turns * s;
+    const R = g.half(t) + GAP;
+    return [...add(g.at(t), mul(g.nl, R * Math.cos(phi))), R * Math.sin(phi)];
+  });
+}
+// A point on the front centre line of a digit (where a station sits).
+const front = (g, t) => [...g.at(t), g.half(t) + GAP];
+// A point just beyond a digit's edge (s = +1 on the nl side, −1 opposite), where the thread changes sides.
+const rim = (g, t, s) => [...add(g.at(t), mul(g.nl, s * (g.half(t) + GAP))), 0];
+
+/**
+ * The thread, after the reference drawing. Γ glows on the thumb tip; two thumb turns cross the
+ * front at Γ, A and B (the opening of the gamut); the thread dives behind the thenar, surfaces at
+ * the index base, swings an S across the palm, wraps the wrist, climbs behind the hand, crosses the
+ * index, slips behind the middle finger and runs down across the palm top behind the hypothenar.
+ */
+function threadPoints({ thumb, index, little }) {
+  return [
+    ...coil(thumb, TT.tip, TT.base, 2), ...coil(thumb, TT.base, TT.base - (TT.tip - TT.base) / 8, 0.25).slice(1),
+    [45.4, 43.4, -1.8], [41, 36, -1.8],
+    rim(index, -0.05, -1),
+    [35, 31.6, 1.6], [27.4, 35.6, 1.6], [20.6, 40.6, 1.6], [18.9, 45.4, 0.8], [20.6, 49.8, 1.6],
+    [28, 51.6, 1.6], [36.2, 52.8, 1.6], [40.8, 55.6, 0], [39.2, 57.6, -1.6],
+    [35, 45, -2], [37.6, 24, -2],
+    rim(index, 0.58, -1), front(index, 0.43), rim(index, 0.28, 1),
+    [33.2, 24.6, -1.6], [28.4, 26.8, 0],
+    [23, 29.6, 1.4], [17.6, 32.8, 1.2], rim(little, -0.45, 1), [16.4, 39, -1.4],
+  ];
+}
+// Gamut stations the thread's front passes cross, in order.
+const THREAD_STATIONS = ['Γ', 'A', 'B'];
+
+/** Raw hand geometry (reference-tile units) before fitting into an icon box. */
+export function handGeometry() {
+  const fingers = FINGERS.map(digit);
+  const thumb = digit(THUMB);
+  const [little, ring, middle, index] = fingers;
+  const on = (g, t) => ({ digit: g, t, p: g.at(t) });
   // The gamut in historical order: a clockwise spiral that walks inward.
   const gamut = [
-    ['Γ', thumb.joints.tip], ['A', thumb.joints.joint], ['B', thumb.joints.base],
-    ['C', index.joints.base], ['D', middle.joints.base], ['E', ring.joints.base], ['F', little.joints.base],
-    ['G', little.joints.mid], ['a', little.joints.upper], ['b', little.joints.tip],
-    ['c', ring.joints.tip], ['d', middle.joints.tip], ['e', index.joints.tip],
-    ['f', index.joints.upper], ['g', index.joints.mid],
-    ['aa', middle.joints.mid], ['bb', ring.joints.mid], ['cc', ring.joints.upper], ['dd', middle.joints.upper],
-  ].map(([name, p]) => ({ name, p }));
-  return { palm: PALM, fingers, thumb, gamut };
+    ['Γ', on(thumb, TT.tip)], ['A', on(thumb, TT.joint)], ['B', on(thumb, TT.base)],
+    ['C', on(index, T.base)], ['D', on(middle, T.base)], ['E', on(ring, T.base)], ['F', on(little, T.base)],
+    ['G', on(little, T.mid)], ['a', on(little, T.upper)], ['b', on(little, T.tip)],
+    ['c', on(ring, T.tip)], ['d', on(middle, T.tip)], ['e', on(index, T.tip)],
+    ['f', on(index, T.upper)], ['g', on(index, T.mid)],
+    ['aa', on(middle, T.mid)], ['bb', on(ring, T.mid)], ['cc', on(ring, T.upper)], ['dd', on(middle, T.upper)],
+  ].map(([name, s]) => ({ name, ...s }));
+  const points = threadPoints({ thumb, index, little }).filter((p, i, a) => i === 0 || Math.hypot(...sub(p, a[i - 1])) > 1e-6);
+  return {
+    palm: palmPath(fingers, thumb),
+    fingers,
+    thumb,
+    gamut: gamut.map(({ name, digit: g, t, p }) => ({ name, p, front: front(g, t) })),
+    thread: { stations: THREAD_STATIONS, points, runs: splitRuns(points) },
+    joints: [
+      ...fingers.flatMap((f) => [T.mid, T.upper].map((t) => ({ g: f, t }))),
+      { g: thumb, t: TT.joint },
+    ],
+  };
+}
+
+/* ------------------------------------------------- 3D curve → front/back runs */
+
+function bezAt(b, t) {
+  const u = 1 - t;
+  return b[0].map((_, i) => u * u * u * b[0][i] + 3 * u * u * t * b[1][i] + 3 * u * t * t * b[2][i] + t * t * t * b[3][i]);
+}
+
+function splitBez(b, t) {
+  const [p0, p1, p2, p3] = b;
+  const a = lerp(p0, p1, t);
+  const m = lerp(p1, p2, t);
+  const c = lerp(p2, p3, t);
+  const d = lerp(a, m, t);
+  const e = lerp(m, c, t);
+  const f = lerp(d, e, t);
+  return [[p0, a, d, f], [f, e, c, p3]];
+}
+
+/**
+ * Uniform Catmull-Rom through the 3D points as cubic Béziers, cut at every z = 0 crossing
+ * (de Casteljau at the bisected root) and grouped into maximal runs on one side of the hand.
+ */
+function splitRuns(points) {
+  const P = [points[0], ...points, points[points.length - 1]];
+  const pieces = [];
+  for (let i = 1; i < P.length - 2; i++) {
+    let seg = [P[i], add(P[i], mul(sub(P[i + 1], P[i - 1]), 1 / 6)), sub(P[i + 1], mul(sub(P[i + 2], P[i]), 1 / 6)), P[i + 1]];
+    const roots = [];
+    const N = 32;
+    for (let k = 0; k < N; k++) {
+      let lo = k / N;
+      let hi = (k + 1) / N;
+      const zl = bezAt(seg, lo)[2];
+      if (Math.sign(zl) * Math.sign(bezAt(seg, hi)[2]) >= 0) continue;
+      for (let it = 0; it < 40; it++) {
+        const mid = (lo + hi) / 2;
+        if (Math.sign(bezAt(seg, mid)[2]) === Math.sign(zl)) lo = mid; else hi = mid;
+      }
+      roots.push((lo + hi) / 2);
+    }
+    let done = 0;
+    for (const t of roots) {
+      const [l, rest] = splitBez(seg, (t - done) / (1 - done));
+      pieces.push(l);
+      seg = rest;
+      done = t;
+    }
+    pieces.push(seg);
+  }
+  const runs = [];
+  for (const b of pieces) {
+    const isFront = bezAt(b, 0.5)[2] >= 0;
+    const last = runs[runs.length - 1];
+    const c = ` C ${pt(b[1])} ${pt(b[2])} ${pt(b[3])}`;
+    const len = Math.hypot(b[3][0] - b[0][0], b[3][1] - b[0][1]);
+    if (last && last.front === isFront) { last.d += c; last.len += len; }
+    else runs.push({ front: isFront, d: `M ${pt(b[0])}${c}`, len });
+  }
+  return runs;
 }
 
 /* ------------------------------------------------------------ fit & render */
 
-// Uniform scale + translate that centres the hand's bounding box inside [m, 64 − m].
+// Uniform scale + translate that centres the hand's bounding box inside [m, 64 − m], mirrored in x
+// (scale −k) so the thumb lands on the left. Lighting offsets in the authoring frame are x-flipped to match.
 function fitter(g, margin) {
-  const xs = [];
-  const ys = [];
-  const push = (p, r = 0) => { xs.push(p[0] - r, p[0] + r); ys.push(p[1] - r, p[1] + r); };
-  for (const f of g.fingers) { push(f.a, f.r); push(f.b, f.r); }
-  for (const s of g.thumb.segments) { push(s.a, s.r); push(s.b, s.r); }
-  for (const m of g.palm.matchAll(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g)) push([+m[1], +m[2]]);
+  const ps = [];
+  for (const m of g.palm.matchAll(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g)) ps.push([+m[1], +m[2]]);
+  for (const f of [...g.fingers, g.thumb]) ps.push(f.tip, add(f.at(1), mul(f.nl, f.wt / 2)), sub(f.at(1), mul(f.nl, f.wt / 2)));
+  const xs = ps.map((p) => p[0]);
+  const ys = ps.map((p) => p[1]);
   const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
   const k = (GRID - 2 * margin) / Math.max(x1 - x0, y1 - y0);
-  const ox = GRID / 2 - ((x0 + x1) / 2) * k;
+  const ox = GRID / 2 + ((x0 + x1) / 2) * k;
   const oy = GRID / 2 - ((y0 + y1) / 2) * k;
-  return { k, p: (q) => [q[0] * k + ox, q[1] * k + oy] };
+  const r4 = (v) => String(Math.round(v * 1e4) / 1e4);
+  return { k, transform: `matrix(${r4(-k)} 0 0 ${r4(k)} ${r4(ox)} ${r4(oy)})` };
 }
 
-function capsule(a, b, r) {
-  const nrm = mul((([x, y]) => [-y, x])(unit(sub(b, a))), r);
-  return `M ${pt(add(a, nrm))} L ${pt(add(b, nrm))} A ${n(r)} ${n(r)} 0 0 0 ${pt(sub(b, nrm))} ` +
-    `L ${pt(sub(a, nrm))} A ${n(r)} ${n(r)} 0 0 0 ${pt(add(a, nrm))} Z`;
+// A thin crescent along the cubic p0 → p3: two curves whose control points are pushed ±w apart.
+function taper(p0, c1, c2, p3, w) {
+  const nrm = mul((([x, y]) => [-y, x])(unit(sub(p3, p0))), w);
+  return `M ${pt(p0)} C ${pt(add(c1, nrm))} ${pt(add(c2, nrm))} ${pt(p3)} C ${pt(sub(c2, nrm))} ${pt(sub(c1, nrm))} ${pt(p0)} Z`;
 }
 
-function palmPath(d, fit) {
-  return d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => pt(fit.p([+x, +y])));
+// Two short curved creases on the palm side of a joint, bowed towards the tip.
+function knuckle(g, t) {
+  const h = g.half(t);
+  const o = (dt, s) => add(g.at(t + dt / g.len), mul(g.nl, s * h));
+  return [
+    taper(o(0, 0.62), o(0.35, 0.3), o(0.35, -0.1), o(0.05, -0.35), 0.12),
+    taper(o(-0.55, 0.3), o(-0.3, 0.05), o(-0.3, -0.3), o(-0.5, -0.55), 0.1),
+  ].join(' ');
 }
 
-// Uniform Catmull-Rom through the points, emitted as cubic Béziers.
-function spline(points) {
-  const P = [points[0], ...points, points[points.length - 1]];
-  let d = `M ${pt(P[1])}`;
-  for (let i = 1; i < P.length - 2; i++) {
-    const c1 = add(P[i], mul(sub(P[i + 1], P[i - 1]), 1 / 6));
-    const c2 = sub(P[i + 1], mul(sub(P[i + 2], P[i]), 1 / 6));
-    d += ` C ${pt(c1)} ${pt(c2)} ${pt(P[i + 1])}`;
-  }
-  return d;
-}
+const PALM_LINES = [
+  [[17.4, 34.8], [22, 33.4], [28.6, 33.2], [34.6, 30.4], 0.2], // heart
+  [[41.6, 36.6], [35, 36.8], [26.6, 39.4], [21.6, 42.8], 0.22], // head
+  [[41, 37.6], [36.4, 41.4], [35.6, 47.6], [37.6, 53], 0.24], // life
+  [[24.4, 55.4], [27.6, 55.9], [31.4, 55.9], [34.6, 55.3], 0.14], // wrist creases
+  [[25.6, 56.9], [28.4, 57.3], [31.8, 57.3], [33.6, 56.9], 0.11],
+];
 
-// Short stroke across a phalanx at point c, perpendicular to dir, inset from both edges.
-function crease(c, dir, half) {
-  const nrm = mul([-dir[1], dir[0]], half);
-  return `M ${pt(sub(c, nrm))} L ${pt(add(c, nrm))}`;
-}
-
-// The small level walks the same spiral through fewer stations so it survives 16–32 px.
-const SMALL_STATIONS = ['Γ', 'B', 'C', 'F', 'G', 'b', 'c', 'd', 'e', 'g', 'aa'];
-
-/** Fitted hand shapes for one detail level. */
+/** Fitted hand for one detail level, as SVG fragments in reference units inside a fit transform. */
 function shapes(detail, margin) {
   const g = handGeometry();
   const fit = fitter(g, margin);
-  const k = fit.k;
-  const hand = [
-    palmPath(g.palm, fit),
-    ...g.thumb.segments.map((s) => capsule(fit.p(s.a), fit.p(s.b), s.r * k)),
-    ...g.fingers.map((f) => capsule(fit.p(f.a), fit.p(f.b), f.r * k)),
-  ];
-  const stations = detail === 'full' ? g.gamut : g.gamut.filter((s) => SMALL_STATIONS.includes(s.name));
-  const pts = stations.map((s) => fit.p(s.p));
-  const creases = detail === 'full'
-    ? [
-      ...g.fingers.flatMap((f) => f.creases.map((c) => crease(fit.p(c), f.dir, f.r * k * 0.62))),
-      crease(fit.p(g.thumb.creases[0]), g.thumb.dir, 3.3 * 0.62 * k),
-    ]
-    : [];
-  return { hand, spiral: spline(pts), start: pts[0], end: pts[pts.length - 1], creases, k };
+  const digits = [...g.fingers, g.thumb];
+  // Below 48 px a coil is noise: the small level keeps only the long front runs.
+  const front = g.thread.runs.filter((r) => r.front && (detail === 'full' || r.len >= SMALL_RUN));
+  const back = g.thread.runs.filter((r) => !r.front);
+  const start = g.thread.points[0];
+  return { g, fit, digits, silhouette: [...digits.map((f) => f.path), g.palm], front, back, start };
 }
 
-/** Flat header glyph (small detail): hand in currentColor, spiral in the accent with a knockout halo. */
+/** Flat header glyph (small detail): hand in currentColor, thread in the accent with a knockout halo. */
 export function buildGlyphSymbol() {
-  const s = shapes('small', 2);
-  const line = 2.2;
-  const halo = line + 2.2;
+  const s = shapes('small', 1.5);
+  const k = s.fit.k;
+  const line = 2.4 / k;
+  const halo = line + 2.4 / k;
+  const bead = 3 / k;
+  const runs = s.front.map((r) => r.d).join(' ');
   return [
     '<symbol id="g-hand" viewBox="0 0 64 64">',
-    '<mask id="g-hand-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">',
-    '<rect width="64" height="64" fill="#fff"/>',
-    `<path d="${s.spiral}" fill="none" stroke="#000" stroke-width="${n(halo)}" stroke-linecap="round" stroke-linejoin="round"/>`,
-    `<circle cx="${n(s.start[0])}" cy="${n(s.start[1])}" r="${n(3 + 1.1)}" fill="#000"/>`,
+    `<g transform="${s.fit.transform}">`,
+    '<mask id="g-hand-cut" maskUnits="userSpaceOnUse" x="-20" y="-20" width="110" height="110">',
+    '<rect x="-20" y="-20" width="110" height="110" fill="#fff"/>',
+    `<path d="${runs}" fill="none" stroke="#000" stroke-width="${n(halo)}" stroke-linecap="round" stroke-linejoin="round"/>`,
+    `<circle cx="${n(s.start[0])}" cy="${n(s.start[1])}" r="${n(bead + 1.1 / k)}" fill="#000"/>`,
     '</mask>',
-    `<g fill="currentColor" mask="url(#g-hand-cut)">${s.hand.map((d) => `<path d="${d}"/>`).join('')}</g>`,
-    `<g style="fill:var(--accent);stroke:var(--accent)">`,
-    `<path d="${s.spiral}" fill="none" stroke-width="${n(line)}" stroke-linecap="round" stroke-linejoin="round"/>`,
-    `<circle cx="${n(s.start[0])}" cy="${n(s.start[1])}" r="3" stroke="none"/>`,
+    `<g fill="currentColor" mask="url(#g-hand-cut)">${s.silhouette.map((d) => `<path d="${d}"/>`).join('')}</g>`,
+    '<g style="fill:var(--accent);stroke:var(--accent)">',
+    `<path d="${runs}" fill="none" stroke-width="${n(line)}" stroke-linecap="round" stroke-linejoin="round"/>`,
+    `<circle cx="${n(s.start[0])}" cy="${n(s.start[1])}" r="${n(bead)}" stroke="none"/>`,
+    '</g>',
     '</g>',
     '</symbol>',
   ].join('');
 }
 
 /**
- * Gel app-icon tile. detail 'small' → favicon (rounded tile), 'full' → apple-touch-icon
- * (full-bleed square; iOS applies its own mask).
+ * Gel app-icon tile. detail 'small' → favicon, 'full' → apple-touch-icon.
+ * bleed (default: full) → full-bleed square without the rim, since iOS applies its own mask.
  */
-export function buildTileSvg({ detail = 'small', size = GRID } = {}) {
+export function buildTileSvg({ detail = 'small', size = GRID, bleed = detail === 'full' } = {}) {
   const full = detail === 'full';
-  const s = shapes(detail, full ? 9 : 5);
-  const rx = full ? 0 : 14;
-  const line = full ? 1.15 : 2.6;
-  const bead = full ? 2.3 : 3.4;
-  const handPaths = s.hand.map((d) => `<path d="${d}"/>`).join('');
-  return [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="${size}" height="${size}">`,
-    '<defs>',
+  const s = shapes(detail, full ? 5.5 : 4);
+  const k = s.fit.k;
+  const rx = bleed ? 0 : 14;
+  const line = (full ? 1.25 : 2.7) / k;
+  const bead = (full ? 2.2 : 3.4) / k;
+  const handPaths = s.silhouette.map((d) => `<path d="${d}"/>`).join('');
+  const frontD = s.front.map((r) => r.d).join(' ');
+  const tube = [
+    `<path d="${frontD}" fill="none" stroke="#008a70" stroke-width="${n(line + 0.7 / k)}" stroke-linejoin="round"/>`,
+    `<path d="${frontD}" fill="none" stroke="#2ef0c8" stroke-width="${n(line)}" stroke-linejoin="round"/>`,
+    full ? `<path d="${frontD}" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="${n(line * 0.32)}" stroke-linejoin="round" transform="translate(${n(line * 0.16)} ${n(-line * 0.2)})"/>` : '',
+  ];
+  const defs = [
     '<linearGradient id="gel" x1="0" y1="0" x2="0" y2="1">',
-    '<stop offset="0" stop-color="#17a387"/><stop offset="0.5" stop-color="#00826a"/><stop offset="1" stop-color="#006e58"/>',
+    '<stop offset="0" stop-color="#1d9c82"/><stop offset="0.5" stop-color="#0a6f5b"/><stop offset="1" stop-color="#065646"/>',
     '</linearGradient>',
-    '<linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">',
-    '<stop offset="0" stop-color="#fff" stop-opacity="0.5"/><stop offset="1" stop-color="#fff" stop-opacity="0.06"/>',
-    '</linearGradient>',
-    '<linearGradient id="pearl" gradientUnits="userSpaceOnUse" x1="14" y1="6" x2="50" y2="60">',
-    '<stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e6fff8"/>',
+    // Diagonal sheen: fades out towards its curved lower edge instead of stopping at a hard line.
+    '<linearGradient id="sheen" gradientUnits="userSpaceOnUse" x1="21" y1="-4" x2="31" y2="22">',
+    '<stop offset="0" stop-color="#fff" stop-opacity="0.42"/><stop offset="0.7" stop-color="#fff" stop-opacity="0.13"/><stop offset="1" stop-color="#fff" stop-opacity="0.03"/>',
     '</linearGradient>',
     '<radialGradient id="glow"><stop offset="0" stop-color="#00ffcc" stop-opacity="0.85"/><stop offset="1" stop-color="#00ffcc" stop-opacity="0"/></radialGradient>',
-    '</defs>',
+    `<clipPath id="tile"><rect width="64" height="64" rx="${rx}"/></clipPath>`,
+  ];
+  let hand;
+  if (full) {
+    // Light from the top-left: every digit is white on its lit edge, grey on the far edge.
+    for (const f of s.digits) {
+      const t = 0.5;
+      const a = sub(f.at(t), mul(f.nl, f.half(t)));
+      const b = add(f.at(t), mul(f.nl, f.half(t)));
+      defs.push(`<linearGradient id="d-${f.name}" gradientUnits="userSpaceOnUse" x1="${n(a[0])}" y1="${n(a[1])}" x2="${n(b[0])}" y2="${n(b[1])}">` +
+        '<stop offset="0" stop-color="#fff"/><stop offset="0.45" stop-color="#f4f7f8"/><stop offset="1" stop-color="#d3dde0"/></linearGradient>');
+    }
+    defs.push(
+      '<radialGradient id="palm" gradientUnits="userSpaceOnUse" cx="37" cy="37" r="27" fx="39" fy="34">',
+      '<stop offset="0" stop-color="#fff"/><stop offset="0.5" stop-color="#f3f6f7"/><stop offset="0.82" stop-color="#dce4e6"/><stop offset="1" stop-color="#c3cfd2"/></radialGradient>',
+    );
+    hand = [
+      `<g fill="#003d31" fill-opacity="0.35" transform="translate(${n(-0.6 / k)} ${n(1.2 / k)})">${handPaths}</g>`,
+      `<path d="${s.back.map((r) => r.d).join(' ')}" fill="none" stroke="#0b8a72" stroke-width="${n(line * 0.72)}"/>`,
+      // Outline of the union: every primitive stroked, then every fill on top hides the inner seams.
+      `<g fill="none" stroke="#a9bcc0" stroke-width="${n(1 / k)}" stroke-linejoin="round">${handPaths}</g>`,
+      ...s.digits.map((f) => `<path d="${f.path}" fill="url(#d-${f.name})"/>`),
+      `<path d="${s.g.palm}" fill="url(#palm)"/>`,
+      `<g fill="#9fb0b4">${PALM_LINES.map(([a, b, c, d, w]) => `<path d="${taper(a, b, c, d, w)}"/>`).join('')}` +
+        `${s.g.joints.map(({ g, t }) => `<path d="${knuckle(g, t)}"/>`).join('')}</g>`,
+      ...tube,
+    ];
+  } else {
+    defs.push(
+      '<linearGradient id="pearl" gradientUnits="userSpaceOnUse" x1="14" y1="6" x2="50" y2="60">',
+      '<stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#dfeeea"/></linearGradient>',
+    );
+    hand = [
+      `<g fill="#003d31" fill-opacity="0.38" transform="translate(${n(-0.6 / k)} ${n(1.2 / k)})">${handPaths}</g>`,
+      `<g fill="url(#pearl)">${handPaths}</g>`,
+      ...tube,
+    ];
+  }
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="${size}" height="${size}">`,
+    `<defs>${defs.join('')}</defs>`,
     `<rect width="64" height="64" rx="${rx}" fill="url(#gel)"/>`,
-    // Gloss cap on the top half, then the 1px top specular.
-    `<path d="M ${rx ? 3 : 0} ${rx ? 14 : 0} ${rx ? 'Q 3 3 14 3 L 50 3 Q 61 3 61 14' : 'L 64 0'} L ${rx ? 61 : 64} 26 Q 32 34 ${rx ? 3 : 0} 26 Z" fill="url(#gloss)"/>`,
-    rx
-      ? '<path d="M 6 1.5 L 58 1.5" stroke="#fff" stroke-opacity="0.75" stroke-width="1" stroke-linecap="round"/>'
-      : '<path d="M 0 0.5 L 64 0.5" stroke="#fff" stroke-opacity="0.6" stroke-width="1"/>',
-    // Contact shadow: the hand silhouette offset down-right (light from top-left).
-    `<g fill="#003d31" fill-opacity="0.38" transform="translate(0.6 1.2)">${handPaths}</g>`,
-    `<g fill="url(#pearl)">${handPaths}</g>`,
-    s.creases.length
-      ? `<path d="${s.creases.join(' ')}" fill="none" stroke="#7fbfae" stroke-width="0.9" stroke-linecap="round"/>`
-      : '',
-    `<path d="${s.spiral}" fill="none" stroke="#006652" stroke-width="${n(line)}" stroke-linecap="round" stroke-linejoin="round"/>`,
-    full ? `<circle cx="${n(s.end[0])}" cy="${n(s.end[1])}" r="${n(bead * 0.7)}" fill="#006652"/>` : '',
+    '<path d="M 0 0 L 64 0 L 64 11.5 Q 30 19 0 36.5 Z" fill="url(#sheen)" clip-path="url(#tile)"/>',
+    bleed ? '' : `<rect x="1.4" y="1.4" width="61.2" height="61.2" rx="${rx - 1.4}" fill="none" stroke="#fff" stroke-opacity="0.85" stroke-width="${full ? 0.8 : 1.1}"/>`,
+    `<g transform="${s.fit.transform}">`,
+    ...hand,
     `<circle cx="${n(s.start[0])}" cy="${n(s.start[1])}" r="${n(bead * 2.1)}" fill="url(#glow)"/>`,
-    `<circle cx="${n(s.start[0])}" cy="${n(s.start[1])}" r="${n(bead)}" fill="#00ffcc" stroke="#006652" stroke-width="${full ? 0.8 : 1.1}"/>`,
+    `<circle cx="${n(s.start[0])}" cy="${n(s.start[1])}" r="${n(bead)}" fill="#2ef0c8" stroke="#008a70" stroke-width="${n((full ? 0.6 : 1) / k)}"/>`,
+    '</g>',
     '</svg>',
   ].join('');
 }
