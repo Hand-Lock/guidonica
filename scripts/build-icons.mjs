@@ -6,13 +6,14 @@
  * one palm path plus tapered digits, authored thumb-right and mirrored when fitted. The thread is a 3D Catmull-Rom curve (z > 0 in front of
  * the hand, z < 0 behind it) split into front and back runs where it crosses z = 0.
  *
- *   node scripts/build-icons.mjs            public/favicon.svg + #g-hand symbol in index.html
- *   node scripts/build-icons.mjs --raster   also apple-touch-icon.png + favicon.ico (Firefox headless)
+ *   node scripts/build-icons.mjs            public/favicon.svg, docs/brand/guidonica-mark.svg + #g-hand symbol in index.html
+ *   node scripts/build-icons.mjs --raster   also apple-touch-icon.png, favicon.ico and the web app manifest
+ *                                           icons icon-192/512.png + icon-maskable-512.png (Firefox headless)
  *
  * Zero dependencies. Every coordinate is rounded to 2 decimals so output is byte-stable.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -300,10 +301,12 @@ export function buildGlyphSymbol() {
 /**
  * Gel app-icon tile. detail 'small' → favicon, 'full' → apple-touch-icon.
  * bleed (default: full) → full-bleed square without the rim, since iOS applies its own mask.
+ * margin → space between the hand's bounding box and the tile edge (64-unit grid); the maskable
+ * icon widens it to keep the hand inside Android's safe circle.
  */
-export function buildTileSvg({ detail = 'small', size = GRID, bleed = detail === 'full' } = {}) {
+export function buildTileSvg({ detail = 'small', size = GRID, bleed = detail === 'full', margin = detail === 'full' ? 5.5 : 4 } = {}) {
   const full = detail === 'full';
-  const s = shapes(detail, full ? 5.5 : 4);
+  const s = shapes(detail, margin);
   const k = s.fit.k;
   const rx = bleed ? 0 : 14;
   const line = (full ? 1.25 : 2.7) / k;
@@ -485,9 +488,15 @@ export function pngToIco(png, size) {
   return Buffer.concat([head, png]);
 }
 
+// Maskable icon margin: the hand's silhouette must stay inside the central circle of radius 0.4 · size
+// (25.6 units on the 64 grid) that every Android launcher mask preserves.
+export const MASKABLE_MARGIN = 12;
+
 function main() {
   const favicon = buildTileSvg({ detail: 'small' });
   writeFileSync(join(ROOT, 'public/favicon.svg'), `${favicon}\n`);
+  mkdirSync(join(ROOT, 'docs/brand'), { recursive: true });
+  writeFileSync(join(ROOT, 'docs/brand/guidonica-mark.svg'), `${buildTileSvg({ detail: 'full', bleed: false, size: 256 })}\n`);
 
   const indexPath = join(ROOT, 'index.html');
   const html = readFileSync(indexPath, 'utf-8');
@@ -498,6 +507,11 @@ function main() {
     writeFileSync(join(ROOT, 'public/apple-touch-icon.png'), rasterize(buildTileSvg({ detail: 'full' }), 180));
     // The tile's rx = 14 on the 64 grid → 7 px at 32 px.
     writeFileSync(join(ROOT, 'public/favicon.ico'), pngToIco(roundCorners(rasterize(favicon, 32), 7), 32));
+    // Web app manifest: rimmed rounded tiles for 'any' (rx = 14/64 of the size), full bleed for 'maskable'.
+    for (const size of [192, 512]) {
+      writeFileSync(join(ROOT, `public/icon-${size}.png`), roundCorners(rasterize(buildTileSvg({ detail: 'full', bleed: false }), size), (size * 14) / GRID));
+    }
+    writeFileSync(join(ROOT, 'public/icon-maskable-512.png'), rasterize(buildTileSvg({ detail: 'full', margin: MASKABLE_MARGIN }), 512));
   }
 }
 

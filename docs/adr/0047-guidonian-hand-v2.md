@@ -138,3 +138,27 @@ All of this lives in `scripts/build-icons.mjs`. The exports keep the same names;
   - the claimed stations are hit in order on their palm-side points (within 0.01);
   - at least one front run and one back run exist.
 - **Maintenance**: as in 0046, never hand-edit the outputs. Change the numbers and run `npm run icons -- --raster`. A second `npm run icons` must produce no diff.
+
+## Editing the mark
+
+Everything is in `scripts/build-icons.mjs`. Never hand-edit an output (`public/favicon.*`, `public/apple-touch-icon.png`, `public/icon-*.png`, `docs/brand/guidonica-mark.svg`, the `#g-hand` symbol in `index.html`).
+
+| To change… | Edit |
+|------------|------|
+| Finger length, width, spread | `FINGERS`: `root`, `tip`, `wb` / `wt` (base / tip width), `sink` (run-on under the palm) |
+| Thumb | `THUMB` (same fields) |
+| Gamut station and joint positions along a digit | `T` (fingers) and `TT` (thumb), fractions of root → tip |
+| Palm, wrist and thenar outline | `PALM_OUTLINE` (the path joining the finger roots to the thumb root) |
+| Thread route and depth | `threadPoints()`: 3D points `[x, y, z]`; `z > 0` passes in front of the hand, `z < 0` behind; `coil()` / `front()` / `rim()` place points relative to a digit |
+| Palm lines (full detail) | `PALM_LINES`: cubic `[p0, c1, c2, p3, width]` per crease |
+| Tile colours, sheen, rim, thread tube | the `defs` and the returned markup in `buildTileSvg()` |
+| Small-level thread pruning | `SMALL_RUN` |
+| Size inside the tile | the `margin` defaults in `buildTileSvg()`, `MASKABLE_MARGIN` (ADR 0048), the glyph's `1.5` in `buildGlyphSymbol()` |
+
+- **Frame**: coordinates are in the *authoring* frame, thumb on the **right** (as in the reference drawing). `fitter()` mirrors x, so the icon shows the thumb on the left. To move something left in the icon, *increase* its authoring x; y is not flipped.
+- **Route changes**: if the thread no longer crosses the front at the stations it claims, update `THREAD_STATIONS` and the station test in `tests/brandMark.test.ts` to match.
+- **Then**:
+  1. `npm run icons -- --raster` (needs Firefox) to regenerate all outputs.
+  2. `npm run icons` again: `git status` must show no further change (byte-stable).
+  3. `npm test`. The drift tests fail if any SVG output is stale.
+  4. If the hand's extent changed, re-check the maskable icon against the safe circle (ADR 0048).

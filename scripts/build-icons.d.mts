@@ -40,6 +40,7 @@ export interface HandGeometry {
 
 export function handGeometry(): HandGeometry;
 export function buildGlyphSymbol(): string;
-export function buildTileSvg(options?: { detail?: 'small' | 'full'; size?: number; bleed?: boolean }): string;
+export function buildTileSvg(options?: { detail?: 'small' | 'full'; size?: number; bleed?: boolean; margin?: number }): string;
+export const MASKABLE_MARGIN: number;
 export function roundCorners(png: Buffer, rx: number): Buffer;
 export function pngToIco(png: Buffer, size: number): Buffer;
