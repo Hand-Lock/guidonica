@@ -27,6 +27,7 @@ import {
   getBeatsPerMeasure,
   isTupletSupported,
   resolveTheme,
+  stageFitsStaff,
   subscribeSystemTheme,
   tempoMarking,
 } from './notation/types';
@@ -561,11 +562,12 @@ class GuidonicaApp {
       document.addEventListener('webkitfullscreenchange', syncFullscreenGlyph);
     }
 
-    // Settings drawer: an in-flow card row on wide screens (open by default), an
-    // overlay sheet on narrow ones (closed by default, dismissed by tapping the staff)
+    // Settings drawer: an in-flow card row on wide screens (open by default while the
+    // staff still fits), an overlay sheet on narrow ones (closed by default, dismissed
+    // by tapping the staff)
     const wideLayout = window.matchMedia?.('(min-width: 961px)');
-    this.setDrawerOpen(wideLayout?.matches === true);
-    wideLayout?.addEventListener?.('change', (e) => this.setDrawerOpen(e.matches));
+    this.openDrawerByDefault(wideLayout?.matches === true);
+    wideLayout?.addEventListener?.('change', (e) => this.openDrawerByDefault(e.matches));
     this.btnDrawerToggle.addEventListener('click', () => {
       this.setDrawerOpen(!this.controlsDrawer.classList.contains('open'));
     });
@@ -833,6 +835,13 @@ class GuidonicaApp {
 
   private openTupletsPopover(): void {
     this.tupletsPopover.classList.remove('hidden');
+    // The desktop overlay is capped to the room below it; the ≤960 accordion scrolls with the sheet
+    if (getComputedStyle(this.tupletsPopover).position === 'absolute') {
+      const room = window.innerHeight - this.tupletsPopover.getBoundingClientRect().top - 12;
+      this.tupletsPopover.style.maxHeight = `${Math.max(160, Math.floor(room))}px`;
+    } else {
+      this.tupletsPopover.style.maxHeight = '';
+    }
     this.btnTupletsToggle.classList.add('open');
     this.btnTupletsToggle.setAttribute('aria-expanded', 'true');
   }
@@ -1370,6 +1379,20 @@ class GuidonicaApp {
   private setDrawerOpen(isOpen: boolean): void {
     this.controlsDrawer.classList.toggle('open', isOpen);
     this.btnDrawerToggle.setAttribute('aria-expanded', String(isOpen));
+  }
+
+  /**
+   * Opens the in-flow desktop drawer, then closes it again when it would leave the
+   * stage shorter than the measure canvas at the current zoom (ADR 0054). Reads
+   * layout once, at init and on breakpoint changes only.
+   */
+  private openDrawerByDefault(wide: boolean): void {
+    this.setDrawerOpen(wide);
+    if (!wide) return;
+    const stage = document.querySelector<HTMLElement>('.canvas-wrapper');
+    if (stage && !stageFitsStaff(stage.clientHeight, this.scroller.getZoom())) {
+      this.setDrawerOpen(false);
+    }
   }
 
   /** Repaints a single frame when the rAF loop is not running (paused/stopped). */

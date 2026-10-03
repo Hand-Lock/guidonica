@@ -189,11 +189,16 @@ The settings are grouped as **Staff** (clef, ledger lines, meter, 6/8 pulse) · 
 #### H. Responsive Layout Contract
 | Width | Header grid | Settings |
 |-------|-------------|----------|
-| > 960px | One row: `brand · transport · tempo · beats · utils` | In-flow card grid (4 columns, 2 columns between 961 and 1279px), open by default, collapsible |
-| ≤ 960px | Two rows: `brand · utils` / `transport · tempo · beats` | Absolutely positioned **glass sheet overlaying the canvas** (the canvas never reflows). It scrolls internally, closes on a canvas tap, and the tuplets popover becomes an in-flow accordion. Footer hidden. |
+| > 1140px | One row: `brand · transport · tempo · beats · utils` | In-flow card grid (4 columns, 2 columns between 961 and 1279px), collapsible. Open by default only when the staff still gets 220px × zoom (ADR 0054). |
+| 961–1140px | The same row, compacted: 12px column gap, tempo shrinks to a 160px minimum, Reset and Settings collapse to icons | As above |
+| ≤ 960px | Two rows: `brand · utils` / `transport · tempo · beats`. The utilities span the cell above tempo, so they never size the beats column. | Absolutely positioned **glass sheet overlaying the canvas** (the canvas never reflows). Its height is the viewport minus the header (`calc(100dvh - 100%)`). It scrolls internally, closes on a canvas tap, and the tuplets popover becomes an in-flow accordion. Footer hidden. |
 | ≤ 600px | Three rows: `brand · utils` / `transport · beats` / `tempo` (full width, long slider track) | One column. The Settings and Reset labels collapse to icons. |
 
 Below 1280px, the Level button collapses to its meter and the header theme toggle hides. The theme stays in Settings → Practice (ADR 0053).
+
+On phones, the brand and transport collapse by the room their column actually gets (container queries), not by viewport width. Touch targets and 6/8's six beat dots move the thresholds. Below 183px the SOLFÈGE badge hides. Below 118px the wordmark is visually hidden but stays readable by assistive tech, so only the hand remains. When the transport has less than 148px, Start drops its label and keeps its play/pause icon (ADR 0054).
+
+On desktop, the tuplets popover is capped to the room below it and scrolls internally.
 
 The canvas wrapper is observed with a `ResizeObserver`, so any layout change (drawer collapse, rotation) resizes the backing store.
 
