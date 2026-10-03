@@ -201,7 +201,7 @@ Rhythm generation decomposes each measure top-down through a metric tree structu
 - Live visual indicator for the active beat / count-in.
 
 ### Onboarding & Level Presets
-- On a first visit (no saved settings, no onboarding flag), a two-step intro asks **"What's your level?"** (Beginner · Elementary · Intermediate · Advanced · Virtuoso) and then **"Which clef do you read?"** (Treble · Bass · Alto · Tenor).
+- On a first visit (no saved settings, no onboarding flag), a two-step intro asks **"What's your level?"** (Beginner · Elementary · Intermediate · Advanced · Virtuoso) and then **"Which clef would you like to read?"** (Treble · Bass · Alto · Tenor).
 - The answers load a preset of existing, user-visible settings: tempo, ledger lines, note values, dotted notes, rests, ties, tuplets, intervals, labels and count-in, all in 4/4. Theme, volume, zoom and sound are left unchanged.
 - "Skip", Esc or a click outside keeps the defaults and never asks again. Settings → Practice → "Level presets…" reopens the intro at any time.
 - Presets never alter the generator; every preset is an ordinary point of the configuration space Ω (see ADR 0049).
