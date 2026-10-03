@@ -40,7 +40,13 @@ import { MeasureBuffer } from './scroller/buffer';
 import { ScrollerView } from './scroller/scroller';
 import { isMusicFontReady, waitForMusicFonts } from './notation/fonts';
 import { ScreenWakeLockController } from './utils/wakeLock';
-import { hasStoredSettings, isOnboarded, markOnboarded } from './storage';
+import {
+  dismissOrientationTip,
+  hasStoredSettings,
+  isOnboarded,
+  isOrientationTipDismissed,
+  markOnboarded,
+} from './storage';
 import {
   INTRO_CLEF_OPTIONS,
   INTRO_CLEFS,
@@ -675,8 +681,8 @@ class GuidonicaApp {
       globalState.updateSettings({ isMuted: nextMuted });
     });
 
-    // Responsive Auto-Zoom Resizing
-    window.addEventListener('resize', () => {
+    // Responsive Auto-Zoom: follow the stage's measured size (ADR 0055)
+    this.scroller.onResize(() => {
       if (globalState.settings.zoomMode === 'auto') {
         this.syncAutoZoom();
       }
@@ -700,6 +706,18 @@ class GuidonicaApp {
       this.btnPillZoomReset.blur();
       this.syncAutoZoom();
     });
+
+    // Portrait phone tip: CSS decides when it shows (ADR 0055); JS only remembers dismissal
+    const orientationNotice = document.getElementById('orientation-notice');
+    const btnOrientationDismiss = document.getElementById('btn-orientation-dismiss');
+    if (orientationNotice) {
+      if (isOrientationTipDismissed()) orientationNotice.hidden = true;
+      btnOrientationDismiss?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        orientationNotice.hidden = true;
+        dismissOrientationTip();
+      });
+    }
 
     // Canvas Two-Finger Pinch-to-Zoom
     const canvas = document.getElementById('scroller-canvas') as HTMLCanvasElement;

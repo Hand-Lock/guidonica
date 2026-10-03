@@ -59,7 +59,8 @@ This directory documents the core architectural decisions, implementation method
 | [0051](0051-intro-preview-representation-presets.md) | Representation Presets for the Intro Level Previews | Accepted; amended by 0052 | 2026-10-03 |
 | [0052](0052-intro-preview-signature-check.md) | Signature Check for the Intro Level Previews | Accepted | 2026-10-03 |
 | [0053](0053-header-level-button.md) | Header Level Button with a Live Difficulty Meter | Accepted; amended by 0054 | 2026-10-03 |
-| [0054](0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted | 2026-10-03 |
+| [0054](0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055 | 2026-10-03 |
+| [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted | 2026-10-03 |
 
 ---
 

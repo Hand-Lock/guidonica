@@ -246,3 +246,22 @@ export function markOnboarded(): void {
     // Ignore quota or private-browsing errors
   }
 }
+
+export const ORIENTATION_TIP_KEY = 'guidonica_orientation_tip_v1';
+
+/** True once the portrait "use landscape" tip has been dismissed (ADR 0055). */
+export function isOrientationTipDismissed(): boolean {
+  try {
+    return window.localStorage.getItem(ORIENTATION_TIP_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
+export function dismissOrientationTip(): void {
+  try {
+    window.localStorage.setItem(ORIENTATION_TIP_KEY, '1');
+  } catch {
+    // Ignore quota or private-browsing errors
+  }
+}
