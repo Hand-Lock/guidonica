@@ -1023,6 +1023,8 @@ select:focus-visible {
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-spec);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   animation: pop var(--slow) var(--ease);
 }
 
@@ -1670,13 +1672,36 @@ dialog.intro-dialog {
 
 /* ==========================================================================
    Responsive contract
-   Desktop (>960): one-row ribbon, in-flow card drawer (open by default)
+   Desktop (>960): one-row ribbon, in-flow card drawer (open by default while
+                   the staff keeps 220px × zoom); 961–1140 compacts the ribbon
    Tablet  (≤960): two-row ribbon, drawer becomes an overlay glass sheet
-   Phone   (≤600): brand+utils / transport+LEDs / full-width tempo
+   Phone   (≤600): brand+utils / transport+LEDs / full-width tempo, brand and
+                   transport collapse by container width (ADR 0054)
    ========================================================================== */
 
 @media (min-width: 961px) {
   .controls-drawer:not(.open) {
+    display: none;
+  }
+}
+
+/* 961–1140px: the one-row ribbon needs up to 1135px (touch + 6/8), so tighten the
+   gaps, let tempo give way down to 160px and collapse Reset and Settings to icons.
+   Worst case at 961px (touch, 6/8) still leaves tempo 171px (ADR 0054). */
+@media (min-width: 961px) and (max-width: 1140px) {
+  .primary-bar {
+    column-gap: 12px;
+    grid-template-columns: auto auto minmax(160px, 380px) auto 1fr;
+  }
+
+  .btn-drawer-toggle,
+  #btn-reset {
+    width: var(--hit);
+    padding: 0;
+  }
+
+  .btn-drawer-toggle .btn-label,
+  #btn-reset .btn-label {
     display: none;
   }
 }
@@ -1707,8 +1732,9 @@ dialog.intro-dialog {
 @media (max-width: 960px) {
   .primary-bar {
     grid-template-columns: auto minmax(0, 1fr) auto;
+    /* Utilities span the empty cell so they never size the beats column (ADR 0054) */
     grid-template-areas:
-      'brand . utils'
+      'brand utils utils'
       'transport tempo beats';
     gap: 10px 14px;
   }
@@ -1722,8 +1748,9 @@ dialog.intro-dialog {
     top: 100%;
     left: 0;
     right: 0;
-    max-height: calc(100vh - 110px);
-    max-height: calc(100dvh - 110px);
+    /* top: 100% of the header, so % here is the header's own height (ADR 0054) */
+    max-height: calc(100vh - 100%);
+    max-height: calc(100dvh - 100%);
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 0 max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom))
@@ -1783,6 +1810,18 @@ dialog.intro-dialog {
     font-size: 20px;
   }
 
+  /* Brand and transport collapse by the room their minmax(0, 1fr) column gives
+     them, not by viewport width: 44px touch targets and 6/8's wider LED cluster
+     move the thresholds (ADR 0054). Containment is safe only here; on the desktop
+     auto columns it would collapse them to zero. */
+  .brand {
+    container: brand / inline-size;
+  }
+
+  .playback-controls {
+    container: transport / inline-size;
+  }
+
   .brand-mark {
     width: 22px;
     height: 22px;
@@ -1808,6 +1847,37 @@ dialog.intro-dialog {
     min-width: 96px;
   }
 
+  /* Mark + wordmark + badge measure 183px */
+  @container brand (max-width: 182px) {
+    .brand-badge {
+      display: none;
+    }
+  }
+
+  /* Mark + wordmark measure 118px: keep only the hand, the name stays for assistive tech */
+  @container brand (max-width: 117px) {
+    .brand h1 {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  /* Start (96px) + gap + Reset (44px touch) measure 148px: Start keeps its icon */
+  @container transport (max-width: 147px) {
+    .playback-controls .btn-primary {
+      min-width: var(--hit);
+    }
+
+    .playback-controls .btn-primary .btn-label {
+      display: none;
+    }
+  }
+
   .tempo-group {
     flex-direction: row;
     align-items: center;
@@ -1825,19 +1895,8 @@ dialog.intro-dialog {
     flex: 1;
   }
 
-  .controls-drawer {
-    max-height: calc(100vh - 170px);
-    max-height: calc(100dvh - 170px);
-  }
-
   .drawer-inner {
     grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 380px) {
-  .brand-badge {
-    display: none;
   }
 }
 
