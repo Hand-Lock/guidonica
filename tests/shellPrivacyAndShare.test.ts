@@ -50,3 +50,21 @@ describe('HTML shell: social preview card (ADR 0061)', () => {
     expect(png.readUInt32BE(20)).toBe(630);
   });
 });
+
+describe('crawler files (ADR 0062)', () => {
+  const robots = fs.readFileSync(path.join(root, 'public/robots.txt'), 'utf-8');
+  const sitemap = fs.readFileSync(path.join(root, 'public/sitemap.xml'), 'utf-8');
+
+  it('allows all crawlers and points to the sitemap on the canonical host', () => {
+    expect(robots).toMatch(/^User-agent: \*$/m);
+    expect(/^Sitemap: (.+)$/m.exec(robots)?.[1]).toBe('https://guidonica.it/sitemap.xml');
+  });
+
+  it('lists only canonical-host URLs, including the shell canonical link', () => {
+    const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+    expect(locs.length).toBeGreaterThan(0);
+    for (const loc of locs) expect(loc.startsWith('https://guidonica.it/'), loc).toBe(true);
+    const canonical = /<link rel="canonical" href="([^"]+)"/.exec(indexHtml)?.[1];
+    expect(locs).toContain(canonical);
+  });
+});
