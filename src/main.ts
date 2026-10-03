@@ -44,6 +44,7 @@ import {
   INTRO_CLEFS,
   LEVEL_PRESETS,
   LevelId,
+  acceptsPreview,
   buildPresetSettings,
   buildPreviewSettings,
   matchLevel,
@@ -1016,11 +1017,12 @@ class GuidonicaApp {
     document.getElementById('btn-intro-skip')?.addEventListener('click', closeIntro);
     this.btnIntroNext?.addEventListener('click', () => this.showIntroStep('clef'));
     document.getElementById('btn-intro-back')?.addEventListener('click', () => {
+      // Show the step first: a hidden card reports clientWidth 0 to the window check
+      this.showIntroStep('level');
       // Level examples follow the clef picked on the second step
       if (this.introPreviewClef !== null && this.introPreviewClef !== this.introClef) {
         this.renderIntroLevelPreviews();
       }
-      this.showIntroStep('level');
     });
     document.getElementById('btn-intro-start')?.addEventListener('click', () => {
       if (this.introLevel) {
@@ -1133,10 +1135,11 @@ class GuidonicaApp {
     }
   }
 
-  /** Each strip is a real sample from its level's representation, a published Ω ⊆ preset Ω (ADR 0051). */
+  /** Each strip samples its level's representation (ADR 0051), filtered by its signature (ADR 0052). */
   private renderIntroLevelPreviews(): void {
     for (const [level, canvas] of this.introLevelPreviews) {
-      renderLevelPreview(canvas, { ...globalState.settings, ...buildPreviewSettings(level, this.introClef) });
+      const settings = { ...globalState.settings, ...buildPreviewSettings(level, this.introClef) };
+      renderLevelPreview(canvas, settings, (w) => acceptsPreview(level, w));
     }
     this.introPreviewClef = this.introClef;
   }

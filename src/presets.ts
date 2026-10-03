@@ -3,6 +3,8 @@ import {
   Clef,
   DEFAULT_TUPLET_OPTIONS,
   IntervalOptions,
+  MeasureData,
+  NoteData,
   SubdivisionOptions,
   TUPLET_NAMES,
   TUPLET_VALUES,
@@ -43,6 +45,41 @@ export interface PreviewOmissions {
   rests?: false; // Literal false: can only switch rests off
 }
 
+/** The notes a level card actually shows, with each note's beat from the strip start (ADR 0052). */
+export interface PreviewWindow {
+  notes: readonly NoteData[];
+  beats: readonly number[];
+  length: number; // Visible beats, fractional
+}
+
+/** A level's signature: whether a visible window shows what the level is about. */
+export type PreviewCheck = (window: PreviewWindow) => boolean;
+
+const base = (note: NoteData): string => note.duration.replace(/r$/, '');
+
+function count(w: PreviewWindow, pred: (note: NoteData) => boolean): number {
+  return w.notes.filter(pred).length;
+}
+
+/** Distinct beats (floor of the strip beat) holding a matching note. */
+function beatsWith(w: PreviewWindow, pred: (note: NoteData) => boolean): number {
+  return new Set(w.beats.filter((_, i) => pred(w.notes[i])).map(Math.floor)).size;
+}
+
+/** Beats a figure must cover: every whole visible beat, at most two. */
+function need(w: PreviewWindow): number {
+  return Math.max(0, Math.min(2, Math.floor(w.length)));
+}
+
+/** True when some note is a non-tuplet q with non-tuplet 8s on both sides (8 q 8). */
+function hasSyncopation(w: PreviewWindow): boolean {
+  const plain = (i: number, d: string): boolean => !w.notes[i].isTuplet && base(w.notes[i]) === d;
+  for (let i = 1; i + 1 < w.notes.length; i++) {
+    if (plain(i, 'q') && plain(i - 1, '8') && plain(i + 1, '8')) return true;
+  }
+  return false;
+}
+
 export interface LevelPreset {
   id: LevelId;
   name: string;
@@ -50,6 +87,8 @@ export interface LevelPreset {
   settings: Readonly<PresetSettings>;
   /** Representation for the intro card: what a 1–3 beat window cannot show well. */
   preview: Readonly<PreviewOmissions>;
+  /** Signature a card's visible window must show, else the strip is re-rolled (ADR 0052). */
+  check: PreviewCheck;
 }
 
 export interface IntroClefOption {
@@ -122,6 +161,8 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
     },
     // Window ≈ 1 bar: a whole note would fill it; repeats show no motion
     preview: { subdivisions: ['whole'], intervals: ['unison'] },
+    // q h q / h h motion, not only quarters
+    check: (w) => count(w, (n) => base(n) === 'h') > 0,
   },
   {
     id: 'elementary',
@@ -159,6 +200,8 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
     },
     // Keep q for qd 8 / 8 q 8; show the new eighths, dots & rests with 3rds and 4ths
     preview: { subdivisions: ['whole', 'half'], intervals: ['unison', 'second'] },
+    // The dotted or syncopated figure, never rest clutter
+    check: (w) => count(w, (n) => n.isRest) <= 1 && (count(w, (n) => base(n) === 'qd') > 0 || hasSyncopation(w)),
   },
   {
     id: 'intermediate',
@@ -200,6 +243,8 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       intervals: ['unison', 'second', 'third'],
       rests: false,
     },
+    // Eighth triplets beside eighth pairs
+    check: (w) => count(w, (n) => n.isTuplet === true) > 0,
   },
   {
     id: 'advanced',
@@ -235,12 +280,15 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       solfegeLabelMode: 'none',
       countIn: true,
     },
-    // No plain quarters: 16th figures and triplets, with 6th to octave leaps
+    // No plain quarters or quarter triplets: 16th figures and eighth triplets, 6th to octave leaps
     preview: {
       subdivisions: ['whole', 'half', 'quarter'],
       intervals: ['unison', 'second', 'third', 'fourth', 'fifth'],
+      tupletValues: ['1/4'],
       rests: false,
     },
+    // 16th figures on the visible beats
+    check: (w) => beatsWith(w, (n) => !n.isTuplet && base(n) === '16') >= need(w),
   },
   {
     id: 'virtuoso',
@@ -277,18 +325,43 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       solfegeLabelMode: 'none',
       countIn: true,
     },
-    // At 360 px/beat a quarter or an eighth fills the window; 16ths, 32nds & fast tuplets
+    // At 360 px/beat a quarter, an eighth or a sparse eighth-tuplet fills the window: 16ths, 32nds & 1/16 tuplets
     preview: {
       subdivisions: ['whole', 'half', 'quarter', 'eighth'],
       intervals: ['unison', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh'],
-      tupletValues: ['1/4'],
+      tupletValues: ['1/4', '1/8'],
       rests: false,
     },
+    // 32nds or fast tuplets on the visible beats
+    check: (w) => beatsWith(w, (n) => base(n) === '32' || (n.isTuplet === true && base(n) === '16')) >= need(w),
   },
 ];
 
 function findPreset(level: LevelId): LevelPreset {
   return LEVEL_PRESETS.find((p) => p.id === level) ?? LEVEL_PRESETS[0];
+}
+
+/**
+ * The part of a strip a card shows (ADR 0052): every note whose strip beat
+ * (`startBeat + beatOffset`) lies before `visibleBeats`.
+ */
+export function previewWindow(measures: readonly MeasureData[], visibleBeats: number): PreviewWindow {
+  const notes: NoteData[] = [];
+  const beats: number[] = [];
+  for (const measure of measures) {
+    for (const note of measure.notes) {
+      const beat = measure.startBeat + note.beatOffset;
+      if (beat >= visibleBeats) return { notes, beats, length: visibleBeats };
+      notes.push(note);
+      beats.push(beat);
+    }
+  }
+  return { notes, beats, length: visibleBeats };
+}
+
+/** Whether `window` shows `level`'s signature figure. */
+export function acceptsPreview(level: LevelId, window: PreviewWindow): boolean {
+  return findPreset(level).check(window);
 }
 
 /** Settings patch for a level and clef: deep-cloned, tuplets limited to the meter. */

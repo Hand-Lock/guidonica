@@ -3,6 +3,7 @@ import { MusicGenerator } from '../src/notation/generator';
 import {
   AppSettings,
   MeasureData,
+  NoteData,
   TUPLET_NAMES,
   TUPLET_VALUES,
   computeBeatWidth,
@@ -12,9 +13,12 @@ import {
   INTRO_CLEFS,
   LEVEL_PRESETS,
   LevelId,
+  PreviewWindow,
+  acceptsPreview,
   buildPresetSettings,
   buildPreviewSettings,
   matchLevel,
+  previewWindow,
 } from '../src/presets';
 
 const BARS = 300;
@@ -40,11 +44,11 @@ function expectSubset(preview: unknown, preset: unknown, path: string): void {
   expect(preview, path).toEqual(preset);
 }
 
-function generateMeasures(settings: AppSettings): MeasureData[] {
+function generateMeasures(settings: AppSettings, bars = BARS): MeasureData[] {
   const generator = new MusicGenerator();
   const measures: MeasureData[] = [];
   let startBeat = 0;
-  for (let m = 0; m < BARS; m++) {
+  for (let m = 0; m < bars; m++) {
     const measure = generator.generateMeasure(m, settings, startBeat);
     startBeat += measure.beatsPerMeasure;
     measures.push(measure);
@@ -111,18 +115,20 @@ describe('intro preview representations (ADR 0051)', () => {
     });
   }
 
-  it('virtuoso preview never draws a quarter-note tuplet', () => {
-    const settings = full(buildPreviewSettings('virtuoso', 'treble'));
-    const generator = new MusicGenerator();
-    let startBeat = 0;
-    for (let m = 0; m < BARS; m++) {
-      const measure = generator.generateMeasure(m, settings, startBeat);
-      startBeat += measure.beatsPerMeasure;
-      for (const note of measure.notes) {
-        if (note.isTuplet) expect(note.duration.replace(/r$/, '')).not.toBe('q');
-      }
-    }
-  });
+  // Sparse tuplet cells dropped from the cards (ADR 0052)
+  const FORBIDDEN_TUPLETS: Partial<Record<LevelId, readonly string[]>> = {
+    advanced: ['q'],
+    virtuoso: ['q', '8'],
+  };
+
+  for (const [level, forbidden] of Object.entries(FORBIDDEN_TUPLETS) as [LevelId, readonly string[]][]) {
+    it(`${level} preview never draws a ${forbidden.join(' or ')} tuplet`, () => {
+      const settings = full(buildPreviewSettings(level, 'treble'));
+      const tuplets = generateMeasures(settings).flatMap((m) => m.notes).filter((n) => n.isTuplet);
+      expect(tuplets.length).toBeGreaterThan(0);
+      for (const note of tuplets) expect(forbidden).not.toContain(note.duration.replace(/r$/, ''));
+    });
+  }
 
   for (const preset of LEVEL_PRESETS) {
     const keepsRests = preset.id === 'elementary';
@@ -157,5 +163,90 @@ describe('intro preview representations (ADR 0051)', () => {
         expect(distance, `${preset.id} note ${i}`).toBeLessThanOrEqual(max);
       }
     });
+  }
+});
+
+/** A window of hand-written notes laid end to end from beat 0. */
+function windowOf(spec: string, length: number): PreviewWindow {
+  const BEATS: Record<string, number> = { h: 2, qd: 1.5, q: 1, '8d': 0.75, '8': 0.5, '16': 0.25, '32': 0.125 };
+  const notes: NoteData[] = [];
+  const beats: number[] = [];
+  let beat = 0;
+  for (const token of spec.split(' ')) {
+    // `3x8` is one note of an eighth triplet; a trailing `r` marks a rest
+    const tuplet = token.match(/^(\d)x(.+)$/);
+    const duration = tuplet ? tuplet[2] : token;
+    const value = duration.replace(/r$/, '');
+    const beatDuration = tuplet ? (BEATS[value] * 2) / Number(tuplet[1]) : BEATS[value];
+    notes.push({
+      keys: ['c/5'],
+      duration,
+      isRest: duration.endsWith('r'),
+      isTuplet: tuplet !== null,
+      beatOffset: beat,
+      beatDuration,
+    });
+    beats.push(beat);
+    beat += beatDuration;
+  }
+  return { notes, beats, length };
+}
+
+describe('intro preview signature check (ADR 0052)', () => {
+  const CASES: Record<LevelId, { accept: readonly string[]; reject: readonly string[] }> = {
+    beginner: { accept: ['q h q'], reject: ['q q q q'] },
+    elementary: {
+      accept: ['qd 8 q', '8 q 8 q', 'qd 8 qr'],
+      reject: ['q q 8 8', 'qr qd 8r', '8 8 q q'],
+    },
+    intermediate: { accept: ['8 8 3x8 3x8 3x8'], reject: ['8 8 8 8'] },
+    advanced: { accept: ['16 16 16 16 8d 16'], reject: ['8 8 8 8', '16 16 16 16 3x8 3x8 3x8'] },
+    virtuoso: {
+      accept: ['32 32 16 16 16 3x16 3x16 3x16 3x16 3x16 3x16'],
+      reject: ['16 16 16 16 16 16 16 16', '32 32 16 16 16 16 16 16 16'],
+    },
+  };
+
+  for (const preset of LEVEL_PRESETS) {
+    const { accept, reject } = CASES[preset.id];
+    it(`${preset.id}: accepts its signature and rejects plain windows`, () => {
+      for (const spec of accept) expect(acceptsPreview(preset.id, windowOf(spec, 2)), spec).toBe(true);
+      for (const spec of reject) expect(acceptsPreview(preset.id, windowOf(spec, 2)), spec).toBe(false);
+    });
+  }
+
+  it('previewWindow keeps only the notes starting before the visible beat', () => {
+    const settings = full(buildPreviewSettings('beginner', 'treble'));
+    const measures = generateMeasures(settings, 3);
+    const window = previewWindow(measures, 5.5);
+    expect(window.length).toBe(5.5);
+    expect(window.notes.length).toBe(window.beats.length);
+    expect(window.beats.every((beat) => beat < 5.5)).toBe(true);
+    const all = measures.flatMap((m) => m.notes.map((n) => m.startBeat + n.beatOffset));
+    expect(window.beats).toEqual(all.filter((beat) => beat < 5.5));
+  });
+
+  // 32 attempts all failing has probability (1 − rate)^32 < 1e-4 when rate ≥ 25%.
+  // Cards of 229–510 px show ≈ 1–4 beats; only the 220/360 px beats get down to one.
+  const WINDOWS = 300;
+  const LENGTHS: Record<LevelId, readonly number[]> = {
+    beginner: [1.3, 2, 4],
+    elementary: [1.3, 2, 4],
+    intermediate: [1.3, 2, 4],
+    advanced: [1, 1.3, 2, 4],
+    virtuoso: [1, 1.3, 2, 4],
+  };
+  for (const preset of LEVEL_PRESETS) {
+    for (const length of LENGTHS[preset.id]) {
+      it(`${preset.id}: ≥ 25% of ${length}-beat windows pass`, () => {
+        const settings = full(buildPreviewSettings(preset.id, 'treble'));
+        let accepted = 0;
+        for (let i = 0; i < WINDOWS; i++) {
+          const window = previewWindow(generateMeasures(settings, 3), length);
+          if (acceptsPreview(preset.id, window)) accepted++;
+        }
+        expect(accepted / WINDOWS).toBeGreaterThanOrEqual(0.25);
+      });
+    }
   }
 });
