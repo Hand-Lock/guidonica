@@ -412,3 +412,9 @@ export function matchLevel(settings: Readonly<AppSettings>): LevelId | null {
   }
   return null;
 }
+
+/** Header difficulty meter (ADR 0053): 0 for Custom, else the preset's 1-based rank. */
+export function levelIndex(settings: Readonly<AppSettings>): number {
+  const id = matchLevel(settings);
+  return id === null ? 0 : LEVEL_PRESETS.findIndex((p) => p.id === id) + 1;
+}

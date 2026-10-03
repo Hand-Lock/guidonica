@@ -469,6 +469,27 @@ input {
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
+/* Header difficulty meter (ADR 0053): data-level lights the first n bars, 0 = Custom */
+.btn-level-toggle .lv-bar {
+  opacity: 0.3;
+  transition: opacity var(--fast) ease;
+}
+
+.btn-level-toggle[data-level='1'] .lv-bar:nth-child(-n + 1),
+.btn-level-toggle[data-level='2'] .lv-bar:nth-child(-n + 2),
+.btn-level-toggle[data-level='3'] .lv-bar:nth-child(-n + 3),
+.btn-level-toggle[data-level='4'] .lv-bar:nth-child(-n + 4),
+.btn-level-toggle[data-level='5'] .lv-bar:nth-child(-n + 5) {
+  stroke: var(--accent);
+  opacity: 1;
+}
+
+/* Widest name ("Intermediate"): the header holds still as the level changes */
+.btn-level-toggle .btn-label {
+  min-width: 73px;
+  text-align: left;
+}
+
 #btn-theme-toggle .icon {
   display: none;
 }
@@ -1636,11 +1657,6 @@ dialog.intro-dialog {
   box-shadow: var(--gel-spec);
 }
 
-.icon-hand {
-  width: 18px;
-  height: 18px;
-}
-
 @media (min-width: 601px) {
   .intro-options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1668,6 +1684,23 @@ dialog.intro-dialog {
 @media (min-width: 961px) and (max-width: 1279px) {
   .drawer-inner {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Below 1280px the labelled Level button no longer fits beside the transport (ADR 0053):
+   it collapses to its meter and replaces the theme toggle, which stays in Settings → Practice */
+@media (max-width: 1279px) {
+  .btn-level-toggle {
+    width: var(--hit);
+    padding: 0;
+  }
+
+  .btn-level-toggle .btn-label {
+    display: none;
+  }
+
+  #btn-theme-toggle {
+    display: none;
   }
 }
 

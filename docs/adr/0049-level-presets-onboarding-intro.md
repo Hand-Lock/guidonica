@@ -18,7 +18,7 @@
 - **Step 1, Level**: a five-card `role="radiogroup"`. The cards are built in TS from `LEVEL_PRESETS`, so the data lives in one place. "Next" stays disabled until a level is picked. "Skip" keeps the current settings.
 - **Step 2, Clef**: four cards (Treble, Bass, Alto, Tenor) from `INTRO_CLEF_OPTIONS`. The current clef is preselected, or Treble if it is not one of the four. A note points to Settings → Staff for the other C/F clefs. "Back" returns to step 1 and "Start practising" applies the preset.
 - **Radio semantics**: each card is a `<button role="radio" aria-checked>` with a roving tabindex. Arrow keys and Home/End move the selection, and focus follows the selection. With nothing selected, the group container (tabindex −1) takes focus, so no unselected card shows a focus ring.
-- **Reopen**: Settings → Practice → "Level presets…" (`#btn-intro-open`, `btn btn-menu`). When the current settings match a preset exactly (clef ignored, key order ignored, `matchLevel()`), that level is preselected.
+- **Reopen**: the header Level button (`#btn-level-toggle`, ADR 0053), which replaced the original Settings → Practice → "Level presets…" row. When the current settings match a preset exactly (clef ignored, key order ignored, `matchLevel()`), that level is preselected.
 - **Shortcuts**: `bindKeyboardShortcuts()` ignores global keys while `#modal-intro` is open, as it already did for About, so Space and R never start or reset playback behind the dialog.
 
 ### 2. Preset table (`src/presets.ts`)

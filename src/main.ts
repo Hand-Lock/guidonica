@@ -3,6 +3,7 @@
 // Copyright (C) 2026 A. C. Lo Cascio
 
 import {
+  AppSettings,
   Clef,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
@@ -47,6 +48,7 @@ import {
   acceptsPreview,
   buildPresetSettings,
   buildPreviewSettings,
+  levelIndex,
   matchLevel,
 } from './presets';
 
@@ -88,6 +90,8 @@ class GuidonicaApp {
   private btnThemeToggle: HTMLButtonElement;
   private btnFullscreenToggle: HTMLButtonElement;
   private btnDrawerToggle: HTMLButtonElement;
+  private btnLevelToggle: HTMLButtonElement | null;
+  private levelSyncedSettings: Readonly<AppSettings> | null = null;
   private controlsDrawer: HTMLElement;
 
   // Drawer Configuration Elements
@@ -183,6 +187,7 @@ class GuidonicaApp {
     this.btnThemeToggle = document.getElementById('btn-theme-toggle') as HTMLButtonElement;
     this.btnFullscreenToggle = document.getElementById('btn-fullscreen-toggle') as HTMLButtonElement;
     this.btnDrawerToggle = document.getElementById('btn-drawer-toggle') as HTMLButtonElement;
+    this.btnLevelToggle = document.getElementById('btn-level-toggle') as HTMLButtonElement | null;
     this.controlsDrawer = document.getElementById('controls-drawer') as HTMLElement;
 
     this.selectTimeSig = document.getElementById('select-time-signature') as HTMLSelectElement;
@@ -293,6 +298,7 @@ class GuidonicaApp {
 
     // 3. Hydrate UI elements from stored settings
     this.hydrateUI(initialSettings);
+    this.syncLevelButton(globalState.settings);
 
     // 4. Setup event wiring and subscriptions
     this.bindEvents();
@@ -314,7 +320,7 @@ class GuidonicaApp {
 
     // 8. New visitors pick a level & clef (no AudioContext involved; audio waits for Start)
     if (showIntro) {
-      this.openIntro();
+      this.openIntro(true);
     }
   }
 
@@ -1008,10 +1014,10 @@ class GuidonicaApp {
       if (this.modalIntro?.open) this.modalIntro.close();
     };
 
-    document.getElementById('btn-intro-open')?.addEventListener('click', (e) => {
+    this.btnLevelToggle?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.closeTupletsPopover();
-      this.openIntro();
+      this.openIntro(false);
     });
     document.getElementById('btn-intro-close')?.addEventListener('click', closeIntro);
     document.getElementById('btn-intro-skip')?.addEventListener('click', closeIntro);
@@ -1160,8 +1166,13 @@ class GuidonicaApp {
     });
   }
 
-  private openIntro(): void {
+  /** First visit welcomes and offers Skip; a reopen from the header is a plain level picker. */
+  private openIntro(firstVisit: boolean): void {
     if (!this.modalIntro || typeof this.modalIntro.showModal !== 'function') return;
+    const title = document.getElementById('intro-title-text');
+    const skip = document.getElementById('btn-intro-skip');
+    if (title) title.textContent = firstVisit ? 'Welcome to Guidonica' : 'Choose your level';
+    if (skip) skip.textContent = firstVisit ? 'Skip' : 'Cancel';
     const settings = globalState.settings;
     this.introLevel = matchLevel(settings);
     this.introClef = INTRO_CLEFS.includes(settings.clef) ? settings.clef : 'treble';
@@ -1558,7 +1569,22 @@ class GuidonicaApp {
     dots.forEach((dot) => dot.classList.remove('active', 'downbeat'));
   }
 
+  /** Lights the header meter's bars and names the matching preset, or Custom (ADR 0053). */
+  private syncLevelButton(settings: Readonly<AppSettings>): void {
+    // updateSettings replaces the object: identity skips the beat-rate notifications
+    if (!this.btnLevelToggle || settings === this.levelSyncedSettings) return;
+    this.levelSyncedSettings = settings;
+    const index = levelIndex(settings);
+    const name = index === 0 ? 'Custom' : LEVEL_PRESETS[index - 1].name;
+    this.btnLevelToggle.dataset.level = String(index);
+    this.btnLevelToggle.setAttribute('aria-label', `Level: ${name}. Choose a level preset`);
+    const label = this.btnLevelToggle.querySelector('.btn-label');
+    if (label) label.textContent = name;
+  }
+
   private syncUI(state: SessionState): void {
+    this.syncLevelButton(state.settings);
+
     if (state.playbackState === 'counting-in' || state.playbackState === 'playing') {
       this.btnLabel.textContent = 'Pause';
       this.btnPlayPause.classList.add('playing');
