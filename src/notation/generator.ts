@@ -488,6 +488,27 @@ export class MusicGenerator {
   }
 
   /**
+   * Fills one half beat (an eighth's worth) in simple meters with any placement-legal
+   * figure: 8 | 16 16, plus every 32nd-bearing figure of partitionEighthSpan when
+   * thirtySecond is on. Lets the half-beat slots of `qd 8`, `8 qd` and `8 q 8` take
+   * sub-eighth values (ADR 0064).
+   */
+  private partitionHalfBeat(subdiv: SubdivisionOptions, allowRests: boolean, isDotted: boolean): PartitionItem[] {
+    if (subdiv.thirtySecond) return this.partitionEighthSpan(subdiv, allowRests, isDotted, 0.5);
+    const candidates: Array<() => PartitionItem[]> = [];
+    if (subdiv.eighth) {
+      candidates.push(() => [{ duration: '8', beatDuration: 0.5, isRest: allowRests && Math.random() < 0.15 }]);
+    }
+    if (subdiv.sixteenth) {
+      candidates.push(() => [
+        { duration: '16', beatDuration: 0.25, isRest: allowRests && Math.random() < 0.12 },
+        { duration: '16', beatDuration: 0.25, isRest: allowRests && Math.random() < 0.12 },
+      ]);
+    }
+    return pick(candidates)();
+  }
+
+  /**
    * Compound 6/8 meter partitioning (6 eighth-note pulses total).
    */
   private partitionCompoundMeasure(
@@ -875,42 +896,33 @@ export class MusicGenerator {
       ]);
     }
 
-    // 2. Dotted quarter + eighth (1.5 + 0.5 beats)
-    if (subdiv.quarter && subdiv.eighth && isDotted) {
-      candidates.push(() => {
-        const rest1 = allowRests && Math.random() < 0.15;
-        const rest2 = allowRests && Math.random() < 0.15;
-        return [
-          { duration: 'qd', beatDuration: 1.5, isRest: rest1 },
-          { duration: '8', beatDuration: 0.5, isRest: rest2 },
-        ];
-      });
+    // Candidates 2-4 fill each half-beat slot with any half-beat figure (8, 16 16, or a
+    // 32nd-bearing figure), so `qd 16 16`, `16 16 qd`, `16 16 q 8` etc. stay reachable (ADR 0064).
+    const halfBeat = subdiv.eighth || subdiv.sixteenth || subdiv.thirtySecond;
+
+    // 2. Dotted quarter + half beat (1.5 + 0.5 beats)
+    if (subdiv.quarter && isDotted && halfBeat) {
+      candidates.push(() => [
+        { duration: 'qd', beatDuration: 1.5, isRest: allowRests && Math.random() < 0.15 },
+        ...this.partitionHalfBeat(subdiv, allowRests, isDotted),
+      ]);
     }
 
-    // 3. Eighth + dotted quarter (0.5 + 1.5 beats) - Syncopated dotted quarter
-    if (subdiv.quarter && subdiv.eighth && isDotted) {
-      candidates.push(() => {
-        const rest1 = allowRests && Math.random() < 0.15;
-        const rest2 = allowRests && Math.random() < 0.15;
-        return [
-          { duration: '8', beatDuration: 0.5, isRest: rest1 },
-          { duration: 'qd', beatDuration: 1.5, isRest: rest2 },
-        ];
-      });
+    // 3. Half beat + dotted quarter (0.5 + 1.5 beats) - Syncopated dotted quarter
+    if (subdiv.quarter && isDotted && halfBeat) {
+      candidates.push(() => [
+        ...this.partitionHalfBeat(subdiv, allowRests, isDotted),
+        { duration: 'qd', beatDuration: 1.5, isRest: allowRests && Math.random() < 0.15 },
+      ]);
     }
 
-    // 4. Syncopation: eighth + quarter + eighth (0.5 + 1.0 + 0.5)
-    if (subdiv.eighth && subdiv.quarter) {
-      candidates.push(() => {
-        const r1 = allowRests && Math.random() < 0.12;
-        const r2 = allowRests && Math.random() < 0.12;
-        const r3 = allowRests && Math.random() < 0.12;
-        return [
-          { duration: '8', beatDuration: 0.5, isRest: r1 },
-          { duration: 'q', beatDuration: 1.0, isRest: r2 },
-          { duration: '8', beatDuration: 0.5, isRest: r3 },
-        ];
-      });
+    // 4. Syncopation: half beat + quarter + half beat (0.5 + 1.0 + 0.5)
+    if (subdiv.quarter && halfBeat) {
+      candidates.push(() => [
+        ...this.partitionHalfBeat(subdiv, allowRests, isDotted),
+        { duration: 'q', beatDuration: 1.0, isRest: allowRests && Math.random() < 0.12 },
+        ...this.partitionHalfBeat(subdiv, allowRests, isDotted),
+      ]);
     }
 
     // 5. 2-Beat Tuplets
