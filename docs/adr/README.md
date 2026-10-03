@@ -53,7 +53,7 @@ This directory documents the core architectural decisions, implementation method
 | [0045](0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md) | Aero-Guidonica 2: Material Hierarchy & Responsive Redesign | Accepted; amended by 0054 | 2026-10-02 |
 | [0046](0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Superseded in part by [0047](0047-guidonian-hand-v2.md) | 2026-10-02 |
 | [0047](0047-guidonian-hand-v2.md) | Guidonian Hand v2: Anatomical Proportions, Volume Shading & 3D Thread | Accepted | 2026-10-02 |
-| [0048](0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted | 2026-10-03 |
+| [0048](0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted; amended by 0063 | 2026-10-03 |
 | [0049](0049-level-presets-onboarding-intro.md) | Level Presets & Onboarding Intro ("What's your level?") | Accepted; amended by 0053, 0059 | 2026-10-03 |
 | [0050](0050-intro-notation-previews.md) | Procedural Notation Previews in the Onboarding Intro | Accepted; amended by 0051, 0052 | 2026-10-03 |
 | [0051](0051-intro-preview-representation-presets.md) | Representation Presets for the Intro Level Previews | Accepted; amended by 0052 | 2026-10-03 |
@@ -68,6 +68,7 @@ This directory documents the core architectural decisions, implementation method
 | [0060](0060-self-hosted-text-fonts-and-privacy-note.md) | Self-Hosted Text Fonts & a No-Tracking Privacy Note | Accepted | 2026-10-03 |
 | [0061](0061-social-preview-card-and-share-metadata.md) | Social Preview Card & Share Metadata | Accepted | 2026-10-03 |
 | [0062](0062-robots-txt-and-sitemap.md) | robots.txt & sitemap.xml | Accepted | 2026-10-03 |
+| [0063](0063-offline-service-worker.md) | Offline Service Worker | Accepted | 2026-10-03 |
 
 ---
 

@@ -42,6 +42,7 @@ import { ScrollerView } from './scroller/scroller';
 import { isMusicFontReady, waitForMusicFonts } from './notation/fonts';
 import { ScreenWakeLockController } from './utils/wakeLock';
 import { bindRovingKeys, setRadioSelection } from './utils/radioGroup';
+import { registerServiceWorker } from './utils/serviceWorker';
 import {
   ENDONYMS,
   Language,
@@ -1805,6 +1806,7 @@ async function bootstrap(): Promise<void> {
   } finally {
     document.documentElement.removeAttribute('data-i18n-pending');
   }
+  registerServiceWorker();
 }
 
 // Bootstrap application when DOM is ready
