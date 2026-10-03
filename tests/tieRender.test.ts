@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { StaveNote, StaveTie } from 'vexflow';
+import { StaveNote, StaveTie } from 'vexflow/core';
 import { MusicGenerator } from '../src/notation/generator';
 import { MeasureRenderer, tieAnchorRightX } from '../src/notation/renderer';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
-import { Beam, Tuplet } from 'vexflow';
+import { Beam, Tuplet } from 'vexflow/core';
 import { MusicGenerator } from '../src/notation/generator';
 import {
   MAX_BEAM_RISE,

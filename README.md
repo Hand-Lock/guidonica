@@ -62,7 +62,7 @@ Guidonica is constructed upon an uncompromising **suckless, ultra-lightweight, a
    - Written exclusively in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and the Web Audio API directly.
    - Zero React, Vue, Svelte, or Angular. Zero Virtual DOM reconciliation overhead.
    - Zero external state management libraries (no Redux, MobX, Zustand, or Pinia).
-   - Entire application JavaScript (excluding VexFlow) is only **~19.3 kB gzipped** (`73.9 kB` uncompressed).
+   - Entire shipped JavaScript is **~117 kB gzipped**: ~24 kB of application code plus ~93 kB of VexFlow's font-free `vexflow/core` build. The music font is a separate **19.6 kB** Bravura subset ([ADR 0058](docs/adr/0058-music-font-audit-and-bravura-subset.md)) instead of the ~600 kB of base64 fonts the full VexFlow entry inlines.
 2. **Single Authoritative Hardware Clock (`AudioContext.currentTime`)**:
    - Visual scroller movement and synthesized audio pulse scheduling are mathematically locked to the hardware audio clock (`AudioContext.currentTime`).
    - Zero `setInterval`, `setTimeout`, or visual delta-time accumulators.
@@ -287,6 +287,7 @@ Guidonica is fully tested and optimized for macOS and Apple Silicon:
 | `pnpm preview` | Serves the production build locally for verification. |
 | `pnpm icons` | Regenerates the Guidonian Hand vector outputs (`favicon.svg`, the README logo, the header glyph) from `scripts/build-icons.mjs`. |
 | `pnpm icons -- --raster` | Also re-renders the PNG/ICO icons (touch, manifest and favicon) through headless Firefox (must be installed). |
+| `pnpm music-font` | Regenerates the Guidonica Notation font (`src/notation/fonts/`) from Bravura via `scripts/build-music-font.py`. Dev-only, needs Python with `pip install fonttools brotli`; the output is committed, so normal development never runs it. |
 
 ---
 
@@ -374,4 +375,4 @@ Copyright &copy; 2026 **A. C. Lo Cascio**.
 ### Copyleft & Network Reciprocity (Section 13)
 - **User Freedoms**: You are free to run, study, inspect, modify, and redistribute this software.
 - **Network Copyleft**: In accordance with Section 13 of the GNU AGPLv3, if you modify this program and run it on a server or host it as a network or cloud service where users interact with it remotely over a computer network, you **must make the complete Corresponding Source code of your modified version available to all users at no charge**, via a prominent network facility (such as a public Git repository).
-- **Third-Party Acknowledgements**: Music notation typesetting and stave vector layout are powered by [VexFlow](https://github.com/vexflow/vexflow), licensed under the [MIT License](https://github.com/vexflow/vexflow/blob/master/LICENSE.txt).
+- **Third-Party Acknowledgements**: Music notation typesetting and stave vector layout are powered by [VexFlow](https://github.com/vexflow/vexflow), licensed under the [MIT License](https://github.com/vexflow/vexflow/blob/master/LICENSE.txt). Music glyphs come from [Bravura](https://github.com/steinbergmedia/bravura) © Steinberg Media Technologies GmbH, licensed under the [SIL Open Font License 1.1](src/notation/fonts/OFL.txt) and shipped as the renamed subset "Guidonica Notation".

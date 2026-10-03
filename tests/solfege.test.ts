@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { Stem, StaveNote } from 'vexflow';
+import { Stem, StaveNote } from 'vexflow/core';
 import {
   ITALIAN_SOLFEGE_SYLLABLES,
   MEASURE_CANVAS_HEIGHT,

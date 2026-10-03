@@ -1208,7 +1208,7 @@ class GuidonicaApp {
     if (this.btnIntroNext) this.btnIntroNext.disabled = this.introLevel === null;
     if (!this.modalIntro.open) this.modalIntro.showModal();
     this.showIntroStep('level');
-    // On a first visit the intro opens before Bravura has loaded: wait to avoid tofu
+    // On a first visit the intro opens before the music font has loaded: wait to avoid tofu
     void this.fontInitPromise?.then(() => {
       if (this.modalIntro?.open) this.renderIntroPreviews();
     });

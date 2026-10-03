@@ -17,7 +17,7 @@ This directory documents the core architectural decisions, implementation method
 | [0009](0009-cross-platform-portability-and-github-synchronization.md) | Cross-Platform Portability, macOS Apple Silicon Support & GitHub Synchronization | Accepted | 2026-09-14 |
 | [0010](0010-separate-tuplet-subdivision-matrix-menu.md) | Separate Tuplet Subdivision Matrix Menu & Arbitrary n-Tuplet Engine | Accepted | 2026-09-14 |
 | [0011](0011-tuplet-beam-stem-direction-unification.md) | Tuplet Beam Stem Direction Unification & Contiguous Non-Tuplet Grouping | Accepted | 2026-09-14 |
-| [0012](0012-web-font-synchronization-and-clef-invalidation.md) | Web Font Loading Synchronization & Pinned Clef Cache Invalidation | Accepted | 2026-09-16 |
+| [0012](0012-web-font-synchronization-and-clef-invalidation.md) | Web Font Loading Synchronization & Pinned Clef Cache Invalidation | Accepted; amended by 0058 | 2026-09-16 |
 | [0013](0013-production-readiness-and-high-dpi-retina-pipeline.md) | Production Readiness, High-DPI Retina Pipeline & Audio Polish | Superseded in part by 0042 | 2026-09-16 |
 | [0014](0014-solfege-label-transform-and-vertical-clearance.md) | Solfège Label Context Transform & Vertical Clearance Architecture | Superseded in part by 0041 | 2026-09-16 |
 | [0015](0015-italian-solfege-and-cross-platform-auto-night-mode.md) | Italian Solfège Syllables and Cross-Platform OS-Aligned Auto Night Mode | Accepted | 2026-09-16 |
@@ -63,6 +63,7 @@ This directory documents the core architectural decisions, implementation method
 | [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056 | 2026-10-03 |
 | [0056](0056-notch-safe-notation-stage.md) | Notch-Safe Notation Stage | Accepted | 2026-10-03 |
 | [0057](0057-canvas-bounded-beams-and-tuplet-numbers.md) | Canvas-Bounded Beams & Tuplet Numbers | Accepted | 2026-10-03 |
+| [0058](0058-music-font-audit-and-bravura-subset.md) | Music Font Audit: Keep Bravura, Ship a Renamed Subset | Accepted | 2026-10-03 |
 
 ---
 
