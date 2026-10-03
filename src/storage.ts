@@ -215,3 +215,34 @@ export function saveStoredSettings(settings: AppSettings): void {
     // Ignore quota or private-browsing errors
   }
 }
+
+export const ONBOARDED_KEY = 'guidonica_onboarded_v1';
+
+/** True when any current or legacy settings record exists (i.e. a returning user). */
+export function hasStoredSettings(): boolean {
+  try {
+    const storage = window.localStorage;
+    return [STORAGE_KEY, LEGACY_STORAGE_KEY_V2, LEGACY_STORAGE_KEY_V1].some(
+      (key) => storage.getItem(key) !== null
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** True once the onboarding intro has been completed, skipped or dismissed. */
+export function isOnboarded(): boolean {
+  try {
+    return window.localStorage.getItem(ONBOARDED_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
+export function markOnboarded(): void {
+  try {
+    window.localStorage.setItem(ONBOARDED_KEY, '1');
+  } catch {
+    // Ignore quota or private-browsing errors
+  }
+}

@@ -1457,6 +1457,162 @@ dialog.about-dialog::backdrop {
 }
 
 /* ==========================================================================
+   Level & clef intro (glass sheet, acrylic option cards; ADR 0049)
+   ========================================================================== */
+
+dialog.intro-dialog {
+  max-width: 600px;
+}
+
+.intro-dialog .about-dialog-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.intro-mark {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.intro-step {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.intro-step[hidden] {
+  display: none;
+}
+
+.intro-question {
+  font-family: var(--font-title);
+  font-style: italic;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.intro-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.intro-options:focus {
+  outline: none;
+}
+
+.intro-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: var(--hit);
+  padding: 9px 12px 9px 30px;
+  border: 1px solid var(--acrylic-border);
+  border-radius: var(--r-md);
+  background: var(--acrylic-bg);
+  box-shadow: var(--acrylic-shadow);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--fast) ease, color var(--fast) ease, box-shadow var(--fast) ease;
+}
+
+/* LED tell, as on the settings chips */
+.intro-option::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 15px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--led-off);
+  box-shadow: var(--led-off-shadow);
+}
+
+.intro-option-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.intro-option-desc {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.intro-option[aria-checked='true'] {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--accent);
+}
+
+.intro-option[aria-checked='true'] .intro-option-name {
+  color: var(--accent-strong);
+}
+
+.intro-option[aria-checked='true']::before {
+  background: var(--led-on);
+  box-shadow: 0 0 6px var(--color-olo);
+}
+
+.intro-option:focus-visible {
+  outline: none;
+  box-shadow: var(--acrylic-shadow), var(--focus-ring);
+}
+
+.intro-option:active {
+  transform: translateY(1px);
+}
+
+@media (hover: hover) {
+  .intro-option:hover {
+    border-color: var(--accent);
+  }
+}
+
+.intro-note {
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.intro-footer {
+  justify-content: space-between;
+}
+
+.intro-footer .btn-primary {
+  min-width: 118px;
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: var(--gel-spec);
+}
+
+.icon-hand {
+  width: 18px;
+  height: 18px;
+}
+
+@media (min-width: 601px) {
+  .intro-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Five levels: the hardest spans the last row */
+  .intro-options-levels .intro-option:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ==========================================================================
    Responsive contract
    Desktop (>960): one-row ribbon, in-flow card drawer (open by default)
    Tablet  (≤960): two-row ribbon, drawer becomes an overlay glass sheet

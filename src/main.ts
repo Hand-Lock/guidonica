@@ -37,6 +37,15 @@ import { MeasureBuffer } from './scroller/buffer';
 import { ScrollerView } from './scroller/scroller';
 import { isMusicFontReady, waitForMusicFonts } from './notation/fonts';
 import { ScreenWakeLockController } from './utils/wakeLock';
+import { hasStoredSettings, isOnboarded, markOnboarded } from './storage';
+import {
+  INTRO_CLEF_OPTIONS,
+  INTRO_CLEFS,
+  LEVEL_PRESETS,
+  LevelId,
+  buildPresetSettings,
+  matchLevel,
+} from './presets';
 
 interface WebKitDocument extends Document {
   webkitFullscreenEnabled?: boolean;
@@ -140,7 +149,20 @@ class GuidonicaApp {
   private btnAboutDismiss: HTMLButtonElement | null;
   private btnFooterAbout: HTMLButtonElement | null;
 
+  // Level & clef intro (ADR 0049)
+  private modalIntro: HTMLDialogElement | null;
+  private introStepLevel: HTMLElement | null;
+  private introStepClef: HTMLElement | null;
+  private btnIntroNext: HTMLButtonElement | null;
+  private introLevelButtons: HTMLButtonElement[] = [];
+  private introClefButtons: HTMLButtonElement[] = [];
+  private introLevel: LevelId | null = null;
+  private introClef: Clef = 'treble';
+
   constructor() {
+    // 0. First visit? Decide before hydration can persist any settings
+    const showIntro = !isOnboarded() && !hasStoredSettings();
+
     // 1. Query all UI DOM elements
     this.btnPlayPause = document.getElementById('btn-play-pause') as HTMLButtonElement;
     this.btnLabel = this.btnPlayPause.querySelector('.btn-label') as HTMLElement;
@@ -234,6 +256,11 @@ class GuidonicaApp {
     this.btnAboutDismiss = document.getElementById('btn-about-dismiss') as HTMLButtonElement | null;
     this.btnFooterAbout = document.getElementById('btn-footer-about') as HTMLButtonElement | null;
 
+    this.modalIntro = document.getElementById('modal-intro') as HTMLDialogElement | null;
+    this.introStepLevel = document.getElementById('intro-step-level');
+    this.introStepClef = document.getElementById('intro-step-clef');
+    this.btnIntroNext = document.getElementById('btn-intro-next') as HTMLButtonElement | null;
+
     const canvas = document.getElementById('scroller-canvas') as HTMLCanvasElement;
 
     // 2. Initialize engines with stored settings
@@ -263,6 +290,7 @@ class GuidonicaApp {
     // 4. Setup event wiring and subscriptions
     this.bindEvents();
     this.bindAboutModalEvents();
+    this.bindIntroModalEvents();
     this.bindKeyboardShortcuts();
     this.bindAudioEvents();
     this.bindLifecycleEvents();
@@ -276,6 +304,11 @@ class GuidonicaApp {
 
     // 7. Asynchronously await musical font readiness before generating notation measures
     this.fontInitPromise = this.initFonts();
+
+    // 8. New visitors pick a level & clef (no AudioContext involved; audio waits for Start)
+    if (showIntro) {
+      this.openIntro();
+    }
   }
 
   private hydrateUI(settings: typeof globalState.settings): void {
@@ -941,6 +974,151 @@ class GuidonicaApp {
     });
   }
 
+  private bindIntroModalEvents(): void {
+    const levelContainer = document.getElementById('intro-level-options');
+    const clefContainer = document.getElementById('intro-clef-options');
+    if (!this.modalIntro || !levelContainer || !clefContainer) return;
+
+    this.introLevelButtons = this.buildIntroOptions(
+      levelContainer,
+      LEVEL_PRESETS.map((p) => ({ value: p.id, name: p.name, description: p.description })),
+      (value) => {
+        this.introLevel = value as LevelId;
+        if (this.btnIntroNext) this.btnIntroNext.disabled = false;
+      }
+    );
+    this.introClefButtons = this.buildIntroOptions(
+      clefContainer,
+      INTRO_CLEF_OPTIONS.map((o) => ({ value: o.clef, name: o.name, description: o.description })),
+      (value) => {
+        this.introClef = value as Clef;
+      }
+    );
+
+    const closeIntro = (): void => {
+      if (this.modalIntro?.open) this.modalIntro.close();
+    };
+
+    document.getElementById('btn-intro-open')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.closeTupletsPopover();
+      this.openIntro();
+    });
+    document.getElementById('btn-intro-close')?.addEventListener('click', closeIntro);
+    document.getElementById('btn-intro-skip')?.addEventListener('click', closeIntro);
+    this.btnIntroNext?.addEventListener('click', () => this.showIntroStep('clef'));
+    document.getElementById('btn-intro-back')?.addEventListener('click', () => this.showIntroStep('level'));
+    document.getElementById('btn-intro-start')?.addEventListener('click', () => {
+      if (this.introLevel) {
+        this.applyLevelPreset(this.introLevel, this.introClef);
+      }
+      closeIntro();
+    });
+
+    // Close on the native backdrop; Esc closes natively. Every exit counts as onboarded.
+    this.modalIntro.addEventListener('click', (e) => {
+      if (e.target === this.modalIntro) closeIntro();
+    });
+    this.modalIntro.addEventListener('close', () => markOnboarded());
+  }
+
+  /** Builds a roving-tabindex radiogroup of option cards inside `container`. */
+  private buildIntroOptions(
+    container: HTMLElement,
+    items: readonly { value: string; name: string; description: string }[],
+    onSelect: (value: string) => void
+  ): HTMLButtonElement[] {
+    const buttons = items.map((item) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'intro-option';
+      btn.setAttribute('role', 'radio');
+      btn.setAttribute('aria-checked', 'false');
+      btn.dataset.value = item.value;
+      const name = document.createElement('span');
+      name.className = 'intro-option-name';
+      name.textContent = item.name;
+      const desc = document.createElement('span');
+      desc.className = 'intro-option-desc';
+      desc.textContent = item.description;
+      btn.append(name, desc);
+      container.appendChild(btn);
+      return btn;
+    });
+
+    // Radio semantics: focus always follows the selection
+    const select = (btn: HTMLButtonElement): void => {
+      this.setIntroSelection(buttons, btn.dataset.value ?? null);
+      btn.focus();
+      onSelect(btn.dataset.value ?? '');
+    };
+
+    for (const btn of buttons) {
+      btn.addEventListener('click', () => select(btn));
+    }
+
+    // Focused itself while nothing is selected, so no card shows a misleading ring
+    container.tabIndex = -1;
+    container.addEventListener('keydown', (e) => {
+      const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+      let next = index;
+      if (index < 0 && document.activeElement !== container) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = (index + 1) % buttons.length;
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = (Math.max(index, 0) - 1 + buttons.length) % buttons.length;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = buttons.length - 1;
+      else return;
+      e.preventDefault();
+      buttons[next].focus();
+      select(buttons[next]);
+    });
+
+    this.setIntroSelection(buttons, null);
+    return buttons;
+  }
+
+  /** Marks `value` as checked; the checked card (or the first) is the group's tab stop. */
+  private setIntroSelection(buttons: readonly HTMLButtonElement[], value: string | null): void {
+    const hasMatch = buttons.some((b) => b.dataset.value === value);
+    buttons.forEach((btn, i) => {
+      const checked = btn.dataset.value === value;
+      btn.setAttribute('aria-checked', String(checked));
+      btn.tabIndex = checked || (!hasMatch && i === 0) ? 0 : -1;
+    });
+  }
+
+  private openIntro(): void {
+    if (!this.modalIntro || typeof this.modalIntro.showModal !== 'function') return;
+    const settings = globalState.settings;
+    this.introLevel = matchLevel(settings);
+    this.introClef = INTRO_CLEFS.includes(settings.clef) ? settings.clef : 'treble';
+    this.setIntroSelection(this.introLevelButtons, this.introLevel);
+    this.setIntroSelection(this.introClefButtons, this.introClef);
+    if (this.btnIntroNext) this.btnIntroNext.disabled = this.introLevel === null;
+    if (!this.modalIntro.open) this.modalIntro.showModal();
+    this.showIntroStep('level');
+  }
+
+  private showIntroStep(step: 'level' | 'clef'): void {
+    if (!this.introStepLevel || !this.introStepClef) return;
+    this.introStepLevel.hidden = step !== 'level';
+    this.introStepClef.hidden = step !== 'clef';
+    const buttons = step === 'level' ? this.introLevelButtons : this.introClefButtons;
+    const checked = buttons.find((b) => b.getAttribute('aria-checked') === 'true');
+    (checked ?? buttons[0]?.parentElement)?.focus();
+  }
+
+  /** Loads a level preset with the chosen clef; only user-visible settings change. */
+  private applyLevelPreset(level: LevelId, clef: Clef): void {
+    globalState.updateSettings(buildPresetSettings(level, clef));
+    const s = globalState.settings;
+    this.metronome.setTempo(s.tempo);
+    this.metronome.setTimeSignature(s.timeSignature);
+    this.renderBeatDots(s.timeSignature);
+    this.hydrateUI(s); // Syncs every control, tuplet availability and auto zoom
+    this.resetSession(); // Stops playback and regenerates the buffer
+  }
+
   private bindKeyboardShortcuts(): void {
     window.addEventListener('keydown', (e) => {
       // Leave browser/OS chords (Cmd+R reload, Ctrl +/- zoom, Alt menus) untouched
@@ -948,8 +1126,8 @@ class GuidonicaApp {
         return;
       }
 
-      // If About modal is open, ignore global app shortcuts
-      if (this.modalAbout && this.modalAbout.open) {
+      // If a modal (About, level intro) is open, ignore global app shortcuts
+      if (this.modalAbout?.open || this.modalIntro?.open) {
         return;
       }
 
