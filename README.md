@@ -207,6 +207,7 @@ Overhead syllable and letter indicators assist ear training and note identificat
 - **AudioContext State Recovery**: Restores Web Audio contexts interrupted by system sleep, phone calls, or audio route changes.
 - **Screen Wake Lock**: Uses `navigator.wakeLock` to prevent the device display from dimming or sleeping during long practice sessions.
 - **iOS AudioSession Silent Mode Bypass**: Uses the W3C WebKit `navigator.audioSession` API to engage `playback` mode during practice (enabling audio through the speaker even if the iPhone physical mute switch is toggled), dropping cleanly back to `ambient` on pause.
+- **Works Offline**: After the first visit, a hand-written, dependency-free service worker serves the app from its cache, so practice continues with no connection; online, every reload still fetches the newest version ([ADR 0063](docs/adr/0063-offline-service-worker.md)).
 - **Fullscreen API**: Clean toggle to enter immersive full-window notation mode, with capability detection that hides the button on unsupported devices (e.g., iPhone Safari).
 
 ### 12. Aero-Guidonica Skeuomorphic Design System
@@ -369,7 +370,8 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0045](docs/adr/0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md) | Aero-Guidonica 2: Material Hierarchy & Responsive Redesign | Accepted |
 | [0046](docs/adr/0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Superseded in part by 0047 |
 | [0047](docs/adr/0047-guidonian-hand-v2.md) | Guidonian Hand v2: Anatomical Proportions, Volume Shading & 3D Thread | Accepted |
-| [0048](docs/adr/0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted |
+| [0048](docs/adr/0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted; amended by 0063 |
+| [0063](docs/adr/0063-offline-service-worker.md) | Offline Service Worker | Accepted |
 
 ---
 

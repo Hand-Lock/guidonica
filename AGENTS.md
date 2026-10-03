@@ -13,6 +13,7 @@ The core software architecture is strictly governed by an uncompromising "suckle
 - **Pure Mathematical Generation**: Rhythms are partitioned via recursive metric tree subdivision based on exact rational time signature fractions. Pitches are generated via a discrete Markov random walk with boundary bias. Zero heavy music theory AI or rule engines.
 - **The Ergodic Generation Principle (State-Space Completeness)**: The music generator is strictly ergodic (the "infinite monkey theorem" heuristic). For any user-selected parameter configuration $\Omega = (\text{Clef}, \text{TimeSig}, \text{Subdivisions}, \text{Dotted}, \text{Ties}, \text{Intervals}, \text{Accidentals})$, *every mathematically and grammatically valid permutation within $\Omega$ must possess a strictly non-zero generation probability ($P(\omega) > 0, \forall \omega \in \Omega$)*. No valid rhythmic figure (such as `q 8` or `8 q` in 6/8, or `q h` and `h q` in 3/4) or interval leap may be artificially suppressed, hijacked, or hardcoded out of existence. Generation rules must remain transparent, organized, and complete.
 - **Pure CSS3 Liquid Glass & Zero CSS Frameworks**: The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed via pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled shadows). Zero Tailwind runtime, zero CSS-in-JS libraries, zero sprite textures. Total CSS is ~7.8 kB gzipped. Text fonts (Alegreya, Alegreya Sans, Ubuntu Mono) are self-hosted Latin woff2 files in `src/fonts/` (ADR 0060); never load fonts, scripts or styles from a third-party origin.
+- **Offline Without Dependencies**: A hand-written service worker (`src/sw.ts`, ~1.8 kB) precaches the build so the app works offline after one visit (ADR 0063). No Workbox, no PWA plugin; never add `skipWaiting()` or runtime caching of navigations.
 - **Strict Typing, Zero Silent Errors**: TypeScript with `strict: true`. Avoid `any`. Catch duration arithmetic mismatches, null pointers, and VexFlow type incompatibilities at compile time. Instant build in < 800ms.
 
 ### Authoritative Specification
@@ -29,7 +30,7 @@ guidonica/
 ├── SPEC.md                 # Product and pedagogical specification
 ├── package.json            # Minimal dependencies (vite, typescript, vexflow; @vexflow-fonts/bravura as font source)
 ├── tsconfig.json           # Strict TypeScript configuration
-├── vite.config.ts          # Minimal Vite configuration
+├── vite.config.ts          # Minimal Vite configuration + serviceWorker() build plugin (ADR 0063)
 ├── index.html              # Minimal semantic HTML shell
 ├── public/                 # Copied verbatim: favicon.svg/.ico, apple-touch-icon.png, icon-*.png, manifest.webmanifest, og-image.png (ADR 0061), robots.txt, sitemap.xml (ADR 0062), CNAME
 ├── scripts/
@@ -45,6 +46,7 @@ guidonica/
 │       └── 0001-*.md       # Specific architectural & subsystem records
 └── src/
     ├── main.ts             # Application bootstrapper, UI event wiring & locale bootstrap
+    ├── sw.ts               # Offline service worker, compiled to dist/sw.js by vite.config.ts (ADR 0063)
     ├── state.ts            # Typed session state and parameter interfaces
     ├── storage.ts          # Validated localStorage settings, defaults & onboarding flag
     ├── presets.ts          # Level presets, preview representations & signatures (ADR 0049, 0051, 0052)
@@ -55,6 +57,7 @@ guidonica/
     │   └── locales/        # en.ts (reference, defines Messages), it.ts, fr.ts, de.ts, es.ts
     ├── utils/
     │   ├── radioGroup.ts   # Shared roving-tabindex radiogroup helpers (intro cards, language chips)
+    │   ├── serviceWorker.ts # Production-only service worker registration (ADR 0063)
     │   └── wakeLock.ts     # Screen Wake Lock controller
     ├── audio/
     │   └── metronome.ts    # Web Audio oscillator synthesis & clock scheduler

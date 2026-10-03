@@ -1,6 +1,6 @@
 # 0048. Brand Mark Rollout: Web App Manifest & README Logo
 
-- **Status**: Accepted (extends [0046](0046-guidonian-hand-brand-mark.md) and [0047](0047-guidonian-hand-v2.md))
+- **Status**: Accepted; amended by [0063](0063-offline-service-worker.md) (extends [0046](0046-guidonian-hand-brand-mark.md) and [0047](0047-guidonian-hand-v2.md))
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 
@@ -47,7 +47,7 @@
 - Static, hand-written JSON (it is not geometry), linked from `index.html` with `<link rel="manifest" href="manifest.webmanifest" />`.
 - `start_url: "."` and `scope: "."` are relative to the manifest URL. They resolve to the site root on `guidonica.it` and to `/guidonica/` on the `hand-lock.github.io` mirror, consistent with Vite's default `base: './'` and the relative icon links (ADR 0046); `public/` files are copied verbatim, so the manifest's relative paths never depend on `base`.
 - `display: "standalone"`; `background_color` and `theme_color` are `#e9eef3`, the light `theme-color` meta. The manifest cannot follow `prefers-color-scheme`; the `theme-color` metas still do once the page loads.
-- No service worker: the manifest is for install and icons only. Offline caching is a separate decision.
+- No service worker here: the manifest is for install and icons only. Offline caching was decided separately in [ADR 0063](0063-offline-service-worker.md).
 
 ### 4. README logo
 
