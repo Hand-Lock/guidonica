@@ -40,6 +40,7 @@ export interface PreviewOmissions {
   subdivisions?: readonly Exclude<keyof SubdivisionOptions, 'dotted'>[];
   intervals?: readonly (keyof IntervalOptions)[];
   tupletValues?: readonly TupletValue[]; // Drops every tuplet cell of these note values
+  rests?: false; // Literal false: can only switch rests off
 }
 
 export interface LevelPreset {
@@ -156,8 +157,8 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       solfegeLabelMode: 'none',
       countIn: true,
     },
-    // Whole and half notes are shared with Beginner; show the new eighths, dots & rests
-    preview: { subdivisions: ['whole', 'half'], intervals: ['unison'] },
+    // Keep q for qd 8 / 8 q 8; show the new eighths, dots & rests with 3rds and 4ths
+    preview: { subdivisions: ['whole', 'half'], intervals: ['unison', 'second'] },
   },
   {
     id: 'intermediate',
@@ -193,8 +194,12 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       solfegeLabelMode: 'none',
       countIn: true,
     },
-    // Long values hide the new triplets and ties
-    preview: { subdivisions: ['whole', 'half'], intervals: ['unison'] },
+    // Eighths only: every beat is 8 8 or an eighth triplet, with ties, 4ths and 5ths
+    preview: {
+      subdivisions: ['whole', 'half', 'quarter'],
+      intervals: ['unison', 'second', 'third'],
+      rests: false,
+    },
   },
   {
     id: 'advanced',
@@ -230,8 +235,12 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       solfegeLabelMode: 'none',
       countIn: true,
     },
-    // Steps are shown by every easier level; leaps and 16ths set this one apart
-    preview: { subdivisions: ['whole', 'half'], intervals: ['unison', 'second'] },
+    // No plain quarters: 16th figures and triplets, with 6th to octave leaps
+    preview: {
+      subdivisions: ['whole', 'half', 'quarter'],
+      intervals: ['unison', 'second', 'third', 'fourth', 'fifth'],
+      rests: false,
+    },
   },
   {
     id: 'virtuoso',
@@ -268,11 +277,12 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       solfegeLabelMode: 'none',
       countIn: true,
     },
-    // At 360 px/beat a single quarter (or ¼ tuplet) fills the window; keep 32nds & fast tuplets
+    // At 360 px/beat a quarter or an eighth fills the window; 16ths, 32nds & fast tuplets
     preview: {
-      subdivisions: ['whole', 'half', 'quarter'],
-      intervals: ['unison', 'second'],
+      subdivisions: ['whole', 'half', 'quarter', 'eighth'],
+      intervals: ['unison', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh'],
       tupletValues: ['1/4'],
+      rests: false,
     },
   },
 ];
@@ -303,6 +313,7 @@ export function buildPreviewSettings(level: LevelId, clef: Clef): Partial<AppSet
   for (const value of omit.tupletValues ?? []) {
     for (const name of TUPLET_NAMES) tuplets[name][value] = false;
   }
+  if (omit.rests === false) patch.rests = false;
   return patch;
 }
 
