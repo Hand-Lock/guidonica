@@ -1,12 +1,16 @@
 import { MusicGenerator } from './generator';
 import { MeasureRenderer } from './renderer';
+import { PreviewWindow, previewWindow } from '../presets';
 import {
   AppSettings,
   CANVAS_PALETTE,
   Clef,
+  MeasureData,
+  NOTE_START_OFFSET,
   RenderedMeasure,
   STAVE_TOP_LINE_Y,
   ThemeMode,
+  computeBeatWidth,
   resolveTheme,
 } from './types';
 
@@ -29,6 +33,12 @@ const STRIP_HEADER_ADVANCE = 88;
 const FIRST_BARLINE_TRIM = 3;
 /** Upper bound on generated bars, whatever the bar width. */
 const STRIP_MAX_MEASURES = 12;
+/** Fraction of the card width left unfaded (mirrors the mask-image stop in style.css). */
+const STRIP_FADE_START = 0.8;
+/** Strips tried per card before drawing the last one anyway (ADR 0052). */
+const MAX_PREVIEW_ATTEMPTS = 32;
+/** Strip x of the first bar's left edge, right after the pinned header. */
+const STRIP_START_X = (STRIP_HEADER_ADVANCE - FIRST_BARLINE_TRIM) * STRIP_SCALE;
 
 /** Clef icons are larger than the strips: a lone glyph must read at a glance. */
 const ICON_SCALE = 0.5;
@@ -92,12 +102,44 @@ export function releasePreview(canvas: HTMLCanvasElement): void {
   canvas.height = 0;
 }
 
+/** Consecutive bars from a fresh generator until the strip is full (data only, no layout). */
+function generateStrip(settings: AppSettings): MeasureData[] {
+  const generator = new MusicGenerator();
+  const measures: MeasureData[] = [];
+  let x = STRIP_START_X;
+  let startBeat = 0;
+  for (let i = 0; i < STRIP_MAX_MEASURES && x < STRIP_WIDTH; i++) {
+    const data = generator.generateMeasure(i, settings, startBeat);
+    measures.push(data);
+    x += data.width * STRIP_SCALE; // Equals the rendered width
+    startBeat += data.beatsPerMeasure;
+  }
+  return measures;
+}
+
 /**
  * Draws a freshly generated excerpt for `settings` into `target`: pinned header, then
  * consecutive bars from a fresh generator until the strip is full, so barline ties and
- * every other rule behave exactly as in the scroller.
+ * every other rule behave exactly as in the scroller. With `accept`, strips are drawn as
+ * data and re-rolled until the unfaded part of the card passes it (ADR 0052); after
+ * MAX_PREVIEW_ATTEMPTS the last strip, still a valid sample, is drawn.
  */
-export function renderLevelPreview(target: HTMLCanvasElement, settings: AppSettings): void {
+export function renderLevelPreview(
+  target: HTMLCanvasElement,
+  settings: AppSettings,
+  accept?: (window: PreviewWindow) => boolean
+): void {
+  // Spacing is linear: a note at strip beat b sits at STRIP_START_X + (NOTE_START_OFFSET + b · W_beat) · scale
+  const visibleWidth = Math.min(target.clientWidth || STRIP_WIDTH, STRIP_WIDTH) * STRIP_FADE_START;
+  const beatWidth = computeBeatWidth(settings.subdivisions, settings.timeSignature, settings.tuplets);
+  const visibleBeats =
+    (visibleWidth - STRIP_START_X - NOTE_START_OFFSET * STRIP_SCALE) / (beatWidth * STRIP_SCALE);
+  let measures = generateStrip(settings);
+  for (let attempt = 1; accept && attempt < MAX_PREVIEW_ATTEMPTS; attempt++) {
+    if (accept(previewWindow(measures, visibleBeats))) break;
+    measures = generateStrip(settings);
+  }
+
   const height = (STRIP_CROP_BOTTOM - STRIP_CROP_TOP) * STRIP_SCALE;
   const ctx = prepare(target, STRIP_WIDTH, height, STRIP_SCALE);
   if (!ctx) return;
@@ -110,26 +152,21 @@ export function renderLevelPreview(target: HTMLCanvasElement, settings: AppSetti
   ctx.drawImage(header, 0, offsetY, header.width / currentDpr(), header.height / currentDpr());
   releasePreview(header);
 
-  const generator = new MusicGenerator();
-  const startX = (STRIP_HEADER_ADVANCE - FIRST_BARLINE_TRIM) * STRIP_SCALE;
-  let x = startX;
-  let startBeat = 0;
-  for (let i = 0; i < STRIP_MAX_MEASURES && x < STRIP_WIDTH; i++) {
-    const data = generator.generateMeasure(i, settings, startBeat);
+  let x = STRIP_START_X;
+  measures.forEach((data, i) => {
     const measure: RenderedMeasure = renderer.renderMeasure(data, settings.theme, settings.solfegeLabelMode);
     ctx.save();
     if (i === 0) {
       // The opening bar starts right after the header, which needs no barline
       ctx.beginPath();
-      ctx.rect(startX + FIRST_BARLINE_TRIM * STRIP_SCALE, 0, STRIP_WIDTH, height);
+      ctx.rect(STRIP_START_X + FIRST_BARLINE_TRIM * STRIP_SCALE, 0, STRIP_WIDTH, height);
       ctx.clip();
     }
     ctx.drawImage(measure.canvas, x, offsetY, measure.width, measure.height);
     ctx.restore();
     releasePreview(measure.canvas);
     x += measure.width;
-    startBeat += data.beatsPerMeasure;
-  }
+  });
 }
 
 /** Draws `clef` alone on a short staff fragment, so alto and tenor C clefs read apart. */

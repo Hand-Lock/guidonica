@@ -1,6 +1,6 @@
 # 0051. Representation Presets for the Intro Level Previews
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0052](0052-intro-preview-signature-check.md)
 - **Date**: 2026-10-03
 - **Author**: Claude & lauseta
 - **Amends**: [0050](0050-intro-notation-previews.md)
@@ -59,8 +59,10 @@ Each row is the full preset minus the omissions.
 | Beginner | h, q | — | 2nd, 3rd | — (off in preset) | — | 110 | q h q / h h with Do-Re-Mi labels |
 | Elementary | q, 8, dotted | — | 3rd, 4th | ✓ | — | 130 | qd 8, 8 qd, 8 q 8, eighth pairs, rests |
 | Intermediate | 8 (w, h, q dropped; dots then have nothing to attach to) | triplet 1/8 | 4th, 5th | — | ✓ | 165 | eighth pairs and eighth triplets (≈ ½ of beats), ties |
-| Advanced | 8, 16, dotted (w, h, q dropped) | triplet 1/4, triplet 1/8 | 6th, 7th, 8ve | — | ✓ | 220 | 8d 16, 16 8d, 16×4, 8 16 16…, eighth and quarter triplets, wide leaps |
-| Virtuoso | 16, 32, dotted (w, h, q, 8 dropped) | every 1/8 and 1/16 cell (1/4 cells dropped) | 8ve, 9th+ | — | ✓ | 360 | 16/32 figures, 16d 32, 5-, 6- and 7-tuplets, compound leaps |
+| Advanced | 8, 16, dotted (w, h, q dropped) | triplet 1/8 (1/4 dropped, ADR 0052) | 6th, 7th, 8ve | — | ✓ | 220 | 8d 16, 16 8d, 16×4, 8 16 16…, eighth triplets, wide leaps |
+| Virtuoso | 16, 32, dotted (w, h, q, 8 dropped) | every 1/16 cell (1/4 and 1/8 dropped, ADR 0052) | 8ve, 9th+ | — | ✓ | 360 | 16/32 figures, 16d 32, 5-, 6- and 7-tuplets of 16ths, compound leaps |
+
+> ADR 0052 dropped the quarter triplet from Advanced and the eighth-value tuplets from Virtuoso, and added a per-level signature check on each card's visible window. The generator checks below describe this ADR's first version.
 
 Checks against `src/notation/generator.ts`:
 - **Intermediate** without q/h: `partitionTwoBeats` offers only 1+1. `partitionSingleBeat` then offers {8 8, triplet ⅛}.
@@ -91,7 +93,7 @@ Checks against `src/notation/generator.ts`:
   | Intermediate, Advanced | `w`, `h`, `hd`, `q`, `qd` |
   | Virtuoso | `w`, `h`, `hd`, `q`, `qd`, `8`, `8d` |
 
-  Virtuoso never draws a `q` tuplet.
+  Virtuoso never draws a `q` tuplet (ADR 0052 extends this to Advanced, and to `8` tuplets on Virtuoso).
 - 300 preview bars per level contain no rest, except Elementary, which produces at least one.
 - Between consecutive sounding notes (skipping `tieEnd` notes), the diatonic distance lies inside the level's kept band. Pitches are parsed from the `keys` as letter index + 7 × octave.
 - `matchLevel` still round-trips the full preset and does not match a preview patch.
@@ -108,7 +110,7 @@ Elementary keeps q for its dotted figures. Rules 1, 3 and 4 and the table above 
 ## Consequences
 
 - **Ergodicity intact**: the generator is untouched and remains ergodic over whatever Ω it is given. Only the preview's *input* is narrowed, the narrowing is published in the table above, and every preview figure is reachable in the real level.
-- **Deliberately biased examples**: the cards are representative examples, not unbiased samples of the level. This replaces the "no cherry-picking" stance of ADR 0050. The bias is a fixed, documented sub-configuration, not resampling or filtering of output.
+- **Deliberately biased examples**: the cards are representative examples, not unbiased samples of the level. This replaces the "no cherry-picking" stance of ADR 0050. The bias is a fixed, documented sub-configuration. (ADR 0052 later added a published, level-specific filter on whole strips; see there.)
 - **Still random**: within the representation, strips are plain samples and change on every open. A strip can still be sparse (e.g. a quarter triplet on an Advanced card), just much less often.
 - **Cost**: about 0.1 kB gzipped JS.
 - **Maintenance**: any new preset needs a `preview` entry (the field is required by the type). Keep rule 2: re-check `computeBeatWidth` equality (the test enforces it) whenever the presets or the beat-width table change.

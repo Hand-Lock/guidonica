@@ -45,14 +45,14 @@ guidonica/
     ├── main.ts             # Application bootstrapper and UI event wiring
     ├── state.ts            # Typed session state and parameter interfaces
     ├── storage.ts          # Validated localStorage settings, defaults & onboarding flag
-    ├── presets.ts          # Level presets & intro preview representations (ADR 0049, 0051)
+    ├── presets.ts          # Level presets, preview representations & signatures (ADR 0049, 0051, 0052)
     ├── style.css           # Clean light-mode styles and accent colors
     ├── audio/
     │   └── metronome.ts    # Web Audio oscillator synthesis & clock scheduler
     ├── notation/
     │   ├── generator.ts    # Procedural rhythm partitioner & pitch random-walk
     │   ├── renderer.ts     # VexFlow offscreen measure canvas builder
-    │   ├── preview.ts      # Intro notation thumbnails: level strips & clef icons (ADR 0050)
+    │   ├── preview.ts      # Intro notation thumbnails: level strips & clef icons (ADR 0050, 0052)
     │   ├── ties.ts         # Tie grammar: notehead placement table & tie legality
     │   └── types.ts        # Musical data types (Note, Measure, Clef, TimeSignature)
     └── scroller/
