@@ -1,6 +1,6 @@
 # 0041. Solfège Labels Anchored to Noteheads (dpr² Transform Fix)
 
-- **Status**: Accepted (supersedes in part [ADR 0014](0014-solfege-label-transform-and-vertical-clearance.md))
+- **Status**: Accepted (supersedes in part [ADR 0014](0014-solfege-label-transform-and-vertical-clearance.md)); amended by [ADR 0057](0057-canvas-bounded-beams-and-tuplet-numbers.md) (§4: tuplets may move to the bottom, and labels clear them on either side)
 - **Date**: 2026-09-25
 - **Author**: Claude & A. C. Lo Cascio
 

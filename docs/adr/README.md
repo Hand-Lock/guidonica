@@ -46,7 +46,7 @@ This directory documents the core architectural decisions, implementation method
 | [0038](0038-setticlavio-complete-clef-system.md) | Setticlavio Complete Clef System: Soprano, Mezzo-Soprano, and Dual Baritone (F & C) Integration | Accepted | 2026-09-19 |
 | [0039](0039-repository-audit-ergodicity-and-clock-unification.md) | Repository Audit: Ergodicity Restoration, Clock Unification, and Configuration Hygiene | Accepted | 2026-09-25 |
 | [0040](0040-engraving-grammar-for-ties-and-cross-barline-ties.md) | Engraving Grammar for Ties and Cross-Barline Ties | Accepted | 2026-09-25 |
-| [0041](0041-solfege-labels-notehead-anchored.md) | Solfège Labels Anchored to Noteheads (dpr² Transform Fix) | Accepted | 2026-09-25 |
+| [0041](0041-solfege-labels-notehead-anchored.md) | Solfège Labels Anchored to Noteheads (dpr² Transform Fix) | Accepted; amended by 0057 | 2026-09-25 |
 | [0042](0042-single-dpr-offscreen-backing-store.md) | Single-dpr Offscreen Backing Store (drop VexFlow `resize()`) | Accepted | 2026-09-25 |
 | [0043](0043-thirty-second-notes.md) | Thirty-Second Notes & Dotted Sixteenths | Accepted | 2026-09-27 |
 | [0044](0044-user-selectable-ledger-lines.md) | User-Selectable Ledger Lines (Above / Below, 0–3) | Accepted | 2026-10-02 |
@@ -62,6 +62,7 @@ This directory documents the core architectural decisions, implementation method
 | [0054](0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055 | 2026-10-03 |
 | [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056 | 2026-10-03 |
 | [0056](0056-notch-safe-notation-stage.md) | Notch-Safe Notation Stage | Accepted | 2026-10-03 |
+| [0057](0057-canvas-bounded-beams-and-tuplet-numbers.md) | Canvas-Bounded Beams & Tuplet Numbers | Accepted | 2026-10-03 |
 
 ---
 
