@@ -2,11 +2,14 @@ import {
   AppSettings,
   Clef,
   DEFAULT_TUPLET_OPTIONS,
+  IntervalOptions,
+  SubdivisionOptions,
   TUPLET_NAMES,
   TUPLET_VALUES,
   TimeSignature,
   TupletCell,
   TupletOptions,
+  TupletValue,
   supportedTuplets,
 } from './notation/types';
 
@@ -32,11 +35,20 @@ export type PresetSettings = Pick<
   | 'countIn'
 >;
 
+/** Toggles a level's intro preview switches off (never on): preview Ω ⊆ preset Ω (ADR 0051). */
+export interface PreviewOmissions {
+  subdivisions?: readonly Exclude<keyof SubdivisionOptions, 'dotted'>[];
+  intervals?: readonly (keyof IntervalOptions)[];
+  tupletValues?: readonly TupletValue[]; // Drops every tuplet cell of these note values
+}
+
 export interface LevelPreset {
   id: LevelId;
   name: string;
   description: string;
   settings: Readonly<PresetSettings>;
+  /** Representation for the intro card: what a 1–3 beat window cannot show well. */
+  preview: Readonly<PreviewOmissions>;
 }
 
 export interface IntroClefOption {
@@ -107,6 +119,8 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       solfegeLabelMode: 'solfege',
       countIn: true,
     },
+    // Window ≈ 1 bar: a whole note would fill it; repeats show no motion
+    preview: { subdivisions: ['whole'], intervals: ['unison'] },
   },
   {
     id: 'elementary',
@@ -142,6 +156,8 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       solfegeLabelMode: 'none',
       countIn: true,
     },
+    // Whole and half notes are shared with Beginner; show the new eighths, dots & rests
+    preview: { subdivisions: ['whole', 'half'], intervals: ['unison'] },
   },
   {
     id: 'intermediate',
@@ -177,6 +193,8 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       solfegeLabelMode: 'none',
       countIn: true,
     },
+    // Long values hide the new triplets and ties
+    preview: { subdivisions: ['whole', 'half'], intervals: ['unison'] },
   },
   {
     id: 'advanced',
@@ -212,6 +230,8 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       solfegeLabelMode: 'none',
       countIn: true,
     },
+    // Steps are shown by every easier level; leaps and 16ths set this one apart
+    preview: { subdivisions: ['whole', 'half'], intervals: ['unison', 'second'] },
   },
   {
     id: 'virtuoso',
@@ -248,6 +268,12 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       solfegeLabelMode: 'none',
       countIn: true,
     },
+    // At 360 px/beat a single quarter (or ¼ tuplet) fills the window; keep 32nds & fast tuplets
+    preview: {
+      subdivisions: ['whole', 'half', 'quarter'],
+      intervals: ['unison', 'second'],
+      tupletValues: ['1/4'],
+    },
   },
 ];
 
@@ -260,6 +286,24 @@ export function buildPresetSettings(level: LevelId, clef: Clef): Partial<AppSett
   const settings = structuredClone(findPreset(level).settings) as PresetSettings;
   settings.tuplets = supportedTuplets(settings.timeSignature, settings.tuplets);
   return { ...settings, clef };
+}
+
+/**
+ * Settings patch for a level's intro preview (ADR 0051): the preset patch with the
+ * level's `preview` omissions switched off. Toggles are only ever cleared, so the
+ * preview's Ω is a subset of the level's Ω and every figure shown is reachable there.
+ */
+export function buildPreviewSettings(level: LevelId, clef: Clef): Partial<AppSettings> {
+  const patch = buildPresetSettings(level, clef);
+  const { subdivisions, intervals, tuplets } = patch;
+  if (!subdivisions || !intervals || !tuplets) return patch;
+  const omit = findPreset(level).preview;
+  for (const key of omit.subdivisions ?? []) subdivisions[key] = false;
+  for (const key of omit.intervals ?? []) intervals[key] = false;
+  for (const value of omit.tupletValues ?? []) {
+    for (const name of TUPLET_NAMES) tuplets[name][value] = false;
+  }
+  return patch;
 }
 
 /** Key-order-insensitive equality for the plain JSON-like values held in settings. */
