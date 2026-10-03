@@ -1,8 +1,8 @@
 {
   "name": "guidonica",
   "private": true,
-  "version": "0.1.0",
-  "description": "High-performance client-only web tool for sight-reading and solfège practice with continuous procedural notation scrolling, inspired by Guido d'Arezzo's historic pedagogy",
+  "version": "1.0.0",
+  "description": "Free sight-reading and solfège practice: endless fresh sheet music scrolls past a playhead in time with a metronome",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "icons": "node scripts/build-icons.mjs",
-    "music-font": "python3 scripts/build-music-font.py"
+    "music-font": "python3 scripts/build-music-font.py",
+    "ui-fonts": "node scripts/fetch-ui-fonts.mjs"
   },
   "engines": {
     "node": ">=22.13"

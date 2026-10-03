@@ -1,7 +1,9 @@
 # ADR 0023: Ubuntu Mono Monospace Typography and Numeric System
 
 ## Status
-Accepted
+Accepted; amended by [ADR 0060](0060-self-hosted-text-fonts-and-privacy-note.md)
+
+> **Amendment (ADR 0060, 2026-10-03):** Ubuntu Mono (and Alegreya / Alegreya Sans) are no longer loaded from Google Fonts. The same Latin woff2 files are self-hosted in `src/fonts/` with `@font-face` rules in `src/style.css`; the `fonts.googleapis.com` link and preconnects below are gone. The family name, weights and `--font-mono` fallback stack are unchanged.
 
 ## Date
 2026-09-18
