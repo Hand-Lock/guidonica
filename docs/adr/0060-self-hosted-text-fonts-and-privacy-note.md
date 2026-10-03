@@ -81,8 +81,8 @@ leaves your device." (`metaPrivacy`, `privacyNote` in every locale). The Third-P
 Acknowledgements paragraph (`thanksHtml`) now credits Alegreya, Alegreya Sans and Ubuntu Mono with
 their licences, since the app now redistributes them.
 
-If page-view counting is ever added (GoatCounter was considered and deferred), this line must
-change in the same commit, and that endpoint becomes the single documented exception.
+If any third-party request is ever added, this line must change in the same commit, and that
+endpoint becomes the single documented exception.
 
 ## Consequences
 
