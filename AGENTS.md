@@ -52,6 +52,7 @@ guidonica/
     ├── notation/
     │   ├── generator.ts    # Procedural rhythm partitioner & pitch random-walk
     │   ├── renderer.ts     # VexFlow offscreen measure canvas builder
+    │   ├── preview.ts      # Intro notation thumbnails: level strips & clef icons (ADR 0050)
     │   ├── ties.ts         # Tie grammar: notehead placement table & tie legality
     │   └── types.ts        # Musical data types (Note, Measure, Clef, TimeSignature)
     └── scroller/

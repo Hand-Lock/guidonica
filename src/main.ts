@@ -33,6 +33,7 @@ import { globalState, SessionState } from './state';
 import { MetronomeEngine } from './audio/metronome';
 import { MusicGenerator, clefRangeLabel } from './notation/generator';
 import { MeasureRenderer } from './notation/renderer';
+import { releasePreview, renderClefIcon, renderLevelPreview } from './notation/preview';
 import { MeasureBuffer } from './scroller/buffer';
 import { ScrollerView } from './scroller/scroller';
 import { isMusicFontReady, waitForMusicFonts } from './notation/fonts';
@@ -158,6 +159,10 @@ class GuidonicaApp {
   private introClefButtons: HTMLButtonElement[] = [];
   private introLevel: LevelId | null = null;
   private introClef: Clef = 'treble';
+  private introLevelPreviews = new Map<LevelId, HTMLCanvasElement>();
+  private introClefIcons = new Map<Clef, HTMLCanvasElement>();
+  /** Clef the level strips were last drawn in; null when they hold no pixels. */
+  private introPreviewClef: Clef | null = null;
 
   constructor() {
     // 0. First visit? Decide before hydration can persist any settings
@@ -981,18 +986,20 @@ class GuidonicaApp {
 
     this.introLevelButtons = this.buildIntroOptions(
       levelContainer,
-      LEVEL_PRESETS.map((p) => ({ value: p.id, name: p.name, description: p.description })),
+      LEVEL_PRESETS.map((p) => ({ value: p.id, name: p.name, description: p.description, preview: 'strip' })),
       (value) => {
         this.introLevel = value as LevelId;
         if (this.btnIntroNext) this.btnIntroNext.disabled = false;
-      }
+      },
+      (value, canvas) => this.introLevelPreviews.set(value as LevelId, canvas)
     );
     this.introClefButtons = this.buildIntroOptions(
       clefContainer,
-      INTRO_CLEF_OPTIONS.map((o) => ({ value: o.clef, name: o.name, description: o.description })),
+      INTRO_CLEF_OPTIONS.map((o) => ({ value: o.clef, name: o.name, description: o.description, preview: 'icon' })),
       (value) => {
         this.introClef = value as Clef;
-      }
+      },
+      (value, canvas) => this.introClefIcons.set(value as Clef, canvas)
     );
 
     const closeIntro = (): void => {
@@ -1007,7 +1014,13 @@ class GuidonicaApp {
     document.getElementById('btn-intro-close')?.addEventListener('click', closeIntro);
     document.getElementById('btn-intro-skip')?.addEventListener('click', closeIntro);
     this.btnIntroNext?.addEventListener('click', () => this.showIntroStep('clef'));
-    document.getElementById('btn-intro-back')?.addEventListener('click', () => this.showIntroStep('level'));
+    document.getElementById('btn-intro-back')?.addEventListener('click', () => {
+      // Level examples follow the clef picked on the second step
+      if (this.introPreviewClef !== null && this.introPreviewClef !== this.introClef) {
+        this.renderIntroLevelPreviews();
+      }
+      this.showIntroStep('level');
+    });
     document.getElementById('btn-intro-start')?.addEventListener('click', () => {
       if (this.introLevel) {
         this.applyLevelPreset(this.introLevel, this.introClef);
@@ -1019,14 +1032,22 @@ class GuidonicaApp {
     this.modalIntro.addEventListener('click', (e) => {
       if (e.target === this.modalIntro) closeIntro();
     });
-    this.modalIntro.addEventListener('close', () => markOnboarded());
+    this.modalIntro.addEventListener('close', () => {
+      markOnboarded();
+      // `close` is dispatched as a task: skip if the intro was reopened meanwhile
+      if (!this.modalIntro?.open) this.releaseIntroPreviews();
+    });
   }
 
-  /** Builds a roving-tabindex radiogroup of option cards inside `container`. */
+  /**
+   * Builds a roving-tabindex radiogroup of option cards inside `container`. An item with
+   * a `preview` gets a decorative notation canvas, handed to `onPreview` (ADR 0050).
+   */
   private buildIntroOptions(
     container: HTMLElement,
-    items: readonly { value: string; name: string; description: string }[],
-    onSelect: (value: string) => void
+    items: readonly { value: string; name: string; description: string; preview?: 'strip' | 'icon' }[],
+    onSelect: (value: string) => void,
+    onPreview?: (value: string, canvas: HTMLCanvasElement) => void
   ): HTMLButtonElement[] {
     const buttons = items.map((item) => {
       const btn = document.createElement('button');
@@ -1041,7 +1062,18 @@ class GuidonicaApp {
       const desc = document.createElement('span');
       desc.className = 'intro-option-desc';
       desc.textContent = item.description;
-      btn.append(name, desc);
+      if (item.preview === 'icon') {
+        // Clef glyph first, then the text column
+        const text = document.createElement('span');
+        text.className = 'intro-option-text';
+        text.append(name, desc);
+        btn.append(this.createIntroPreview('intro-option-clef', item.value, onPreview), text);
+      } else {
+        btn.append(name, desc);
+        if (item.preview === 'strip') {
+          btn.append(this.createIntroPreview('intro-option-preview', item.value, onPreview));
+        }
+      }
       container.appendChild(btn);
       return btn;
     });
@@ -1077,6 +1109,43 @@ class GuidonicaApp {
     return buttons;
   }
 
+  private createIntroPreview(
+    className: string,
+    value: string,
+    onPreview?: (value: string, canvas: HTMLCanvasElement) => void
+  ): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    canvas.className = className;
+    // Decorative: the card text already describes the option
+    canvas.setAttribute('aria-hidden', 'true');
+    releasePreview(canvas);
+    onPreview?.(value, canvas);
+    return canvas;
+  }
+
+  /** Fresh examples of every level in the chosen clef, plus the clef icons. */
+  private renderIntroPreviews(): void {
+    this.renderIntroLevelPreviews();
+    const theme = globalState.settings.theme;
+    for (const [clef, canvas] of this.introClefIcons) {
+      renderClefIcon(canvas, clef, theme);
+    }
+  }
+
+  /** Each strip is a real sample within its preset's exact Ω (only clef and theme vary). */
+  private renderIntroLevelPreviews(): void {
+    for (const [level, canvas] of this.introLevelPreviews) {
+      renderLevelPreview(canvas, { ...globalState.settings, ...buildPresetSettings(level, this.introClef) });
+    }
+    this.introPreviewClef = this.introClef;
+  }
+
+  private releaseIntroPreviews(): void {
+    for (const canvas of this.introLevelPreviews.values()) releasePreview(canvas);
+    for (const canvas of this.introClefIcons.values()) releasePreview(canvas);
+    this.introPreviewClef = null;
+  }
+
   /** Marks `value` as checked; the checked card (or the first) is the group's tab stop. */
   private setIntroSelection(buttons: readonly HTMLButtonElement[], value: string | null): void {
     const hasMatch = buttons.some((b) => b.dataset.value === value);
@@ -1097,6 +1166,10 @@ class GuidonicaApp {
     if (this.btnIntroNext) this.btnIntroNext.disabled = this.introLevel === null;
     if (!this.modalIntro.open) this.modalIntro.showModal();
     this.showIntroStep('level');
+    // On a first visit the intro opens before Bravura has loaded: wait to avoid tofu
+    void this.fontInitPromise?.then(() => {
+      if (this.modalIntro?.open) this.renderIntroPreviews();
+    });
   }
 
   private showIntroStep(step: 'level' | 'clef'): void {

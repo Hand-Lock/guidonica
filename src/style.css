@@ -1546,6 +1546,46 @@ dialog.intro-dialog {
   color: var(--text-muted);
 }
 
+/* Procedural notation previews (ADR 0050): transparent canvases on the acrylic card */
+.intro-option-preview {
+  display: block;
+  align-self: stretch;
+  width: 100%;
+  height: 77px; /* STRIP_CROP (196 − 12) units × STRIP_SCALE 0.42, src/notation/preview.ts */
+  margin-top: 6px;
+  /* Crop the 640px strip on the right instead of scaling it: equal notation size on every card */
+  object-fit: cover;
+  object-position: left center;
+  -webkit-mask-image: linear-gradient(to right, #000 80%, transparent);
+  mask-image: linear-gradient(to right, #000 80%, transparent);
+  pointer-events: none;
+}
+
+.intro-options-clefs .intro-option {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.intro-option-clef {
+  flex-shrink: 0;
+  width: 28px;
+  height: 46px; /* ICON_CROP (148 − 56) units × ICON_SCALE 0.5 */
+  pointer-events: none;
+}
+
+/* The LED sits beside the clef icon, centred like the settings chips */
+.intro-options-clefs .intro-option::before {
+  top: calc(50% - 4px);
+}
+
+.intro-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .intro-option[aria-checked='true'] {
   background: var(--accent-tint);
   border-color: var(--accent);
