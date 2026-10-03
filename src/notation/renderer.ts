@@ -78,6 +78,19 @@ const SOLFEGE_FONT_PX = 11;
 /** Labels stay at least this far from the measure canvas's top and bottom edges. */
 const SOLFEGE_CANVAS_MARGIN = 8;
 
+/** Beam ink and tuplet numbers stay at least this far inside the measure canvas (ADR 0057). */
+export const NOTATION_CANVAS_MARGIN = 2;
+/** Engraving cap on a beam's total slant: 2 staff spaces of rise, whatever its length (ADR 0057). */
+export const MAX_BEAM_RISE = 20; // 2 × VexFlow's 10 px staff space
+/** Ink height of a Bravura tuplet digit (U+E880–E889) at VexFlow's 30 px tuplet font: 11.2–11.5 px. */
+export const TUPLET_NUMBER_HEIGHT = 12;
+
+/** Vertical extent of a tuplet number drawn at `yPosition` on the given side (mirrors Tuplet.draw). */
+export function tupletNumberBox(yPosition: number, location: number): { top: number; bottom: number } {
+  const center = yPosition - location * Metrics.get('Tuplet.textYOffset');
+  return { top: center - TUPLET_NUMBER_HEIGHT / 2, bottom: center + TUPLET_NUMBER_HEIGHT / 2 };
+}
+
 /**
  * Where a note's solfège label is centered: on the notehead's x center, a fixed distance
  * from the head on the side opposite the stem (stem up → below, stem down → above).
@@ -290,10 +303,20 @@ export class MeasureRenderer {
       staveNotes[i].getTickContext().setX(targetLinearX - stavePadding);
     }
 
-    // Re-format beams after exact manual note positioning
+    // Re-format beams after exact manual note positioning, slant-capped and canvas-bounded
     for (const beam of beams) {
-      beam.postFormatted = false;
-      beam.postFormat();
+      this.fitBeam(beam);
+    }
+
+    // A tuplet number with no room above the beam moves to the notehead side (ADR 0057)
+    const tupletLocations = new Map<Tuplet, number>();
+    for (const tuplet of tuplets) {
+      let location = Tuplet.LOCATION_TOP;
+      if (tupletNumberBox(tuplet.getYPosition(), location).top < NOTATION_CANVAS_MARGIN) {
+        location = Tuplet.LOCATION_BOTTOM;
+        tuplet.setTupletLocation(location);
+      }
+      tupletLocations.set(tuplet, location);
     }
 
     // Build ties: connect consecutive notes where note[i].tieStart is true and note[i+1].tieEnd is true
@@ -357,7 +380,7 @@ export class MeasureRenderer {
             if (note instanceof StaveNote) tupletByNote.set(note, tuplet);
           }
         }
-        this.drawSolfegeLabels(rawCtx, data, staveNotes, tupletByNote, solfegeMode, solfegeColor);
+        this.drawSolfegeLabels(rawCtx, data, staveNotes, tupletByNote, tupletLocations, solfegeMode, solfegeColor);
       }
     }
 
@@ -419,6 +442,7 @@ export class MeasureRenderer {
     data: MeasureData,
     staveNotes: StaveNote[],
     tupletByNote: Map<StaveNote, Tuplet>,
+    tupletLocations: Map<Tuplet, number>,
     mode: SolfegeLabelMode,
     color: string
   ): void {
@@ -449,14 +473,53 @@ export class MeasureRenderer {
       );
       let y = anchor.y;
       const tuplet = tupletByNote.get(staveNote);
-      if (tuplet && stemDir !== Stem.UP) {
-        // Labels above a tuplet note clear its top bracket and number
-        y = Math.min(y, tuplet.getYPosition() - SOLFEGE_LABEL_OFFSET);
+      if (tuplet) {
+        // A label on the same side as its tuplet's bracket and number clears them (ADR 0041, 0057)
+        const location = tupletLocations.get(tuplet) ?? Tuplet.LOCATION_TOP;
+        const labelAbove = stemDir !== Stem.UP;
+        if (labelAbove && location === Tuplet.LOCATION_TOP) {
+          y = Math.min(y, tuplet.getYPosition() - SOLFEGE_LABEL_OFFSET);
+        } else if (!labelAbove && location === Tuplet.LOCATION_BOTTOM) {
+          y = Math.max(y, tuplet.getYPosition() + SOLFEGE_LABEL_OFFSET);
+        }
       }
       y = Math.max(SOLFEGE_CANVAS_MARGIN, Math.min(MEASURE_CANVAS_HEIGHT - SOLFEGE_CANVAS_MARGIN, y));
       rawCtx.fillText(label, anchor.x, y);
     }
     rawCtx.restore();
+  }
+
+  /**
+   * Post-formats a beam on the linear layout. VexFlow scores slope per pixel, so on our
+   * long linear beams it would follow the contour; the slant is capped at MAX_BEAM_RISE
+   * over the beam's span. If a stem tip still leaves the canvas, the beam is redone flat,
+   * which seats it at the extreme note's minimum stem length (ADR 0057).
+   */
+  private fitBeam(beam: Beam): void {
+    const notes = beam.getNotes();
+    const preBeamExtensions = notes.map((note) => note.getStem()?.getExtension() ?? 0);
+    const span = notes[notes.length - 1].getStemX() - notes[0].getStemX();
+    if (span > 0) {
+      const maxSlope = Math.min(beam.renderOptions.maxSlope, MAX_BEAM_RISE / span);
+      beam.renderOptions.maxSlope = maxSlope;
+      beam.renderOptions.minSlope = -maxSlope;
+    }
+    beam.postFormatted = false;
+    beam.postFormat();
+
+    const fits = notes.every((note) => {
+      if (!note.hasStem()) return true;
+      const tipY = note.getStemExtents().topY;
+      return tipY >= NOTATION_CANVAS_MARGIN && tipY <= MEASURE_CANVAS_HEIGHT - NOTATION_CANVAS_MARGIN;
+    });
+    if (fits) return;
+
+    // Restore the natural stems so the flat beam is measured from them, not the sloped tips
+    notes.forEach((note, i) => note.getStem()?.setExtension(preBeamExtensions[i]));
+    beam.renderOptions.flatBeams = true;
+    beam.renderOptions.flatBeamOffset = undefined;
+    beam.postFormatted = false;
+    beam.postFormat();
   }
 
   private drawBarlineTie(
