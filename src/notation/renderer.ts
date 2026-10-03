@@ -34,6 +34,16 @@ import {
 const tieHeadOffsets = new Map<string, number>();
 
 /**
+ * Spells a duration with VexFlow's numeric code ('q' -> '4', 'hd' -> '2d'). Beam.generateBeams
+ * splits beam groups at unbeamable notes via `parseInt(getDuration()) < 8`, which is NaN for
+ * letter codes, so `16 16 q` would lose its beam (ADR 0064).
+ */
+const NUMERIC_DURATION: Record<string, string> = { w: '1', h: '2', q: '4' };
+function vexDuration(duration: string): string {
+  return (NUMERIC_DURATION[duration[0]] ?? duration[0]) + duration.slice(1);
+}
+
+/**
  * Distance from a note's linear x to where its outgoing tie starts: notehead glyph width
  * plus the dot's right shift (what StaveNote.getTieRightX adds). It depends only on the
  * duration, so it is measured once per duration on a detached note and memoized.
@@ -260,7 +270,7 @@ export class MeasureRenderer {
     const tuplets: Tuplet[] = [];
     for (const entry of tupletGroupsMap.values()) {
       if (entry.notes.length === entry.numNotes) {
-        const isQuarter = entry.notes[0].getDuration() === 'q';
+        const isQuarter = entry.notes[0].getDuration() === '4';
         const tuplet = new Tuplet(entry.notes, {
           numNotes: entry.numNotes,
           notesOccupied: entry.notesOccupied,
@@ -547,7 +557,8 @@ export class MeasureRenderer {
     noteColor: string = '#000000'
   ): StaveNote {
     const isDotted = noteData.duration.endsWith('d');
-    const durationString = noteData.isRest ? `${noteData.duration}r` : noteData.duration;
+    const duration = vexDuration(noteData.duration);
+    const durationString = noteData.isRest ? `${duration}r` : duration;
 
     const staveNote = new StaveNote({
       keys: noteData.keys,

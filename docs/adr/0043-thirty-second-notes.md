@@ -1,6 +1,6 @@
 # 0043. Thirty-Second Notes & Dotted Sixteenths
 
-- **Status**: Accepted (extends [ADR 0040](0040-engraving-grammar-for-ties-and-cross-barline-ties.md))
+- **Status**: Accepted (extends [ADR 0040](0040-engraving-grammar-for-ties-and-cross-barline-ties.md)); amended by [ADR 0064](0064-two-beat-sub-eighth-slots.md)
 - **Date**: 2026-09-27
 - **Author**: Claude & lauseta
 
@@ -58,4 +58,4 @@ No change. `createStaveNote` attaches dots for any duration ending in `d`, which
 - With 32nds on, bars are wide (4/4 = 1440 px at zoom 1), so auto-zoom shrinks the staff more. This is the cost of legible 32nd spacing.
 - 32nd-only practice works: every figure is `32`s, beamed in eighth groups.
 - Tests cover beat conservation, the 32nd-only vocabulary, reachability of `32`, `16d`, `32 16 32` and `8d 32 32` in 4/4 and 6/8, placement-table membership of every generated note with 32nds on, tie rendering of `16d`/`32`, and beat widths.
-- Known pre-existing gap, not addressed here: simple-meter two-beat groups never emit `qd` followed by sub-eighth values (for example `qd 16 16`), and ties can't produce them either.
+- Known pre-existing gap, not addressed here: simple-meter two-beat groups never emitted `qd` followed by sub-eighth values (for example `qd 16 16`), and ties couldn't produce them either. Resolved in [ADR 0064](0064-two-beat-sub-eighth-slots.md).

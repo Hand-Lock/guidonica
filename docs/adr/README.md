@@ -48,7 +48,7 @@ This directory documents the core architectural decisions, implementation method
 | [0040](0040-engraving-grammar-for-ties-and-cross-barline-ties.md) | Engraving Grammar for Ties and Cross-Barline Ties | Accepted | 2026-09-25 |
 | [0041](0041-solfege-labels-notehead-anchored.md) | Solfège Labels Anchored to Noteheads (dpr² Transform Fix) | Accepted; amended by 0057 | 2026-09-25 |
 | [0042](0042-single-dpr-offscreen-backing-store.md) | Single-dpr Offscreen Backing Store (drop VexFlow `resize()`) | Accepted | 2026-09-25 |
-| [0043](0043-thirty-second-notes.md) | Thirty-Second Notes & Dotted Sixteenths | Accepted | 2026-09-27 |
+| [0043](0043-thirty-second-notes.md) | Thirty-Second Notes & Dotted Sixteenths | Accepted; amended by 0064 | 2026-09-27 |
 | [0044](0044-user-selectable-ledger-lines.md) | User-Selectable Ledger Lines (Above / Below, 0–3) | Accepted; amended by 0059 | 2026-10-02 |
 | [0045](0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md) | Aero-Guidonica 2: Material Hierarchy & Responsive Redesign | Accepted; amended by 0054 | 2026-10-02 |
 | [0046](0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Superseded in part by [0047](0047-guidonian-hand-v2.md) | 2026-10-02 |
@@ -69,6 +69,7 @@ This directory documents the core architectural decisions, implementation method
 | [0061](0061-social-preview-card-and-share-metadata.md) | Social Preview Card & Share Metadata | Accepted | 2026-10-03 |
 | [0062](0062-robots-txt-and-sitemap.md) | robots.txt & sitemap.xml | Accepted | 2026-10-03 |
 | [0063](0063-offline-service-worker.md) | Offline Service Worker | Accepted | 2026-10-03 |
+| [0064](0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Accepted | 2026-10-03 |
 
 ---
 

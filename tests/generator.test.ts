@@ -510,6 +510,67 @@ describe('MusicGenerator', () => {
       expect(found).toBe(true);
     });
 
+    // ADR 0064: the half-beat slots of `qd 8`, `8 qd` and `8 q 8` take sub-eighth figures
+    const figures = (m: MeasureData): string[] => m.notes.map((n) => n.duration);
+    const findRun = (m: MeasureData, run: string[], at?: (offset: number) => boolean): boolean =>
+      m.notes.some(
+        (n, i) =>
+          run.every((d, k) => m.notes[i + k]?.duration === d) && (at === undefined || at(n.beatOffset))
+      );
+
+    it('reaches qd 16 16 on a two-beat group in 4/4', () => {
+      const measures = generateMany({
+        ...DEFAULT_APP_SETTINGS,
+        timeSignature: '4/4',
+        subdivisions: { ...noTupletSubdiv, half: false, sixteenth: true, dotted: true },
+        rests: false,
+      });
+      const found = measures.some((m) => findRun(m, ['qd', '16', '16'], (o) => o === 0 || o === 2));
+      expect(found).toBe(true);
+    });
+
+    it('reaches 16 16 qd in 2/4', () => {
+      const measures = generateMany({
+        ...DEFAULT_APP_SETTINGS,
+        timeSignature: '2/4',
+        subdivisions: { ...noTupletSubdiv, half: false, sixteenth: true, dotted: true },
+        rests: false,
+      });
+      const found = measures.some((m) => figures(m).join(' ') === '16 16 qd');
+      expect(found).toBe(true);
+    });
+
+    it('reaches 16 16 q 16 16 in 3/4 with eighths off', () => {
+      const measures = generateMany({
+        ...DEFAULT_APP_SETTINGS,
+        timeSignature: '3/4',
+        subdivisions: { ...noTupletSubdiv, half: false, eighth: false, sixteenth: true },
+        rests: false,
+      });
+      const found = measures.some((m) =>
+        findRun(m, ['16', '16', 'q', '16', '16'], (o) => o % 1 === 0)
+      );
+      expect(found).toBe(true);
+    });
+
+    it('reaches qd followed by a 32nd-bearing half beat in 4/4', () => {
+      const measures = generateMany({
+        ...DEFAULT_APP_SETTINGS,
+        timeSignature: '4/4',
+        subdivisions: { ...noTupletSubdiv, half: false, sixteenth: true, thirtySecond: true, dotted: true },
+        rests: false,
+      });
+      const found = measures.some((m) =>
+        m.notes.some(
+          (n, i) =>
+            n.duration === 'qd' &&
+            (n.beatOffset === 0 || n.beatOffset === 2) &&
+            m.notes[i + 1]?.duration === '32'
+        )
+      );
+      expect(found).toBe(true);
+    });
+
     it('reaches leaps of 12+ diatonic steps with ninthPlus', () => {
       const pitches = pitchPool('treble', DEFAULT_APP_SETTINGS.ledgerLines);
       const measures = generateMany({
