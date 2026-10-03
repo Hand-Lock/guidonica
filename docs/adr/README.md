@@ -17,7 +17,7 @@ This directory documents the core architectural decisions, implementation method
 | [0009](0009-cross-platform-portability-and-github-synchronization.md) | Cross-Platform Portability, macOS Apple Silicon Support & GitHub Synchronization | Accepted | 2026-09-14 |
 | [0010](0010-separate-tuplet-subdivision-matrix-menu.md) | Separate Tuplet Subdivision Matrix Menu & Arbitrary n-Tuplet Engine | Accepted | 2026-09-14 |
 | [0011](0011-tuplet-beam-stem-direction-unification.md) | Tuplet Beam Stem Direction Unification & Contiguous Non-Tuplet Grouping | Accepted | 2026-09-14 |
-| [0012](0012-web-font-synchronization-and-clef-invalidation.md) | Web Font Loading Synchronization & Pinned Clef Cache Invalidation | Accepted; amended by 0058 | 2026-09-16 |
+| [0012](0012-web-font-synchronization-and-clef-invalidation.md) | Web Font Loading Synchronization & Pinned Clef Cache Invalidation | Accepted; amended by 0058, 0060 | 2026-09-16 |
 | [0013](0013-production-readiness-and-high-dpi-retina-pipeline.md) | Production Readiness, High-DPI Retina Pipeline & Audio Polish | Superseded in part by 0042 | 2026-09-16 |
 | [0014](0014-solfege-label-transform-and-vertical-clearance.md) | Solfège Label Context Transform & Vertical Clearance Architecture | Superseded in part by 0041 | 2026-09-16 |
 | [0015](0015-italian-solfege-and-cross-platform-auto-night-mode.md) | Italian Solfège Syllables and Cross-Platform OS-Aligned Auto Night Mode | Accepted; amended by 0059 | 2026-09-16 |
@@ -28,7 +28,7 @@ This directory documents the core architectural decisions, implementation method
 | [0020](0020-in-app-license-and-repository-ui.md) | In-App License and Repository Presentation Architecture | Accepted | 2026-09-17 |
 | [0021](0021-project-rebranding-guidonica.md) | Project, Web-App, and Repository Rebranding to Guidonica | Accepted | 2026-09-17 |
 | [0022](0022-aero-skeuomorphic-design-system-and-manifesto.md) | Aero-Guidonica Skeuomorphic Design System, Alegreya Typography, and Design Manifesto | Accepted | 2026-09-17 |
-| [0023](0023-ubuntu-mono-monospace-typography.md) | Ubuntu Mono Monospace Typography and Numeric System | Accepted | 2026-09-18 |
+| [0023](0023-ubuntu-mono-monospace-typography.md) | Ubuntu Mono Monospace Typography and Numeric System | Accepted; amended by 0060 | 2026-09-18 |
 | [0024](0024-haptic-feedback-feasibility-and-rejection.md) | Technical Feasibility Evaluation and Rejection of Web Haptic Motor Feedback | Decided | 2026-09-18 |
 | [0025](0025-in-app-notation-zoom-and-mobile-ergonomics.md) | In-App Notation Zoom & Mobile Ergonomics | Accepted | 2026-09-18 |
 | [0026](0026-stationary-time-signature-and-stave-header.md) | Stationary Selected Time Signature & Left Stave Header | Accepted | 2026-09-18 |
@@ -65,6 +65,8 @@ This directory documents the core architectural decisions, implementation method
 | [0057](0057-canvas-bounded-beams-and-tuplet-numbers.md) | Canvas-Bounded Beams & Tuplet Numbers | Accepted | 2026-10-03 |
 | [0058](0058-music-font-audit-and-bravura-subset.md) | Music Font Audit: Keep Bravura, Ship a Renamed Subset | Accepted | 2026-10-03 |
 | [0059](0059-localization-and-national-note-naming.md) | Localization & national note naming | Accepted | 2026-10-03 |
+| [0060](0060-self-hosted-text-fonts-and-privacy-note.md) | Self-Hosted Text Fonts & a No-Tracking Privacy Note | Accepted | 2026-10-03 |
+| [0061](0061-social-preview-card-and-share-metadata.md) | Social Preview Card & Share Metadata | Accepted | 2026-10-03 |
 
 ---
 

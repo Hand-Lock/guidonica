@@ -12,7 +12,7 @@ The core software architecture is strictly governed by an uncompromising "suckle
 - **Synthesized Audio (0-Byte Sample Downloads)**: Metronome clicks and woodblock timbres are synthesized live on the audio hardware using native Web Audio `OscillatorNode` (sine/triangle) and exponential `GainNode` envelopes. Zero audio files (MP3/WAV/OGG) downloaded over the network.
 - **Pure Mathematical Generation**: Rhythms are partitioned via recursive metric tree subdivision based on exact rational time signature fractions. Pitches are generated via a discrete Markov random walk with boundary bias. Zero heavy music theory AI or rule engines.
 - **The Ergodic Generation Principle (State-Space Completeness)**: The music generator is strictly ergodic (the "infinite monkey theorem" heuristic). For any user-selected parameter configuration $\Omega = (\text{Clef}, \text{TimeSig}, \text{Subdivisions}, \text{Dotted}, \text{Ties}, \text{Intervals}, \text{Accidentals})$, *every mathematically and grammatically valid permutation within $\Omega$ must possess a strictly non-zero generation probability ($P(\omega) > 0, \forall \omega \in \Omega$)*. No valid rhythmic figure (such as `q 8` or `8 q` in 6/8, or `q h` and `h q` in 3/4) or interval leap may be artificially suppressed, hijacked, or hardcoded out of existence. Generation rules must remain transparent, organized, and complete.
-- **Pure CSS3 Liquid Glass & Zero CSS Frameworks**: The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed via pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled shadows). Zero Tailwind runtime, zero CSS-in-JS libraries, zero sprite textures. Total CSS is ~7.5 kB gzipped.
+- **Pure CSS3 Liquid Glass & Zero CSS Frameworks**: The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed via pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled shadows). Zero Tailwind runtime, zero CSS-in-JS libraries, zero sprite textures. Total CSS is ~7.8 kB gzipped. Text fonts (Alegreya, Alegreya Sans, Ubuntu Mono) are self-hosted Latin woff2 files in `src/fonts/` (ADR 0060); never load fonts, scripts or styles from a third-party origin.
 - **Strict Typing, Zero Silent Errors**: TypeScript with `strict: true`. Avoid `any`. Catch duration arithmetic mismatches, null pointers, and VexFlow type incompatibilities at compile time. Instant build in < 800ms.
 
 ### Authoritative Specification
@@ -31,10 +31,11 @@ guidonica/
 ├── tsconfig.json           # Strict TypeScript configuration
 ├── vite.config.ts          # Minimal Vite configuration
 ├── index.html              # Minimal semantic HTML shell
-├── public/                 # Copied verbatim: favicon.svg/.ico, apple-touch-icon.png, icon-*.png, manifest.webmanifest, CNAME
+├── public/                 # Copied verbatim: favicon.svg/.ico, apple-touch-icon.png, icon-*.png, manifest.webmanifest, og-image.png (ADR 0061), CNAME
 ├── scripts/
 │   ├── build-icons.mjs     # Guidonian Hand mark generator (npm run icons; ADRs 0046–0048)
-│   └── build-music-font.py # Bravura → Guidonica Notation subset (npm run music-font; fontTools, dev-only; ADR 0058)
+│   ├── build-music-font.py # Bravura → Guidonica Notation subset (npm run music-font; fontTools, dev-only; ADR 0058)
+│   └── fetch-ui-fonts.mjs  # Self-hosted text fonts from Google Fonts' Latin subsets (npm run ui-fonts, dev-only; ADR 0060)
 ├── docs/
 │   ├── DESIGN_MANIFESTO.md # Aero-Guidonica design manifesto and visual rules
 │   ├── brand/
@@ -48,6 +49,7 @@ guidonica/
     ├── storage.ts          # Validated localStorage settings, defaults & onboarding flag
     ├── presets.ts          # Level presets, preview representations & signatures (ADR 0049, 0051, 0052)
     ├── style.css           # Clean light-mode styles and accent colors
+    ├── fonts/              # Self-hosted text fonts + OFL/UFL licences (ADR 0060; never hand-edit)
     ├── i18n/
     │   ├── index.ts        # Locale runtime: lazy chunks, t(), applyDom, note names & octave formats (ADR 0059)
     │   └── locales/        # en.ts (reference, defines Messages), it.ts, fr.ts, de.ts, es.ts

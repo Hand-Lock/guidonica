@@ -2,6 +2,12 @@
 
 # Guidonica
 
+**Free sight-reading and solfège practice in your browser.** Endless fresh sheet music scrolls past a playhead in time with a metronome, at the level you choose, from first steps to every tuplet. No sign-up, no ads, no tracking, and it works on phones, tablets and desktops in English, Italian, French, German and Spanish.
+
+**▶ Practice now at [guidonica.it](https://guidonica.it)**
+
+<p align="center"><img src="public/og-image.png" width="720" alt="Guidonica: a treble staff of generated notes with solfège labels scrolling past a red playhead"></p>
+
 > **Guidonica** is a high-performance, client-only web engine for deliberate sight-reading and solfège practice, inspired by Guido d'Arezzo's historic pedagogical method. It continuously streams procedurally generated sheet music across a fixed playhead in sample-accurate synchronization with a Web Audio synthesized metronome—built with zero framework bloat in pure Vanilla TypeScript, pure CSS3 liquid glass, and 60/120 FPS GPU blitting.
 
 **Live Application**: [https://guidonica.it](https://guidonica.it) *(mirror: [hand-lock.github.io/guidonica](https://hand-lock.github.io/guidonica/))* &nbsp;|&nbsp; [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) [![Node.js](https://img.shields.io/badge/node-%3E%3D22.13-brightgreen.svg)](https://nodejs.org/) [![pnpm](https://img.shields.io/badge/pnpm-11.8.0-orange.svg)](https://pnpm.io/) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6.svg)](https://www.typescriptlang.org/) [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/Hand-Lock/guidonica/actions)
@@ -62,7 +68,7 @@ Guidonica is constructed upon an uncompromising **suckless, ultra-lightweight, a
    - Written exclusively in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and the Web Audio API directly.
    - Zero React, Vue, Svelte, or Angular. Zero Virtual DOM reconciliation overhead.
    - Zero external state management libraries (no Redux, MobX, Zustand, or Pinia).
-   - Entire shipped JavaScript is **~117 kB gzipped**: ~24 kB of application code plus ~93 kB of VexFlow's font-free `vexflow/core` build. The music font is a separate **19.6 kB** Bravura subset ([ADR 0058](docs/adr/0058-music-font-audit-and-bravura-subset.md)) instead of the ~600 kB of base64 fonts the full VexFlow entry inlines.
+   - Entire shipped JavaScript is **~123 kB gzipped**: ~29 kB of application code plus ~93 kB of VexFlow's font-free `vexflow/core` build. The music font is a separate **19.6 kB** Bravura subset ([ADR 0058](docs/adr/0058-music-font-audit-and-bravura-subset.md)) instead of the ~600 kB of base64 fonts the full VexFlow entry inlines.
 2. **Single Authoritative Hardware Clock (`AudioContext.currentTime`)**:
    - Visual scroller movement and synthesized audio pulse scheduling are mathematically locked to the hardware audio clock (`AudioContext.currentTime`).
    - Zero `setInterval`, `setTimeout`, or visual delta-time accumulators.
@@ -84,7 +90,7 @@ Guidonica is constructed upon an uncompromising **suckless, ultra-lightweight, a
 7. **Pure CSS3 Liquid Glass UI (Zero CSS Frameworks)**:
    - The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed with 100% pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled glass borders, tactile inset/drop shadows).
    - Zero Tailwind runtime, zero CSS-in-JS runtimes, zero heavy sprite textures.
-   - Entire stylesheet is only **~6.5 kB gzipped** (`28.4 kB` minified).
+   - Entire stylesheet is only **~7.8 kB gzipped** (`37 kB` minified). The text fonts (Alegreya, Alegreya Sans, Ubuntu Mono) are self-hosted Latin subsets, so the page makes no third-party requests ([ADR 0060](docs/adr/0060-self-hosted-text-fonts-and-privacy-note.md)).
 8. **Native Device & Lifecycle Resilience**:
    - Integrates modern Web APIs including Screen Wake Lock (`navigator.wakeLock`), Page Visibility lifecycle auto-pause, dynamic iOS `AVAudioSession` category switching (`playback` mode to bypass physical silent switches), and Fullscreen API.
 
@@ -287,6 +293,7 @@ Guidonica is fully tested and optimized for macOS and Apple Silicon:
 | `pnpm preview` | Serves the production build locally for verification. |
 | `pnpm icons` | Regenerates the Guidonian Hand vector outputs (`favicon.svg`, the README logo, the header glyph) from `scripts/build-icons.mjs`. |
 | `pnpm icons -- --raster` | Also re-renders the PNG/ICO icons (touch, manifest and favicon) through headless Firefox (must be installed). |
+| `pnpm ui-fonts` | Re-downloads the self-hosted text fonts (`src/fonts/`) and their licences from Google Fonts via `scripts/fetch-ui-fonts.mjs`. Dev-only; the output is committed, so normal development never runs it. |
 | `pnpm music-font` | Regenerates the Guidonica Notation font (`src/notation/fonts/`) from Bravura via `scripts/build-music-font.py`. Dev-only, needs Python with `pip install fonttools brotli`; the output is committed, so normal development never runs it. |
 
 ---
@@ -375,4 +382,4 @@ Copyright &copy; 2026 **A. C. Lo Cascio**.
 ### Copyleft & Network Reciprocity (Section 13)
 - **User Freedoms**: You are free to run, study, inspect, modify, and redistribute this software.
 - **Network Copyleft**: In accordance with Section 13 of the GNU AGPLv3, if you modify this program and run it on a server or host it as a network or cloud service where users interact with it remotely over a computer network, you **must make the complete Corresponding Source code of your modified version available to all users at no charge**, via a prominent network facility (such as a public Git repository).
-- **Third-Party Acknowledgements**: Music notation typesetting and stave vector layout are powered by [VexFlow](https://github.com/vexflow/vexflow), licensed under the [MIT License](https://github.com/vexflow/vexflow/blob/master/LICENSE.txt). Music glyphs come from [Bravura](https://github.com/steinbergmedia/bravura) © Steinberg Media Technologies GmbH, licensed under the [SIL Open Font License 1.1](src/notation/fonts/OFL.txt) and shipped as the renamed subset "Guidonica Notation".
+- **Third-Party Acknowledgements**: Music notation typesetting and stave vector layout are powered by [VexFlow](https://github.com/vexflow/vexflow), licensed under the [MIT License](https://github.com/vexflow/vexflow/blob/master/LICENSE.txt). Music glyphs come from [Bravura](https://github.com/steinbergmedia/bravura) © Steinberg Media Technologies GmbH, licensed under the [SIL Open Font License 1.1](src/notation/fonts/OFL.txt) and shipped as the renamed subset "Guidonica Notation". Text is set in [Alegreya](https://github.com/huertatipografica/Alegreya) and [Alegreya Sans](https://github.com/huertatipografica/Alegreya-Sans) (SIL Open Font License 1.1: [Alegreya](src/fonts/OFL-Alegreya.txt), [Alegreya Sans](src/fonts/OFL-AlegreyaSans.txt)) and [Ubuntu Mono](https://design.ubuntu.com/font) ([Ubuntu Font Licence 1.0](src/fonts/UFL.txt)), served from the same origin as the app.

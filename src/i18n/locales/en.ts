@@ -11,7 +11,7 @@ type IntroClefText = Record<IntroClef, { name: string; description: string }>;
 const LINK = 'target="_blank" rel="noopener noreferrer" class="link-external"';
 
 const en = {
-  docTitle: 'Guidonica — Sight-Reading & Solfège Engine',
+  docTitle: 'Guidonica — Sight-Reading & Solfège Practice',
   brandTagline: 'Sight-Reading & Solfège Engine',
   brandBadge: 'SOLFÈGE',
 
@@ -186,11 +186,13 @@ const en = {
   strictCopyleft: '(Strict Copyleft)',
   metaCopyright: 'Copyright',
   metaRepository: 'Repository',
+  metaPrivacy: 'Privacy',
+  privacyNote: 'No accounts, no cookies, no tracking: nothing leaves your device.',
   copyleftHeading: 'Strict Copyleft (AGPLv3)',
   copyleftHtml:
     'This software is free and open-source under the <strong>GNU Affero General Public License v3.0 or later</strong>. You are free to run, study, and modify it. In accordance with Section 13, any modified version deployed as a service over a computer network must make its complete source code available to all users.',
   thanksHeading: 'Third-Party Acknowledgements',
-  thanksHtml: `Music notation layout and rendering powered by <a href="https://github.com/vexflow/vexflow" ${LINK}>VexFlow 5</a> (MIT License). Music glyphs from <a href="https://github.com/steinbergmedia/bravura" ${LINK}>Bravura</a> © Steinberg Media Technologies GmbH (SIL Open Font License 1.1), shipped as the renamed subset “Guidonica Notation”.`,
+  thanksHtml: `Music notation layout and rendering powered by <a href="https://github.com/vexflow/vexflow" ${LINK}>VexFlow 5</a> (MIT License). Music glyphs from <a href="https://github.com/steinbergmedia/bravura" ${LINK}>Bravura</a> © Steinberg Media Technologies GmbH (SIL Open Font License 1.1), shipped as the renamed subset “Guidonica Notation”. Text set in <a href="https://github.com/huertatipografica/Alegreya" ${LINK}>Alegreya</a> and <a href="https://github.com/huertatipografica/Alegreya-Sans" ${LINK}>Alegreya Sans</a> (SIL Open Font License 1.1) and <a href="https://design.ubuntu.com/font" ${LINK}>Ubuntu Mono</a> (Ubuntu Font Licence 1.0), served from this site.`,
   viewLicense: 'View Full LICENSE',
   close: 'Close',
 

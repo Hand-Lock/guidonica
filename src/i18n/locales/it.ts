@@ -167,11 +167,13 @@ const it: Messages = {
   strictCopyleft: '(copyleft forte)',
   metaCopyright: 'Copyright',
   metaRepository: 'Repository',
+  metaPrivacy: 'Privacy',
+  privacyNote: 'Nessun account, nessun cookie, nessun tracciamento: nulla lascia il tuo dispositivo.',
   copyleftHeading: 'Copyleft forte (AGPLv3)',
   copyleftHtml:
     "Questo software è libero e open source secondo la <strong>GNU Affero General Public License v3.0 o successiva</strong>. Puoi eseguirlo, studiarlo e modificarlo liberamente. Ai sensi della Sezione 13, ogni versione modificata offerta come servizio in rete deve rendere disponibile a tutti gli utenti il proprio codice sorgente completo.",
   thanksHeading: 'Riconoscimenti',
-  thanksHtml: `Impaginazione e resa della notazione con <a href="https://github.com/vexflow/vexflow" ${LINK}>VexFlow 5</a> (licenza MIT). Glifi musicali da <a href="https://github.com/steinbergmedia/bravura" ${LINK}>Bravura</a> © Steinberg Media Technologies GmbH (SIL Open Font License 1.1), distribuiti come sottoinsieme rinominato “Guidonica Notation”.`,
+  thanksHtml: `Impaginazione e resa della notazione con <a href="https://github.com/vexflow/vexflow" ${LINK}>VexFlow 5</a> (licenza MIT). Glifi musicali da <a href="https://github.com/steinbergmedia/bravura" ${LINK}>Bravura</a> © Steinberg Media Technologies GmbH (SIL Open Font License 1.1), distribuiti come sottoinsieme rinominato “Guidonica Notation”. Testi in <a href="https://github.com/huertatipografica/Alegreya" ${LINK}>Alegreya</a> e <a href="https://github.com/huertatipografica/Alegreya-Sans" ${LINK}>Alegreya Sans</a> (SIL Open Font License 1.1) e <a href="https://design.ubuntu.com/font" ${LINK}>Ubuntu Mono</a> (Ubuntu Font Licence 1.0), serviti da questo sito.`,
   viewLicense: 'Leggi la LICENZA completa',
   close: 'Chiudi',
 

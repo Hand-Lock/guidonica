@@ -65,7 +65,7 @@ export async function waitForMusicFonts(): Promise<void> {
     await Promise.all([
       musicFontLoad,
       document.fonts.load(MUSIC_FONT_PROBE),
-      // Solfège label face (Google Fonts); a failed fetch falls back to system-ui silently
+      // Solfège label face (self-hosted, ADR 0060); a failed fetch falls back to system-ui silently
       document.fonts.load('700 12px "Alegreya Sans"').catch(() => []),
       document.fonts.ready,
     ]);
