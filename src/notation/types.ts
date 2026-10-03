@@ -10,6 +10,10 @@ export const CLEFS = [
 ] as const;
 export type Clef = (typeof CLEFS)[number];
 
+/** UI languages; each also sets the note-naming convention (ADR 0059). */
+export const LANGUAGES = ['en', 'it', 'fr', 'de', 'es'] as const;
+export type Language = (typeof LANGUAGES)[number];
+
 export const TIME_SIGNATURES = ['4/4', '3/4', '2/4', '6/8'] as const;
 export type TimeSignature = (typeof TIME_SIGNATURES)[number];
 
@@ -162,6 +166,33 @@ export function isTupletSupported(ts: TimeSignature, name: TupletName, value: Tu
   return TUPLET_SUPPORT[ts].has(`${name}:${value}`);
 }
 
+/** "n in the time of d" for each tuplet, as the generator writes it (ADR 0059). */
+const TUPLET_RATIO: Record<TupletName, readonly [number, number]> = {
+  duplet: [2, 3],
+  triplet: [3, 2],
+  quadruplet: [4, 3],
+  quintuplet: [5, 4],
+  sextuplet: [6, 4],
+  septuplet: [7, 4],
+};
+
+const TUPLET_VALUE_WHOLES: Record<TupletValue, number> = { '1/4': 1 / 4, '1/8': 1 / 8, '1/16': 1 / 16 };
+
+/**
+ * Ratio and span of a supported tuplet cell in `ts`. `beats` counts the meter's beats
+ * (dotted quarters in 6/8). Only 3/4 quadruplet 1/8 departs from the table: 4:6 across the bar.
+ */
+export function tupletShape(
+  ts: TimeSignature,
+  name: TupletName,
+  value: TupletValue
+): { notes: number; inTimeOf: number; beats: number } {
+  const [notes, base] = TUPLET_RATIO[name];
+  const inTimeOf = ts === '3/4' && name === 'quadruplet' && value === '1/8' ? 6 : base;
+  const beatWholes = ts === '6/8' ? 3 / 8 : 1 / 4;
+  return { notes, inTimeOf, beats: (inTimeOf * TUPLET_VALUE_WHOLES[value]) / beatWholes };
+}
+
 /** Returns a copy of `tuplets` with every cell unsupported by `ts` switched off. */
 export function supportedTuplets(ts: TimeSignature, tuplets: TupletOptions): TupletOptions {
   const result = structuredClone(DEFAULT_TUPLET_OPTIONS) as TupletOptions;
@@ -184,7 +215,8 @@ export interface SubdivisionOptions {
   dotted?: boolean;
 }
 
-export type SolfegeLabelMode = 'none' | 'solfege' | 'italian' | 'letters';
+/** Note labels drawn beside noteheads; the UI language supplies the spelling (ADR 0059). */
+export type SolfegeLabelMode = 'none' | 'syllables' | 'letters';
 export type SoundProfile = 'triangle' | 'woodblock';
 export type Pulse68Mode = 'dotted-quarter' | 'eighth';
 export type ThemeMode = 'auto' | 'light' | 'dark';
@@ -228,36 +260,6 @@ export const CANVAS_PALETTE: Record<ResolvedTheme, CanvasPalette> = {
     playhead: '#f43f5e',
     playheadRgb: '244, 63, 94',
   },
-};
-
-export const SOLFEGE_SYLLABLES: Record<string, string> = {
-  c: 'Do',
-  d: 'Re',
-  e: 'Mi',
-  f: 'Fa',
-  g: 'Sol',
-  a: 'La',
-  b: 'Ti',
-};
-
-export const ITALIAN_SOLFEGE_SYLLABLES: Record<string, string> = {
-  c: 'Do',
-  d: 'Re',
-  e: 'Mi',
-  f: 'Fa',
-  g: 'Sol',
-  a: 'La',
-  b: 'Si',
-};
-
-export const NOTE_LETTER_NAMES: Record<string, string> = {
-  c: 'C',
-  d: 'D',
-  e: 'E',
-  f: 'F',
-  g: 'G',
-  a: 'A',
-  b: 'B',
 };
 
 /**
@@ -317,6 +319,7 @@ export interface AppSettings {
   ties: boolean;
   intervals: IntervalOptions;
   solfegeLabelMode: SolfegeLabelMode;
+  language: Language; // UI language and national note naming (ADR 0059)
   soundProfile: SoundProfile;
   pulse68: Pulse68Mode;
   countIn: boolean;

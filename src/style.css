@@ -199,6 +199,11 @@ kbd {
   font-family: var(--font-mono);
 }
 
+/* Hidden until a non-English locale chunk has translated the shell (ADR 0059) */
+html[data-i18n-pending] body {
+  visibility: hidden;
+}
+
 button,
 select,
 input {
@@ -1688,6 +1693,78 @@ dialog.intro-dialog {
   }
 }
 
+/* First-visit language chips (ADR 0059): compact acrylic pills with the LED tell */
+.intro-languages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.intro-languages[hidden] {
+  display: none;
+}
+
+.intro-languages:focus {
+  outline: none;
+}
+
+.intro-language {
+  position: relative;
+  min-height: 32px;
+  padding: 4px 12px 4px 24px;
+  border: 1px solid var(--acrylic-border);
+  border-radius: 999px;
+  background: var(--acrylic-bg);
+  box-shadow: var(--acrylic-shadow);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color var(--fast) ease, color var(--fast) ease, box-shadow var(--fast) ease;
+}
+
+.intro-language::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: calc(50% - 3px);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--led-off);
+  box-shadow: var(--led-off-shadow);
+}
+
+.intro-language[aria-checked='true'] {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  font-weight: 700;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--accent);
+}
+
+.intro-language[aria-checked='true']::before {
+  background: var(--led-on);
+  box-shadow: 0 0 6px var(--color-olo);
+}
+
+.intro-language:focus-visible {
+  outline: none;
+  box-shadow: var(--acrylic-shadow), var(--focus-ring);
+}
+
+.intro-language:active {
+  transform: translateY(1px);
+}
+
+@media (hover: hover) {
+  .intro-language:hover {
+    border-color: var(--accent);
+  }
+}
+
 .intro-note {
   font-size: 12.5px;
   font-style: italic;
@@ -1752,6 +1829,16 @@ dialog.intro-dialog {
   .btn-drawer-toggle .btn-label,
   #btn-reset .btn-label {
     display: none;
+  }
+}
+
+/* 1141–1439px in the longer languages (ADR 0059): "Zurücksetzen", "Impostazioni" and
+   the labelled Level button need up to 63px more than English (touch + 6/8 at 1280px),
+   so the ribbon takes the 961–1140 gaps and tempo floor while keeping every label. */
+@media (min-width: 1141px) and (max-width: 1439px) {
+  .primary-bar:not(:lang(en)) {
+    column-gap: 12px;
+    grid-template-columns: auto auto minmax(160px, 380px) auto 1fr;
   }
 }
 

@@ -2,6 +2,7 @@ import { AppSettings, RenderedMeasure, getBeatsPerMeasure } from '../notation/ty
 import { MusicGenerator } from '../notation/generator';
 import { MeasureRenderer } from '../notation/renderer';
 import { isMusicFontReady } from '../notation/fonts';
+import { noteLabels } from '../i18n';
 
 export class MeasureBuffer {
   private measures: RenderedMeasure[] = [];
@@ -47,7 +48,7 @@ export class MeasureBuffer {
     this.measures = this.measures.map((m) => {
       m.canvas.width = 0;
       m.canvas.height = 0;
-      return this.renderer.renderMeasure(m.data, settings.theme, settings.solfegeLabelMode);
+      return this.renderer.renderMeasure(m.data, settings.theme, noteLabels(settings.solfegeLabelMode));
     });
   }
 
@@ -91,7 +92,7 @@ export class MeasureBuffer {
       const rendered = this.renderer.renderMeasure(
         measureData,
         settings.theme,
-        settings.solfegeLabelMode
+        noteLabels(settings.solfegeLabelMode)
       );
       this.measures.push(rendered);
 

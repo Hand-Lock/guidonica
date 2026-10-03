@@ -12,6 +12,7 @@ import {
   TupletName,
   TupletValue,
 } from '../src/notation/types';
+import en from '../src/i18n/locales/en';
 
 /**
  * Every glyph VexFlow draws must exist in the Guidonica Notation subset (ADR 0058):
@@ -96,11 +97,11 @@ describe('Music font subset covers every glyph the renderer draws', () => {
           intervals,
           rests: true,
           ties: true,
-          solfegeLabelMode: 'solfege',
+          solfegeLabelMode: 'syllables',
         };
         const generator = new MusicGenerator();
         for (let m = 0; m < 12; m++) {
-          renderer.renderMeasure(generator.generateMeasure(m, settings, m * 6), 'light', 'solfege');
+          renderer.renderMeasure(generator.generateMeasure(m, settings, m * 6), 'light', en.noteNames.syllables);
         }
       }
       expect(drawn.size).toBeGreaterThan(0);

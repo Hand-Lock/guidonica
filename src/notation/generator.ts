@@ -78,13 +78,6 @@ export function pitchPool(clef: Clef, ledger: LedgerLineOptions): string[] {
   return Array.from({ length: high - low + 1 }, (_, i) => toKey(low + i));
 }
 
-/** Human-readable range label for the clef hint, e.g. "E3 – F6". */
-export function clefRangeLabel(clef: Clef, ledger: LedgerLineOptions): string {
-  const { low, high } = pitchBounds(clef, ledger);
-  const label = (step: number): string => toKey(step).replace('/', '').toUpperCase();
-  return `${label(low)} – ${label(high)}`;
-}
-
 /** Last note of the previously generated measure, source of an incoming barline tie. */
 interface MeasureTail {
   measureIndex: number;

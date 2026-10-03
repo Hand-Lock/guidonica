@@ -127,7 +127,7 @@ describe('In-App Notation Zoom Pipeline', () => {
 
     for (const zoom of [0.75, 1.0, 1.5]) {
       renderer.setZoom(zoom);
-      const { canvas } = renderer.renderMeasure(data, 'light', 'none');
+      const { canvas } = renderer.renderMeasure(data, 'light', null);
       expect(canvas.width).toBe(Math.floor(data.width * 2 * zoom));
       expect(canvas.height).toBe(Math.floor(MEASURE_CANVAS_HEIGHT * 2 * zoom));
 

@@ -4,6 +4,7 @@ import { MusicGenerator } from '../src/notation/generator';
 import { MeasureRenderer } from '../src/notation/renderer';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import { AppSettings, MeasureData, RenderedMeasure } from '../src/notation/types';
+import en from '../src/i18n/locales/en';
 
 vi.mock('../src/notation/fonts', () => ({ isMusicFontReady: () => true }));
 
@@ -36,7 +37,7 @@ describe('MeasureBuffer.rerender', () => {
     expect(resetSpy).not.toHaveBeenCalled();
     expect(renderMeasure).toHaveBeenCalledTimes(before.length);
     for (const call of renderMeasure.mock.calls) {
-      expect((call as unknown[]).slice(1)).toEqual(['dark', 'letters']);
+      expect((call as unknown[]).slice(1)).toEqual(['dark', en.noteNames.letters]);
     }
     // Same MeasureData objects: the music under the playhead is unchanged
     expect(buffer.getMeasures().map((m) => m.data)).toEqual(before);

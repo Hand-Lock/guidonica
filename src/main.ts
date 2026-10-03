@@ -30,16 +30,29 @@ import {
   stageFitsStaff,
   subscribeSystemTheme,
   tempoMarking,
+  tupletShape,
 } from './notation/types';
 import { globalState, SessionState } from './state';
 import { MetronomeEngine } from './audio/metronome';
-import { MusicGenerator, clefRangeLabel } from './notation/generator';
+import { MusicGenerator, pitchBounds } from './notation/generator';
 import { MeasureRenderer } from './notation/renderer';
 import { releasePreview, renderClefIcon, renderLevelPreview } from './notation/preview';
 import { MeasureBuffer } from './scroller/buffer';
 import { ScrollerView } from './scroller/scroller';
 import { isMusicFontReady, waitForMusicFonts } from './notation/fonts';
 import { ScreenWakeLockController } from './utils/wakeLock';
+import { bindRovingKeys, setRadioSelection } from './utils/radioGroup';
+import {
+  ENDONYMS,
+  Language,
+  SUPPORTED_LANGUAGES,
+  applyDom,
+  formatRange,
+  getLanguage,
+  isLanguage,
+  loadLocale,
+  t,
+} from './i18n';
 import {
   dismissOrientationTip,
   hasStoredSettings,
@@ -48,8 +61,8 @@ import {
   markOnboarded,
 } from './storage';
 import {
-  INTRO_CLEF_OPTIONS,
   INTRO_CLEFS,
+  IntroClef,
   LEVEL_PRESETS,
   LevelId,
   acceptsPreview,
@@ -113,6 +126,7 @@ class GuidonicaApp {
   private toggleCountIn: HTMLInputElement;
   private togglePlayhead: HTMLInputElement;
   private selectSolfegeMode: HTMLSelectElement;
+  private selectLanguage: HTMLSelectElement | null;
   private selectSoundProfile: HTMLSelectElement;
   private selectTheme: HTMLSelectElement;
   private volumeSlider: HTMLInputElement;
@@ -170,6 +184,8 @@ class GuidonicaApp {
   private btnIntroNext: HTMLButtonElement | null;
   private introLevelButtons: HTMLButtonElement[] = [];
   private introClefButtons: HTMLButtonElement[] = [];
+  private introLanguageButtons: HTMLButtonElement[] = [];
+  private introFirstVisit: boolean = false;
   private introLevel: LevelId | null = null;
   private introClef: Clef = 'treble';
   private introLevelPreviews = new Map<LevelId, HTMLCanvasElement>();
@@ -209,6 +225,7 @@ class GuidonicaApp {
     this.toggleCountIn = document.getElementById('toggle-count-in') as HTMLInputElement;
     this.togglePlayhead = document.getElementById('toggle-playhead') as HTMLInputElement;
     this.selectSolfegeMode = document.getElementById('select-solfege-mode') as HTMLSelectElement;
+    this.selectLanguage = document.getElementById('select-language') as HTMLSelectElement | null;
     this.selectSoundProfile = document.getElementById('select-sound-profile') as HTMLSelectElement;
     this.selectTheme = document.getElementById('select-theme') as HTMLSelectElement;
     this.volumeSlider = document.getElementById('volume-slider') as HTMLInputElement;
@@ -321,6 +338,7 @@ class GuidonicaApp {
 
     // 6. Subscribe to state changes for UI sync
     globalState.subscribe((state) => this.syncUI(state));
+    this.syncUI(globalState.getState());
 
     // 7. Asynchronously await musical font readiness before generating notation measures
     this.fontInitPromise = this.initFonts();
@@ -361,6 +379,7 @@ class GuidonicaApp {
 
     // Sound & Display overlays
     this.selectSolfegeMode.value = settings.solfegeLabelMode;
+    if (this.selectLanguage) this.selectLanguage.value = getLanguage();
     this.selectSoundProfile.value = settings.soundProfile;
     this.volumeSlider.value = String(settings.volume);
     this.updateMuteUI(settings.isMuted);
@@ -420,9 +439,8 @@ class GuidonicaApp {
   private updateZoomUI(mode: ZoomMode, zoomVal: number): void {
     const isAuto = mode === 'auto';
     this.btnPillZoomReset.classList.toggle('active', isAuto);
-    this.btnPillZoomReset.title = isAuto
-      ? `Zoom: ${Math.round(zoomVal * 100)}% (Auto)`
-      : `Zoom: ${Math.round(zoomVal * 100)}% (Click to reset to Auto)`;
+    const pct = Math.round(zoomVal * 100);
+    this.btnPillZoomReset.title = isAuto ? t().zoomAuto(pct) : t().zoomManual(pct);
   }
 
   private applyZoom(val: number, mode?: ZoomMode): void {
@@ -452,22 +470,31 @@ class GuidonicaApp {
   private updateThemeUI(theme: ThemeMode, resolved: ResolvedTheme): void {
     // The button holds all three vector glyphs; CSS shows the one matching data-mode
     this.btnThemeToggle.dataset.mode = theme;
-    if (theme === 'auto') {
-      this.btnThemeToggle.title = `Theme: Auto (OS: ${resolved === 'dark' ? 'Dark' : 'Light'}) - Click for Dark`;
-      this.btnThemeToggle.setAttribute(
-        'aria-label',
-        `Theme: Auto (OS: ${resolved}). Click to cycle theme.`
-      );
-    } else if (theme === 'dark') {
-      this.btnThemeToggle.title = 'Theme: Dark - Click for Light';
-      this.btnThemeToggle.setAttribute('aria-label', 'Theme: Dark. Click to cycle theme.');
-    } else {
-      this.btnThemeToggle.title = 'Theme: Light - Click for Auto (OS)';
-      this.btnThemeToggle.setAttribute('aria-label', 'Theme: Light. Click to cycle theme.');
-    }
+    const m = t();
+    const names: Record<ThemeMode, string> = {
+      auto: m.themeAutoResolved(resolved === 'dark' ? m.themeDark : m.themeLight),
+      light: m.themeLight,
+      dark: m.themeDark,
+    };
+    // Cycle: auto → dark → light → auto
+    const next: Record<ThemeMode, string> = { auto: m.themeDark, dark: m.themeLight, light: m.themeAuto };
+    this.btnThemeToggle.title = m.themeButtonTitle(names[theme], next[theme]);
+    this.btnThemeToggle.setAttribute('aria-label', m.themeButtonAria(names[theme]));
     if (this.selectTheme) {
       this.selectTheme.value = theme;
     }
+  }
+
+  private syncFullscreenGlyph(): void {
+    const doc = document as WebKitDocument;
+    const isFs = Boolean(doc.fullscreenElement || doc.webkitFullscreenElement);
+    const iconPath = this.btnFullscreenToggle.querySelector<SVGPathElement>('#fullscreen-icon-path');
+    if (iconPath) {
+      iconPath.setAttribute('d', isFs ? FULLSCREEN_EXIT_PATH : FULLSCREEN_ENTER_PATH);
+    }
+    const label = isFs ? t().fullscreenExit : t().fullscreenToggle;
+    this.btnFullscreenToggle.setAttribute('aria-label', label);
+    this.btnFullscreenToggle.title = label;
   }
 
   private applyTheme(nextTheme: ThemeMode): void {
@@ -552,18 +579,7 @@ class GuidonicaApp {
         }
       });
 
-      const syncFullscreenGlyph = (): void => {
-        const doc = document as WebKitDocument;
-        const isFs = Boolean(doc.fullscreenElement || doc.webkitFullscreenElement);
-        const iconPath = this.btnFullscreenToggle.querySelector<SVGPathElement>('#fullscreen-icon-path');
-        if (iconPath) {
-          iconPath.setAttribute('d', isFs ? FULLSCREEN_EXIT_PATH : FULLSCREEN_ENTER_PATH);
-        }
-        const label = isFs ? 'Exit full screen' : 'Toggle full screen';
-        this.btnFullscreenToggle.setAttribute('aria-label', label);
-        this.btnFullscreenToggle.title = label;
-      };
-
+      const syncFullscreenGlyph = (): void => this.syncFullscreenGlyph();
       document.addEventListener('fullscreenchange', syncFullscreenGlyph);
       document.addEventListener('webkitfullscreenchange', syncFullscreenGlyph);
     }
@@ -658,6 +674,12 @@ class GuidonicaApp {
       const mode = (e.target as HTMLSelectElement).value as SolfegeLabelMode;
       globalState.updateSettings({ solfegeLabelMode: mode });
       this.rerenderBuffer();
+    });
+
+    // UI language & note naming (ADR 0059)
+    this.selectLanguage?.addEventListener('change', (e) => {
+      const lang = (e.target as HTMLSelectElement).value;
+      if (isLanguage(lang)) void this.changeLanguage(lang);
     });
 
     // Sound Profile (Timbre)
@@ -880,18 +902,33 @@ class GuidonicaApp {
    * The stored checked state is preserved so it reactivates when switching back.
    */
   private applyTupletAvailability(ts: TimeSignature): void {
+    const m = t();
     for (const cb of this.tupletCheckboxes) {
       const tName = cb.dataset.tuplet as TupletName | undefined;
       const tVal = cb.dataset.value as TupletValue | undefined;
       const supported = !!tName && !!tVal && isTupletSupported(ts, tName, tVal);
       cb.disabled = !supported;
       const label = cb.closest('label');
-      if (label) {
-        label.dataset.baseTitle ??= label.title;
-        label.title = supported ? label.dataset.baseTitle : `Not available in ${ts}`;
+      if (label && tName && tVal) {
+        label.title = supported ? this.tupletTitle(ts, tName, tVal) : m.tupletUnavailable(ts);
       }
     }
+    this.tupletsPopover.querySelectorAll<HTMLElement>('tr[data-row]').forEach((row) => {
+      const name = row.dataset.row as TupletName | undefined;
+      const header = row.querySelector('.th-row');
+      if (name && header && name in m.tupletNames) {
+        header.textContent = `${m.tupletNames[name]} (${tupletShape(ts, name, '1/4').notes})`;
+      }
+    });
     this.updateTupletsUI();
+  }
+
+  /** "Triplet · 3 eighths in the time of 2 (1 beat)"; spans off the half-beat grid are omitted. */
+  private tupletTitle(ts: TimeSignature, name: TupletName, value: TupletValue): string {
+    const m = t();
+    const { notes, inTimeOf, beats } = tupletShape(ts, name, value);
+    const base = m.tupletCell(m.tupletNames[name], notes, m.tupletValuePlurals[value], inTimeOf);
+    return Number.isInteger(beats * 2) ? `${base} (${m.tupletBeats(beats)})` : base;
   }
 
   private getTupletOptionsFromUI(): TupletOptions {
@@ -1019,9 +1056,10 @@ class GuidonicaApp {
     const clefContainer = document.getElementById('intro-clef-options');
     if (!this.modalIntro || !levelContainer || !clefContainer) return;
 
+    const m = t();
     this.introLevelButtons = this.buildIntroOptions(
       levelContainer,
-      LEVEL_PRESETS.map((p) => ({ value: p.id, name: p.name, description: p.description, preview: 'strip' })),
+      LEVEL_PRESETS.map((p) => ({ value: p.id, ...m.levels[p.id], preview: 'strip' })),
       (value) => {
         this.introLevel = value as LevelId;
         if (this.btnIntroNext) this.btnIntroNext.disabled = false;
@@ -1030,12 +1068,13 @@ class GuidonicaApp {
     );
     this.introClefButtons = this.buildIntroOptions(
       clefContainer,
-      INTRO_CLEF_OPTIONS.map((o) => ({ value: o.clef, name: o.name, description: o.description, preview: 'icon' })),
+      INTRO_CLEFS.map((clef) => ({ value: clef, ...m.introClefs[clef], preview: 'icon' })),
       (value) => {
         this.introClef = value as Clef;
       },
       (value, canvas) => this.introClefIcons.set(value as Clef, canvas)
     );
+    this.buildIntroLanguages();
 
     const closeIntro = (): void => {
       if (this.modalIntro?.open) this.modalIntro.close();
@@ -1116,7 +1155,7 @@ class GuidonicaApp {
 
     // Radio semantics: focus always follows the selection
     const select = (btn: HTMLButtonElement): void => {
-      this.setIntroSelection(buttons, btn.dataset.value ?? null);
+      setRadioSelection(buttons, btn.dataset.value ?? null);
       btn.focus();
       onSelect(btn.dataset.value ?? '');
     };
@@ -1124,25 +1163,103 @@ class GuidonicaApp {
     for (const btn of buttons) {
       btn.addEventListener('click', () => select(btn));
     }
+    bindRovingKeys(container, buttons, select);
 
-    // Focused itself while nothing is selected, so no card shows a misleading ring
-    container.tabIndex = -1;
-    container.addEventListener('keydown', (e) => {
-      const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
-      let next = index;
-      if (index < 0 && document.activeElement !== container) return;
-      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = (index + 1) % buttons.length;
-      else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = (Math.max(index, 0) - 1 + buttons.length) % buttons.length;
-      else if (e.key === 'Home') next = 0;
-      else if (e.key === 'End') next = buttons.length - 1;
-      else return;
-      e.preventDefault();
-      buttons[next].focus();
-      select(buttons[next]);
-    });
-
-    this.setIntroSelection(buttons, null);
+    setRadioSelection(buttons, null);
     return buttons;
+  }
+
+  /** First-visit language chips (endonyms); picking one re-translates the dialog live (ADR 0059). */
+  private buildIntroLanguages(): void {
+    const container = document.getElementById('intro-language-options');
+    if (!container) return;
+    const buttons = SUPPORTED_LANGUAGES.map((lang) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'intro-language';
+      btn.setAttribute('role', 'radio');
+      btn.lang = lang;
+      btn.dataset.value = lang;
+      btn.textContent = ENDONYMS[lang];
+      container.appendChild(btn);
+      return btn;
+    });
+    const select = (btn: HTMLButtonElement): void => {
+      const lang = btn.dataset.value;
+      if (!isLanguage(lang)) return;
+      setRadioSelection(buttons, lang);
+      btn.focus();
+      void this.changeLanguage(lang);
+    };
+    for (const btn of buttons) {
+      btn.addEventListener('click', () => select(btn));
+    }
+    bindRovingKeys(container, buttons, select);
+    setRadioSelection(buttons, getLanguage());
+    this.introLanguageButtons = buttons;
+  }
+
+  /** Re-labels the intro cards and title in the active language. */
+  private translateIntro(): void {
+    const m = t();
+    const label = (btn: HTMLButtonElement, text: { name: string; description: string }): void => {
+      const name = btn.querySelector('.intro-option-name');
+      const desc = btn.querySelector('.intro-option-desc');
+      if (name) name.textContent = text.name;
+      if (desc) desc.textContent = text.description;
+    };
+    for (const btn of this.introLevelButtons) {
+      const id = btn.dataset.value as LevelId;
+      if (id in m.levels) label(btn, m.levels[id]);
+    }
+    for (const btn of this.introClefButtons) {
+      const clef = btn.dataset.value as IntroClef;
+      if (clef in m.introClefs) label(btn, m.introClefs[clef]);
+    }
+    const title = document.getElementById('intro-title-text');
+    const skip = document.getElementById('btn-intro-skip');
+    if (title) title.textContent = this.introFirstVisit ? m.introWelcome : m.introChooseLevel;
+    if (skip) skip.textContent = this.introFirstVisit ? m.skip : m.cancel;
+  }
+
+  /**
+   * Persists the language, loads its dictionary and re-runs every text updater. A
+   * superseded or failed load leaves the UI in the language that is actually active.
+   */
+  private async changeLanguage(lang: Language): Promise<void> {
+    let loaded = false;
+    try {
+      loaded = await loadLocale(lang);
+    } catch {
+      loaded = false;
+    }
+    if (!loaded) {
+      if (this.selectLanguage) this.selectLanguage.value = getLanguage();
+      return;
+    }
+    globalState.updateSettings({ language: lang });
+    this.applyTranslations();
+  }
+
+  /** Static text by data-i18n attributes, then every dynamic label (ADR 0059). */
+  private applyTranslations(): void {
+    applyDom(document);
+    const settings = globalState.settings;
+    if (this.selectLanguage) this.selectLanguage.value = getLanguage();
+    setRadioSelection(this.introLanguageButtons, getLanguage());
+    this.syncUI(globalState.getState());
+    this.syncLevelButton(settings, true);
+    this.updateZoomUI(settings.zoomMode, settings.zoom || DEFAULT_ZOOM);
+    this.updateThemeUI(settings.theme, resolveTheme(settings.theme));
+    this.syncFullscreenGlyph();
+    this.applyTupletAvailability(settings.timeSignature);
+    this.updateClefRangeHint();
+    this.translateIntro();
+    if (settings.solfegeLabelMode !== 'none') {
+      this.rerenderBuffer();
+      // The Beginner strip shows note labels too
+      if (this.modalIntro?.open && this.introPreviewClef !== null) this.renderIntroLevelPreviews();
+    }
   }
 
   private createIntroPreview(
@@ -1183,28 +1300,19 @@ class GuidonicaApp {
     this.introPreviewClef = null;
   }
 
-  /** Marks `value` as checked; the checked card (or the first) is the group's tab stop. */
-  private setIntroSelection(buttons: readonly HTMLButtonElement[], value: string | null): void {
-    const hasMatch = buttons.some((b) => b.dataset.value === value);
-    buttons.forEach((btn, i) => {
-      const checked = btn.dataset.value === value;
-      btn.setAttribute('aria-checked', String(checked));
-      btn.tabIndex = checked || (!hasMatch && i === 0) ? 0 : -1;
-    });
-  }
-
   /** First visit welcomes and offers Skip; a reopen from the header is a plain level picker. */
   private openIntro(firstVisit: boolean): void {
     if (!this.modalIntro || typeof this.modalIntro.showModal !== 'function') return;
-    const title = document.getElementById('intro-title-text');
-    const skip = document.getElementById('btn-intro-skip');
-    if (title) title.textContent = firstVisit ? 'Welcome to Guidonica' : 'Choose your level';
-    if (skip) skip.textContent = firstVisit ? 'Skip' : 'Cancel';
+    this.introFirstVisit = firstVisit;
+    this.translateIntro();
+    const languages = document.getElementById('intro-language-options');
+    if (languages) languages.hidden = !firstVisit;
+    setRadioSelection(this.introLanguageButtons, getLanguage());
     const settings = globalState.settings;
     this.introLevel = matchLevel(settings);
-    this.introClef = INTRO_CLEFS.includes(settings.clef) ? settings.clef : 'treble';
-    this.setIntroSelection(this.introLevelButtons, this.introLevel);
-    this.setIntroSelection(this.introClefButtons, this.introClef);
+    this.introClef = (INTRO_CLEFS as readonly Clef[]).includes(settings.clef) ? settings.clef : 'treble';
+    setRadioSelection(this.introLevelButtons, this.introLevel);
+    setRadioSelection(this.introClefButtons, this.introClef);
     if (this.btnIntroNext) this.btnIntroNext.disabled = this.introLevel === null;
     if (!this.modalIntro.open) this.modalIntro.showModal();
     this.showIntroStep('level');
@@ -1517,7 +1625,9 @@ class GuidonicaApp {
 
   private updateClefRangeHint(): void {
     const { clef, ledgerLines } = globalState.settings;
-    this.clefRangeHint.textContent = clefRangeLabel(clef, ledgerLines);
+    const { low, high } = pitchBounds(clef, ledgerLines);
+    this.clefRangeHint.textContent = formatRange(low, high);
+    this.clefRangeHint.title = t().rangeTitle;
   }
 
   private resetSession(): void {
@@ -1611,14 +1721,15 @@ class GuidonicaApp {
   }
 
   /** Lights the header meter's bars and names the matching preset, or Custom (ADR 0053). */
-  private syncLevelButton(settings: Readonly<AppSettings>): void {
+  private syncLevelButton(settings: Readonly<AppSettings>, force: boolean = false): void {
     // updateSettings replaces the object: identity skips the beat-rate notifications
-    if (!this.btnLevelToggle || settings === this.levelSyncedSettings) return;
+    if (!this.btnLevelToggle || (settings === this.levelSyncedSettings && !force)) return;
     this.levelSyncedSettings = settings;
     const index = levelIndex(settings);
-    const name = index === 0 ? 'Custom' : LEVEL_PRESETS[index - 1].name;
+    const m = t();
+    const name = index === 0 ? m.levelCustom : m.levels[LEVEL_PRESETS[index - 1].id].name;
     this.btnLevelToggle.dataset.level = String(index);
-    this.btnLevelToggle.setAttribute('aria-label', `Level: ${name}. Choose a level preset`);
+    this.btnLevelToggle.setAttribute('aria-label', m.levelAria(name));
     const label = this.btnLevelToggle.querySelector('.btn-label');
     if (label) label.textContent = name;
   }
@@ -1627,13 +1738,13 @@ class GuidonicaApp {
     this.syncLevelButton(state.settings);
 
     if (state.playbackState === 'counting-in' || state.playbackState === 'playing') {
-      this.btnLabel.textContent = 'Pause';
+      this.btnLabel.textContent = t().pause;
       this.btnPlayPause.classList.add('playing');
     } else if (state.playbackState === 'paused') {
-      this.btnLabel.textContent = 'Resume';
+      this.btnLabel.textContent = t().resume;
       this.btnPlayPause.classList.remove('playing');
     } else {
-      this.btnLabel.textContent = 'Start';
+      this.btnLabel.textContent = t().start;
       this.btnPlayPause.classList.remove('playing');
     }
 
@@ -1677,7 +1788,26 @@ class GuidonicaApp {
   }
 }
 
+/**
+ * Loads the stored or detected language before the app builds its UI. The head script
+ * hides the page for non-English languages; it is shown again even if the chunk fails,
+ * in which case the English shell stays (ADR 0059).
+ */
+async function bootstrap(): Promise<void> {
+  try {
+    await loadLocale(globalState.settings.language);
+  } catch {
+    // Keep English
+  }
+  try {
+    applyDom(document);
+    new GuidonicaApp();
+  } finally {
+    document.documentElement.removeAttribute('data-i18n-pending');
+  }
+}
+
 // Bootstrap application when DOM is ready
 window.addEventListener('DOMContentLoaded', () => {
-  new GuidonicaApp();
+  void bootstrap();
 });

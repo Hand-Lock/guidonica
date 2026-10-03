@@ -17,12 +17,24 @@
         try {
           var raw = localStorage.getItem('guidonica_settings_v1') || localStorage.getItem('solfege_scroller_settings_v2') || localStorage.getItem('solfege_scroller_settings_v1');
           var theme = 'auto';
+          var langs = ['en', 'it', 'fr', 'de', 'es'];
+          var lang = null;
           if (raw) {
             var parsed = JSON.parse(raw);
             if (parsed.theme === 'dark' || parsed.theme === 'light' || parsed.theme === 'auto') {
               theme = parsed.theme;
             }
+            if (langs.indexOf(parsed.language) >= 0) lang = parsed.language;
           }
+          // Mirrors detectLanguage() in src/i18n; the page stays hidden until the locale lands
+          var preferred = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
+          for (var i = 0; !lang && i < preferred.length; i++) {
+            var primary = String(preferred[i] || '').toLowerCase().split('-')[0];
+            if (langs.indexOf(primary) >= 0) lang = primary;
+          }
+          lang = lang || 'en';
+          document.documentElement.lang = lang;
+          if (lang !== 'en') document.documentElement.setAttribute('data-i18n-pending', '');
           var isDark = theme === 'auto'
             ? window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
             : theme === 'dark';
@@ -72,62 +84,62 @@
           <div class="brand">
             <svg class="brand-mark" aria-hidden="true"><use href="#g-hand"/></svg>
             <h1>Guidonica</h1>
-            <span class="brand-badge" title="Sight-Reading &amp; Solfège Engine">SOLFÈGE</span>
+            <span class="brand-badge" title="Sight-Reading &amp; Solfège Engine" data-i18n="brandBadge" data-i18n-title="brandTagline">SOLFÈGE</span>
           </div>
 
           <div class="playback-controls">
-            <button id="btn-play-pause" class="btn btn-primary" type="button" aria-label="Play or pause">
+            <button id="btn-play-pause" class="btn btn-primary" type="button" aria-label="Play or pause" data-i18n-aria-label="playPauseAria">
               <span class="btn-icon"><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg></span>
               <span class="btn-label">Start</span>
             </button>
-            <button id="btn-reset" class="btn btn-secondary" type="button" aria-label="Reset session" title="Reset (R / Esc)">
+            <button id="btn-reset" class="btn btn-secondary" type="button" aria-label="Reset session" title="Reset (R / Esc)" data-i18n-aria-label="resetAria" data-i18n-title="resetTitle">
               <svg class="icon" aria-hidden="true"><use href="#i-reset"/></svg>
-              <span class="btn-label">Reset</span>
+              <span class="btn-label" data-i18n="reset">Reset</span>
             </button>
           </div>
 
           <div class="control-group tempo-group">
             <div class="tempo-head">
-              <label for="tempo-number">Tempo</label>
+              <label for="tempo-number" data-i18n="tempo">Tempo</label>
               <span id="tempo-term" class="tempo-term" aria-live="polite">Larghetto</span>
             </div>
             <div class="tempo-inputs">
               <div class="tempo-readout">
-                <input type="number" id="tempo-number" min="30" max="240" value="60" step="1" inputmode="numeric" aria-label="Tempo numeric input in BPM" />
+                <input type="number" id="tempo-number" min="30" max="240" value="60" step="1" inputmode="numeric" aria-label="Tempo numeric input in BPM" data-i18n-aria-label="tempoNumberAria" />
                 <span class="tempo-unit" aria-hidden="true">BPM</span>
               </div>
-              <input type="range" id="tempo-slider" min="30" max="240" value="60" step="1" aria-label="Tempo slider in BPM" />
+              <input type="range" id="tempo-slider" min="30" max="240" value="60" step="1" aria-label="Tempo slider in BPM" data-i18n-aria-label="tempoSliderAria" />
             </div>
           </div>
 
           <div class="beat-indicator-container">
-            <div id="count-in-badge" class="badge-count-in hidden">COUNT-IN</div>
+            <div id="count-in-badge" class="badge-count-in hidden" data-i18n="countInBadge">COUNT-IN</div>
             <div id="beat-dots" class="beat-dots">
               <!-- Dynamically populated beat dots -->
             </div>
           </div>
 
           <div class="utility-actions">
-            <button id="btn-about-toggle" class="btn-icon-only" type="button" aria-label="About & License" title="About & License">
+            <button id="btn-about-toggle" class="btn-icon-only" type="button" aria-label="About &amp; License" title="About &amp; License" data-i18n-aria-label="aboutToggle" data-i18n-title="aboutToggle">
               <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
             </button>
             <button id="btn-theme-toggle" class="btn-icon-only" type="button" data-mode="auto" aria-label="Theme: Auto (OS). Click to cycle theme." title="Theme: Auto (OS)">
               <svg class="icon theme-auto" aria-hidden="true"><use href="#i-auto"/></svg><svg class="icon theme-light" aria-hidden="true"><use href="#i-sun"/></svg><svg class="icon theme-dark" aria-hidden="true"><use href="#i-moon"/></svg>
             </button>
-            <button id="btn-fullscreen-toggle" class="btn-icon-only" type="button" aria-label="Toggle full screen" title="Toggle Fullscreen">
+            <button id="btn-fullscreen-toggle" class="btn-icon-only" type="button" aria-label="Toggle full screen" title="Toggle full screen">
               <svg class="fullscreen-icon" viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" aria-hidden="true">
                 <path id="fullscreen-icon-path" d="M2.5 5.5V2.5h3 M13.5 5.5V2.5h-3 M2.5 10.5v3h3 M13.5 10.5v3h-3" />
               </svg>
             </button>
-            <button id="btn-level-toggle" class="btn btn-secondary btn-level-toggle" type="button" data-level="0" aria-haspopup="dialog" aria-controls="modal-intro" aria-label="Level: Custom. Choose a level preset" title="Level presets">
+            <button id="btn-level-toggle" class="btn btn-secondary btn-level-toggle" type="button" data-level="0" aria-haspopup="dialog" aria-controls="modal-intro" aria-label="Level: Custom. Choose a level preset" title="Level presets" data-i18n-title="levelPresets">
               <svg class="icon level-meter" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                 <line class="lv-bar" x1="2" y1="14" x2="2" y2="12" /><line class="lv-bar" x1="5" y1="14" x2="5" y2="10" /><line class="lv-bar" x1="8" y1="14" x2="8" y2="7.5" /><line class="lv-bar" x1="11" y1="14" x2="11" y2="5" /><line class="lv-bar" x1="14" y1="14" x2="14" y2="2" />
               </svg>
               <span class="btn-label">Custom</span>
             </button>
-            <button id="btn-drawer-toggle" class="btn btn-secondary btn-drawer-toggle" type="button" aria-expanded="false" aria-controls="controls-drawer" aria-label="Toggle settings menu" title="Settings">
+            <button id="btn-drawer-toggle" class="btn btn-secondary btn-drawer-toggle" type="button" aria-expanded="false" aria-controls="controls-drawer" aria-label="Toggle settings menu" title="Settings" data-i18n-aria-label="settingsAria" data-i18n-title="settings">
               <svg class="icon" aria-hidden="true"><use href="#i-gear"/></svg>
-              <span class="btn-label">Settings</span>
+              <span class="btn-label" data-i18n="settings">Settings</span>
             </button>
           </div>
         </div>
@@ -135,41 +147,41 @@
         <div id="controls-drawer" class="controls-drawer">
           <div class="drawer-inner">
             <section class="settings-section section-staff" aria-labelledby="section-staff-title">
-              <h2 id="section-staff-title" class="section-title">Staff</h2>
+              <h2 id="section-staff-title" class="section-title" data-i18n="sectionStaff">Staff</h2>
               <div class="control-group clef-group">
-                <label for="select-clef">Clef</label>
-                <select id="select-clef" aria-label="Select musical clef">
-                  <option value="treble" selected>Treble (G)</option>
-                  <option value="soprano">Soprano (C1)</option>
-                  <option value="mezzo-soprano">Mezzo-Soprano (C2)</option>
-                  <option value="alto">Alto (C3)</option>
-                  <option value="tenor">Tenor (C4)</option>
-                  <option value="baritone-f">Baritone (F3)</option>
-                  <option value="baritone-c">Baritone (C5)</option>
-                  <option value="bass">Bass (F)</option>
+                <label for="select-clef" data-i18n="clef">Clef</label>
+                <select id="select-clef" aria-label="Select musical clef" data-i18n-aria-label="clefAria">
+                  <option value="treble" selected data-i18n="clefTreble">Treble (G)</option>
+                  <option value="soprano" data-i18n="clefSoprano">Soprano (C1)</option>
+                  <option value="mezzo-soprano" data-i18n="clefMezzoSoprano">Mezzo-Soprano (C2)</option>
+                  <option value="alto" data-i18n="clefAlto">Alto (C3)</option>
+                  <option value="tenor" data-i18n="clefTenor">Tenor (C4)</option>
+                  <option value="baritone-f" data-i18n="clefBaritoneF">Baritone (F3)</option>
+                  <option value="baritone-c" data-i18n="clefBaritoneC">Baritone (C5)</option>
+                  <option value="bass" data-i18n="clefBass">Bass (F)</option>
                 </select>
               </div>
               <div class="control-group ledger-group">
-                <span class="group-label">Ledger lines</span>
+                <span class="group-label" data-i18n="ledgerLines">Ledger lines</span>
                 <div class="ledger-select-row">
-                  <select id="select-ledger-above" aria-label="Ledger lines above the staff" title="Ledger lines above the staff">
+                  <select id="select-ledger-above" aria-label="Ledger lines above the staff" title="Ledger lines above the staff" data-i18n-aria-label="ledgerAbove" data-i18n-title="ledgerAbove">
                     <option value="0">↑ 0</option>
                     <option value="1">↑ 1</option>
                     <option value="2">↑ 2</option>
                     <option value="3" selected>↑ 3</option>
                   </select>
-                  <select id="select-ledger-below" aria-label="Ledger lines below the staff" title="Ledger lines below the staff">
+                  <select id="select-ledger-below" aria-label="Ledger lines below the staff" title="Ledger lines below the staff" data-i18n-aria-label="ledgerBelow" data-i18n-title="ledgerBelow">
                     <option value="0">↓ 0</option>
                     <option value="1">↓ 1</option>
                     <option value="2">↓ 2</option>
                     <option value="3" selected>↓ 3</option>
                   </select>
-                  <span id="clef-range-hint" class="clef-range-hint" title="Pitch range">E3 – F6</span>
+                  <span id="clef-range-hint" class="clef-range-hint" title="Pitch range (C4 = middle C)" data-i18n-title="rangeTitle">E3 – F6</span>
                 </div>
               </div>
               <div class="control-group">
-                <label for="select-time-signature">Meter</label>
-                <select id="select-time-signature" aria-label="Select musical time signature">
+                <label for="select-time-signature" data-i18n="meter">Meter</label>
+                <select id="select-time-signature" aria-label="Select musical time signature" data-i18n-aria-label="meterAria">
                   <option value="4/4" selected>4/4</option>
                   <option value="3/4">3/4</option>
                   <option value="2/4">2/4</option>
@@ -177,102 +189,102 @@
                 </select>
               </div>
               <div id="group-pulse-68" class="control-group hidden">
-                <label for="select-pulse-68">6/8 Pulse</label>
-                <select id="select-pulse-68" aria-label="6/8 Meter pulse grouping">
-                  <option value="dotted-quarter" selected>2 Beats (♩.)</option>
-                  <option value="eighth">6 Beats (♪)</option>
+                <label for="select-pulse-68" data-i18n="pulse68">6/8 Pulse</label>
+                <select id="select-pulse-68" aria-label="6/8 Meter pulse grouping" data-i18n-aria-label="pulse68Aria">
+                  <option value="dotted-quarter" selected data-i18n="pulse68Two">2 Beats (♩.)</option>
+                  <option value="eighth" data-i18n="pulse68Six">6 Beats (♪)</option>
                 </select>
               </div>
             </section>
 
             <section class="settings-section section-rhythm" aria-labelledby="section-rhythm-title">
-              <h2 id="section-rhythm-title" class="section-title">Rhythm</h2>
+              <h2 id="section-rhythm-title" class="section-title" data-i18n="sectionRhythm">Rhythm</h2>
               <fieldset class="control-group subdivisions-group">
-                <legend>Note values</legend>
+                <legend data-i18n="noteValues">Note values</legend>
                 <div class="checkbox-grid">
                 <label class="checkbox-item">
                   <input type="checkbox" id="subdiv-quarter" checked />
-                  <span>Quarter <svg class="music-icon icon-quarter" aria-hidden="true"><use href="#g-quarter"/></svg></span>
+                  <span data-i18n="valueQuarter">Quarter <svg class="music-icon icon-quarter" aria-hidden="true"><use href="#g-quarter"/></svg></span>
                 </label>
                 <label class="checkbox-item">
                   <input type="checkbox" id="subdiv-eighth" checked />
-                  <span>Eighth <svg class="music-icon icon-eighth" aria-hidden="true"><use href="#g-eighth"/></svg></span>
+                  <span data-i18n="valueEighth">Eighth <svg class="music-icon icon-eighth" aria-hidden="true"><use href="#g-eighth"/></svg></span>
                 </label>
                 <label class="checkbox-item">
                   <input type="checkbox" id="subdiv-half" checked />
-                  <span>Half <svg class="music-icon icon-half" aria-hidden="true"><use href="#g-half"/></svg></span>
+                  <span data-i18n="valueHalf">Half <svg class="music-icon icon-half" aria-hidden="true"><use href="#g-half"/></svg></span>
                 </label>
                 <label class="checkbox-item">
                   <input type="checkbox" id="subdiv-whole" checked />
-                  <span>Whole <svg class="music-icon icon-whole" aria-hidden="true"><use href="#g-whole"/></svg></span>
+                  <span data-i18n="valueWhole">Whole <svg class="music-icon icon-whole" aria-hidden="true"><use href="#g-whole"/></svg></span>
                 </label>
                 <label class="checkbox-item">
                   <input type="checkbox" id="subdiv-sixteenth" />
-                  <span>16th <svg class="music-icon icon-sixteenth" aria-hidden="true"><use href="#g-sixteenth"/></svg></span>
+                  <span data-i18n="valueSixteenth">16th <svg class="music-icon icon-sixteenth" aria-hidden="true"><use href="#g-sixteenth"/></svg></span>
                 </label>
                 <label class="checkbox-item">
                   <input type="checkbox" id="subdiv-thirty-second" />
-                  <span>32nd <svg class="music-icon icon-thirty-second" aria-hidden="true"><use href="#g-thirty-second"/></svg></span>
+                  <span data-i18n="valueThirtySecond">32nd <svg class="music-icon icon-thirty-second" aria-hidden="true"><use href="#g-thirty-second"/></svg></span>
                 </label>
-                <label class="checkbox-item" title="Dotted Notes (hd, qd, 8d, 16d)">
+                <label class="checkbox-item" title="Dotted Notes (hd, qd, 8d, 16d)" data-i18n-title="dottedTitle">
                   <input type="checkbox" id="subdiv-dotted" checked />
-                  <span>Dotted <svg class="music-icon icon-dotted" aria-hidden="true"><use href="#g-dotted"/></svg></span>
+                  <span data-i18n="dotted">Dotted <svg class="music-icon icon-dotted" aria-hidden="true"><use href="#g-dotted"/></svg></span>
                 </label>
                 </div>
               </fieldset>
               <div class="control-group tuplets-group">
-                <span class="group-label">Tuplets &amp; figures</span>
+                <span class="group-label" data-i18n="tupletsFigures">Tuplets &amp; figures</span>
                 <div class="checkbox-grid">
                   <div class="tuplets-menu-wrapper">
-                    <button id="btn-tuplets-toggle" class="btn btn-menu" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="tuplets-popover" title="Configure n-tuplets and subdivisions">
+                    <button id="btn-tuplets-toggle" class="btn btn-menu" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="tuplets-popover" title="Configure n-tuplets and subdivisions" data-i18n-title="tupletsToggleTitle">
                       <svg class="icon btn-icon" aria-hidden="true"><use href="#i-tuplet"/></svg>
-                      <span class="btn-label">Tuplets</span>
+                      <span class="btn-label" data-i18n="tuplets">Tuplets</span>
                       <span id="tuplets-badge" class="badge-count hidden">0</span>
                       <svg class="icon menu-arrow" aria-hidden="true"><use href="#i-chevron"/></svg>
                     </button>
                   </div>
                   <label class="checkbox-item">
                     <input type="checkbox" id="toggle-rests" />
-                    <span>Rests <svg class="music-icon icon-rest" aria-hidden="true"><use href="#g-rest"/></svg></span>
+                    <span data-i18n="rests">Rests <svg class="music-icon icon-rest" aria-hidden="true"><use href="#g-rest"/></svg></span>
                   </label>
-                  <label class="checkbox-item" title="Tied notes across beats and barlines">
+                  <label class="checkbox-item" title="Tied notes across beats and barlines" data-i18n-title="tiesTitle">
                     <input type="checkbox" id="toggle-ties" />
-                    <span>Ties <svg class="music-icon icon-tie" aria-hidden="true"><use href="#g-tie"/></svg></span>
+                    <span data-i18n="ties">Ties <svg class="music-icon icon-tie" aria-hidden="true"><use href="#g-tie"/></svg></span>
                   </label>
                 </div>
-                <div id="tuplets-popover" class="tuplets-popover hidden" role="dialog" aria-label="Tuplet configuration menu">
+                <div id="tuplets-popover" class="tuplets-popover hidden" role="dialog" aria-label="Tuplet configuration menu" data-i18n-aria-label="tupletsMenuAria">
                   <div class="tuplets-popover-header">
-                    <span class="tuplets-popover-title">Tuplet Subdivisions</span>
+                    <span class="tuplets-popover-title" data-i18n="tupletsHeading">Tuplet Subdivisions</span>
                     <div class="tuplets-popover-actions">
-                      <button id="btn-tuplets-clear" class="btn-text" type="button" title="Uncheck all tuplets">Clear all</button>
-                      <button id="btn-tuplets-close" class="btn-close" type="button" aria-label="Close tuplet menu"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+                      <button id="btn-tuplets-clear" class="btn-text" type="button" title="Uncheck all tuplets" data-i18n="clearAll" data-i18n-title="clearAllTitle">Clear all</button>
+                      <button id="btn-tuplets-close" class="btn-close" type="button" aria-label="Close tuplet menu" data-i18n-aria-label="tupletsCloseAria"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
                     </div>
                   </div>
                   <div class="tuplets-table-wrapper">
                     <table class="tuplets-table">
                       <thead>
                         <tr>
-                          <th class="th-corner">n-Tuplet</th>
-                          <th class="th-val" title="Quarter Note (1/4) Tuplets">1/4 <svg class="music-icon icon-quarter" aria-hidden="true"><use href="#g-quarter"/></svg></th>
-                          <th class="th-val" title="Eighth Note (1/8) Tuplets">1/8 <svg class="music-icon icon-eighth" aria-hidden="true"><use href="#g-eighth"/></svg></th>
-                          <th class="th-val" title="Sixteenth Note (1/16) Tuplets">1/16 <svg class="music-icon icon-sixteenth" aria-hidden="true"><use href="#g-sixteenth"/></svg></th>
+                          <th class="th-corner" data-i18n="tupletCorner">n-Tuplet</th>
+                          <th class="th-val" title="Quarter Note (1/4) Tuplets" data-i18n-title="tupletColQuarter">1/4 <svg class="music-icon icon-quarter" aria-hidden="true"><use href="#g-quarter"/></svg></th>
+                          <th class="th-val" title="Eighth Note (1/8) Tuplets" data-i18n-title="tupletColEighth">1/8 <svg class="music-icon icon-eighth" aria-hidden="true"><use href="#g-eighth"/></svg></th>
+                          <th class="th-val" title="Sixteenth Note (1/16) Tuplets" data-i18n-title="tupletColSixteenth">1/16 <svg class="music-icon icon-sixteenth" aria-hidden="true"><use href="#g-sixteenth"/></svg></th>
                         </tr>
                       </thead>
                       <tbody>
                             <tr data-row="duplet">
                               <th class="th-row" scope="row">Duplet (2)</th>
                               <td>
-                                <label class="tuplet-cell-label" title="Duplet 1/4 (2:3 quarters, 3 beats)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-duplet-1-4" data-tuplet="duplet" data-value="1/4" />
                                 </label>
                               </td>
                               <td>
-                                <label class="tuplet-cell-label" title="Duplet 1/8 (2:3 eighths, 1 compound beat in 6/8)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-duplet-1-8" data-tuplet="duplet" data-value="1/8" />
                                 </label>
                               </td>
                               <td>
-                                <label class="tuplet-cell-label" title="Duplet 1/16 (2:3 sixteenths)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-duplet-1-16" data-tuplet="duplet" data-value="1/16" />
                                 </label>
                               </td>
@@ -280,17 +292,17 @@
                             <tr data-row="triplet">
                               <th class="th-row" scope="row">Triplet (3)</th>
                               <td>
-                                <label class="tuplet-cell-label" title="Triplet 1/4 (3:2 quarters, 2 beats)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-triplet-1-4" data-tuplet="triplet" data-value="1/4" />
                                 </label>
                               </td>
                               <td>
-                                <label class="tuplet-cell-label" title="Triplet 1/8 (3:2 eighths, 1 beat)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-triplet-1-8" data-tuplet="triplet" data-value="1/8" />
                                 </label>
                               </td>
                               <td>
-                                <label class="tuplet-cell-label" title="Triplet 1/16 (3:2 sixteenths, 0.5 beat)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-triplet-1-16" data-tuplet="triplet" data-value="1/16" />
                                 </label>
                               </td>
@@ -298,17 +310,17 @@
                             <tr data-row="quadruplet">
                               <th class="th-row" scope="row">Quadruplet (4)</th>
                               <td>
-                                <label class="tuplet-cell-label" title="Quadruplet 1/4 (4:3 quarters, 3 beats)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-quadruplet-1-4" data-tuplet="quadruplet" data-value="1/4" />
                                 </label>
                               </td>
                               <td>
-                                <label class="tuplet-cell-label" title="Quadruplet 1/8 (4:3 eighths, 1 compound beat in 6/8)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-quadruplet-1-8" data-tuplet="quadruplet" data-value="1/8" />
                                 </label>
                               </td>
                               <td>
-                                <label class="tuplet-cell-label" title="Quadruplet 1/16 (4:3 sixteenths)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-quadruplet-1-16" data-tuplet="quadruplet" data-value="1/16" />
                                 </label>
                               </td>
@@ -316,17 +328,17 @@
                             <tr data-row="quintuplet">
                               <th class="th-row" scope="row">Quintuplet (5)</th>
                               <td>
-                                <label class="tuplet-cell-label" title="Quintuplet 1/4 (5:4 quarters, 4 beats)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-quintuplet-1-4" data-tuplet="quintuplet" data-value="1/4" />
                                 </label>
                               </td>
                               <td>
-                                <label class="tuplet-cell-label" title="Quintuplet 1/8 (5:4 eighths, 2 beats)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-quintuplet-1-8" data-tuplet="quintuplet" data-value="1/8" />
                                 </label>
                               </td>
                               <td>
-                                <label class="tuplet-cell-label" title="Quintuplet 1/16 (5:4 sixteenths, 1 beat)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-quintuplet-1-16" data-tuplet="quintuplet" data-value="1/16" />
                                 </label>
                               </td>
@@ -334,17 +346,17 @@
                             <tr data-row="sextuplet">
                               <th class="th-row" scope="row">Sextuplet (6)</th>
                               <td>
-                                <label class="tuplet-cell-label" title="Sextuplet 1/4 (6:4 quarters, 4 beats)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-sextuplet-1-4" data-tuplet="sextuplet" data-value="1/4" />
                                 </label>
                               </td>
                               <td>
-                                <label class="tuplet-cell-label" title="Sextuplet 1/8 (6:4 eighths, 2 beats)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-sextuplet-1-8" data-tuplet="sextuplet" data-value="1/8" />
                                 </label>
                               </td>
                               <td>
-                                <label class="tuplet-cell-label" title="Sextuplet 1/16 (6:4 sixteenths, 1 beat)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-sextuplet-1-16" data-tuplet="sextuplet" data-value="1/16" />
                                 </label>
                               </td>
@@ -352,17 +364,17 @@
                             <tr data-row="septuplet">
                               <th class="th-row" scope="row">Septuplet (7)</th>
                               <td>
-                                <label class="tuplet-cell-label" title="Septuplet 1/4 (7:4 quarters, 4 beats)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-septuplet-1-4" data-tuplet="septuplet" data-value="1/4" />
                                 </label>
                               </td>
                               <td>
-                                <label class="tuplet-cell-label" title="Septuplet 1/8 (7:4 eighths, 2 beats)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-septuplet-1-8" data-tuplet="septuplet" data-value="1/8" />
                                 </label>
                               </td>
                               <td>
-                                <label class="tuplet-cell-label" title="Septuplet 1/16 (7:4 sixteenths, 1 beat)">
+                                <label class="tuplet-cell-label">
                                   <input type="checkbox" id="tuplet-septuplet-1-16" data-tuplet="septuplet" data-value="1/16" />
                                 </label>
                               </td>
@@ -371,101 +383,110 @@
                     </table>
                   </div>
                   <div class="tuplets-popover-footer">
-                    <span>Select any n-tuplet and note value combinations to stream procedurally.</span>
+                    <span data-i18n="tupletsFooter">Select any n-tuplet and note value combinations to stream procedurally.</span>
                   </div>
                 </div>
               </div>
             </section>
 
             <section class="settings-section section-melody" aria-labelledby="section-melody-title">
-              <h2 id="section-melody-title" class="section-title">Melody</h2>
+              <h2 id="section-melody-title" class="section-title" data-i18n="sectionMelody">Melody</h2>
               <fieldset class="control-group intervals-group">
-                <legend>Intervals</legend>
+                <legend data-i18n="intervals">Intervals</legend>
                 <div class="checkbox-grid intervals-grid">
-                <label class="checkbox-item" title="Unison (1st) - Same pitch / repeated note">
+                <label class="checkbox-item" title="Unison (1st) - Same pitch / repeated note" data-i18n-title="intervalUnisonTitle">
                   <input type="checkbox" id="interval-unison" />
-                  <span>Unison</span>
+                  <span data-i18n="intervalUnison">Unison</span>
                 </label>
-                <label class="checkbox-item" title="Second (2nd) - 1 step">
+                <label class="checkbox-item" title="Second (2nd) - 1 step" data-i18n-title="intervalSecondTitle">
                   <input type="checkbox" id="interval-second" checked />
-                  <span>2nd</span>
+                  <span data-i18n="intervalSecond">2nd</span>
                 </label>
-                <label class="checkbox-item" title="Third (3rd) - 2 steps / skip">
+                <label class="checkbox-item" title="Third (3rd) - 2 steps / skip" data-i18n-title="intervalThirdTitle">
                   <input type="checkbox" id="interval-third" checked />
-                  <span>3rd</span>
+                  <span data-i18n="intervalThird">3rd</span>
                 </label>
-                <label class="checkbox-item" title="Fourth (4th) - 3 steps">
+                <label class="checkbox-item" title="Fourth (4th) - 3 steps" data-i18n-title="intervalFourthTitle">
                   <input type="checkbox" id="interval-fourth" />
-                  <span>4th</span>
+                  <span data-i18n="intervalFourth">4th</span>
                 </label>
-                <label class="checkbox-item" title="Fifth (5th) - 4 steps">
+                <label class="checkbox-item" title="Fifth (5th) - 4 steps" data-i18n-title="intervalFifthTitle">
                   <input type="checkbox" id="interval-fifth" />
-                  <span>5th</span>
+                  <span data-i18n="intervalFifth">5th</span>
                 </label>
-                <label class="checkbox-item" title="Sixth (6th) - 5 steps">
+                <label class="checkbox-item" title="Sixth (6th) - 5 steps" data-i18n-title="intervalSixthTitle">
                   <input type="checkbox" id="interval-sixth" />
-                  <span>6th</span>
+                  <span data-i18n="intervalSixth">6th</span>
                 </label>
-                <label class="checkbox-item" title="Seventh (7th) - 6 steps">
+                <label class="checkbox-item" title="Seventh (7th) - 6 steps" data-i18n-title="intervalSeventhTitle">
                   <input type="checkbox" id="interval-seventh" />
-                  <span>7th</span>
+                  <span data-i18n="intervalSeventh">7th</span>
                 </label>
-                <label class="checkbox-item" title="Octave (8ve) - 7 steps / octave leap">
+                <label class="checkbox-item" title="Octave (8ve) - 7 steps / octave leap" data-i18n-title="intervalOctaveTitle">
                   <input type="checkbox" id="interval-octave" />
-                  <span>8ve</span>
+                  <span data-i18n="intervalOctave">8ve</span>
                 </label>
-                <label class="checkbox-item" title="Ninth and plus (9+) - Compound intervals (8+ steps)">
+                <label class="checkbox-item" title="Ninth and plus (9+) - Compound intervals (8+ steps)" data-i18n-title="intervalNinthPlusTitle">
                   <input type="checkbox" id="interval-ninth-plus" />
-                  <span>9+</span>
+                  <span data-i18n="intervalNinthPlus">9+</span>
                 </label>
                 </div>
               </fieldset>
             </section>
 
             <section class="settings-section section-practice" aria-labelledby="section-practice-title">
-              <h2 id="section-practice-title" class="section-title">Practice</h2>
+              <h2 id="section-practice-title" class="section-title" data-i18n="sectionPractice">Practice</h2>
               <div class="control-group">
-                <label for="select-solfege-mode">Labels</label>
-                <select id="select-solfege-mode" aria-label="Note labels / Solfège overlay">
-                  <option value="none" selected>None</option>
-                  <option value="solfege">Solfège (Do-Re-Mi / Ti)</option>
-                  <option value="italian">Italian (Do-Re-Mi / Si)</option>
-                  <option value="letters">Letters (C-D-E)</option>
+                <label for="select-language" data-i18n="language">Language</label>
+                <select id="select-language" aria-label="Language" data-i18n-aria-label="language">
+                  <option value="en" lang="en" selected>English</option>
+                  <option value="it" lang="it">Italiano</option>
+                  <option value="fr" lang="fr">Français</option>
+                  <option value="de" lang="de">Deutsch</option>
+                  <option value="es" lang="es">Español</option>
                 </select>
               </div>
               <div class="control-group">
-                <span class="group-label">Assists</span>
+                <label for="select-solfege-mode" data-i18n="labels">Labels</label>
+                <select id="select-solfege-mode" aria-label="Note labels / Solfège overlay" data-i18n-aria-label="labelsAria">
+                  <option value="none" selected data-i18n="labelsNone">None</option>
+                  <option value="syllables" data-i18n="labelsSyllables">Syllables (Do Re Mi)</option>
+                  <option value="letters" data-i18n="labelsLetters">Letters (C D E)</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <span class="group-label" data-i18n="assists">Assists</span>
                 <div class="checkbox-grid">
                   <label class="checkbox-item">
                     <input type="checkbox" id="toggle-count-in" checked />
-                    <span>Count-In</span>
+                    <span data-i18n="countIn">Count-In</span>
                   </label>
-                  <label class="checkbox-item" title="Toggle stationary red playhead visibility (Shortcut: P)">
+                  <label class="checkbox-item" title="Toggle stationary red playhead visibility (Shortcut: P)" data-i18n-title="playheadTitle">
                     <input type="checkbox" id="toggle-playhead" checked />
-                    <span>Playhead <svg class="music-icon icon-playhead" aria-hidden="true"><use href="#g-playhead"/></svg></span>
+                    <span data-i18n="playhead">Playhead <svg class="music-icon icon-playhead" aria-hidden="true"><use href="#g-playhead"/></svg></span>
                   </label>
                 </div>
               </div>
               <div class="control-group">
-                <label for="select-sound-profile">Click</label>
-                <select id="select-sound-profile" aria-label="Metronome click timbre">
-                  <option value="triangle">Electronic</option>
-                  <option value="woodblock" selected>Woodblock</option>
+                <label for="select-sound-profile" data-i18n="click">Click</label>
+                <select id="select-sound-profile" aria-label="Metronome click timbre" data-i18n-aria-label="clickAria">
+                  <option value="triangle" data-i18n="clickElectronic">Electronic</option>
+                  <option value="woodblock" selected data-i18n="clickWoodblock">Woodblock</option>
                 </select>
               </div>
               <div class="control-group volume-group">
-                <label for="volume-slider">Volume</label>
+                <label for="volume-slider" data-i18n="volume">Volume</label>
                 <div class="volume-inputs">
-                  <button id="btn-volume-mute" class="btn-mute" type="button" aria-pressed="false" aria-label="Mute or unmute metronome" title="Mute/Unmute"><svg class="icon icon-speaker" aria-hidden="true"><use href="#i-speaker"/></svg><svg class="icon icon-muted" aria-hidden="true"><use href="#i-muted"/></svg></button>
-                  <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.8" aria-label="Metronome volume" />
+                  <button id="btn-volume-mute" class="btn-mute" type="button" aria-pressed="false" aria-label="Mute or unmute metronome" title="Mute/Unmute" data-i18n-aria-label="muteAria" data-i18n-title="muteTitle"><svg class="icon icon-speaker" aria-hidden="true"><use href="#i-speaker"/></svg><svg class="icon icon-muted" aria-hidden="true"><use href="#i-muted"/></svg></button>
+                  <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.8" aria-label="Metronome volume" data-i18n-aria-label="volumeAria" />
                 </div>
               </div>
               <div class="control-group">
-                <label for="select-theme">Theme</label>
-                <select id="select-theme" aria-label="Visual color theme">
-                  <option value="auto" selected>Auto (OS)</option>
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
+                <label for="select-theme" data-i18n="theme">Theme</label>
+                <select id="select-theme" aria-label="Visual color theme" data-i18n-aria-label="themeAria">
+                  <option value="auto" selected data-i18n="themeAuto">Auto (OS)</option>
+                  <option value="light" data-i18n="themeLight">Light</option>
+                  <option value="dark" data-i18n="themeDark">Dark</option>
                 </select>
               </div>
             </section>
@@ -474,31 +495,31 @@
       </header>
 
       <main class="canvas-wrapper">
-        <canvas id="scroller-canvas" role="img" aria-label="Streaming sight-reading music notation canvas"></canvas>
-        <div class="canvas-zoom-pill" id="canvas-zoom-pill" role="toolbar" aria-label="Notation zoom controls">
-          <button id="btn-pill-zoom-out" class="btn-pill-action" type="button" aria-label="Zoom out" title="Zoom out (−10%)">−</button>
-          <button id="btn-pill-zoom-reset" class="btn-pill-label" type="button" aria-label="Auto-fit zoom to screen" title="Reset zoom to auto-fit"><span id="pill-zoom-text">100%</span></button>
-          <button id="btn-pill-zoom-in" class="btn-pill-action" type="button" aria-label="Zoom in" title="Zoom in (+10%)">+</button>
+        <canvas id="scroller-canvas" role="img" aria-label="Streaming sight-reading music notation canvas" data-i18n-aria-label="canvasAria"></canvas>
+        <div class="canvas-zoom-pill" id="canvas-zoom-pill" role="toolbar" aria-label="Notation zoom controls" data-i18n-aria-label="zoomPillAria">
+          <button id="btn-pill-zoom-out" class="btn-pill-action" type="button" aria-label="Zoom out" title="Zoom out (−10%)" data-i18n-aria-label="zoomOut" data-i18n-title="zoomOutTitle">−</button>
+          <button id="btn-pill-zoom-reset" class="btn-pill-label" type="button" aria-label="Auto-fit zoom to screen" title="Reset zoom to auto-fit" data-i18n-aria-label="zoomResetAria" data-i18n-title="zoomResetTitle"><span id="pill-zoom-text">100%</span></button>
+          <button id="btn-pill-zoom-in" class="btn-pill-action" type="button" aria-label="Zoom in" title="Zoom in (+10%)" data-i18n-aria-label="zoomIn" data-i18n-title="zoomInTitle">+</button>
         </div>
         <aside id="orientation-notice" class="orientation-notice" role="note">
           <svg class="icon" aria-hidden="true"><use href="#i-rotate"/></svg>
-          <span><strong>Best in landscape</strong> Rotate your device for a wider staff and more notes ahead.</span>
-          <button id="btn-orientation-dismiss" class="btn-pill-action" type="button" aria-label="Dismiss landscape tip" title="Dismiss"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+          <span data-i18n="landscapeBody"><strong data-i18n="landscapeTitle">Best in landscape</strong> Rotate your device for a wider staff and more notes ahead.</span>
+          <button id="btn-orientation-dismiss" class="btn-pill-action" type="button" aria-label="Dismiss landscape tip" title="Dismiss" data-i18n-aria-label="landscapeDismissAria" data-i18n-title="dismiss"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
         </aside>
       </main>
 
       <footer class="shortcuts-hint">
-        <span><kbd>Space</kbd> Play/Pause</span>
-        <span><kbd>R</kbd> / <kbd>Esc</kbd> Reset</span>
-        <span><kbd>P</kbd> Playhead</span>
+        <span data-i18n="keyPlayPause"><kbd>Space</kbd> Play/Pause</span>
+        <span data-i18n="reset"><kbd>R</kbd> / <kbd>Esc</kbd> Reset</span>
+        <span data-i18n="playhead"><kbd>P</kbd> Playhead</span>
         <span><kbd>↑</kbd>/<kbd>↓</kbd> ±5 BPM</span>
         <span><kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> ±1 BPM</span>
-        <span><kbd>+</kbd>/<kbd>-</kbd> Zoom</span>
-        <span><kbd>0</kbd> Auto Zoom</span>
+        <span data-i18n="keyZoom"><kbd>+</kbd>/<kbd>-</kbd> Zoom</span>
+        <span data-i18n="keyAutoZoom"><kbd>0</kbd> Auto Zoom</span>
         <span class="footer-source">
-          <button id="btn-footer-about" class="btn-link" type="button">License &amp; Info</button>
+          <button id="btn-footer-about" class="btn-link" type="button" data-i18n="licenseInfo">License &amp; Info</button>
           <span aria-hidden="true">·</span>
-          <a href="https://github.com/Hand-Lock/guidonica" target="_blank" rel="noopener noreferrer" title="View Source Code on GitHub (AGPL-3.0-or-later)">GitHub</a>
+          <a href="https://github.com/Hand-Lock/guidonica" target="_blank" rel="noopener noreferrer" title="View Source Code on GitHub (AGPL-3.0-or-later)" data-i18n-title="githubTitle">GitHub</a>
         </span>
       </footer>
 
@@ -506,44 +527,44 @@
       <dialog id="modal-about" class="about-dialog" aria-labelledby="about-dialog-title">
         <div class="about-dialog-content">
           <div class="about-dialog-header">
-            <h2 id="about-dialog-title">About Guidonica</h2>
-            <button id="btn-about-close" class="btn-close" type="button" aria-label="Close dialog"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+            <h2 id="about-dialog-title" data-i18n="aboutTitle">About Guidonica</h2>
+            <button id="btn-about-close" class="btn-close" type="button" aria-label="Close dialog" data-i18n-aria-label="closeDialog"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
           </div>
 
           <div class="about-dialog-body">
-            <p class="about-tagline">
+            <p class="about-tagline" data-i18n-html="aboutTaglineHtml">
               High-performance, client-only web tool for sight-reading and solfège practice. Inspired by Guido d'Arezzo's <em>manus guidonica</em> and historic musical pedagogy, Guidonica continuously streams procedurally generated music notation across a fixed playhead in synchronization with a Web Audio synthesized metronome.
             </p>
 
             <div class="about-meta-grid">
               <div class="about-meta-row">
-                <span class="meta-label">Author</span>
+                <span class="meta-label" data-i18n="metaAuthor">Author</span>
                 <span class="meta-value"><strong>A. C. Lo Cascio</strong></span>
               </div>
               <div class="about-meta-row">
-                <span class="meta-label">License</span>
-                <span class="meta-value"><span class="badge-license">GNU AGPLv3</span> (Strict Copyleft)</span>
+                <span class="meta-label" data-i18n="metaLicense">License</span>
+                <span class="meta-value" data-i18n="strictCopyleft"><span class="badge-license">GNU AGPLv3</span> (Strict Copyleft)</span>
               </div>
               <div class="about-meta-row">
-                <span class="meta-label">Copyright</span>
+                <span class="meta-label" data-i18n="metaCopyright">Copyright</span>
                 <span class="meta-value">&copy; 2026 A. C. Lo Cascio</span>
               </div>
               <div class="about-meta-row">
-                <span class="meta-label">Repository</span>
+                <span class="meta-label" data-i18n="metaRepository">Repository</span>
                 <span class="meta-value"><a href="https://github.com/Hand-Lock/guidonica" target="_blank" rel="noopener noreferrer" class="link-external">github.com/Hand-Lock/guidonica ↗</a></span>
               </div>
             </div>
 
             <div class="about-section">
-              <h3>Strict Copyleft (AGPLv3)</h3>
-              <p>
+              <h3 data-i18n="copyleftHeading">Strict Copyleft (AGPLv3)</h3>
+              <p data-i18n-html="copyleftHtml">
                 This software is free and open-source under the <strong>GNU Affero General Public License v3.0 or later</strong>. You are free to run, study, and modify it. In accordance with Section 13, any modified version deployed as a service over a computer network must make its complete source code available to all users.
               </p>
             </div>
 
             <div class="about-section">
-              <h3>Third-Party Acknowledgements</h3>
-              <p>
+              <h3 data-i18n="thanksHeading">Third-Party Acknowledgements</h3>
+              <p data-i18n-html="thanksHtml">
                 Music notation layout and rendering powered by <a href="https://github.com/vexflow/vexflow" target="_blank" rel="noopener noreferrer" class="link-external">VexFlow 5</a> (MIT License).
                 Music glyphs from <a href="https://github.com/steinbergmedia/bravura" target="_blank" rel="noopener noreferrer" class="link-external">Bravura</a> &copy; Steinberg Media Technologies GmbH (SIL Open Font License 1.1), shipped as the renamed subset &ldquo;Guidonica Notation&rdquo;.
               </p>
@@ -551,8 +572,8 @@
           </div>
 
           <div class="about-dialog-footer">
-            <a href="https://github.com/Hand-Lock/guidonica/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">View Full LICENSE</a>
-            <button id="btn-about-dismiss" class="btn btn-primary" type="button">Close</button>
+            <a href="https://github.com/Hand-Lock/guidonica/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" data-i18n="viewLicense">View Full LICENSE</a>
+            <button id="btn-about-dismiss" class="btn btn-primary" type="button" data-i18n="close">Close</button>
           </div>
         </div>
       </dialog>
@@ -562,30 +583,31 @@
         <div class="about-dialog-content">
           <div class="about-dialog-header">
             <h2 id="intro-title"><svg class="intro-mark" aria-hidden="true"><use href="#g-hand"/></svg><span id="intro-title-text">Welcome to Guidonica</span></h2>
-            <button id="btn-intro-close" class="btn-close" type="button" aria-label="Close dialog"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+            <button id="btn-intro-close" class="btn-close" type="button" aria-label="Close dialog" data-i18n-aria-label="closeDialog"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
           </div>
 
           <div id="intro-step-level" class="intro-step">
             <div class="about-dialog-body">
-              <p class="about-tagline">Pick your level and Guidonica loads matching practice material. Every option stays adjustable in Settings.</p>
-              <h3 id="intro-level-question" class="intro-question">What's your level?</h3>
+              <div id="intro-language-options" class="intro-languages" role="radiogroup" aria-label="Language" data-i18n-aria-label="language" hidden></div>
+              <p class="about-tagline" data-i18n="introTagline">Pick your level and Guidonica loads matching practice material. Every option stays adjustable in Settings.</p>
+              <h3 id="intro-level-question" class="intro-question" data-i18n="introLevelQuestion">What's your level?</h3>
               <div id="intro-level-options" class="intro-options intro-options-levels" role="radiogroup" aria-labelledby="intro-level-question"></div>
             </div>
             <div class="about-dialog-footer intro-footer">
               <button id="btn-intro-skip" class="btn-text" type="button">Skip</button>
-              <button id="btn-intro-next" class="btn btn-primary" type="button" disabled>Next</button>
+              <button id="btn-intro-next" class="btn btn-primary" type="button" disabled data-i18n="next">Next</button>
             </div>
           </div>
 
           <div id="intro-step-clef" class="intro-step" hidden>
             <div class="about-dialog-body">
-              <h3 id="intro-clef-question" class="intro-question">Which clef would you like to read?</h3>
+              <h3 id="intro-clef-question" class="intro-question" data-i18n="introClefQuestion">Which clef would you like to read?</h3>
               <div id="intro-clef-options" class="intro-options intro-options-clefs" role="radiogroup" aria-labelledby="intro-clef-question"></div>
-              <p class="intro-note">Soprano, mezzo-soprano and baritone clefs are in Settings → Staff.</p>
+              <p class="intro-note" data-i18n="introClefNote">Soprano, mezzo-soprano and baritone clefs are in Settings → Staff.</p>
             </div>
             <div class="about-dialog-footer intro-footer">
-              <button id="btn-intro-back" class="btn btn-secondary" type="button">Back</button>
-              <button id="btn-intro-start" class="btn btn-primary" type="button">Start practising</button>
+              <button id="btn-intro-back" class="btn btn-secondary" type="button" data-i18n="back">Back</button>
+              <button id="btn-intro-start" class="btn btn-primary" type="button" data-i18n="startPractising">Start practising</button>
             </div>
           </div>
         </div>

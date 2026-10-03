@@ -1,45 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Stem, StaveNote } from 'vexflow/core';
-import {
-  ITALIAN_SOLFEGE_SYLLABLES,
-  MEASURE_CANVAS_HEIGHT,
-  NOTE_LETTER_NAMES,
-  SOLFEGE_SYLLABLES,
-  STAVE_TOP_LINE_Y,
-} from '../src/notation/types';
+import { MEASURE_CANVAS_HEIGHT, STAVE_TOP_LINE_Y } from '../src/notation/types';
+import en from '../src/i18n/locales/en';
 import { pitchPool } from '../src/notation/generator';
 import { MeasureRenderer, SOLFEGE_LABEL_OFFSET, solfegeLabelAnchor } from '../src/notation/renderer';
 import type { MeasureData } from '../src/notation/types';
 
 describe('Solfège and Note Label Geometry', () => {
-  it('maps all 7 natural diatonic pitches to correct Anglo-American Solfège syllables (with Ti)', () => {
-    expect(SOLFEGE_SYLLABLES['c']).toBe('Do');
-    expect(SOLFEGE_SYLLABLES['d']).toBe('Re');
-    expect(SOLFEGE_SYLLABLES['e']).toBe('Mi');
-    expect(SOLFEGE_SYLLABLES['f']).toBe('Fa');
-    expect(SOLFEGE_SYLLABLES['g']).toBe('Sol');
-    expect(SOLFEGE_SYLLABLES['a']).toBe('La');
-    expect(SOLFEGE_SYLLABLES['b']).toBe('Ti');
-  });
-
-  it('maps all 7 natural diatonic pitches to correct Italian Solfège syllables (with Si instead of Ti)', () => {
-    expect(ITALIAN_SOLFEGE_SYLLABLES['c']).toBe('Do');
-    expect(ITALIAN_SOLFEGE_SYLLABLES['d']).toBe('Re');
-    expect(ITALIAN_SOLFEGE_SYLLABLES['e']).toBe('Mi');
-    expect(ITALIAN_SOLFEGE_SYLLABLES['f']).toBe('Fa');
-    expect(ITALIAN_SOLFEGE_SYLLABLES['g']).toBe('Sol');
-    expect(ITALIAN_SOLFEGE_SYLLABLES['a']).toBe('La');
-    expect(ITALIAN_SOLFEGE_SYLLABLES['b']).toBe('Si');
-  });
-
-  it('maps all 7 natural diatonic pitches to correct uppercase Letter names', () => {
-    expect(NOTE_LETTER_NAMES['c']).toBe('C');
-    expect(NOTE_LETTER_NAMES['d']).toBe('D');
-    expect(NOTE_LETTER_NAMES['e']).toBe('E');
-    expect(NOTE_LETTER_NAMES['f']).toBe('F');
-    expect(NOTE_LETTER_NAMES['g']).toBe('G');
-    expect(NOTE_LETTER_NAMES['a']).toBe('A');
-    expect(NOTE_LETTER_NAMES['b']).toBe('B');
+  it('spells the English syllables with Ti and the letters C to B', () => {
+    expect(en.noteNames.syllables).toEqual(['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Ti']);
+    expect(en.noteNames.letters).toEqual(['C', 'D', 'E', 'F', 'G', 'A', 'B']);
   });
 
   it('ensures MEASURE_CANVAS_HEIGHT is 220px to prevent clipping', () => {
@@ -61,7 +31,7 @@ describe('Solfège and Note Label Geometry', () => {
     expect(down.y).toBe(90 - SOLFEGE_LABEL_OFFSET);
   });
 
-  it('verifies all pitches across all clefs have valid Solfège and Italian Solfège mappings', () => {
+  it('labels every pitch across all clefs in every naming table', () => {
     const clefs = [
       'treble',
       'soprano',
@@ -76,10 +46,10 @@ describe('Solfège and Note Label Geometry', () => {
       const pitchList = pitchPool(clef, { above: 3, below: 3 });
       expect(pitchList.length).toBeGreaterThan(0);
       for (const pitch of pitchList) {
-        const letter = pitch.split('/')[0].toLowerCase();
-        expect(SOLFEGE_SYLLABLES[letter]).toBeDefined();
-        expect(ITALIAN_SOLFEGE_SYLLABLES[letter]).toBeDefined();
-        expect(NOTE_LETTER_NAMES[letter]).toBeDefined();
+        const index = 'cdefgab'.indexOf(pitch.split('/')[0].toLowerCase());
+        expect(index).toBeGreaterThanOrEqual(0);
+        expect(en.noteNames.syllables[index]).toBeDefined();
+        expect(en.noteNames.letters[index]).toBeDefined();
       }
     }
   });
@@ -181,7 +151,7 @@ describe('Solfège labels at devicePixelRatio 2 (drift regression)', () => {
       width: 440,
       startBeat: 0,
     };
-    renderer.renderMeasure(data, 'light', 'letters');
+    renderer.renderMeasure(data, 'light', en.noteNames.letters);
 
     expect(labels.map((l) => l.text)).toEqual(['C', 'E', 'G', 'B', 'D', 'F', 'A', 'C']);
     expect(heads).toHaveLength(keys.length);

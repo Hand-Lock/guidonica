@@ -5,14 +5,14 @@
 
 ### Suckless Engineering Philosophy
 The core software architecture is strictly governed by an uncompromising "suckless", ultra-lightweight, and zero-bloat engineering philosophy:
-- **Zero Framework Bloat**: No React, Vue, Svelte, or Angular. Written in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and Web Audio API directly. Zero virtual DOM reconciliation, zero runtime reactivity overhead, zero state management dependencies. Shipped JS is ~117 kB gzipped: ~24 kB of app code plus ~93 kB of VexFlow's font-free `vexflow/core`. The music font is a separate 19.6 kB Bravura subset (ADR 0058); never import the full `'vexflow'` entry, which inlines ~600 kB of fonts.
+- **Zero Framework Bloat**: No React, Vue, Svelte, or Angular. Written in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and Web Audio API directly. Zero virtual DOM reconciliation, zero runtime reactivity overhead, zero state management dependencies. Shipped JS is ~123 kB gzipped: ~29 kB of app code (including the English dictionary) plus ~93 kB of VexFlow's font-free `vexflow/core`; each other language is one lazy ~3.6 kB chunk (ADR 0059). The music font is a separate 19.6 kB Bravura subset (ADR 0058); never import the full `'vexflow'` entry, which inlines ~600 kB of fonts.
 - **Single Source of Truth Hardware Clock**: Visual motion and synthesized metronome audio clicks are mathematically linked to the hardware audio clock (`AudioContext.currentTime`). Never introduce independent `setInterval`, `setTimeout`, or visual time accumulators. Visual-auditory drift is mathematically impossible; noteheads cross the playhead at the exact physical microsecond the speaker clicks.
 - **Hardware-Accelerated Measure Blitting**: VexFlow layout and font glyph rasterization execute **once** onto an offscreen canvas per measure. The 60/120 FPS animation loop (`requestAnimationFrame`) exclusively executes GPU-accelerated bit-block transfers (`ctx.drawImage()`). Zero per-frame layout, zero font parsing, sub-millisecond per-frame CPU time (< 1% CPU utilization).
 - **Bounded Ring-Buffer & Zero-Leak Memory Discipline**: Only 4 to 6 measures exist in memory at any time. Measures scrolling past the left edge are immediately evicted and their offscreen canvases dereferenced. An infinite 3-hour practice session maintains the exact same memory footprint (~30–45 MB process memory) as a 5-second test.
 - **Synthesized Audio (0-Byte Sample Downloads)**: Metronome clicks and woodblock timbres are synthesized live on the audio hardware using native Web Audio `OscillatorNode` (sine/triangle) and exponential `GainNode` envelopes. Zero audio files (MP3/WAV/OGG) downloaded over the network.
 - **Pure Mathematical Generation**: Rhythms are partitioned via recursive metric tree subdivision based on exact rational time signature fractions. Pitches are generated via a discrete Markov random walk with boundary bias. Zero heavy music theory AI or rule engines.
 - **The Ergodic Generation Principle (State-Space Completeness)**: The music generator is strictly ergodic (the "infinite monkey theorem" heuristic). For any user-selected parameter configuration $\Omega = (\text{Clef}, \text{TimeSig}, \text{Subdivisions}, \text{Dotted}, \text{Ties}, \text{Intervals}, \text{Accidentals})$, *every mathematically and grammatically valid permutation within $\Omega$ must possess a strictly non-zero generation probability ($P(\omega) > 0, \forall \omega \in \Omega$)*. No valid rhythmic figure (such as `q 8` or `8 q` in 6/8, or `q h` and `h q` in 3/4) or interval leap may be artificially suppressed, hijacked, or hardcoded out of existence. Generation rules must remain transparent, organized, and complete.
-- **Pure CSS3 Liquid Glass & Zero CSS Frameworks**: The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed via pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled shadows). Zero Tailwind runtime, zero CSS-in-JS libraries, zero sprite textures. Total CSS is ~6.5 kB gzipped.
+- **Pure CSS3 Liquid Glass & Zero CSS Frameworks**: The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed via pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled shadows). Zero Tailwind runtime, zero CSS-in-JS libraries, zero sprite textures. Total CSS is ~7.5 kB gzipped.
 - **Strict Typing, Zero Silent Errors**: TypeScript with `strict: true`. Avoid `any`. Catch duration arithmetic mismatches, null pointers, and VexFlow type incompatibilities at compile time. Instant build in < 800ms.
 
 ### Authoritative Specification
@@ -43,11 +43,17 @@ guidonica/
 │       ├── README.md       # ADR index and registration log
 │       └── 0001-*.md       # Specific architectural & subsystem records
 └── src/
-    ├── main.ts             # Application bootstrapper and UI event wiring
+    ├── main.ts             # Application bootstrapper, UI event wiring & locale bootstrap
     ├── state.ts            # Typed session state and parameter interfaces
     ├── storage.ts          # Validated localStorage settings, defaults & onboarding flag
     ├── presets.ts          # Level presets, preview representations & signatures (ADR 0049, 0051, 0052)
     ├── style.css           # Clean light-mode styles and accent colors
+    ├── i18n/
+    │   ├── index.ts        # Locale runtime: lazy chunks, t(), applyDom, note names & octave formats (ADR 0059)
+    │   └── locales/        # en.ts (reference, defines Messages), it.ts, fr.ts, de.ts, es.ts
+    ├── utils/
+    │   ├── radioGroup.ts   # Shared roving-tabindex radiogroup helpers (intro cards, language chips)
+    │   └── wakeLock.ts     # Screen Wake Lock controller
     ├── audio/
     │   └── metronome.ts    # Web Audio oscillator synthesis & clock scheduler
     ├── notation/
@@ -86,7 +92,12 @@ guidonica/
    - No extraneous console logging in production modules (`console.log` should be removed before committing).
    - Strict adherence to the **Aero-Guidonica Design Manifesto** ([`docs/DESIGN_MANIFESTO.md`](docs/DESIGN_MANIFESTO.md)). All visual elements must follow the pure CSS3 Liquid Glass / Frutiger Aero / skeuomorphic tactile physics model without adding external CSS or JS dependencies.
 
-5. **Procedural Ergodicity & Rule Transparency**:
+5. **Localization (ADR 0059)**:
+   - New UI text needs a key in every locale (`src/i18n/locales/*.ts`); `en.ts` is the reference and the compiler rejects an incomplete locale.
+   - Never hardcode user-visible strings in TS. Static HTML text keeps its English copy plus a `data-i18n*` attribute; `tests/i18n.test.ts` checks that it matches `en`.
+   - Note names and octave formats come from the locale (`noteLabels`, `formatRange`); the renderer receives a resolved label table.
+
+6. **Procedural Ergodicity & Rule Transparency**:
    - Whenever modifying the procedural generator (`src/notation/generator.ts` or related files), you must preserve metric and melodic ergodicity.
    - Never introduce hardcoded duration substitutions, silent omissions of valid rhythms, or hidden heuristics that reduce the reachable state space.
    - All musical capabilities (e.g., dotted notes, ties, rests) must be transparently controllable by the user and mathematically reachable in the generator's partition tree.

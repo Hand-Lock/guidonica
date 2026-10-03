@@ -201,11 +201,27 @@ Rhythm generation decomposes each measure top-down through a metric tree structu
 - Live visual indicator for the active beat / count-in.
 
 ### Onboarding & Level Presets
+- On a first visit, the welcome step also shows the five languages as endonym chips (English · Italiano · Français · Deutsch · Español), preselected from the browser language; picking one re-translates the intro at once. Later visits omit the chips; the language stays changeable in Settings → Practice.
 - On a first visit (no saved settings, no onboarding flag), a two-step intro asks **"What's your level?"** (Beginner · Elementary · Intermediate · Advanced · Virtuoso) and then **"Which clef would you like to read?"** (Treble · Bass · Alto · Tenor).
 - The answers load a preset of existing, user-visible settings: tempo, ledger lines, note values, dotted notes, rests, ties, tuplets, intervals, labels and count-in, all in 4/4. Theme, volume, zoom and sound are left unchanged.
 - "Skip", Esc or a click outside keeps the defaults and never asks again. The header Level button reopens it at any time. Its five-bar meter lights up to the current level, or stays dim with the label "Custom" when the settings match no preset (see ADR 0053).
 - Presets never alter the generator; every preset is an ordinary point of the configuration space Ω (see ADR 0049).
 - Level cards show freshly generated examples from a narrowed, published sub-configuration of each preset (toggles only switched off, Ω_preview ⊆ Ω_preset), so each card shows the figures typical of its level (see ADR 0051).
+
+### Localization & National Note Naming
+- The interface is available in English, Italian, French, German and Spanish (see ADR 0059). The default is the first supported browser language, else English; the choice is saved with the settings but is not part of any level preset.
+- The language also sets the note-naming convention. Note labels are *None*, *Syllables* or *Letters*, spelled nationally:
+  - English: Do Re Mi Fa Sol La Ti.
+  - Italian and Spanish: … La Si.
+  - French: Do Ré Mi …
+  - German: Do Re Mi Fa So La Ti, and letters with H for B natural.
+- The clef range hint uses each country's octave convention:
+  - scientific "E3 – F6" in English;
+  - Franco-Belgian "Mi2 – Fa5" (Do3 = middle C) in Italian, French and Spanish;
+  - Helmholtz "e – f³" (c¹ = middle C) in German.
+  - Its tooltip names middle C.
+- Tempo terms (Grave … Prestissimo) and "BPM" stay untranslated, as universal musical vocabulary.
+- Non-English pages stay hidden until their dictionary has loaded, so no English text flashes.
 
 ### Keyboard Controls
 - `Space`: Toggle Play / Pause.
