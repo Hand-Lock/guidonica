@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { MusicGenerator } from '../src/notation/generator';
-import { AppSettings, TUPLET_NAMES, TUPLET_VALUES, computeBeatWidth } from '../src/notation/types';
+import {
+  AppSettings,
+  MeasureData,
+  TUPLET_NAMES,
+  TUPLET_VALUES,
+  computeBeatWidth,
+} from '../src/notation/types';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import {
   INTRO_CLEFS,
@@ -34,18 +40,30 @@ function expectSubset(preview: unknown, preset: unknown, path: string): void {
   expect(preview, path).toEqual(preset);
 }
 
-function generateBars(settings: AppSettings): string[] {
+function generateMeasures(settings: AppSettings): MeasureData[] {
   const generator = new MusicGenerator();
-  const durations: string[] = [];
+  const measures: MeasureData[] = [];
   let startBeat = 0;
   for (let m = 0; m < BARS; m++) {
     const measure = generator.generateMeasure(m, settings, startBeat);
     startBeat += measure.beatsPerMeasure;
-    for (const note of measure.notes) {
-      if (!note.isTuplet) durations.push(note.duration.replace(/r$/, ''));
-    }
+    measures.push(measure);
   }
-  return durations;
+  return measures;
+}
+
+function generateBars(settings: AppSettings): string[] {
+  return generateMeasures(settings).flatMap((measure) =>
+    measure.notes.filter((note) => !note.isTuplet).map((note) => note.duration.replace(/r$/, ''))
+  );
+}
+
+const LETTERS = 'cdefgab';
+
+/** Diatonic step index of a VexFlow key such as `c/4`. */
+function diatonicStep(key: string): number {
+  const [letter, octave] = key.split('/');
+  return Number(octave) * 7 + LETTERS.indexOf(letter);
 }
 
 describe('intro preview representations (ADR 0051)', () => {
@@ -78,9 +96,9 @@ describe('intro preview representations (ADR 0051)', () => {
   const FORBIDDEN: Record<LevelId, readonly string[]> = {
     beginner: ['w'],
     elementary: ['w', 'h', 'hd'],
-    intermediate: ['w', 'h', 'hd'],
-    advanced: ['w', 'h', 'hd'],
-    virtuoso: ['w', 'h', 'hd', 'q'],
+    intermediate: ['w', 'h', 'hd', 'q', 'qd'],
+    advanced: ['w', 'h', 'hd', 'q', 'qd'],
+    virtuoso: ['w', 'h', 'hd', 'q', 'qd', '8', '8d'],
   };
 
   for (const preset of LEVEL_PRESETS) {
@@ -105,4 +123,39 @@ describe('intro preview representations (ADR 0051)', () => {
       }
     }
   });
+
+  for (const preset of LEVEL_PRESETS) {
+    const keepsRests = preset.id === 'elementary';
+    it(`${preset.id}: ${BARS} preview bars ${keepsRests ? 'include' : 'never include'} rests`, () => {
+      const settings = full(buildPreviewSettings(preset.id, 'treble'));
+      const rests = generateMeasures(settings).flatMap((m) => m.notes).filter((n) => n.isRest);
+      if (keepsRests) expect(rests.length).toBeGreaterThan(0);
+      else expect(rests.length).toBe(0);
+    });
+  }
+
+  // Kept diatonic distances per level, in steps (2nd = 1 … 8ve = 7, 9th+ = 8 and up)
+  const BAND: Record<LevelId, readonly [number, number]> = {
+    beginner: [1, 2],
+    elementary: [2, 3],
+    intermediate: [3, 4],
+    advanced: [5, 7],
+    virtuoso: [7, Infinity],
+  };
+
+  for (const preset of LEVEL_PRESETS) {
+    const [min, max] = BAND[preset.id];
+    it(`${preset.id}: ${BARS} preview bars only move by the kept intervals`, () => {
+      const settings = full(buildPreviewSettings(preset.id, 'treble'));
+      const sounding = generateMeasures(settings).flatMap((m) => m.notes).filter((n) => !n.isRest);
+      for (let i = 1; i < sounding.length; i++) {
+        if (sounding[i].tieEnd) continue;
+        const distance = Math.abs(
+          diatonicStep(sounding[i].keys[0]) - diatonicStep(sounding[i - 1].keys[0])
+        );
+        expect(distance, `${preset.id} note ${i}`).toBeGreaterThanOrEqual(min);
+        expect(distance, `${preset.id} note ${i}`).toBeLessThanOrEqual(max);
+      }
+    });
+  }
 });
