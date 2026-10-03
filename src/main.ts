@@ -45,6 +45,7 @@ import {
   LEVEL_PRESETS,
   LevelId,
   buildPresetSettings,
+  buildPreviewSettings,
   matchLevel,
 } from './presets';
 
@@ -1132,10 +1133,10 @@ class GuidonicaApp {
     }
   }
 
-  /** Each strip is a real sample within its preset's exact Ω (only clef and theme vary). */
+  /** Each strip is a real sample from its level's representation, a published Ω ⊆ preset Ω (ADR 0051). */
   private renderIntroLevelPreviews(): void {
     for (const [level, canvas] of this.introLevelPreviews) {
-      renderLevelPreview(canvas, { ...globalState.settings, ...buildPresetSettings(level, this.introClef) });
+      renderLevelPreview(canvas, { ...globalState.settings, ...buildPreviewSettings(level, this.introClef) });
     }
     this.introPreviewClef = this.introClef;
   }

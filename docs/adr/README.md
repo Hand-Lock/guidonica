@@ -55,7 +55,8 @@ This directory documents the core architectural decisions, implementation method
 | [0047](0047-guidonian-hand-v2.md) | Guidonian Hand v2: Anatomical Proportions, Volume Shading & 3D Thread | Accepted | 2026-10-02 |
 | [0048](0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted | 2026-10-03 |
 | [0049](0049-level-presets-onboarding-intro.md) | Level Presets & Onboarding Intro ("What's your level?") | Accepted | 2026-10-03 |
-| [0050](0050-intro-notation-previews.md) | Procedural Notation Previews in the Onboarding Intro | Accepted | 2026-10-03 |
+| [0050](0050-intro-notation-previews.md) | Procedural Notation Previews in the Onboarding Intro | Accepted; amended by 0051 | 2026-10-03 |
+| [0051](0051-intro-preview-representation-presets.md) | Representation Presets for the Intro Level Previews | Accepted | 2026-10-03 |
 
 ---
 

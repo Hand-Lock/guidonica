@@ -1,6 +1,6 @@
 # 0050. Procedural Notation Previews in the Onboarding Intro
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0051](0051-intro-preview-representation-presets.md)
 - **Date**: 2026-10-03
 - **Author**: Claude & lauseta
 
@@ -31,7 +31,7 @@
 - `buildIntroOptions` items take an optional `preview: 'strip' | 'icon'` and append a decorative `<canvas aria-hidden="true">`. The card text already describes each option.
   - Clef cards wrap their text in `.intro-option-text`, so the icon leads the row.
   - Canvases are kept in `introLevelPreviews` / `introClefIcons` maps.
-- `renderIntroPreviews()`: each level strip uses `{ ...globalState.settings, ...buildPresetSettings(level, introClef) }`, which is the preset's exact Ω in the chosen clef, with the current theme.
+- `renderIntroPreviews()`: each level strip uses `{ ...globalState.settings, ...buildPresetSettings(level, introClef) }`, which is the preset's exact Ω in the chosen clef, with the current theme (since ADR 0051: `buildPreviewSettings`, a narrowed representation of it).
 - **Triggers**:
   - `openIntro()` renders after `fontInitPromise` resolves. On a first visit the intro opens before Bravura has loaded, and an early render would bake tofu into the bitmaps.
   - Every open draws new examples.
@@ -49,7 +49,7 @@
 
 ## Consequences
 
-- **Ergodicity untouched**: the generator code is unchanged. A strip is a plain sample from it within the preset's Ω. No cherry-picking or resampling is done, so an example can be sparse (a Virtuoso strip may show a whole note), which is honest. The examples change on every open.
+- **Ergodicity untouched**: the generator code is unchanged. A strip is a plain sample from it, with no resampling. Originally it sampled the preset's exact Ω, so an example could be sparse (a Virtuoso strip could show a whole note); ADR 0051 now narrows each strip to a published representation Ω ⊆ preset Ω. The examples change on every open.
 - **Linear spacing shows**: beat width grows with the finest subdivision, so denser levels fit fewer beats into the same pixels. This is the scroller's real proportional layout.
 - **Cost**: about 0.9 kB gzipped JS and 0.1 kB CSS, with no assets or dependencies. Nine small canvases exist only while the intro is open.
 - **Maintenance**: the CSS heights mirror `STRIP_*` / `ICON_*` constants in `preview.ts` (commented at both ends). Retuning the scale or crop means editing both.
