@@ -1216,13 +1216,15 @@ select:focus-visible {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  /* Notch-safe stage (ADR 0056): paper stays full-bleed, notation sits inside the insets */
+  padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
   background-color: var(--canvas-bg);
 }
 
 #scroller-canvas {
   position: absolute;
   top: 0;
-  left: 0;
+  left: env(safe-area-inset-left);
   display: block;
 }
 
@@ -1231,7 +1233,7 @@ select:focus-visible {
   content: '';
   position: absolute;
   top: 0;
-  right: 0;
+  right: env(safe-area-inset-right);
   bottom: 0;
   width: 32px;
   background: linear-gradient(90deg, transparent, var(--canvas-bg));
