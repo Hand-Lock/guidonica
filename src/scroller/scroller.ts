@@ -33,6 +33,7 @@ export class ScrollerView {
   private renderer: MeasureRenderer;
   private getSettings: () => AppSettings;
   private frameCallback: (() => void) | null = null;
+  private resizeCallback: (() => void) | null = null;
 
   private dpr: number = 1;
   private zoom: number = DEFAULT_ZOOM;
@@ -128,6 +129,7 @@ export class ScrollerView {
       // Moved to a monitor with a different pixel density: cached canvases would blit blurry
       this.buffer.rerender(this.getSettings());
     }
+    this.resizeCallback?.();
     this.renderFrame();
   };
 
@@ -180,6 +182,15 @@ export class ScrollerView {
    */
   public onFrame(callback: (() => void) | null): void {
     this.frameCallback = callback;
+  }
+
+  /**
+   * Registers a hook invoked after the stage has been re-measured (rotation, drawer
+   * collapse, fullscreen, dpr change). Runs once getViewportWidth() already reports the
+   * new size, unlike a window resize listener, which fires before layout.
+   */
+  public onResize(callback: (() => void) | null): void {
+    this.resizeCallback = callback;
   }
 
   public stopLoop(): void {
