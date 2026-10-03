@@ -17,6 +17,7 @@ import {
   acceptsPreview,
   buildPresetSettings,
   buildPreviewSettings,
+  levelIndex,
   matchLevel,
   previewWindow,
 } from '../src/presets';
@@ -249,4 +250,26 @@ describe('intro preview signature check (ADR 0052)', () => {
       });
     }
   }
+});
+
+describe('header level meter index (ADR 0053)', () => {
+  it('ranks each preset 1–5 under every intro clef', () => {
+    LEVEL_PRESETS.forEach((preset, i) => {
+      for (const clef of INTRO_CLEFS) {
+        expect(levelIndex(full(buildPresetSettings(preset.id, clef)))).toBe(i + 1);
+      }
+    });
+  });
+
+  it('reads Custom (0) whenever no preset matches', () => {
+    const defaults = structuredClone(DEFAULT_APP_SETTINGS);
+    const expected = matchLevel(defaults) === null ? 0 : LEVEL_PRESETS.findIndex((p) => p.id === matchLevel(defaults)) + 1;
+    expect(levelIndex(defaults)).toBe(expected);
+
+    for (const preset of LEVEL_PRESETS) {
+      const settings = full(buildPresetSettings(preset.id, 'treble'));
+      settings.subdivisions = { ...settings.subdivisions, quarter: !settings.subdivisions.quarter };
+      expect(levelIndex(settings)).toBe(0);
+    }
+  });
 });

@@ -203,7 +203,7 @@ Rhythm generation decomposes each measure top-down through a metric tree structu
 ### Onboarding & Level Presets
 - On a first visit (no saved settings, no onboarding flag), a two-step intro asks **"What's your level?"** (Beginner · Elementary · Intermediate · Advanced · Virtuoso) and then **"Which clef would you like to read?"** (Treble · Bass · Alto · Tenor).
 - The answers load a preset of existing, user-visible settings: tempo, ledger lines, note values, dotted notes, rests, ties, tuplets, intervals, labels and count-in, all in 4/4. Theme, volume, zoom and sound are left unchanged.
-- "Skip", Esc or a click outside keeps the defaults and never asks again. Settings → Practice → "Level presets…" reopens the intro at any time.
+- "Skip", Esc or a click outside keeps the defaults and never asks again. The header Level button reopens it at any time. Its five-bar meter lights up to the current level, or stays dim with the label "Custom" when the settings match no preset (see ADR 0053).
 - Presets never alter the generator; every preset is an ordinary point of the configuration space Ω (see ADR 0049).
 - Level cards show freshly generated examples from a narrowed, published sub-configuration of each preset (toggles only switched off, Ω_preview ⊆ Ω_preset), so each card shows the figures typical of its level (see ADR 0051).
 

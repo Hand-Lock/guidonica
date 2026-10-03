@@ -131,7 +131,7 @@ Only the loaded faces may be used: Alegreya 700 (plus italic 400/700), Alegreya 
 - All icons are vector `<symbol>`s in one hidden sprite at the top of `<body>`, referenced with `<svg class="icon"><use href="#i-…"/></svg>`.
 - **UI icon grammar**: a 16-unit grid, `fill: none`, `stroke: currentColor`, stroke width 1.75, round caps and joins.
 - **Music glyphs** (`#g-quarter`, `#g-eighth`, …) are filled with `currentColor` and keep their original viewBoxes. Because `<use>` scales "meet" into its box, every `.icon-*` class sets an explicit `em` width and height matching the glyph's aspect ratio.
-- The fullscreen icon stays inline (ADR 0034).
+- The fullscreen icon stays inline (ADR 0034). So does the header Level meter (ADR 0053): five `.lv-bar` strokes (width 2), lit in `var(--accent)` up to `data-level`, with unlit bars at 0.3 opacity.
 - **Brand mark** (ADRs 0046, 0047): the student's own left Guidonian Hand, palm facing them, so the **thumb is on the left**.
   - **Thread**: it wraps in 3D around the digits, passing in front of and behind the hand. It starts at the Γ bead on the thumb tip and passes Γ, A, B.
   - **App icon and favicon**: a **Gel** tile with a deep gel body, a pearl hand, an Olo tube thread and a glowing Olo Γ bead.
@@ -192,6 +192,8 @@ The settings are grouped as **Staff** (clef, ledger lines, meter, 6/8 pulse) · 
 | > 960px | One row: `brand · transport · tempo · beats · utils` | In-flow card grid (4 columns, 2 columns between 961 and 1279px), open by default, collapsible |
 | ≤ 960px | Two rows: `brand · utils` / `transport · tempo · beats` | Absolutely positioned **glass sheet overlaying the canvas** (the canvas never reflows). It scrolls internally, closes on a canvas tap, and the tuplets popover becomes an in-flow accordion. Footer hidden. |
 | ≤ 600px | Three rows: `brand · utils` / `transport · beats` / `tempo` (full width, long slider track) | One column. The Settings and Reset labels collapse to icons. |
+
+Below 1280px, the Level button collapses to its meter and the header theme toggle hides. The theme stays in Settings → Practice (ADR 0053).
 
 The canvas wrapper is observed with a `ResizeObserver`, so any layout change (drawer collapse, rotation) resizes the backing store.
 
