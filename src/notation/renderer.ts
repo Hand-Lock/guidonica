@@ -11,7 +11,8 @@ import {
   Stem,
   Tuplet,
   Voice,
-} from 'vexflow';
+} from 'vexflow/core';
+import './fonts'; // registers the music font and points VexFlow at it (ADR 0058)
 import {
   CANVAS_PALETTE,
   Clef,
@@ -82,7 +83,7 @@ const SOLFEGE_CANVAS_MARGIN = 8;
 export const NOTATION_CANVAS_MARGIN = 2;
 /** Engraving cap on a beam's total slant: 2 staff spaces of rise, whatever its length (ADR 0057). */
 export const MAX_BEAM_RISE = 20; // 2 × VexFlow's 10 px staff space
-/** Ink height of a Bravura tuplet digit (U+E880–E889) at VexFlow's 30 px tuplet font: 11.2–11.5 px. */
+/** Ink height of a Bravura tuplet digit (U+E880–E889, kept in the ADR 0058 subset) at VexFlow's 30 px tuplet font: 11.2–11.5 px. */
 export const TUPLET_NUMBER_HEIGHT = 12;
 
 /** Vertical extent of a tuplet number drawn at `yPosition` on the given side (mirrors Tuplet.draw). */

@@ -1,6 +1,6 @@
 # 0012. Web Font Loading Synchronization & Pinned Clef Cache Invalidation
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0058](0058-music-font-audit-and-bravura-subset.md) (the font is now the self-hosted "Guidonica Notation" Bravura subset; Academico is no longer loaded)
 - **Date**: 2026-09-16
 - **Author**: Antigravity Assistant & lauseta
 

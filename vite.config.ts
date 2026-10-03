@@ -6,7 +6,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vexflow: ['vexflow'],
+          vexflow: ['vexflow/core'],
         },
       },
     },

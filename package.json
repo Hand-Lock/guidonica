@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "icons": "node scripts/build-icons.mjs"
+    "icons": "node scripts/build-icons.mjs",
+    "music-font": "python3 scripts/build-music-font.py"
   },
   "engines": {
     "node": ">=22.13"
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.20.4",
+    "@vexflow-fonts/bravura": "1.0.2",
     "happy-dom": "^20.14.5",
     "typescript": "^5.8.2",
     "vite": "^6.2.0",
