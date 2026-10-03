@@ -20,6 +20,7 @@ import {
   TupletName,
   TupletValue,
 } from '../src/notation/types';
+import en from '../src/i18n/locales/en';
 
 describe('Renderer accepts every supported tuplet cell with ties', () => {
   const originalGetContext = HTMLCanvasElement.prototype.getContext;
@@ -57,12 +58,12 @@ describe('Renderer accepts every supported tuplet cell with ties', () => {
           timeSignature: ts,
           tuplets,
           ties: true,
-          solfegeLabelMode: 'solfege',
+          solfegeLabelMode: 'syllables',
         };
         const generator = new MusicGenerator();
         for (let m = 0; m < 20; m++) {
           const data = generator.generateMeasure(m, settings, m * 6);
-          const rendered = renderer.renderMeasure(data, 'light', 'solfege');
+          const rendered = renderer.renderMeasure(data, 'light', en.noteNames.syllables);
           expect(rendered.width).toBeGreaterThan(0);
         }
       }
@@ -160,7 +161,7 @@ describe('Long tuplet beams and numbers stay inside the measure canvas (ADR 0057
   }
 
   it('caps the slant of the reported sextuplet beam and keeps its "6" above it, on canvas', () => {
-    new MeasureRenderer().renderMeasure(tupletMeasure(['a/4', 'f/4', 'g/5', 'f/4', 'f/3', 'a/3'], '8'), 'light', 'solfege');
+    new MeasureRenderer().renderMeasure(tupletMeasure(['a/4', 'f/4', 'g/5', 'f/4', 'f/3', 'a/3'], '8'), 'light', en.noteNames.syllables);
     expect(beamDraw).toHaveBeenCalledTimes(1);
     expectBeamsInsideCanvas();
     const [tuplet] = drawnTuplets();
@@ -169,7 +170,7 @@ describe('Long tuplet beams and numbers stay inside the measure canvas (ADR 0057
   });
 
   it('flattens a beam forced past the canvas top and moves its number below the noteheads', () => {
-    new MeasureRenderer().renderMeasure(tupletMeasure(['e/3', 'e/3', 'g/6', 'e/3', 'e/3', 'e/3'], '16'), 'light', 'solfege');
+    new MeasureRenderer().renderMeasure(tupletMeasure(['e/3', 'e/3', 'g/6', 'e/3', 'e/3', 'e/3'], '16'), 'light', en.noteNames.syllables);
     expect((beamDraw.mock.contexts as Beam[])[0].slope).toBe(0);
     expectBeamsInsideCanvas();
     const [tuplet] = drawnTuplets();
@@ -202,7 +203,7 @@ describe('Long tuplet beams and numbers stay inside the measure canvas (ADR 0057
           for (let m = 0; m < 50; m++) {
             beamDraw.mockClear();
             tupletDraw.mockClear();
-            renderer.renderMeasure(generator.generateMeasure(m, settings, m * 6), 'light', 'solfege');
+            renderer.renderMeasure(generator.generateMeasure(m, settings, m * 6), 'light', en.noteNames.syllables);
             expectBeamsInsideCanvas();
             expectTupletNumbersInsideCanvas();
           }

@@ -17,19 +17,15 @@ import {
   CANVAS_PALETTE,
   Clef,
   DEFAULT_ZOOM,
-  ITALIAN_SOLFEGE_SYLLABLES,
   MAX_ZOOM,
   MEASURE_CANVAS_HEIGHT,
   MIN_ZOOM,
   MeasureData,
-  NOTE_LETTER_NAMES,
   NOTE_START_OFFSET,
   NoteData,
   PINNED_HEADER_WIDTH,
   RenderedMeasure,
-  SOLFEGE_SYLLABLES,
   STAVE_CANVAS_Y,
-  SolfegeLabelMode,
   ThemeMode,
   TimeSignature,
   resolveTheme,
@@ -108,11 +104,10 @@ export function solfegeLabelAnchor(
   };
 }
 
-function labelFor(mode: SolfegeLabelMode, key: string): string {
-  const pitchLetter = key.split('/')[0].toLowerCase();
-  const table =
-    mode === 'solfege' ? SOLFEGE_SYLLABLES : mode === 'italian' ? ITALIAN_SOLFEGE_SYLLABLES : NOTE_LETTER_NAMES;
-  return table[pitchLetter] || '';
+/** Label for a VexFlow key from a table indexed by c d e f g a b (the UI language's, ADR 0059). */
+function labelFor(labels: readonly string[], key: string): string {
+  const index = 'cdefgab'.indexOf(key.charAt(0).toLowerCase());
+  return index < 0 ? '' : labels[index] ?? '';
 }
 
 export class MeasureRenderer {
@@ -141,7 +136,7 @@ export class MeasureRenderer {
   public renderMeasure(
     data: MeasureData,
     theme: ThemeMode = 'auto',
-    solfegeMode: SolfegeLabelMode = 'none'
+    labels: readonly string[] | null = null
   ): RenderedMeasure {
     const dpr = this.dpr;
     const zoom = this.zoom;
@@ -372,7 +367,7 @@ export class MeasureRenderer {
     }
 
     // Draw pedagogical Solfège syllables or note names beside noteheads
-    if (solfegeMode !== 'none') {
+    if (labels) {
       const rawCtx = canvas.getContext('2d');
       if (rawCtx) {
         const tupletByNote = new Map<StaveNote, Tuplet>();
@@ -381,7 +376,7 @@ export class MeasureRenderer {
             if (note instanceof StaveNote) tupletByNote.set(note, tuplet);
           }
         }
-        this.drawSolfegeLabels(rawCtx, data, staveNotes, tupletByNote, tupletLocations, solfegeMode, solfegeColor);
+        this.drawSolfegeLabels(rawCtx, data, staveNotes, tupletByNote, tupletLocations, labels, solfegeColor);
       }
     }
 
@@ -444,7 +439,7 @@ export class MeasureRenderer {
     staveNotes: StaveNote[],
     tupletByNote: Map<StaveNote, Tuplet>,
     tupletLocations: Map<Tuplet, number>,
-    mode: SolfegeLabelMode,
+    labels: readonly string[],
     color: string
   ): void {
     // Keep the context's current transform: it is exactly the one VexFlow drew the notes
@@ -460,7 +455,7 @@ export class MeasureRenderer {
       const nData = data.notes[i];
       // Tie continuations are not re-articulated, so they get no syllable
       if (nData.isRest || nData.tieEnd || !nData.keys || nData.keys.length === 0) continue;
-      const label = labelFor(mode, nData.keys[0]);
+      const label = labelFor(labels, nData.keys[0]);
       if (!label) continue;
 
       const staveNote = staveNotes[i];

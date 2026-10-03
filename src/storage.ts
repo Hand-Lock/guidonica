@@ -21,8 +21,11 @@ import {
   ZoomMode,
   clampTempo,
 } from './notation/types';
+import { SUPPORTED_LANGUAGES, detectLanguage } from './i18n';
 
-const SOLFEGE_LABEL_MODES: readonly SolfegeLabelMode[] = ['none', 'solfege', 'italian', 'letters'];
+const SOLFEGE_LABEL_MODES: readonly SolfegeLabelMode[] = ['none', 'syllables', 'letters'];
+// Label modes before ADR 0059: both syllable spellings became the language-driven 'syllables'
+const LEGACY_SYLLABLE_MODES: readonly string[] = ['solfege', 'italian'];
 const SOUND_PROFILES: readonly SoundProfile[] = ['woodblock', 'triangle'];
 const PULSE_68_MODES: readonly Pulse68Mode[] = ['dotted-quarter', 'eighth'];
 const THEME_MODES: readonly ThemeMode[] = ['auto', 'light', 'dark'];
@@ -61,6 +64,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     ninthPlus: false,
   },
   solfegeLabelMode: 'none',
+  language: 'en', // Replaced by the detected browser language on load
   soundProfile: 'woodblock',
   pulse68: 'dotted-quarter',
   countIn: true,
@@ -126,7 +130,7 @@ function pickTuplets(value: unknown): TupletOptions {
  * (never spreading unvalidated JSON) and applying legacy migrations.
  */
 export function loadStoredSettings(): AppSettings {
-  const defaults = (): AppSettings => structuredClone(DEFAULT_APP_SETTINGS);
+  const defaults = (): AppSettings => ({ ...structuredClone(DEFAULT_APP_SETTINGS), language: detectLanguage() });
   if (typeof window === 'undefined' || !window.localStorage) {
     return defaults();
   }
@@ -181,11 +185,10 @@ export function loadStoredSettings(): AppSettings {
       rests: pickBool(parsed.rests, d.rests),
       ties: pickBool(parsed.ties, d.ties),
       intervals: pickBoolRecord(parsed.intervals, d.intervals),
-      solfegeLabelMode: pickEnum<SolfegeLabelMode>(
-        parsed.solfegeLabelMode,
-        SOLFEGE_LABEL_MODES,
-        d.solfegeLabelMode
-      ),
+      solfegeLabelMode: LEGACY_SYLLABLE_MODES.includes(String(parsed.solfegeLabelMode))
+        ? 'syllables'
+        : pickEnum<SolfegeLabelMode>(parsed.solfegeLabelMode, SOLFEGE_LABEL_MODES, d.solfegeLabelMode),
+      language: pickEnum(parsed.language, SUPPORTED_LANGUAGES, detectLanguage()),
       soundProfile,
       pulse68: pickEnum<Pulse68Mode>(parsed.pulse68, PULSE_68_MODES, d.pulse68),
       countIn: pickBool(parsed.countIn, d.countIn),

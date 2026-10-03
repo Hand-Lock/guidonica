@@ -4,6 +4,7 @@ import { MusicGenerator } from '../src/notation/generator';
 import { MeasureRenderer, tieAnchorRightX } from '../src/notation/renderer';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import { AppSettings, MeasureData, NOTE_START_OFFSET, TimeSignature } from '../src/notation/types';
+import en from '../src/i18n/locales/en';
 
 const SIMPLE_BEATS: Record<string, number> = {
   w: 4, hd: 3, h: 2, qd: 1.5, q: 1, '8d': 0.75, '8': 0.5, '16d': 0.375, '16': 0.25, '32': 0.125,
@@ -63,7 +64,7 @@ describe('Cross-barline tie rendering', () => {
       for (let m = 0; m < 200; m++) {
         const data = generator.generateMeasure(m, settings, m * 6);
         if (data.tieIn) incoming++;
-        expect(renderer.renderMeasure(data, 'light', 'solfege').width).toBeGreaterThan(0);
+        expect(renderer.renderMeasure(data, 'light', en.noteNames.syllables).width).toBeGreaterThan(0);
       }
       expect(incoming).toBeGreaterThan(0);
     }
@@ -86,7 +87,7 @@ describe('Cross-barline tie rendering', () => {
       const keys = ['g/4'];
       const out = measure([{ keys, duration, isRest: false, tieStart: true, beatOffset, beatDuration: SIMPLE_BEATS[duration] }]);
       calls.length = 0;
-      renderer.renderMeasure(out, 'light', 'none');
+      renderer.renderMeasure(out, 'light', null);
       expect(calls).toHaveLength(1);
       const outNote = calls[0].note;
       expect(outNote).toBeDefined();
@@ -100,7 +101,7 @@ describe('Cross-barline tie rendering', () => {
         { tieIn: { beatOffset, duration, beatWidth: 110, measureWidth: 440 } }
       );
       calls.length = 0;
-      renderer.renderMeasure(incoming, 'light', 'none');
+      renderer.renderMeasure(incoming, 'light', null);
       expect(calls).toHaveLength(1);
       const inNote = calls[0].note;
       if (!inNote) continue;

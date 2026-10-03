@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DEFAULT_APP_SETTINGS, loadStoredSettings, saveStoredSettings } from '../src/storage';
+import { DEFAULT_APP_SETTINGS, STORAGE_KEY, loadStoredSettings, saveStoredSettings } from '../src/storage';
 import { AppSettings, resolveTheme } from '../src/notation/types';
 
 describe('storage module', () => {
@@ -27,7 +27,7 @@ describe('storage module', () => {
       theme: 'dark',
       volume: 0.5,
       isMuted: true,
-      solfegeLabelMode: 'solfege',
+      solfegeLabelMode: 'syllables',
       zoom: 0.75,
       zoomMode: 'manual',
       showPlayhead: false,
@@ -43,7 +43,7 @@ describe('storage module', () => {
     expect(loaded.theme).toBe('dark');
     expect(loaded.volume).toBe(0.5);
     expect(loaded.isMuted).toBe(true);
-    expect(loaded.solfegeLabelMode).toBe('solfege');
+    expect(loaded.solfegeLabelMode).toBe('syllables');
     expect(loaded.zoom).toBe(0.75);
     expect(loaded.zoomMode).toBe('manual');
     expect(loaded.showPlayhead).toBe(false);
@@ -92,18 +92,18 @@ describe('storage module', () => {
     expect(loadedPartial.subdivisions).toEqual(DEFAULT_APP_SETTINGS.subdivisions);
   });
 
-  it('persists and reloads italian solfege label mode and auto theme accurately', () => {
-    const custom: AppSettings = {
+  it('migrates the legacy italian label mode to syllables', () => {
+    const legacy = {
       ...DEFAULT_APP_SETTINGS,
       solfegeLabelMode: 'italian',
       soundProfile: 'woodblock',
       theme: 'auto',
     };
 
-    saveStoredSettings(custom);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(legacy));
     const loaded = loadStoredSettings();
 
-    expect(loaded.solfegeLabelMode).toBe('italian');
+    expect(loaded.solfegeLabelMode).toBe('syllables');
     expect(loaded.soundProfile).toBe('woodblock');
     expect(loaded.theme).toBe('auto');
   });

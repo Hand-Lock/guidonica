@@ -80,10 +80,9 @@ function hasSyncopation(w: PreviewWindow): boolean {
   return false;
 }
 
+/** Names and descriptions live in the locale dictionaries, keyed by id (ADR 0059). */
 export interface LevelPreset {
   id: LevelId;
-  name: string;
-  description: string;
   settings: Readonly<PresetSettings>;
   /** Representation for the intro card: what a 1–3 beat window cannot show well. */
   preview: Readonly<PreviewOmissions>;
@@ -91,21 +90,10 @@ export interface LevelPreset {
   check: PreviewCheck;
 }
 
-export interface IntroClefOption {
-  clef: Clef;
-  name: string;
-  description: string;
-}
+export type IntroClef = 'treble' | 'bass' | 'alto' | 'tenor';
 
 /** Clefs offered by the intro; the remaining C/F clefs stay available in Settings. */
-export const INTRO_CLEF_OPTIONS: readonly IntroClefOption[] = [
-  { clef: 'treble', name: 'Treble', description: 'G clef · voice, violin, flute, piano right hand' },
-  { clef: 'bass', name: 'Bass', description: 'F clef · cello, bassoon, trombone, piano left hand' },
-  { clef: 'alto', name: 'Alto', description: 'C clef on the middle line · viola' },
-  { clef: 'tenor', name: 'Tenor', description: 'C clef on the fourth line · upper cello & bassoon' },
-];
-
-export const INTRO_CLEFS: readonly Clef[] = INTRO_CLEF_OPTIONS.map((o) => o.clef);
+export const INTRO_CLEFS: readonly IntroClef[] = ['treble', 'bass', 'alto', 'tenor'];
 
 // Every preset is in 4/4; buildPresetSettings() drops any tuplet cell 4/4 cannot realise
 const PRESET_METER: TimeSignature = '4/4';
@@ -127,8 +115,6 @@ const ALL_TUPLET_CELLS: readonly TupletCell[] = TUPLET_NAMES.flatMap((name) =>
 export const LEVEL_PRESETS: readonly LevelPreset[] = [
   {
     id: 'beginner',
-    name: 'Beginner',
-    description: 'Steps & skips · whole to quarter notes · solfège labels · 50 BPM',
     settings: {
       tempo: 50,
       timeSignature: PRESET_METER,
@@ -156,7 +142,7 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
         octave: false,
         ninthPlus: false,
       },
-      solfegeLabelMode: 'solfege',
+      solfegeLabelMode: 'syllables',
       countIn: true,
     },
     // Window ≈ 1 bar: a whole note would fill it; repeats show no motion
@@ -166,8 +152,6 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
   },
   {
     id: 'elementary',
-    name: 'Elementary',
-    description: 'Up to 4ths · eighths, dots & rests · 60 BPM',
     settings: {
       tempo: 60,
       timeSignature: PRESET_METER,
@@ -205,8 +189,6 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
   },
   {
     id: 'intermediate',
-    name: 'Intermediate',
-    description: 'Up to 5ths · ties & eighth-note triplets · 72 BPM',
     settings: {
       tempo: 72,
       timeSignature: PRESET_METER,
@@ -248,8 +230,6 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
   },
   {
     id: 'advanced',
-    name: 'Advanced',
-    description: 'Up to the octave · sixteenths & triplets · 80 BPM',
     settings: {
       tempo: 80,
       timeSignature: PRESET_METER,
@@ -292,8 +272,6 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
   },
   {
     id: 'virtuoso',
-    name: 'Virtuoso',
-    description: 'Any leap · 32nds & every tuplet · 92 BPM',
     settings: {
       tempo: 92,
       timeSignature: PRESET_METER,

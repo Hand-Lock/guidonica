@@ -2,10 +2,11 @@ import { describe, it, expect } from 'vitest';
 import {
   MusicGenerator,
   CLEF_PITCH_RANGES,
-  clefRangeLabel,
   pitchBounds,
   pitchPool,
 } from '../src/notation/generator';
+import { formatRange } from '../src/i18n';
+import en from '../src/i18n/locales/en';
 import {
   AppSettings,
   Clef,
@@ -693,9 +694,13 @@ describe('User-selectable ledger lines', () => {
   });
 
   it('derives range labels and pool sizes from the ledger counts', () => {
-    expect(clefRangeLabel('treble', { above: 3, below: 3 })).toBe('E3 – F6');
-    expect(clefRangeLabel('treble', { above: 0, below: 0 })).toBe('D4 – G5');
-    expect(clefRangeLabel('bass', { above: 1, below: 2 })).toBe('B1 – D4');
+    const range = (clef: 'treble' | 'bass', above: number, below: number): string => {
+      const { low, high } = pitchBounds(clef, { above, below });
+      return formatRange(low, high, en);
+    };
+    expect(range('treble', 3, 3)).toBe('E3 – F6');
+    expect(range('treble', 0, 0)).toBe('D4 – G5');
+    expect(range('bass', 1, 2)).toBe('B1 – D4');
     expect(pitchPool('alto', { above: 0, below: 0 }).length).toBe(11);
   });
 

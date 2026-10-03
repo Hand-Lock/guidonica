@@ -1,5 +1,6 @@
 import { MusicGenerator } from './generator';
 import { MeasureRenderer } from './renderer';
+import { noteLabels } from '../i18n';
 import { PreviewWindow, previewWindow } from '../presets';
 import {
   AppSettings,
@@ -154,7 +155,7 @@ export function renderLevelPreview(
 
   let x = STRIP_START_X;
   measures.forEach((data, i) => {
-    const measure: RenderedMeasure = renderer.renderMeasure(data, settings.theme, settings.solfegeLabelMode);
+    const measure: RenderedMeasure = renderer.renderMeasure(data, settings.theme, noteLabels(settings.solfegeLabelMode));
     ctx.save();
     if (i === 0) {
       // The opening bar starts right after the header, which needs no barline
