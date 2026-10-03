@@ -135,13 +135,19 @@ export class ScrollerView {
 
   public updateDimensions(): void {
     this.dpr = window.devicePixelRatio || 1;
-    const rect = this.canvas.parentElement?.getBoundingClientRect() ?? {
-      width: window.innerWidth,
-      height: window.innerHeight - 60,
-    };
+    const parent = this.canvas.parentElement;
+    let width = window.innerWidth;
+    let height = window.innerHeight - 60;
+    if (parent) {
+      // Content box, not border box: the wrapper pads by the notch insets (ADR 0056)
+      const rect = parent.getBoundingClientRect();
+      const style = getComputedStyle(parent);
+      width = rect.width - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0);
+      height = rect.height - (parseFloat(style.paddingTop) || 0) - (parseFloat(style.paddingBottom) || 0);
+    }
 
-    this.viewportWidth = Math.max(300, Math.floor(rect.width));
-    this.viewportHeight = Math.max(220, Math.floor(rect.height));
+    this.viewportWidth = Math.max(300, Math.floor(width));
+    this.viewportHeight = Math.max(220, Math.floor(height));
 
     this.canvas.width = Math.floor(this.viewportWidth * this.dpr);
     this.canvas.height = Math.floor(this.viewportHeight * this.dpr);
