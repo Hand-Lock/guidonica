@@ -44,6 +44,8 @@ guidonica/
 └── src/
     ├── main.ts             # Application bootstrapper and UI event wiring
     ├── state.ts            # Typed session state and parameter interfaces
+    ├── storage.ts          # Validated localStorage settings, defaults & onboarding flag
+    ├── presets.ts          # Level presets for the onboarding intro (ADR 0049)
     ├── style.css           # Clean light-mode styles and accent colors
     ├── audio/
     │   └── metronome.ts    # Web Audio oscillator synthesis & clock scheduler

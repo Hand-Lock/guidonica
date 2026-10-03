@@ -418,6 +418,15 @@
             <section class="settings-section section-practice" aria-labelledby="section-practice-title">
               <h2 id="section-practice-title" class="section-title">Practice</h2>
               <div class="control-group">
+                <span class="group-label">Level</span>
+                <div class="checkbox-grid">
+                  <button id="btn-intro-open" class="btn btn-menu" type="button" aria-haspopup="dialog" aria-controls="modal-intro" title="Load a level &amp; clef preset">
+                    <svg class="icon btn-icon icon-hand" aria-hidden="true"><use href="#g-hand"/></svg>
+                    <span class="btn-label">Level presets…</span>
+                  </button>
+                </div>
+              </div>
+              <div class="control-group">
                 <label for="select-solfege-mode">Labels</label>
                 <select id="select-solfege-mode" aria-label="Note labels / Solfège overlay">
                   <option value="none" selected>None</option>
@@ -540,6 +549,40 @@
           <div class="about-dialog-footer">
             <a href="https://github.com/Hand-Lock/guidonica/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">View Full LICENSE</a>
             <button id="btn-about-dismiss" class="btn btn-primary" type="button">Close</button>
+          </div>
+        </div>
+      </dialog>
+
+      <!-- First-visit level & clef intro (ADR 0049); option cards are built from src/presets.ts -->
+      <dialog id="modal-intro" class="about-dialog intro-dialog" aria-labelledby="intro-title">
+        <div class="about-dialog-content">
+          <div class="about-dialog-header">
+            <h2 id="intro-title"><svg class="intro-mark" aria-hidden="true"><use href="#g-hand"/></svg>Welcome to Guidonica</h2>
+            <button id="btn-intro-close" class="btn-close" type="button" aria-label="Close dialog"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+          </div>
+
+          <div id="intro-step-level" class="intro-step">
+            <div class="about-dialog-body">
+              <p class="about-tagline">Pick your level and Guidonica loads matching practice material. Every option stays adjustable in Settings.</p>
+              <h3 id="intro-level-question" class="intro-question">What's your level?</h3>
+              <div id="intro-level-options" class="intro-options intro-options-levels" role="radiogroup" aria-labelledby="intro-level-question"></div>
+            </div>
+            <div class="about-dialog-footer intro-footer">
+              <button id="btn-intro-skip" class="btn-text" type="button">Skip</button>
+              <button id="btn-intro-next" class="btn btn-primary" type="button" disabled>Next</button>
+            </div>
+          </div>
+
+          <div id="intro-step-clef" class="intro-step" hidden>
+            <div class="about-dialog-body">
+              <h3 id="intro-clef-question" class="intro-question">Which clef do you read?</h3>
+              <div id="intro-clef-options" class="intro-options intro-options-clefs" role="radiogroup" aria-labelledby="intro-clef-question"></div>
+              <p class="intro-note">Soprano, mezzo-soprano and baritone clefs are in Settings → Staff.</p>
+            </div>
+            <div class="about-dialog-footer intro-footer">
+              <button id="btn-intro-back" class="btn btn-secondary" type="button">Back</button>
+              <button id="btn-intro-start" class="btn btn-primary" type="button">Start practising</button>
+            </div>
           </div>
         </div>
       </dialog>

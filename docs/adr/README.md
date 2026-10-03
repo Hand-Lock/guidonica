@@ -54,6 +54,7 @@ This directory documents the core architectural decisions, implementation method
 | [0046](0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Superseded in part by [0047](0047-guidonian-hand-v2.md) | 2026-10-02 |
 | [0047](0047-guidonian-hand-v2.md) | Guidonian Hand v2: Anatomical Proportions, Volume Shading & 3D Thread | Accepted | 2026-10-02 |
 | [0048](0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted | 2026-10-03 |
+| [0049](0049-level-presets-onboarding-intro.md) | Level Presets & Onboarding Intro ("What's your level?") | Accepted | 2026-10-03 |
 
 ---
 
