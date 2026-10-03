@@ -67,6 +67,7 @@ This directory documents the core architectural decisions, implementation method
 | [0059](0059-localization-and-national-note-naming.md) | Localization & national note naming | Accepted | 2026-10-03 |
 | [0060](0060-self-hosted-text-fonts-and-privacy-note.md) | Self-Hosted Text Fonts & a No-Tracking Privacy Note | Accepted | 2026-10-03 |
 | [0061](0061-social-preview-card-and-share-metadata.md) | Social Preview Card & Share Metadata | Accepted | 2026-10-03 |
+| [0062](0062-robots-txt-and-sitemap.md) | robots.txt & sitemap.xml | Accepted | 2026-10-03 |
 
 ---
 
