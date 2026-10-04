@@ -43,7 +43,8 @@ The DCO's clause (a) refers to "the open source license indicated in the file". 
 
 - **`.github/workflows/dco.yml`:** a self-contained workflow, with no third-party GitHub App. It runs on `pull_request` with `permissions: contents: read` and a full-history checkout. Base and head SHAs reach the script only through `env:`, never as `${{ }}` inside `run:`, to avoid script injection. For each commit in `git rev-list --no-merges "$BASE..$HEAD"`, it reads `%(trailers:key=Signed-off-by,valueonly)` and requires one that contains the author's `<email>` (case-insensitive). Each failing commit gets an `::error::` annotation, then one more gives the fix (`git commit --amend -s`, or `git rebase --signoff origin/main`, then `git push --force-with-lease`). The owner's direct pushes to `main` are not pull requests, so they never run it.
 - **`.github/pull_request_template.md`:** checkboxes for the DCO sign-off and the MIT grant (an explicit, per-PR acceptance of the terms), plus the hygiene checks from AGENTS.md.
-- **Repository setting** (manual): "Require contributors to sign off on web-based commits", so the GitHub web editor adds the trailer itself. Optionally, a ruleset can make the DCO check required on pull requests, with an owner bypass.
+- **Repository setting** (done): "Require contributors to sign off on web-based commits" is on (`web_commit_signoff_required: true`), so the GitHub web editor adds the trailer itself.
+- **Repository ruleset** (done, id 24458065): "Require DCO sign-off on main" targets the default branch with one `required_status_checks` rule, context `sign-off` (the job name in `dco.yml`) from `integration_id: 15368` (GitHub Actions, so no other app can satisfy it). A pull request with an unsigned commit cannot be merged. The Repository admin role (`actor_id: 5`) bypasses it with mode `always`, because a required check also applies to direct pushes, which have no PR check; the owner's `git push origin main` (AGENTS.md §5) therefore still works and GitHub prints "Bypassed rule violations", which is expected. Rollback: Settings → Rules → Rulesets, or `gh api -X DELETE repos/Hand-Lock/guidonica/rulesets/24458065`.
 
 ### 4. Provenance rules
 
@@ -101,6 +102,6 @@ If the project grows to many regular contributors, or a commercial partner asks 
 
 ## Manual follow-ups (owner)
 
-- GitHub → Settings → General → enable "Require contributors to sign off on web-based commits".
-- Optional: a ruleset that requires the DCO check on pull requests to `main`, with an owner bypass.
+- ~~GitHub → Settings → General → enable "Require contributors to sign off on web-based commits".~~ Done.
+- ~~Optional: a ruleset that requires the DCO check on pull requests to `main`, with an owner bypass.~~ Done: "Require DCO sign-off on main" (see §3).
 - Search TMview, then file an EUIPO application in classes 9, 41 and 42. After registration, switch ™ → ® and update `TRADEMARKS.md`.
