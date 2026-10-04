@@ -34,6 +34,9 @@ guidonica/
 ├── tsconfig.json           # Strict TypeScript configuration
 ├── vite.config.ts          # Minimal Vite configuration + serviceWorker() build plugin (ADR 0063)
 ├── index.html              # Minimal semantic HTML shell
+├── .claude/
+│   └── skills/
+│       └── run-guidonica/  # Agent run/screenshot skill + Playwright driver (dev-only)
 ├── .github/
 │   ├── pull_request_template.md # DCO + MIT checkboxes and hygiene checklist (ADR 0067)
 │   └── workflows/
