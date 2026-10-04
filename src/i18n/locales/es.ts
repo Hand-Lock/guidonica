@@ -61,7 +61,7 @@ const es: Messages = {
   valueSixteenth: 'Semicorchea',
   valueThirtySecond: 'Fusa',
   dotted: 'Con puntillo',
-  dottedTitle: 'Notas con puntillo (blanca, negra, corchea, semicorchea)',
+  dottedTitle: 'Notas con puntillo (blanca, negra, corchea, semicorchea). La corchea con puntillo necesita semicorcheas o fusas; la semicorchea con puntillo, fusas',
   tupletsFigures: 'Grupos especiales y figuras',
   tuplets: 'Grupos',
   tupletsToggleTitle: 'Configurar los grupos de valoración especial',

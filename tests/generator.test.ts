@@ -2,9 +2,14 @@ import { describe, it, expect } from 'vitest';
 import {
   MusicGenerator,
   CLEF_PITCH_RANGES,
+  SILENCE_CONTINUE_PROBABILITY,
+  SILENCE_PROBABILITY,
+  drawTupletMembers,
+  enabledValues,
   rhythmGrammar,
   pitchBounds,
   pitchPool,
+  tupletCompositions,
 } from '../src/notation/generator';
 import { formatRange } from '../src/i18n';
 import en from '../src/i18n/locales/en';
@@ -36,6 +41,42 @@ const NO_INTERVALS: AppSettings['intervals'] = {
   seventh: false,
   octave: false,
   ninthPlus: false,
+};
+
+const INTERVAL_KEYS = [
+  'unison',
+  'second',
+  'third',
+  'fourth',
+  'fifth',
+  'sixth',
+  'seventh',
+  'octave',
+  'ninthPlus',
+] as const;
+
+/** Every subset of the interval toggles; the empty one falls back to seconds and thirds. */
+const ALL_INTERVAL_SETS: AppSettings['intervals'][] = Array.from({ length: 1 << INTERVAL_KEYS.length }, (_, mask) => {
+  const intervals = { ...NO_INTERVALS };
+  INTERVAL_KEYS.forEach((key, i) => (intervals[key] = Boolean(mask & (1 << i))));
+  return intervals;
+});
+
+/** Diatonic steps an interval set allows, and whether leaps of a 9th or more are on. */
+function allowedSteps(intervals: AppSettings['intervals']): { steps: number[]; ninth: boolean } {
+  const steps = INTERVAL_KEYS.slice(0, 8).flatMap((key, s) => (intervals[key] ? [s] : []));
+  if (steps.length === 0 && !intervals.ninthPlus) return { steps: [1, 2], ninth: false };
+  return { steps, ninth: intervals.ninthPlus };
+}
+
+const QUARTERS: SubdivisionOptions = {
+  whole: false,
+  half: false,
+  quarter: true,
+  eighth: false,
+  sixteenth: false,
+  thirtySecond: false,
+  dotted: false,
 };
 
 const EXPECTED_TUPLET_SHAPE: Record<TupletName, number> = {
@@ -483,7 +524,7 @@ describe('MusicGenerator', () => {
       };
 
       let foundRest = false;
-      for (let m = 0; m < 20; m++) {
+      for (let m = 0; m < 100; m++) {
         const measure = generator.generateMeasure(m, settings, m * 4);
         for (const note of measure.notes) {
           if (note.isRest && note.duration !== 'w') {
@@ -618,13 +659,17 @@ describe('MusicGenerator', () => {
     });
 
     it('reaches tie chains (a~b~c), inside the bar and across barlines', () => {
-      const measures = generateMany({
-        ...DEFAULT_APP_SETTINGS,
-        timeSignature: '4/4',
-        subdivisions: { ...noTupletSubdiv, dotted: true },
-        ties: true,
-        rests: false,
-      });
+      // An inner chain is about one bar in a thousand
+      const measures = generateMany(
+        {
+          ...DEFAULT_APP_SETTINGS,
+          timeSignature: '4/4',
+          subdivisions: { ...noTupletSubdiv, dotted: true },
+          ties: true,
+          rests: false,
+        },
+        10000
+      );
       const inner = measures.some((m) =>
         m.notes.some((n, i) => i > 0 && i < m.notes.length - 1 && n.tieStart && n.tieEnd)
       );
@@ -824,25 +869,34 @@ describe('User-selectable ledger lines', () => {
     },
   };
 
-  const selectedFits = (intervals: AppSettings['intervals'], up: number, down: number): number[] => {
-    const steps: number[] = [];
-    const flags = [
-      intervals.unison,
-      intervals.second,
-      intervals.third,
-      intervals.fourth,
-      intervals.fifth,
-      intervals.sixth,
-      intervals.seventh,
-      intervals.octave,
-    ];
-    flags.forEach((on, s) => {
-      if (on && (s <= up || s <= down)) steps.push(s);
-    });
-    return steps;
+  /** Pool indices of every note of `count` bars, a fresh session every `sessionBars` bars. */
+  const walk = (settings: AppSettings, pool: string[], count: number, sessionBars = count): number[][] => {
+    const generator = new MusicGenerator();
+    const sessions: number[][] = [];
+    for (let m = 0; m < count; m++) {
+      if (m % sessionBars === 0) {
+        generator.resetPitch();
+        sessions.push([]);
+      }
+      for (const note of generator.generateMeasure(m, settings, m * 4).notes) {
+        sessions[sessions.length - 1].push(pool.indexOf(note.keys[0]));
+      }
+    }
+    return sessions;
   };
 
-  it('stays in bounds, reaches both edges and moves only by selected intervals or the fallback', () => {
+  /** Moves of a session that are not one selected interval (ADR 0066: no fallback move). */
+  const badMoves = (intervals: AppSettings['intervals'], idxs: number[], label: string): string[] => {
+    const { steps, ninth } = allowedSteps(intervals);
+    const bad: string[] = [];
+    for (let i = 1; i < idxs.length; i++) {
+      const leap = Math.abs(idxs[i] - idxs[i - 1]);
+      if (!steps.includes(leap) && !(ninth && leap >= 8)) bad.push(`${label}: ${idxs[i - 1]} -> ${idxs[i]}`);
+    }
+    return bad;
+  };
+
+  it('stays in bounds, reaches both edges and moves only by selected intervals', () => {
     const violations: string[] = [];
     for (const clef of ALL_CLEFS) {
       for (let above = 0; above <= 3; above++) {
@@ -851,37 +905,83 @@ describe('User-selectable ledger lines', () => {
           const pool = pitchPool(clef, ledgerLines);
           for (const [name, intervals] of Object.entries(INTERVAL_SETS)) {
             const label = `${clef} ${above}/${below} ${name}`;
-            const generator = new MusicGenerator();
             const settings: AppSettings = { ...DEFAULT_APP_SETTINGS, clef, ledgerLines, intervals };
-            const idxs: number[] = [];
-            for (let m = 0; m < 300; m++) {
-              for (const note of generator.generateMeasure(m, settings, m * 4).notes) {
-                idxs.push(pool.indexOf(note.keys[0]));
-              }
-            }
+            const [idxs] = walk(settings, pool, 300);
             if (idxs.includes(-1)) violations.push(`${label}: out of bounds`);
             if (name === 'all' && !(idxs.includes(0) && idxs.includes(pool.length - 1))) {
               violations.push(`${label}: edge not reached`);
             }
-            for (let i = 1; i < idxs.length; i++) {
-              const prev = idxs[i - 1];
-              const up = pool.length - 1 - prev;
-              const down = prev;
-              const leap = Math.abs(idxs[i] - prev);
-              const fitting = selectedFits(intervals, up, down);
-              const ninthFits = intervals.ninthPlus && Math.max(up, down) >= 8;
-              const ok =
-                fitting.length === 0 && !ninthFits
-                  ? leap === Math.max(up, down) // Documented fallback
-                  : fitting.includes(leap) || (ninthFits && leap >= 8);
-              if (!ok) violations.push(`${label}: ${prev} -> ${idxs[i]}`);
-            }
+            violations.push(...badMoves(intervals, idxs, label));
           }
         }
       }
     }
     expect(violations).toEqual([]);
   }, 20000);
+
+  it('moves only by selected intervals for every interval subset (ADR 0066)', () => {
+    const violations: string[] = [];
+    const pools: [Clef, AppSettings['ledgerLines']][] = [
+      ['treble', { above: 0, below: 0 }],
+      ['alto', { above: 3, below: 3 }],
+      ['bass', { above: 1, below: 2 }],
+    ];
+    for (const [clef, ledgerLines] of pools) {
+      const pool = pitchPool(clef, ledgerLines);
+      for (const [mask, intervals] of ALL_INTERVAL_SETS.entries()) {
+        const label = `${clef} ${ledgerLines.above}/${ledgerLines.below} #${mask}`;
+        const settings: AppSettings = { ...DEFAULT_APP_SETTINGS, clef, ledgerLines, intervals, subdivisions: QUARTERS };
+        for (const idxs of walk(settings, pool, 40, 10)) {
+          if (idxs.includes(-1)) violations.push(`${label}: out of bounds`);
+          violations.push(...badMoves(intervals, idxs, label));
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  }, 30000);
+
+  it('starts disconnected interval sets on every live pitch of the pool (ADR 0066)', () => {
+    const cases: [string, AppSettings['intervals'], AppSettings['ledgerLines']][] = [
+      ['thirds', { ...NO_INTERVALS, third: true }, { above: 3, below: 3 }],
+      ['fourths', { ...NO_INTERVALS, fourth: true }, { above: 3, below: 3 }],
+      ['fifths', { ...NO_INTERVALS, fifth: true }, { above: 3, below: 3 }],
+      ['octaves', { ...NO_INTERVALS, octave: true }, { above: 3, below: 3 }],
+      ['octaves 0/0', { ...NO_INTERVALS, octave: true }, { above: 0, below: 0 }],
+      ['unison', { ...NO_INTERVALS, unison: true }, { above: 3, below: 3 }],
+    ];
+    for (const [name, intervals, ledgerLines] of cases) {
+      const pool = pitchPool('treble', ledgerLines);
+      const { steps } = allowedSteps(intervals);
+      const live = pool
+        .map((_, i) => i)
+        .filter((i) => steps.some((s) => i + s < pool.length || i - s >= 0));
+      const settings: AppSettings = { ...DEFAULT_APP_SETTINGS, ledgerLines, intervals, subdivisions: QUARTERS };
+      const generator = new MusicGenerator();
+      const starts = new Set<number>();
+      for (let s = 0; s < N; s++) {
+        generator.resetPitch();
+        starts.add(pool.indexOf(generator.generateMeasure(0, settings, 0).notes[0].keys[0]));
+      }
+      // Octaves at 0/0: the middle of the 11-note pool has no octave, so it is never a start
+      expect([...starts].sort((a, b) => a - b), name).toEqual(live);
+    }
+  });
+
+  it('keeps the anchor start for connected interval sets (ADR 0066)', () => {
+    const connected: AppSettings['intervals'][] = [
+      { ...NO_INTERVALS, third: true, fourth: true },
+      { ...NO_INTERVALS, second: true, octave: true },
+      NO_INTERVALS, // Fallback: seconds and thirds
+    ];
+    for (const intervals of connected) {
+      const generator = new MusicGenerator();
+      for (let s = 0; s < 50; s++) {
+        generator.resetPitch();
+        const first = generator.generateMeasure(0, { ...DEFAULT_APP_SETTINGS, intervals }, 0).notes[0];
+        expect(first.keys[0]).toBe(CLEF_PITCH_RANGES.treble.defaultAnchor);
+      }
+    }
+  });
 });
 
 describe('Rhythm grammar (ADR 0065)', () => {
@@ -958,6 +1058,41 @@ describe('Rhythm grammar (ADR 0065)', () => {
     expect(measures.some((m) => m.notes.some((n) => n.duration === 'hd'))).toBe(true);
   });
 
+  it('pins the dormant values: enabled but in no complete bar (ADR 0066)', () => {
+    // Too long for the bar, or a dotted value without its shorter partner (strict alphabet)
+    const expected = (ts: TimeSignature, sub: SubdivisionOptions): string[] => {
+      const shorter = sub.eighth || sub.sixteenth || sub.thirtySecond;
+      return enabledValues(sub).filter(
+        (v) =>
+          (v === 'w' && ts !== '4/4') ||
+          (v === 'h' && ts === '6/8') ||
+          (v === 'hd' && ts === '2/4') ||
+          (v === 'qd' && (ts === '4/4' || ts === '2/4') && !shorter) ||
+          (v === '8d' && !(sub.sixteenth || sub.thirtySecond)) ||
+          (v === '16d' && !sub.thirtySecond)
+      );
+    };
+    for (const ts of METERS) {
+      for (let mask = 0; mask < 1 << (BASES.length + 1); mask++) {
+        const sub: SubdivisionOptions = { ...NONE, dotted: Boolean(mask & (1 << BASES.length)) };
+        BASES.forEach((base, i) => (sub[base] = Boolean(mask & (1 << i))));
+        const g = rhythmGrammar(ts, sub);
+        const reached = new Array<boolean>(g.barUnits + 1).fill(false);
+        reached[0] = true;
+        const used = new Set<string>();
+        for (let u = 0; u < g.barUnits; u++) {
+          if (!reached[u]) continue;
+          for (const step of g.notes[u]) {
+            used.add(step.duration);
+            reached[u + step.units] = true;
+          }
+        }
+        const dormant = enabledValues(sub).filter((v) => !used.has(v));
+        expect(dormant, `${ts} ${JSON.stringify(sub)}`).toEqual(expected(ts, sub));
+      }
+    }
+  });
+
   it('memoizes the grammar per configuration', () => {
     const subdiv = { ...NONE, quarter: true, eighth: true };
     expect(rhythmGrammar('3/4', subdiv)).toBe(rhythmGrammar('3/4', { ...subdiv }));
@@ -1028,5 +1163,104 @@ describe('Symmetric pitch walk (ADR 0065)', () => {
     }
     expect(up / (up + down)).toBeGreaterThan(0.47);
     expect(up / (up + down)).toBeLessThan(0.53);
+  });
+});
+
+describe('Rest runs (ADR 0066)', () => {
+  /** Silent flag of every beat-unit slot of a quarters-only stream (a bar rest is 4 slots). */
+  function silentSlots(settings: AppSettings, bars: number): boolean[] {
+    return generateMany(settings, bars).flatMap((m) =>
+      m.notes.flatMap((n) => Array.from({ length: Math.round(n.beatDuration) }, () => n.isRest))
+    );
+  }
+
+  it('starts a rest with SILENCE_PROBABILITY and continues one with SILENCE_CONTINUE_PROBABILITY', () => {
+    const slots = silentSlots({ ...DEFAULT_APP_SETTINGS, rests: true, subdivisions: QUARTERS }, 5000);
+    let afterSound = 0;
+    let soundToSilent = 0;
+    let afterSilence = 0;
+    let silentToSilent = 0;
+    for (let i = 1; i < slots.length; i++) {
+      if (slots[i - 1]) {
+        afterSilence++;
+        if (slots[i]) silentToSilent++;
+      } else {
+        afterSound++;
+        if (slots[i]) soundToSilent++;
+      }
+    }
+    expect(Math.abs(soundToSilent / afterSound - SILENCE_PROBABILITY)).toBeLessThan(0.015);
+    expect(Math.abs(silentToSilent / afterSilence - SILENCE_CONTINUE_PROBABILITY)).toBeLessThan(0.04);
+  });
+
+  it('reaches a full-bar rest in 3/4 with eighths and sixteenths', () => {
+    const settings: AppSettings = {
+      ...DEFAULT_APP_SETTINGS,
+      timeSignature: '3/4',
+      rests: true,
+      subdivisions: { ...QUARTERS, quarter: false, eighth: true, sixteenth: true },
+    };
+    const bars = generateMany(settings, 20000);
+    expect(bars.some((m) => m.notes.length === 1 && m.notes[0].isRest)).toBe(true);
+  }, 20000);
+});
+
+describe('Tuplet member shapes (ADR 0066)', () => {
+  const ALL_VALUES: ReadonlySet<string> = new Set(
+    enabledValues({ ...QUARTERS, whole: true, half: true, eighth: true, sixteenth: true, thirtySecond: true, dotted: true })
+  );
+  const MEMBER_UNITS: Record<TupletValue, readonly number[]> = {
+    '1/4': [1, 2, 3, 4],
+    '1/8': [1, 2, 3, 4, 6],
+    '1/16': [1, 2, 3, 4, 6],
+  };
+
+  /** Brute force: every split of n units into ≥ 2 allowed member lengths. */
+  function compositions(n: number, lengths: readonly number[]): string[] {
+    const out: string[] = [];
+    const extend = (prefix: number[], rest: number): void => {
+      if (rest === 0) {
+        if (prefix.length >= 2) out.push(prefix.join(' '));
+        return;
+      }
+      for (const l of lengths) if (l <= rest) extend([...prefix, l], rest - l);
+    };
+    extend([], n);
+    return out.sort();
+  }
+
+  it('enumerates every valid composition, grouped by member count', () => {
+    for (const value of TUPLET_VALUES) {
+      for (let n = 2; n <= 7; n++) {
+        const grouped = tupletCompositions(n, value, ALL_VALUES);
+        expect(grouped.flat().map((c) => c.join(' ')).sort()).toEqual(compositions(n, MEMBER_UNITS[value]));
+        for (const group of grouped) expect(new Set(group.map((c) => c.length)).size).toBe(1);
+      }
+    }
+    // Only enabled noteheads: with nothing but the unit, every member is one unit
+    expect(tupletCompositions(5, '1/4', new Set())).toEqual([[[1, 1, 1, 1, 1]]]);
+  });
+
+  it('draws member counts uniformly and reaches every quintuplet and septuplet shape', () => {
+    const cases: [number, TupletValue][] = [
+      [5, '1/4'],
+      [7, '1/8'],
+    ];
+    for (const [n, value] of cases) {
+      const grouped = tupletCompositions(n, value, ALL_VALUES);
+      const seen = new Set<string>();
+      const counts = new Map<number, number>();
+      const draws = 20000;
+      for (let i = 0; i < draws; i++) {
+        const members = drawTupletMembers(n, value, ALL_VALUES);
+        expect(members.reduce((a, b) => a + b, 0)).toBe(n);
+        seen.add(members.join(' '));
+        counts.set(members.length, (counts.get(members.length) ?? 0) + 1);
+      }
+      expect([...seen].sort()).toEqual(compositions(n, MEMBER_UNITS[value]));
+      for (const count of counts.values()) {
+        expect(Math.abs(count / draws - 1 / grouped.length)).toBeLessThan(0.02);
+      }
+    }
   });
 });

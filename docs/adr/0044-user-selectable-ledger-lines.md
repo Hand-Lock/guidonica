@@ -1,6 +1,6 @@
 # 0044. User-Selectable Ledger Lines (Above / Below, 0–3)
 
-- **Status**: Accepted; amended by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (boundary bias removed)
+- **Status**: Accepted; amended by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (boundary bias removed) and [ADR 0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) (fallback move removed)
 - **Date**: 2026-10-02
 - **Author**: Claude & A. C. Lo Cascio
 
@@ -36,7 +36,7 @@ Constraints:
 
 ### 4. Feasibility filter & fallback (`sampleNextPitch`)
 - Before the weighted pick, interval choices that fit in neither direction are dropped. A step *s* fits if `idx+s ≤ n−1` or `idx−s ≥ 0`. `9+` fits if `max(upRoom, downRoom) ≥ 8`. Unison always fits. The weights (unison damping $1/(1+u)$, 1 otherwise) renormalize over the remaining choices, so every in-range move keeps P > 0.
-- If nothing selected fits, the pitch moves by the largest step that fits, toward the side with more room (a random side on a tie). This can only happen with a small pool and wide intervals only, e.g. octaves only at 0/0 from mid-staff. This replaces the old `9+` short-room fallback and the silent `Math.max/min` clamp, which could produce a mislabeled interval.
+- If nothing selected fits, the pitch moves by the largest step that fits, toward the side with more room (a random side on a tie). This can only happen with a small pool and wide intervals only, e.g. octaves only at 0/0 from mid-staff. This replaces the old `9+` short-room fallback and the silent `Math.max/min` clamp, which could produce a mislabeled interval. *(Removed by ADR 0066: the walk now starts on a live pitch and every move is reversible, so some selected interval always fits.)*
 - At 3/3 the filter never removes anything: 23 > 2·7 + 1, and the larger room is always ≥ 11 for `9+`. The random-number consumption is unchanged, so the default walk is identical.
 
 ### 5. Boundary bias zone per side

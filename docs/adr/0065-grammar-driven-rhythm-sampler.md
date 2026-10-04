@@ -1,6 +1,6 @@
 # 0065. Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges
 
-- **Status**: Accepted (supersedes the rhythm sampler of [0036](0036-ergodic-metric-tree-procedural-generation-and-dotted-rhythms.md), [0043](0043-thirty-second-notes.md) and [0064](0064-two-beat-sub-eighth-slots.md); amends [0006](0006-multi-interval-selection-and-clef-pitch-pools.md), [0010](0010-separate-tuplet-subdivision-matrix-menu.md), [0011](0011-tuplet-beam-stem-direction-unification.md), [0040](0040-engraving-grammar-for-ties-and-cross-barline-ties.md) and [0044](0044-user-selectable-ledger-lines.md))
+- **Status**: Accepted (supersedes the rhythm sampler of [0036](0036-ergodic-metric-tree-procedural-generation-and-dotted-rhythms.md), [0043](0043-thirty-second-notes.md) and [0064](0064-two-beat-sub-eighth-slots.md); amends [0006](0006-multi-interval-selection-and-clef-pitch-pools.md), [0010](0010-separate-tuplet-subdivision-matrix-menu.md), [0011](0011-tuplet-beam-stem-direction-unification.md), [0040](0040-engraving-grammar-for-ties-and-cross-barline-ties.md) and [0044](0044-user-selectable-ledger-lines.md)); §6, §8 and §10 amended by [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md)
 - **Date**: 2026-10-04
 - **Author**: Claude & A. C. Lo Cascio
 
@@ -97,6 +97,9 @@ This is the tuplet counterpart of `NOTEHEAD_PLACEMENTS`. Its keys are exactly
 
 ### 6. Tuplet members (`makeTupletItems`)
 
+> Amended by ADR 0066: members are now a uniform member count, then a uniform composition
+> (`tupletCompositions`), and silence follows the two-state rest chain.
+
 A group of n units is first split into members. Each inner boundary independently merges its two
 neighbours with `TUPLET_MERGE_PROBABILITY` = 0.2. A draw is repeated until:
 
@@ -125,6 +128,9 @@ Tuplet time still never merges with plain time, so a tie across the edge of a gr
 
 ### 8. Rest spelling (`REST_PLACEMENTS`, `spellRest`, `consolidateRests`, ties.ts)
 
+> Amended by ADR 0066: silence is drawn by a two-state chain (0.1 to start, 0.5 to continue),
+> not independently per note. The spelling below is unchanged.
+
 Plain notes are silenced with `SILENCE_PROBABILITY`. Each run of adjacent plain rests is then
 re-spelled as one silence by `spellRest`, using a rest table that never hides a beat:
 
@@ -152,6 +158,9 @@ a single beam joins every member of the group; then the beam already shows the g
 `3[8 8 8]` has no bracket, and `6[16 16 r 16 16 16]` and `3[q 8]` do.
 
 ### 10. Symmetric pitch walk (`sampleNextPitch`)
+
+> Amended by ADR 0066: the fallback move is removed (a live start never needs it), and the edge
+> notes come up about half as often as the middle, a property of the reflecting walk.
 
 The 85% inward bias is removed. When an interval fits both up and down, the direction is a fair
 coin. The walk stays in range because only intervals that fit are drawn (and the documented

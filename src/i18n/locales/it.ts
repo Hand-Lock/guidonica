@@ -61,7 +61,7 @@ const it: Messages = {
   valueSixteenth: 'Semicroma',
   valueThirtySecond: 'Biscroma',
   dotted: 'Puntate',
-  dottedTitle: 'Note puntate (minima, semiminima, croma, semicroma)',
+  dottedTitle: 'Note puntate (minima, semiminima, croma, semicroma). La croma puntata richiede semicrome o biscrome, la semicroma puntata le biscrome',
   tupletsFigures: 'Gruppi irregolari e figure',
   tuplets: 'Gruppi',
   tupletsToggleTitle: 'Configura i gruppi irregolari',

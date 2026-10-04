@@ -63,7 +63,7 @@ const fr: Messages = {
   valueSixteenth: 'Double',
   valueThirtySecond: 'Triple',
   dotted: 'Pointées',
-  dottedTitle: 'Notes pointées (blanche, noire, croche, double croche)',
+  dottedTitle: 'Notes pointées (blanche, noire, croche, double croche). La croche pointée demande des doubles ou triples croches, la double croche pointée des triples croches',
   tupletsFigures: 'Valeurs irrégulières et figures',
   tuplets: 'N-olets',
   tupletsToggleTitle: 'Configurer les valeurs irrégulières',

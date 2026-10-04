@@ -57,9 +57,12 @@ function generateMeasures(settings: AppSettings, bars = BARS): MeasureData[] {
   return measures;
 }
 
+/** Plain note values of the bars; a bar-long rest is the whole-rest glyph in every meter, not a value. */
 function generateBars(settings: AppSettings): string[] {
   return generateMeasures(settings).flatMap((measure) =>
-    measure.notes.filter((note) => !note.isTuplet).map((note) => note.duration.replace(/r$/, ''))
+    measure.notes
+      .filter((note) => !note.isTuplet && !(note.isRest && note.beatDuration === measure.beatsPerMeasure))
+      .map((note) => note.duration.replace(/r$/, ''))
   );
 }
 

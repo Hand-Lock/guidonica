@@ -1,6 +1,6 @@
 # 0006. Multi-Interval Checkbox Selection & Clef-Dependent Pitch Pools (±3 Ledger Lines)
 
-- **Status**: Accepted; amended by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (boundary bias removed)
+- **Status**: Accepted; amended by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (boundary bias removed) and [ADR 0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) (connected start, item 7)
 - **Date**: 2026-09-14
 - **Author**: Antigravity Assistant & A. C. Lo Cascio
 
@@ -47,7 +47,7 @@ Prior to this architectural revision, two pedagogical limitations existed in the
   4. Because every clef's note pool spans 23 diatonic notes, at least one direction is **always** valid from any position in the range ($\max(\text{currentIdx}, 22 - \text{currentIdx}) \ge 11 \ge 8$).
   5. If both directions are feasible, boundary bias is applied when approaching edges ($\ge \text{rangeLen} - 4$ biases 85% downward; $\le 4$ biases 85% upward).
   6. If only one direction fits, the generator strictly uses that direction. This eliminates clamp-wrapping distortion and guarantees that every generated interval step is 100% mathematically exact (an octave is always an octave, a 9+ is always $\ge 8$ steps).
-  7. The first note of a session anchors on the clef's default tonic/anchor note (e.g. `c/4` in treble/alto/tenor, `c/3` in bass), establishing a tonal reference for the sight-reader.
+  7. The first note of a session anchors on the clef's default tonic/anchor note (e.g. `c/4` in treble/alto/tenor, `c/3` in bass), establishing a tonal reference for the sight-reader. *(ADR 0066: only when the anchor's component of the interval graph holds every live pitch; otherwise a random live pitch, so disconnected sets such as thirds only reach every note across sessions.)*
 
 ### 3. Clef-Dependent Pitch Pools Spanning ±3 Ledger Lines
 - Defined `ClefPitchConfig` and expanded `CLEF_PITCH_RANGES`:

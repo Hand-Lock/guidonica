@@ -70,7 +70,8 @@ This directory documents the core architectural decisions, implementation method
 | [0062](0062-robots-txt-and-sitemap.md) | robots.txt & sitemap.xml | Accepted | 2026-10-03 |
 | [0063](0063-offline-service-worker.md) | Offline Service Worker | Accepted | 2026-10-03 |
 | [0064](0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Superseded by 0065 | 2026-10-03 |
-| [0065](0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted | 2026-10-04 |
+| [0065](0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066 | 2026-10-04 |
+| [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted | 2026-10-04 |
 
 ---
 

@@ -61,7 +61,7 @@ const de: Messages = {
   valueSixteenth: '16tel',
   valueThirtySecond: '32tel',
   dotted: 'Punktiert',
-  dottedTitle: 'Punktierte Noten (Halbe, Viertel, Achtel, 16tel)',
+  dottedTitle: 'Punktierte Noten (Halbe, Viertel, Achtel, 16tel). Punktierte Achtel brauchen 16tel oder 32tel, punktierte 16tel brauchen 32tel',
   tupletsFigures: 'N-tolen & Figuren',
   tuplets: 'N-tolen',
   tupletsToggleTitle: 'N-tolen konfigurieren',

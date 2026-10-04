@@ -50,16 +50,20 @@ export interface PartitionItem {
   tieEnd?: boolean;
 }
 
-/** Probability that a note (or a tuplet member) is written as a rest when rests are on. */
-export const SILENCE_PROBABILITY = 0.15;
-
-/** Probability that two adjacent tuplet units sound as one member (3[q 8]). */
-export const TUPLET_MERGE_PROBABILITY = 0.2;
+/**
+ * Silence is a two-state chain over notes and tuplet members (ADR 0066): a rest starts after
+ * a sounding item with SILENCE_PROBABILITY and continues after a silent one with
+ * SILENCE_CONTINUE_PROBABILITY, so a k-item silence costs 0.1 · 0.5^(k−1), not 0.15^k.
+ */
+export const SILENCE_PROBABILITY = 0.1;
+export const SILENCE_CONTINUE_PROBABILITY = 0.5;
 
 /**
  * The note values a configuration draws from: every enabled base value plus, with dotted
  * on, the dotted value of each enabled base (hd needs half, qd quarter, 8d eighth, 16d
- * sixteenth). Ordered longest first (ADR 0065).
+ * sixteenth). Ordered longest first (ADR 0065). A dotted value only fills a bar beside its
+ * shorter partner: 8d needs 16 or 32, 16d needs 32, and qd in 4/4 and 2/4 needs 8 or
+ * shorter, so without it the value is in the alphabet but never written (ADR 0066).
  */
 export function enabledValues(subdiv: SubdivisionOptions): string[] {
   const dotted = subdiv.dotted !== false;
@@ -220,6 +224,45 @@ function tupletMember(value: TupletValue, units: number, values: ReadonlySet<str
   return units === 1 || values.has(duration) ? duration : null;
 }
 
+const compositionMemo = new Map<string, number[][][]>();
+
+/**
+ * Every way to split an n-unit tuplet into at least two members that are each one enabled
+ * notehead, grouped by member count (index 0 holds the shortest splits). n ≤ 7, so there
+ * are at most 2^6 = 64 compositions; memoized per cell value and allowed member lengths.
+ */
+export function tupletCompositions(n: number, value: TupletValue, values: ReadonlySet<string>): number[][][] {
+  const lengths = Object.keys(TUPLET_MEMBERS[value])
+    .map(Number)
+    .filter((units) => units < n && tupletMember(value, units, values) !== null);
+  const key = `${value}|${n}|${lengths.join(',')}`;
+  const memo = compositionMemo.get(key);
+  if (memo) return memo;
+
+  const byCount = new Map<number, number[][]>();
+  const extend = (prefix: number[], rest: number): void => {
+    if (rest === 0) {
+      if (prefix.length < 2) return;
+      const list = byCount.get(prefix.length) ?? [];
+      list.push(prefix);
+      byCount.set(prefix.length, list);
+      return;
+    }
+    for (const units of lengths) {
+      if (units <= rest) extend([...prefix, units], rest - units);
+    }
+  };
+  extend([], n);
+  const grouped = [...byCount.keys()].sort((a, b) => a - b).map((count) => byCount.get(count) ?? []);
+  compositionMemo.set(key, grouped);
+  return grouped;
+}
+
+/** Member lengths of one tuplet: a uniform member count, then a uniform composition (ADR 0066). */
+export function drawTupletMembers(n: number, value: TupletValue, values: ReadonlySet<string>): number[] {
+  return pick(pick(tupletCompositions(n, value, values)));
+}
+
 // Diatonic pitch pools (C Major / A Minor baseline), derived per clef from the bottom staff line.
 // Diatonic step arithmetic: step = octave * 7 + letter index (c = 0 ... b = 6).
 const LETTERS = 'cdefgab';
@@ -263,6 +306,77 @@ export function pitchPool(clef: Clef, ledger: LedgerLineOptions): string[] {
   return Array.from({ length: high - low + 1 }, (_, i) => toKey(low + i));
 }
 
+/** A selected melodic move: a diatonic step count (0 = unison) or any leap of a 9th or more. */
+type IntervalChoice = number | '9+';
+
+/** The interval toggles as moves; nothing selected falls back to seconds and thirds. */
+function selectedIntervals(intervals: IntervalOptions): IntervalChoice[] {
+  const flags = [
+    intervals.unison,
+    intervals.second,
+    intervals.third,
+    intervals.fourth,
+    intervals.fifth,
+    intervals.sixth,
+    intervals.seventh,
+    intervals.octave,
+  ];
+  const choices: IntervalChoice[] = flags.flatMap((on, steps) => (on ? [steps] : []));
+  if (intervals.ninthPlus) choices.push('9+');
+  return choices.length > 0 ? choices : [1, 2];
+}
+
+/** Whether a move fits in at least one direction with the given room above and below. */
+function fits(choice: IntervalChoice, upRoom: number, downRoom: number): boolean {
+  return choice === '9+' ? Math.max(upRoom, downRoom) >= 8 : choice <= upRoom || choice <= downRoom;
+}
+
+/** Pool indices one selected move away from `idx` in a pool of n notes. */
+function movesFrom(idx: number, choices: readonly IntervalChoice[], n: number): number[] {
+  const targets = new Set<number>();
+  for (const c of choices) {
+    const steps = c === '9+' ? Array.from({ length: Math.max(0, n - 8) }, (_, k) => 8 + k) : [c];
+    for (const s of steps) {
+      if (idx + s < n) targets.add(idx + s);
+      if (idx - s >= 0) targets.add(idx - s);
+    }
+  }
+  return [...targets];
+}
+
+/** Pool indices with at least one selected move (unison counts). */
+function livePitches(choices: readonly IntervalChoice[], n: number): number[] {
+  return Array.from({ length: n }, (_, i) => i).filter((i) => movesFrom(i, choices, n).length > 0);
+}
+
+/**
+ * First pitch of a session, as a pool index (ADR 0066). The clamped clef anchor when its
+ * component of the move graph holds every live pitch, which keeps ADR 0006's tonal
+ * reference for every connected interval set. Otherwise (thirds only reach the lines or the
+ * spaces, unison only never moves) a uniformly random live pitch, so every component and
+ * every melody within it has P > 0 per session. Every move is reversible (k from i lands on
+ * i ± k, which has room for k back; a 9+ leap leaves room ≥ 8), so a live start never
+ * reaches a pitch without a move.
+ */
+export function startIndex(intervals: IntervalOptions, clef: Clef, low: number, high: number): number {
+  const n = high - low + 1;
+  const choices = selectedIntervals(intervals);
+  const anchor = Math.max(low, Math.min(high, toStep(CLEF_PITCH_RANGES[clef].defaultAnchor))) - low;
+  const live = livePitches(choices, n);
+  const seen = new Set<number>([anchor]);
+  const queue = [anchor];
+  while (queue.length > 0) {
+    const idx = queue.shift() as number;
+    for (const next of movesFrom(idx, choices, n)) {
+      if (!seen.has(next)) {
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+  }
+  return live.includes(anchor) && live.every((i) => seen.has(i)) ? anchor : pick(live);
+}
+
 /** Last note of the previously generated measure, source of an incoming barline tie. */
 interface MeasureTail {
   measureIndex: number;
@@ -282,6 +396,8 @@ export class MusicGenerator {
   private lookahead: PartitionItem[] | null = null;
   private tail: MeasureTail | null = null;
   private lastSoundingPitch: string | null = null;
+  /** Whether the last note or tuplet member was silent: the state of the rest chain. */
+  private lastSilent: boolean = false;
 
   constructor() {
     this.resetPitch();
@@ -295,6 +411,13 @@ export class MusicGenerator {
     this.tail = null;
     this.lastSoundingPitch = null;
     this.lastStep = null;
+    this.lastSilent = false;
+  }
+
+  /** One step of the two-state rest chain (ADR 0066). */
+  private drawSilent(): boolean {
+    this.lastSilent = Math.random() < (this.lastSilent ? SILENCE_CONTINUE_PROBABILITY : SILENCE_PROBABILITY);
+    return this.lastSilent;
   }
 
   /**
@@ -344,12 +467,12 @@ export class MusicGenerator {
         pitch = this.lastSoundingPitch;
       } else if (this.isFirstNoteOfSession || this.lastStep === null) {
         this.isFirstNoteOfSession = false;
-        // Anchor clamped into the pool (treble with 0 ledger lines below starts on D4)
-        const anchor = toStep(CLEF_PITCH_RANGES[clef].defaultAnchor);
-        this.lastStep = Math.max(low, Math.min(high, anchor));
+        // Anchor clamped into the pool (treble with 0 ledger lines below starts on D4), or a
+        // random live pitch when the anchor cannot reach the whole pool
+        this.lastStep = low + startIndex(intervals, clef, low, high);
         pitch = toKey(this.lastStep);
       } else {
-        pitch = this.sampleNextPitch(intervals, this.lastStep, low, high);
+        pitch = this.sampleNextPitch(intervals, clef, this.lastStep, low, high);
       }
 
       if (!item.isRest) {
@@ -409,10 +532,12 @@ export class MusicGenerator {
    * Markov random-walk step over the diatonic pool [low, high]. Only interval choices that
    * fit in at least one direction are drawn (weights renormalize over them), so every
    * in-range move keeps P > 0 and no interval is ever mislabeled by clamping. The walk is
-   * symmetric: up and down are equally likely whenever both fit (ADR 0065).
+   * symmetric: up and down are equally likely whenever both fit (ADR 0065). The walk starts
+   * on a live pitch (startIndex) and every move is reversible, so some choice always fits.
    */
   private sampleNextPitch(
     intervals: IntervalOptions,
+    clef: Clef,
     lastStep: number,
     low: number,
     high: number
@@ -426,34 +551,14 @@ export class MusicGenerator {
       return toKey(this.lastStep);
     };
 
-    // Collect all allowed diatonic steps from user-selected toggle checkboxes
-    type IntervalChoice = number | '9+';
-    const candidateChoices: IntervalChoice[] = [];
-    if (intervals.unison) candidateChoices.push(0);
-    if (intervals.second) candidateChoices.push(1);
-    if (intervals.third) candidateChoices.push(2);
-    if (intervals.fourth) candidateChoices.push(3);
-    if (intervals.fifth) candidateChoices.push(4);
-    if (intervals.sixth) candidateChoices.push(5);
-    if (intervals.seventh) candidateChoices.push(6);
-    if (intervals.octave) candidateChoices.push(7);
-    if (intervals.ninthPlus) candidateChoices.push('9+');
-
-    // Fallback if all checkboxes are unchecked: default to seconds and thirds to avoid mono-interval exercises
-    const selectedChoices = candidateChoices.length > 0 ? candidateChoices : [1, 2];
-
     // Feasibility: keep choices that fit in at least one direction from the current pitch.
     // With the default ±3 pool (23 notes) nothing is ever removed.
-    const fits = (c: IntervalChoice): boolean =>
-      c === '9+' ? Math.max(upRoom, downRoom) >= 8 : c <= upRoom || c <= downRoom;
-    const activeChoices = selectedChoices.filter(fits);
+    const activeChoices = selectedIntervals(intervals).filter((c) => fits(c, upRoom, downRoom));
 
     if (activeChoices.length === 0) {
-      // Tiny pool + wide intervals only (e.g. octaves at 0/0 from mid-staff): move by the
-      // largest step that fits, toward the side with more room
+      // Unreachable from a live start; guards a pool or interval change without a reset
       this.consecutiveUnisons = 0;
-      const direction = upRoom === downRoom ? pick([1, -1]) : upRoom > downRoom ? 1 : -1;
-      return commit(currentIdx + direction * (direction === 1 ? upRoom : downRoom));
+      return commit(startIndex(intervals, clef, low, high));
     }
 
     // Pick an interval step size from the active set. Unison is softly down-weighted
@@ -528,7 +633,7 @@ export class MusicGenerator {
         items.push({
           duration: step.duration,
           beatDuration: step.units / grammar.unitsPerBeat,
-          isRest: rests && Math.random() < SILENCE_PROBABILITY,
+          isRest: rests && this.drawSilent(),
         });
         u += step.units;
       } else {
@@ -542,9 +647,10 @@ export class MusicGenerator {
   }
 
   /**
-   * One tuplet group. Its n units are merged into members (each inner boundary
-   * independently with TUPLET_MERGE_PROBABILITY), redrawn until every member is one enabled
-   * notehead and there are at least two; members may then be silent, never all of them.
+   * One tuplet group. Its n units are split into members (ADR 0066): a member count drawn
+   * uniformly among the feasible ones, then one composition with that many members, each one
+   * enabled notehead, drawn uniformly. Members then step the rest chain (only undotted ones
+   * may be silent), redrawn from the state before the group until not all are silent.
    * Adjacent silent members are written as the longest undotted rest (ADR 0065).
    */
   private makeTupletItems(
@@ -557,18 +663,17 @@ export class MusicGenerator {
     const unit = step.units / grammar.unitsPerBeat / n;
     const values = grammar.values;
 
-    let members: number[];
-    do {
-      members = [1];
-      for (let i = 1; i < n; i++) {
-        if (Math.random() < TUPLET_MERGE_PROBABILITY) members[members.length - 1]++;
-        else members.push(1);
-      }
-    } while (members.length < 2 || members.some((m) => tupletMember(step.value, m, values) === null));
+    const members = drawTupletMembers(n, step.value, values);
 
+    const before = this.lastSilent;
     let silent: boolean[];
     do {
-      silent = members.map((m) => allowRests && TUPLET_REST_UNITS.has(m) && Math.random() < SILENCE_PROBABILITY);
+      this.lastSilent = before;
+      silent = members.map((m) => {
+        if (allowRests && TUPLET_REST_UNITS.has(m)) return this.drawSilent();
+        this.lastSilent = false;
+        return false;
+      });
     } while (silent.every(Boolean));
 
     const parts: { units: number; isRest: boolean }[] = [];

@@ -72,7 +72,7 @@ const en = {
   valueSixteenth: '16th',
   valueThirtySecond: '32nd',
   dotted: 'Dotted',
-  dottedTitle: 'Dotted Notes (hd, qd, 8d, 16d)',
+  dottedTitle: 'Dotted Notes (hd, qd, 8d, 16d). 8d needs 16ths or 32nds, 16d needs 32nds',
   tupletsFigures: 'Tuplets & figures',
   tuplets: 'Tuplets',
   tupletsToggleTitle: 'Configure n-tuplets and subdivisions',
