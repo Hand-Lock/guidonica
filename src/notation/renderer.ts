@@ -193,8 +193,8 @@ export class MeasureRenderer {
       notes: StaveNote[];
       numNotes: number;
       notesOccupied: number;
-      bracketed?: boolean;
-      ratioed?: boolean;
+      /** True when one beam joins every member, which then replaces the bracket. */
+      fullyBeamed: boolean;
     }
     const tupletGroupsMap: Map<number, TupletGroupEntry> = new Map();
     const tupletNotesSet = new Set<StaveNote>();
@@ -211,8 +211,7 @@ export class MeasureRenderer {
             notes: [],
             numNotes: noteData.tupletNumNotes ?? 3,
             notesOccupied: noteData.tupletNotesOccupied ?? 2,
-            bracketed: noteData.tupletBracketed,
-            ratioed: noteData.tupletRatioed,
+            fullyBeamed: false,
           };
           tupletGroupsMap.set(noteData.tupletGroup, entry);
         }
@@ -222,18 +221,25 @@ export class MeasureRenderer {
     }
 
     // Build beams:
-    // Tuplet groups of 8ths or 16ths receive dedicated unified beams spanning the tuplet with autoStem enabled
-    // so notes spanning a wide pitch range share a single unified stem direction towards the beam
+    // Inside a tuplet, each run of consecutive sounding 8ths/16ths gets its own beam with
+    // autoStem enabled, so notes spanning a wide pitch range share one stem direction; a rest
+    // or a longer member breaks the run (ADR 0065)
     const beams: Beam[] = [];
+    const isBeamable = (n: StaveNote): boolean => !n.isRest() && parseInt(n.getDuration(), 10) >= 8;
     for (const entry of tupletGroupsMap.values()) {
-      const isBeamable = entry.notes.every((n) => {
-        const d = n.getDuration();
-        return (d === '8' || d === '16') && !n.isRest();
-      });
-      if (isBeamable && entry.notes.length > 1) {
-        const tupletBeam = new Beam(entry.notes, true);
-        beams.push(tupletBeam);
+      let run: StaveNote[] = [];
+      const flush = (): void => {
+        if (run.length > 1) {
+          beams.push(new Beam(run, true));
+          entry.fullyBeamed = run.length === entry.notes.length;
+        }
+        run = [];
+      };
+      for (const note of entry.notes) {
+        if (isBeamable(note)) run.push(note);
+        else flush();
       }
+      flush();
     }
 
     // Non-tuplet notes receive meter-aware automatic beam groups chunked by contiguous runs
@@ -268,19 +274,18 @@ export class MeasureRenderer {
 
     // Build tuplets
     const tuplets: Tuplet[] = [];
+    // A group may merge members (3[q 8]), so the ratio comes from the generator, never from
+    // the note count; a bracket is drawn unless one beam already shows the whole group
     for (const entry of tupletGroupsMap.values()) {
-      if (entry.notes.length === entry.numNotes) {
-        const isQuarter = entry.notes[0].getDuration() === '4';
-        const tuplet = new Tuplet(entry.notes, {
-          numNotes: entry.numNotes,
-          notesOccupied: entry.notesOccupied,
-          location: Tuplet.LOCATION_TOP,
-          bracketed: entry.bracketed ?? isQuarter,
-          ratioed: entry.ratioed ?? false,
-        });
-        tuplet.setStyle({ fillStyle: tupletColor, strokeStyle: tupletColor });
-        tuplets.push(tuplet);
-      }
+      const tuplet = new Tuplet(entry.notes, {
+        numNotes: entry.numNotes,
+        notesOccupied: entry.notesOccupied,
+        location: Tuplet.LOCATION_TOP,
+        bracketed: !entry.fullyBeamed,
+        ratioed: false,
+      });
+      tuplet.setStyle({ fillStyle: tupletColor, strokeStyle: tupletColor });
+      tuplets.push(tuplet);
     }
 
     // Voice setup
@@ -305,7 +310,11 @@ export class MeasureRenderer {
 
     for (let i = 0; i < staveNotes.length; i++) {
       const noteData = data.notes[i];
-      const targetLinearX = NOTE_START_OFFSET + noteData.beatOffset * beatWidth;
+      // A bar-long silence is one whole rest centred in the bar, whatever the meter (ADR 0065)
+      const isBarRest = noteData.isRest && noteData.beatDuration === data.beatsPerMeasure;
+      const targetLinearX = isBarRest
+        ? (data.width - staveNotes[i].getGlyphWidth()) / 2
+        : NOTE_START_OFFSET + noteData.beatOffset * beatWidth;
       staveNotes[i].getTickContext().setX(targetLinearX - stavePadding);
     }
 

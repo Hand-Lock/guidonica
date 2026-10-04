@@ -1,6 +1,6 @@
 # 0043. Thirty-Second Notes & Dotted Sixteenths
 
-- **Status**: Accepted (extends [ADR 0040](0040-engraving-grammar-for-ties-and-cross-barline-ties.md)); amended by [ADR 0064](0064-two-beat-sub-eighth-slots.md)
+- **Status**: Accepted (extends [ADR 0040](0040-engraving-grammar-for-ties-and-cross-barline-ties.md)); amended by [ADR 0064](0064-two-beat-sub-eighth-slots.md); rhythm sampler superseded by [ADR 0065](0065-grammar-driven-rhythm-sampler.md)
 - **Date**: 2026-09-27
 - **Author**: Claude & A. C. Lo Cascio
 

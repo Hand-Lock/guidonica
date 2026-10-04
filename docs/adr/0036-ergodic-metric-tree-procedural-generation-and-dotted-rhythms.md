@@ -1,6 +1,6 @@
 # 0036. Ergodic Metric Tree Procedural Generation, Dotted Rhythms & Tied Notes
 
-- **Status**: Accepted
+- **Status**: Accepted; rhythm sampler superseded by [ADR 0065](0065-grammar-driven-rhythm-sampler.md)
 - **Date**: 2026-09-19
 - **Author**: Antigravity Assistant & A. C. Lo Cascio
 

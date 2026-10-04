@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { MusicGenerator, PartitionItem } from '../src/notation/generator';
-import { isLegalInnerTie, placementOf } from '../src/notation/ties';
+import {
+  REST_PLACEMENTS,
+  TUPLET_NOTEHEAD_UNITS,
+  consolidateRests,
+  isLegalInnerTie,
+  isPlaced,
+  placementOf,
+  spellRest,
+} from '../src/notation/ties';
 import { AppSettings, METER, MeasureData, NoteData, TimeSignature } from '../src/notation/types';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 
@@ -29,7 +37,7 @@ function items(ts: TimeSignature, spec: string): { items: PartitionItem[]; offse
       duration,
       beatDuration,
       isRest,
-      ...(isTuplet ? { isTuplet: true, tupletGroup: 1 } : {}),
+      ...(isTuplet ? { isTuplet: true, tupletGroup: 1, tupletUnit: (table[duration] * 2) / 3 } : {}),
     });
     offsets.push(offset);
     offset += beatDuration;
@@ -117,11 +125,41 @@ describe('isLegalInnerTie (tie grammar)', () => {
     expect(legal('6/8', '8 8 8 qd', 0)).toBe(false);
   });
 
-  it('never ties rests or inside one tuplet group; ties across tuplet boundaries', () => {
+  it('never ties rests; ties across tuplet boundaries', () => {
     expect(legal('4/4', 'q rq h', 0)).toBe(false);
-    expect(legal('4/4', 't8 t8 t8 q h', 0)).toBe(false);
     expect(legal('4/4', 't8 t8 t8 q h', 2)).toBe(true);
     expect(legal('4/4', 'q t8 t8 t8 h', 0)).toBe(true);
+  });
+
+  it('ties inside one tuplet group only when no single member notehead could replace them', () => {
+    // Triplet t8~t8 is a tq
+    expect(legal('4/4', 't8 t8 t8 q h', 0)).toBe(false);
+    // Quintuplet of eighths (unit 0.4 beats): 8~8 = q, q~8 = qd, q~q = h, but q~qd = 5 units
+    const quint = (units: number[]): PartitionItem[] =>
+      units.map((u) => ({
+        duration: '8',
+        beatDuration: u * 0.4,
+        isRest: false,
+        isTuplet: true,
+        tupletGroup: 1,
+        tupletUnit: 0.4,
+      }));
+    const at = (parts: PartitionItem[]): number[] => {
+      let o = 0;
+      return parts.map((p) => ((o += p.beatDuration), o - p.beatDuration));
+    };
+    for (const [units, expected] of [
+      [[1, 1, 1, 1, 1], false],
+      [[2, 1, 1, 1], false],
+      [[2, 2, 1], false],
+      [[2, 3], true],
+    ] as const) {
+      const parts = [...quint([...units]), { duration: 'h', beatDuration: 2, isRest: false }];
+      expect(isLegalInnerTie(parts, at(parts), 0, 0, '4/4'), units.join('+')).toBe(expected);
+    }
+    // A chain inside the group: 1~1 is illegal, but after a 2 the suffix 2+1+1 = 4 (h) is too
+    const parts = [...quint([2, 1, 1, 1]), { duration: 'h', beatDuration: 2, isRest: false }];
+    expect(isLegalInnerTie(parts, at(parts), 1, 0, '4/4')).toBe(false);
   });
 
   it('enforces chain minimality', () => {
@@ -159,12 +197,19 @@ describe('generated tie grammar', () => {
           tieCount++;
           expect(b.tieEnd).toBe(true);
           expect(a.isRest || b.isRest).toBe(false);
-          expect(Boolean(a.isTuplet && b.isTuplet && a.tupletGroup === b.tupletGroup)).toBe(false);
           expect(b.keys[0]).toBe(a.keys[0]);
           let span = b.beatDuration;
           for (let j = i; j >= chainStart; j--) {
             span += m.notes[j].beatDuration;
-            if (m.notes.slice(j, i + 2).some((n) => n.isTuplet)) continue;
+            const chain = m.notes.slice(j, i + 2);
+            if (b.isTuplet && chain.every((n) => n.isTuplet && n.tupletGroup === b.tupletGroup)) {
+              // Inside one group the merged sound must not be one member notehead
+              const group = m.notes.filter((n) => n.isTuplet && n.tupletGroup === b.tupletGroup);
+              const unit = group.reduce((sum, n) => sum + n.beatDuration, 0) / (b.tupletNumNotes ?? 1);
+              expect(TUPLET_NOTEHEAD_UNITS.has(Math.round(span / unit))).toBe(false);
+              continue;
+            }
+            if (chain.some((n) => n.isTuplet)) continue;
             expect(placementOf(ts, m.notes[j].beatOffset, span), `${ts} chain ${j}..${i + 1}`).not.toBe('canonical');
           }
         });
@@ -267,6 +312,112 @@ describe('tie reachability (P > 0)', () => {
     expect(
       measures.some((m) => m.notes.length === 1 && m.notes[0].duration === 'w' && m.notes[0].tieEnd && m.notes[0].tieStart)
     ).toBe(true);
+  });
+});
+
+describe('rest spelling (spellRest, consolidateRests)', () => {
+  const durations = (rests: PartitionItem[]): string => rests.map((r) => r.duration).join(' ');
+
+  /** Asserts the rests tile [start, end) and each sits on its REST_PLACEMENTS grid. */
+  function expectPlaced(ts: TimeSignature, start: number, rests: PartitionItem[], end: number): void {
+    let offset = start;
+    for (const rest of rests) {
+      expect(rest.isRest).toBe(true);
+      const placement = REST_PLACEMENTS[ts][rest.duration];
+      expect(placement, `${ts} ${rest.duration}r`).toBeDefined();
+      expect(isPlaced(offset, placement), `${ts} ${rest.duration}r @${offset}`).toBe(true);
+      offset += rest.beatDuration;
+    }
+    expect(offset).toBeCloseTo(end, 9);
+  }
+
+  it('spells a full silent bar as one whole rest in every meter, even with quarters only', () => {
+    for (const ts of METERS) {
+      const bar = METER[ts].beatsPerMeasure;
+      for (const values of [new Set(['q']), new Set(['8']), new Set(['w', 'h', 'q', '8'])]) {
+        expect(spellRest(ts, 0, bar, values)).toEqual([{ duration: 'w', beatDuration: bar, isRest: true }]);
+      }
+    }
+  });
+
+  it('places every rest of any grid-aligned silence on its REST_PLACEMENTS grid', () => {
+    const values = new Set(['h', 'q', '8', '16', '32', 'qd']);
+    for (const ts of METERS) {
+      const bar = METER[ts].beatsPerMeasure;
+      const grid = ts === '6/8' ? 0.25 : 0.125;
+      const points = Math.round(bar / grid);
+      for (let a = 0; a < points; a++) {
+        for (let b = a + 1; b <= points; b++) {
+          if (a === 0 && b === points) continue;
+          expectPlaced(ts, a * grid, spellRest(ts, a * grid, b * grid, values), b * grid);
+        }
+      }
+    }
+  });
+
+  it('spells a silent syncopated q as 8r 8r when only quarters are enabled', () => {
+    expect(durations(spellRest('4/4', 0.5, 1.5, new Set(['q'])))).toBe('8 8');
+    expect(durations(spellRest('4/4', 1, 2, new Set(['q'])))).toBe('q');
+  });
+
+  it('writes a half rest only when half notes are on', () => {
+    expect(durations(spellRest('4/4', 0, 2, new Set(['q'])))).toBe('q q');
+    expect(durations(spellRest('4/4', 2, 4, new Set(['q', '8'])))).toBe('q q');
+    expect(durations(spellRest('4/4', 0, 2, new Set(['h', 'q'])))).toBe('h');
+    // Never across the middle of the bar
+    expect(durations(spellRest('4/4', 1, 3, new Set(['h', 'q'])))).toBe('q q');
+  });
+
+  it('dots no rest but the whole-group qd in 6/8', () => {
+    for (const ts of METERS) {
+      const dotted = Object.keys(REST_PLACEMENTS[ts]).filter((d) => d.endsWith('d'));
+      expect(dotted).toEqual(ts === '6/8' ? ['qd'] : []);
+    }
+    expect(durations(spellRest('6/8', 0, 3, new Set(['qd', '8'])))).toBe('qd');
+    expect(durations(spellRest('6/8', 1, 3, new Set(['qd', 'q', '8'])))).toBe('8 8');
+  });
+
+  it('re-spells runs of adjacent rests and leaves notes and tuplet rests alone', () => {
+    const q = (isRest: boolean): PartitionItem => ({ duration: 'q', beatDuration: 1, isRest });
+    const tupletRest: PartitionItem = {
+      duration: '8',
+      beatDuration: 1 / 3,
+      isRest: true,
+      isTuplet: true,
+      tupletGroup: 1,
+    };
+    const tupletNote: PartitionItem = { ...tupletRest, isRest: false };
+    expect(durations(consolidateRests([q(true), q(true), q(false), q(false)], '4/4', new Set(['h', 'q'])))).toBe(
+      'h q q'
+    );
+    expect(durations(consolidateRests([q(true), q(true), q(false), q(false)], '4/4', new Set(['q'])))).toBe(
+      'q q q q'
+    );
+    expect(durations(consolidateRests([q(true), q(true), q(true), q(true)], '4/4', new Set(['q'])))).toBe('w');
+    const mixed = consolidateRests(
+      [tupletRest, tupletNote, tupletNote, q(true), q(true), q(true)],
+      '4/4',
+      new Set(['h', 'q'])
+    );
+    expect(durations(mixed)).toBe('8 8 8 q h');
+    expect(mixed[0]).toBe(tupletRest);
+  });
+
+  it('places every generated non-tuplet rest on its grid', () => {
+    for (const ts of METERS) {
+      for (const m of generateMany(richSettings(ts, ALL_SUBDIV_32), 500)) {
+        for (const n of m.notes) {
+          if (!n.isRest || n.isTuplet) continue;
+          if (n.duration === 'w' && n.beatDuration === m.beatsPerMeasure) {
+            expect(n.beatOffset).toBe(0);
+            continue;
+          }
+          const placement = REST_PLACEMENTS[ts][n.duration];
+          expect(placement, `${ts} ${n.duration}r`).toBeDefined();
+          expect(isPlaced(n.beatOffset, placement), `${ts} ${n.duration}r @${n.beatOffset}`).toBe(true);
+        }
+      }
+    }
   });
 });
 

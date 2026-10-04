@@ -84,9 +84,9 @@ Guidonica is constructed upon an uncompromising **suckless, ultra-lightweight, a
 5. **Synthesized Hardware Audio (0-Byte Sample Downloads)**:
    - Metronome pulses and woodblock timbres are synthesized live on the audio hardware using Web Audio `OscillatorNode` (sine/triangle) and exponential `GainNode` envelopes.
    - Zero audio sample files (MP3/WAV/OGG) downloaded across the network.
-6. **Ergodic Metric Tree Procedural Generation**:
-   - Rhythms are partitioned via recursive metric tree subdivision based on exact rational time signature fractions.
-   - Pitches are generated via an irreducible, strongly connected Markov random walk with boundary reflection bias. Zero heavyweight music theory AI, zero rule engines, zero network dependencies.
+6. **Ergodic Grammar-Driven Procedural Generation**:
+   - Rhythms are sampled step by step over a 32nd grid from a grammar derived from the notehead, rest and tuplet placement tables, so every legal bar has P > 0.
+   - Pitches are generated via an irreducible, strongly connected, symmetric Markov random walk. Zero heavyweight music theory AI, zero rule engines, zero network dependencies.
 7. **Pure CSS3 Liquid Glass UI (Zero CSS Frameworks)**:
    - The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed with 100% pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled glass borders, tactile inset/drop shadows).
    - Zero Tailwind runtime, zero CSS-in-JS runtimes, zero heavy sprite textures.
@@ -162,12 +162,12 @@ The rhythm engine decomposes each measure top-down based on exact rational time 
 A dedicated tuplet configuration menu allows selecting any combinations of:
 - **Tuplet Ratios**: Duplets (2:3), Triplets (3:2), Quadruplets (4:3), Quintuplets (5:4), Sextuplets (6:4), and Septuplets (7:4).
 - **Base Note Values**: Quarter notes (`1/4`), Eighth notes (`1/8`), and Sixteenth notes (`1/16`).
-- **Engraving Polish**: Automated unified stem direction grouping, bracketed ratio displays, and metric width compensation.
+- **Engraving Polish**: Merged members (`3[q 8]`), one beam per run of beamable members with a bracket unless one beam spans the group, unified stem directions, and metric width compensation.
 
 ### 4. Multi-Interval Pitch Random Walk
-Pitch transitions are governed by an irreducible Markov chain with boundary reflection:
+Pitch transitions are governed by an irreducible, symmetric Markov chain:
 - **Selectable Intervals**: Granular checkboxes for Unison (1st), Second (2nd / stepwise), Third (3rd / skip), Fourth (4th), Fifth (5th), Sixth (6th), Seventh (7th), Octave (8ve leap), and Ninth Plus (9+ compound intervals).
-- **Ledger Boundary Reflection**: Inward boundary bias prevents notes from straying beyond the $\pm 3$ ledger line range while maintaining ergodic exploration of the full clef gamut.
+- **Feasible, Symmetric Steps**: Only intervals that fit inside the selected ledger-line range are drawn, and up and down are equally likely whenever both fit, so the walk never leaves the range and reaches every note of it, edges included.
 
 ### 5. Solfège Syllable Overlays & Note Labels
 Overhead syllable and letter indicators assist ear training and note identification:

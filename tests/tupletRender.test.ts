@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
-import { Beam, Tuplet } from 'vexflow/core';
+import { Beam, StaveNote, Tuplet } from 'vexflow/core';
 import { MusicGenerator } from '../src/notation/generator';
 import {
   MAX_BEAM_RISE,
@@ -211,4 +211,106 @@ describe('Long tuplet beams and numbers stay inside the measure canvas (ADR 0057
       }
     });
   }
+});
+
+describe('Tuplet beam runs, brackets and the bar rest (ADR 0065)', () => {
+  const originalGetContext = HTMLCanvasElement.prototype.getContext;
+  let beamDraw: MockInstance<Beam['draw']>;
+  let tupletDraw: MockInstance<Tuplet['draw']>;
+  let noteDraw: MockInstance<StaveNote['draw']>;
+
+  beforeEach(() => {
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, contextId: string) {
+      if (contextId !== '2d') return null;
+      const noop = (): void => {};
+      return new Proxy(
+        {
+          canvas: this,
+          getTransform: () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }),
+          measureText: () => ({ width: 10 }),
+          createLinearGradient: () => ({ addColorStop: noop }),
+          getLineDash: () => [],
+        } as Record<string | symbol, unknown>,
+        { get: (target, key) => (key in target ? target[key] : noop), set: () => true }
+      ) as unknown as CanvasRenderingContext2D;
+    } as unknown as typeof HTMLCanvasElement.prototype.getContext;
+    beamDraw = vi.spyOn(Beam.prototype, 'draw');
+    tupletDraw = vi.spyOn(Tuplet.prototype, 'draw');
+    noteDraw = vi.spyOn(StaveNote.prototype, 'draw');
+  });
+
+  afterEach(() => {
+    HTMLCanvasElement.prototype.getContext = originalGetContext;
+    vi.restoreAllMocks();
+  });
+
+  const BEAT_WIDTH = 120;
+
+  /** A 4/4 bar: a one-beat sextuplet of sixteenths (`r` marks a rest), then three quarters. */
+  function sextupletMeasure(spec: string): MeasureData {
+    const notes: NoteData[] = spec.split(' ').map((token, i) => ({
+      keys: ['b/4'],
+      duration: '16',
+      isRest: token === 'r',
+      isTuplet: true,
+      tupletGroup: 1,
+      tupletNumNotes: 6,
+      tupletNotesOccupied: 4,
+      beatOffset: i / 6,
+      beatDuration: 1 / 6,
+    }));
+    for (let beat = 1; beat < 4; beat++) {
+      notes.push({ keys: ['b/4'], duration: 'q', isRest: false, beatOffset: beat, beatDuration: 1 });
+    }
+    return {
+      index: 0,
+      notes,
+      clef: 'treble',
+      timeSignature: '4/4',
+      beatsPerMeasure: 4,
+      beatValue: 4,
+      beatWidth: BEAT_WIDTH,
+      width: NOTE_START_OFFSET + 4 * BEAT_WIDTH,
+      startBeat: 0,
+    };
+  }
+
+  const beamSizes = (): number[] => (beamDraw.mock.contexts as Beam[]).map((beam) => beam.getNotes().length);
+  const bracketed = (): boolean[] =>
+    (tupletDraw.mock.contexts as Tuplet[]).map(
+      (tuplet) => (tuplet as unknown as { options: { bracketed: boolean } }).options.bracketed
+    );
+
+  it('beams each run around a rest separately and keeps the bracket', () => {
+    new MeasureRenderer().renderMeasure(sextupletMeasure('n n r n n n'), 'light', en.noteNames.syllables);
+    expect(beamSizes()).toEqual([2, 3]);
+    expect(bracketed()).toEqual([true]);
+  });
+
+  it('drops the bracket when one beam joins the whole group', () => {
+    new MeasureRenderer().renderMeasure(sextupletMeasure('n n n n n n'), 'light', en.noteNames.syllables);
+    expect(beamSizes()).toEqual([6]);
+    expect(bracketed()).toEqual([false]);
+  });
+
+  it('centres a bar-long whole rest in the bar', () => {
+    for (const [ts, beats, beatValue] of [['3/4', 3, 4], ['2/4', 2, 4], ['4/4', 4, 4], ['6/8', 6, 8]] as const) {
+      noteDraw.mockClear();
+      const width = NOTE_START_OFFSET + beats * BEAT_WIDTH;
+      const data: MeasureData = {
+        index: 0,
+        notes: [{ keys: ['d/5'], duration: 'w', isRest: true, beatOffset: 0, beatDuration: beats }],
+        clef: 'treble',
+        timeSignature: ts,
+        beatsPerMeasure: beats,
+        beatValue,
+        beatWidth: BEAT_WIDTH,
+        width,
+        startBeat: 0,
+      };
+      new MeasureRenderer().renderMeasure(data, 'light', en.noteNames.syllables);
+      const [rest] = noteDraw.mock.contexts as StaveNote[];
+      expect(rest.getAbsoluteX() + rest.getGlyphWidth() / 2, ts).toBeCloseTo(width / 2, 6);
+    }
+  });
 });

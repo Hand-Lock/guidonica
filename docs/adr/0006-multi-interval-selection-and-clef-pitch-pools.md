@@ -1,6 +1,6 @@
 # 0006. Multi-Interval Checkbox Selection & Clef-Dependent Pitch Pools (±3 Ledger Lines)
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (boundary bias removed)
 - **Date**: 2026-09-14
 - **Author**: Antigravity Assistant & A. C. Lo Cascio
 

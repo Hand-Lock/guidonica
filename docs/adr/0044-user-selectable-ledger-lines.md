@@ -1,6 +1,6 @@
 # 0044. User-Selectable Ledger Lines (Above / Below, 0–3)
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (boundary bias removed)
 - **Date**: 2026-10-02
 - **Author**: Claude & A. C. Lo Cascio
 

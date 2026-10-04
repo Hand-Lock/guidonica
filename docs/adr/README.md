@@ -11,12 +11,12 @@ This directory documents the core architectural decisions, implementation method
 | [0003](0003-infinite-stream-stave-alignment-and-barlines.md) | Infinite Streaming Buffer, Stave Alignment & Barline Rendering | Accepted | 2026-09-14 |
 | [0004](0004-beaming-geometry-and-stave-attachment.md) | Beaming Geometry, Stave Attachment & Stem Extension Alignment | Accepted | 2026-09-14 |
 | [0005](0005-dynamic-subdivision-beat-width-and-stave-padding-compensation.md) | Dynamic Subdivision Beat Width & Stave Padding Compensation | Accepted | 2026-09-14 |
-| [0006](0006-multi-interval-selection-and-clef-pitch-pools.md) | Multi-Interval Checkbox Selection & Clef-Dependent Pitch Pools (±3 Ledger Lines) | Accepted | 2026-09-14 |
+| [0006](0006-multi-interval-selection-and-clef-pitch-pools.md) | Multi-Interval Checkbox Selection & Clef-Dependent Pitch Pools (±3 Ledger Lines) | Accepted; amended by 0065 | 2026-09-14 |
 | [0007](0007-comprehensive-system-audit-and-optimizations.md) | Comprehensive System Audit, Glitch Elimination & Performance Optimizations | Accepted | 2026-09-14 |
 | [0008](0008-pause-and-resume-state-synchronization.md) | Pause and Resume State Synchronization & Beat Grid Phase Alignment | Accepted | 2026-09-14 |
 | [0009](0009-cross-platform-portability-and-github-synchronization.md) | Cross-Platform Portability, macOS Apple Silicon Support & GitHub Synchronization | Accepted | 2026-09-14 |
-| [0010](0010-separate-tuplet-subdivision-matrix-menu.md) | Separate Tuplet Subdivision Matrix Menu & Arbitrary n-Tuplet Engine | Accepted | 2026-09-14 |
-| [0011](0011-tuplet-beam-stem-direction-unification.md) | Tuplet Beam Stem Direction Unification & Contiguous Non-Tuplet Grouping | Accepted | 2026-09-14 |
+| [0010](0010-separate-tuplet-subdivision-matrix-menu.md) | Separate Tuplet Subdivision Matrix Menu & Arbitrary n-Tuplet Engine | Accepted; amended by 0065 | 2026-09-14 |
+| [0011](0011-tuplet-beam-stem-direction-unification.md) | Tuplet Beam Stem Direction Unification & Contiguous Non-Tuplet Grouping | Accepted; amended by 0065 | 2026-09-14 |
 | [0012](0012-web-font-synchronization-and-clef-invalidation.md) | Web Font Loading Synchronization & Pinned Clef Cache Invalidation | Accepted; amended by 0058, 0060 | 2026-09-16 |
 | [0013](0013-production-readiness-and-high-dpi-retina-pipeline.md) | Production Readiness, High-DPI Retina Pipeline & Audio Polish | Superseded in part by 0042 | 2026-09-16 |
 | [0014](0014-solfege-label-transform-and-vertical-clearance.md) | Solfège Label Context Transform & Vertical Clearance Architecture | Superseded in part by 0041 | 2026-09-16 |
@@ -41,15 +41,15 @@ This directory documents the core architectural decisions, implementation method
 | [0033](0033-fullscreen-api-feature-detection-and-selective-ui-presentation.md) | Fullscreen API Capability Detection & Selective UI Presentation | Accepted | 2026-09-18 |
 | [0034](0034-matched-segmented-square-fullscreen-icons.md) | Matched Segmented-Square Fullscreen Icons & Inverted Exit Geometry | Accepted | 2026-09-18 |
 | [0035](0035-page-lifecycle-auto-pause-and-screen-wake-lock.md) | Page Lifecycle Auto-Pause, AudioContext State Recovery & Screen Wake Lock | Accepted | 2026-09-18 |
-| [0036](0036-ergodic-metric-tree-procedural-generation-and-dotted-rhythms.md) | Ergodic Metric Tree Procedural Generation, Dotted Rhythms & Tied Notes | Accepted | 2026-09-19 |
+| [0036](0036-ergodic-metric-tree-procedural-generation-and-dotted-rhythms.md) | Ergodic Metric Tree Procedural Generation, Dotted Rhythms & Tied Notes | Accepted; rhythm sampler superseded by 0065 | 2026-09-19 |
 | [0037](0037-toggleable-playhead-mark-visibility.md) | Toggleable Playhead Mark Visibility & Unassisted Sight-Reading Mode | Accepted | 2026-09-19 |
 | [0038](0038-setticlavio-complete-clef-system.md) | Setticlavio Complete Clef System: Soprano, Mezzo-Soprano, and Dual Baritone (F & C) Integration | Accepted | 2026-09-19 |
 | [0039](0039-repository-audit-ergodicity-and-clock-unification.md) | Repository Audit: Ergodicity Restoration, Clock Unification, and Configuration Hygiene | Accepted | 2026-09-25 |
-| [0040](0040-engraving-grammar-for-ties-and-cross-barline-ties.md) | Engraving Grammar for Ties and Cross-Barline Ties | Accepted | 2026-09-25 |
+| [0040](0040-engraving-grammar-for-ties-and-cross-barline-ties.md) | Engraving Grammar for Ties and Cross-Barline Ties | Accepted; amended by 0065 | 2026-09-25 |
 | [0041](0041-solfege-labels-notehead-anchored.md) | Solfège Labels Anchored to Noteheads (dpr² Transform Fix) | Accepted; amended by 0057 | 2026-09-25 |
 | [0042](0042-single-dpr-offscreen-backing-store.md) | Single-dpr Offscreen Backing Store (drop VexFlow `resize()`) | Accepted | 2026-09-25 |
-| [0043](0043-thirty-second-notes.md) | Thirty-Second Notes & Dotted Sixteenths | Accepted; amended by 0064 | 2026-09-27 |
-| [0044](0044-user-selectable-ledger-lines.md) | User-Selectable Ledger Lines (Above / Below, 0–3) | Accepted; amended by 0059 | 2026-10-02 |
+| [0043](0043-thirty-second-notes.md) | Thirty-Second Notes & Dotted Sixteenths | Accepted; amended by 0064; rhythm sampler superseded by 0065 | 2026-09-27 |
+| [0044](0044-user-selectable-ledger-lines.md) | User-Selectable Ledger Lines (Above / Below, 0–3) | Accepted; amended by 0059, 0065 | 2026-10-02 |
 | [0045](0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md) | Aero-Guidonica 2: Material Hierarchy & Responsive Redesign | Accepted; amended by 0054 | 2026-10-02 |
 | [0046](0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Superseded in part by [0047](0047-guidonian-hand-v2.md) | 2026-10-02 |
 | [0047](0047-guidonian-hand-v2.md) | Guidonian Hand v2: Anatomical Proportions, Volume Shading & 3D Thread | Accepted | 2026-10-02 |
@@ -69,7 +69,8 @@ This directory documents the core architectural decisions, implementation method
 | [0061](0061-social-preview-card-and-share-metadata.md) | Social Preview Card & Share Metadata | Accepted | 2026-10-03 |
 | [0062](0062-robots-txt-and-sitemap.md) | robots.txt & sitemap.xml | Accepted | 2026-10-03 |
 | [0063](0063-offline-service-worker.md) | Offline Service Worker | Accepted | 2026-10-03 |
-| [0064](0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Accepted | 2026-10-03 |
+| [0064](0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Superseded by 0065 | 2026-10-03 |
+| [0065](0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted | 2026-10-04 |
 
 ---
 

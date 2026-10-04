@@ -1,6 +1,6 @@
 # 0040. Engraving Grammar for Ties and Cross-Barline Ties
 
-- **Status**: Accepted (supersedes the tie section of [ADR 0039](0039-repository-audit-ergodicity-and-clock-unification.md))
+- **Status**: Accepted (supersedes the tie section of [ADR 0039](0039-repository-audit-ergodicity-and-clock-unification.md)); amended by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (ties inside a tuplet group)
 - **Date**: 2026-09-25
 - **Author**: Claude & A. C. Lo Cascio
 

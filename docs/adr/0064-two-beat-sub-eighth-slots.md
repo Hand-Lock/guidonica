@@ -1,6 +1,6 @@
 # 0064. Sub-Eighth Half-Beat Slots in Two-Beat Groups
 
-- **Status**: Accepted (amends [0043](0043-thirty-second-notes.md))
+- **Status**: Superseded by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (amended [0043](0043-thirty-second-notes.md))
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 

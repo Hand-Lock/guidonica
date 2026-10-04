@@ -9,13 +9,28 @@ import {
   NoteData,
   SubdivisionOptions,
   TUPLET_NAMES,
+  TUPLET_PLACEMENTS,
   TUPLET_VALUES,
   TimeSignature,
+  TupletCell,
+  TupletName,
   TupletOptions,
+  TupletValue,
   computeBeatWidth,
   supportedTuplets,
+  tupletShape,
+  tupletSpan,
 } from './types';
-import { TIE_PROBABILITY, applyTies, canTieAcrossBarline } from './ties';
+import {
+  BAR_REST,
+  TIE_PROBABILITY,
+  applyTies,
+  canTieAcrossBarline,
+  consolidateRests,
+  isPlaced,
+  noteSpan,
+  placementOf,
+} from './ties';
 
 function pick<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)];
@@ -29,10 +44,180 @@ export interface PartitionItem {
   tupletGroup?: number;
   tupletNumNotes?: number;
   tupletNotesOccupied?: number;
-  tupletBracketed?: boolean;
-  tupletRatioed?: boolean;
+  /** Beats per unit of the tuplet (one member of an unmerged group). */
+  tupletUnit?: number;
   tieStart?: boolean;
   tieEnd?: boolean;
+}
+
+/** Probability that a note (or a tuplet member) is written as a rest when rests are on. */
+export const SILENCE_PROBABILITY = 0.15;
+
+/** Probability that two adjacent tuplet units sound as one member (3[q 8]). */
+export const TUPLET_MERGE_PROBABILITY = 0.2;
+
+/**
+ * The note values a configuration draws from: every enabled base value plus, with dotted
+ * on, the dotted value of each enabled base (hd needs half, qd quarter, 8d eighth, 16d
+ * sixteenth). Ordered longest first (ADR 0065).
+ */
+export function enabledValues(subdiv: SubdivisionOptions): string[] {
+  const dotted = subdiv.dotted !== false;
+  const values: string[] = [];
+  if (subdiv.whole) values.push('w');
+  if (subdiv.half) values.push('h', ...(dotted ? ['hd'] : []));
+  if (subdiv.quarter) values.push('q', ...(dotted ? ['qd'] : []));
+  if (subdiv.eighth) values.push('8', ...(dotted ? ['8d'] : []));
+  if (subdiv.sixteenth) values.push('16', ...(dotted ? ['16d'] : []));
+  if (subdiv.thirtySecond) values.push('32');
+  return values;
+}
+
+/** One plain notehead the sampler may write at a grid point. */
+interface NoteStep {
+  duration: string;
+  units: number;
+}
+
+/** One tuplet group the sampler may write at a grid point. */
+interface TupletStep {
+  name: TupletName;
+  value: TupletValue;
+  units: number;
+}
+
+/**
+ * Every legal, completable step at each grid point of one bar. The grid is the 32nd: 8
+ * units per quarter beat in simple meters, 4 per eighth beat in 6/8.
+ */
+export interface RhythmGrammar {
+  unitsPerBeat: number;
+  barUnits: number;
+  /** The values in play, including the beat-unit fallback when it was needed. */
+  values: ReadonlySet<string>;
+  notes: readonly NoteStep[][];
+  tuplets: readonly TupletStep[][];
+}
+
+interface GrammarDraft extends RhythmGrammar {
+  complete: boolean;
+  /** Values and tuplet cells that occur in at least one complete bar. */
+  used: ReadonlySet<string>;
+}
+
+function buildGrammar(ts: TimeSignature, values: readonly string[], cells: readonly TupletCell[]): GrammarDraft {
+  const unitsPerBeat = ts === '6/8' ? 4 : 8;
+  const barUnits = METER[ts].beatsPerMeasure * unitsPerBeat;
+  const allNotes: NoteStep[][] = [];
+  const allTuplets: TupletStep[][] = [];
+  for (let u = 0; u < barUnits; u++) {
+    const offset = u / unitsPerBeat;
+    allNotes.push(
+      values.flatMap((duration) => {
+        const span = noteSpan(ts, duration);
+        return span !== null && placementOf(ts, offset, span) !== null
+          ? [{ duration, units: Math.round(span * unitsPerBeat) }]
+          : [];
+      })
+    );
+    allTuplets.push(
+      cells.flatMap((cell) => {
+        const placement = TUPLET_PLACEMENTS[ts][cell];
+        const [name, value] = cell.split(':') as [TupletName, TupletValue];
+        const units = Math.round(tupletSpan(ts, name, value) * unitsPerBeat);
+        return placement && u + units <= barUnits && isPlaced(offset, placement) ? [{ name, value, units }] : [];
+      })
+    );
+  }
+
+  // Backward pass: from which grid points the bar can still be filled exactly
+  const completable = new Array<boolean>(barUnits + 1).fill(false);
+  completable[barUnits] = true;
+  for (let u = barUnits - 1; u >= 0; u--) {
+    completable[u] =
+      allNotes[u].some((s) => completable[u + s.units]) || allTuplets[u].some((s) => completable[u + s.units]);
+  }
+  const notes = allNotes.map((steps, u) => steps.filter((s) => completable[u + s.units]));
+  const tuplets = allTuplets.map((steps, u) => steps.filter((s) => completable[u + s.units]));
+
+  // Forward pass: which values and cells some complete bar actually uses
+  const used = new Set<string>();
+  const reached = new Array<boolean>(barUnits + 1).fill(false);
+  reached[0] = completable[0];
+  for (let u = 0; u < barUnits; u++) {
+    if (!reached[u]) continue;
+    for (const s of notes[u]) {
+      used.add(s.duration);
+      reached[u + s.units] = true;
+    }
+    for (const s of tuplets[u]) {
+      used.add(`${s.name}:${s.value}`);
+      reached[u + s.units] = true;
+    }
+  }
+
+  return { unitsPerBeat, barUnits, values: new Set(values), notes, tuplets, complete: completable[0], used };
+}
+
+const grammarMemo = new Map<string, RhythmGrammar>();
+const GRAMMAR_MEMO_LIMIT = 64;
+
+/**
+ * Rhythm grammar of a configuration, memoized. When the enabled values cannot fill a bar
+ * (whole notes only in 3/4), or when the beat unit would make an enabled value or cell
+ * reachable that otherwise is not (q in 4/4 with half and dotted only, for the hd), the
+ * beat unit (q; 8 in 6/8) joins the values. Nothing else is ever added (ADR 0065).
+ */
+export function rhythmGrammar(ts: TimeSignature, subdiv: SubdivisionOptions, tuplets?: TupletOptions): RhythmGrammar {
+  const active = tuplets && supportedTuplets(ts, tuplets);
+  const cells: TupletCell[] = [];
+  for (const name of TUPLET_NAMES) {
+    for (const value of TUPLET_VALUES) {
+      if (active?.[name][value]) cells.push(`${name}:${value}`);
+    }
+  }
+  let values = enabledValues(subdiv);
+  // Nothing selected at all: quarter notes
+  if (values.length === 0 && cells.length === 0) values = enabledValues({ ...subdiv, quarter: true });
+
+  const key = `${ts}|${values.join(',')}|${cells.join(',')}`;
+  const memo = grammarMemo.get(key);
+  if (memo) return memo;
+
+  let grammar = buildGrammar(ts, values, cells);
+  const beatUnit = ts === '6/8' ? '8' : 'q';
+  if (!values.includes(beatUnit)) {
+    const unused = [...values, ...cells].filter((k) => !grammar.used.has(k));
+    if (!grammar.complete || unused.length > 0) {
+      const widened = buildGrammar(ts, [...values, beatUnit], cells);
+      if (!grammar.complete || unused.some((k) => widened.used.has(k))) grammar = widened;
+    }
+  }
+
+  if (grammarMemo.size >= GRAMMAR_MEMO_LIMIT) grammarMemo.clear();
+  grammarMemo.set(key, grammar);
+  return grammar;
+}
+
+/** Tuplet members by base value and length in tuplet units (one notehead each). */
+const TUPLET_MEMBERS: Record<TupletValue, Record<number, string>> = {
+  '1/4': { 1: 'q', 2: 'h', 3: 'hd', 4: 'w' },
+  '1/8': { 1: '8', 2: 'q', 3: 'qd', 4: 'h', 6: 'hd' },
+  '1/16': { 1: '16', 2: '8', 3: '8d', 4: 'q', 6: 'qd' },
+};
+
+/** Member lengths a tuplet rest may take: undotted, like every other rest. */
+const TUPLET_REST_UNITS: ReadonlySet<number> = new Set([1, 2, 4]);
+
+/**
+ * Member value of `units` tuplet units, or null when it is not one enabled notehead. A
+ * single unit is always allowed (the cell itself is enabled); a longer member needs its
+ * value enabled, so dotted members need dotted on.
+ */
+function tupletMember(value: TupletValue, units: number, values: ReadonlySet<string>): string | null {
+  const duration = TUPLET_MEMBERS[value][units];
+  if (duration === undefined) return null;
+  return units === 1 || values.has(duration) ? duration : null;
 }
 
 // Diatonic pitch pools (C Major / A Minor baseline), derived per clef from the bottom staff line.
@@ -151,7 +336,9 @@ export class MusicGenerator {
     for (const item of rawRhythms) {
       let pitch: string;
       if (item.isRest) {
-        pitch = CLEF_PITCH_RANGES[clef].restPitch;
+        // A whole rest hangs from the fourth line, two steps above the other rests
+        const restStep = toStep(CLEF_PITCH_RANGES[clef].restPitch);
+        pitch = toKey(item.duration === BAR_REST ? restStep + 2 : restStep);
       } else if (item.tieEnd && this.lastSoundingPitch !== null) {
         // Tied note strictly maintains the pitch of the note it is tied from
         pitch = this.lastSoundingPitch;
@@ -162,7 +349,7 @@ export class MusicGenerator {
         this.lastStep = Math.max(low, Math.min(high, anchor));
         pitch = toKey(this.lastStep);
       } else {
-        pitch = this.sampleNextPitch(intervals, this.lastStep, low, high, ledgerLines);
+        pitch = this.sampleNextPitch(intervals, this.lastStep, low, high);
       }
 
       if (!item.isRest) {
@@ -177,8 +364,6 @@ export class MusicGenerator {
         tupletGroup: item.tupletGroup,
         tupletNumNotes: item.tupletNumNotes,
         tupletNotesOccupied: item.tupletNotesOccupied,
-        tupletBracketed: item.tupletBracketed,
-        tupletRatioed: item.tupletRatioed,
         tieStart: item.tieStart,
         tieEnd: item.tieEnd,
         beatOffset: currentOffset,
@@ -223,14 +408,14 @@ export class MusicGenerator {
   /**
    * Markov random-walk step over the diatonic pool [low, high]. Only interval choices that
    * fit in at least one direction are drawn (weights renormalize over them), so every
-   * in-range move keeps P > 0 and no interval is ever mislabeled by clamping.
+   * in-range move keeps P > 0 and no interval is ever mislabeled by clamping. The walk is
+   * symmetric: up and down are equally likely whenever both fit (ADR 0065).
    */
   private sampleNextPitch(
     intervals: IntervalOptions,
     lastStep: number,
     low: number,
-    high: number,
-    ledger: LedgerLineOptions
+    high: number
   ): string {
     const rangeLen = high - low + 1;
     const currentIdx = Math.max(0, Math.min(rangeLen - 1, lastStep - low));
@@ -310,22 +495,9 @@ export class MusicGenerator {
       const canGoDown = chosenStep <= downRoom;
 
       if (canGoUp && canGoDown) {
-        // Both directions fit within the pool.
-        // Apply boundary bias towards staff center when approaching range limits. The bias
-        // zone per side is min(4, 2n) pool notes for n ledger lines, so it only acts inside
-        // the ledger-line region (4 on both sides at the default ±3; none at 0).
-        const highMargin = Math.min(4, 2 * ledger.above);
-        const lowMargin = Math.min(4, 2 * ledger.below);
-        if (currentIdx >= rangeLen - highMargin) {
-          // High register: 85% descend
-          direction = Math.random() < 0.85 ? -1 : 1;
-        } else if (currentIdx <= lowMargin) {
-          // Low register: 85% ascend
-          direction = Math.random() < 0.85 ? 1 : -1;
-        } else {
-          // Middle staff register: 50/50
-          direction = Math.random() < 0.5 ? 1 : -1;
-        }
+        // Both directions fit: a fair coin. Feasibility alone keeps the walk in range, so
+        // no inward bias is applied and the edge notes stay as reachable as the middle
+        direction = Math.random() < 0.5 ? 1 : -1;
       } else if (canGoUp) {
         direction = 1;
       } else {
@@ -337,749 +509,96 @@ export class MusicGenerator {
   }
 
   /**
-   * Checks if any tuplet combination is active in settings.
-   */
-  private hasActiveTuplets(tuplets?: TupletOptions): boolean {
-    if (!tuplets) return false;
-    for (const name of TUPLET_NAMES) {
-      for (const val of TUPLET_VALUES) {
-        if (tuplets[name]?.[val]) return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Helper to generate an array of notes belonging to a single tuplet group.
-   */
-  private makeTupletItems(
-    numNotes: number,
-    notesOccupied: number,
-    duration: string,
-    totalBeatDuration: number,
-    bracketed?: boolean,
-    ratioed?: boolean
-  ): PartitionItem[] {
-    const tupletId = ++this.tupletCounter;
-    const noteBeatDuration = totalBeatDuration / numNotes;
-    const items: PartitionItem[] = [];
-
-    for (let i = 0; i < numNotes; i++) {
-      items.push({
-        duration,
-        beatDuration: noteBeatDuration,
-        isRest: false,
-        isTuplet: true,
-        tupletGroup: tupletId,
-        tupletNumNotes: numNotes,
-        tupletNotesOccupied: notesOccupied,
-        tupletBracketed: bracketed,
-        tupletRatioed: ratioed,
-      });
-    }
-
-    return items;
-  }
-
-  /**
-   * Partitions the metric beats of a measure into rhythms strictly summing to beatsPerMeasure.
-   * Employs an ergodic metric partition tree guaranteeing that every valid musical combination
-   * of active settings has a non-zero probability of being generated, then applies the
-   * within-measure tie grammar (ties.ts) when ties are on.
+   * Composes one bar's rhythm: the grammar-driven sampler, then rests, then (with ties on)
+   * the within-measure tie grammar (ties.ts). Each step is a uniform draw over the plain
+   * values legal and completable at that grid point plus one aggregate "tuplet" option, so
+   * every legal bar has P > 0 and no figure is buried by the number of enabled tuplets.
    */
   private composeRhythm(settings: AppSettings): PartitionItem[] {
     const { timeSignature: ts, subdivisions, tuplets, rests, ties } = settings;
-    // Only cells meaningful in this meter participate (TUPLET_SUPPORT)
-    const activeTuplets = tuplets && supportedTuplets(ts, tuplets);
-    const items = this.partitionMeasure(ts, subdivisions, activeTuplets, rests);
-    return ties ? applyTies(items, ts) : items;
+    const grammar = rhythmGrammar(ts, subdivisions, tuplets);
+    const items: PartitionItem[] = [];
+    let u = 0;
+    while (u < grammar.barUnits) {
+      const notes = grammar.notes[u];
+      const groups = grammar.tuplets[u];
+      const k = Math.floor(Math.random() * (notes.length + (groups.length > 0 ? 1 : 0)));
+      if (k < notes.length) {
+        const step = notes[k];
+        items.push({
+          duration: step.duration,
+          beatDuration: step.units / grammar.unitsPerBeat,
+          isRest: rests && Math.random() < SILENCE_PROBABILITY,
+        });
+        u += step.units;
+      } else {
+        const step = pick(groups);
+        items.push(...this.makeTupletItems(ts, step, grammar, rests));
+        u += step.units;
+      }
+    }
+    const spelled = rests ? consolidateRests(items, ts, grammar.values) : items;
+    return ties ? applyTies(spelled, ts) : spelled;
   }
 
-  private partitionMeasure(
+  /**
+   * One tuplet group. Its n units are merged into members (each inner boundary
+   * independently with TUPLET_MERGE_PROBABILITY), redrawn until every member is one enabled
+   * notehead and there are at least two; members may then be silent, never all of them.
+   * Adjacent silent members are written as the longest undotted rest (ADR 0065).
+   */
+  private makeTupletItems(
     ts: TimeSignature,
-    subdiv: SubdivisionOptions,
-    tuplets: TupletOptions | undefined,
+    step: TupletStep,
+    grammar: RhythmGrammar,
     allowRests: boolean
   ): PartitionItem[] {
-    const hasAnySubdiv =
-      subdiv.whole ||
-      subdiv.half ||
-      subdiv.quarter ||
-      subdiv.eighth ||
-      subdiv.sixteenth ||
-      subdiv.thirtySecond;
-    const hasAnyTuplet = this.hasActiveTuplets(tuplets);
+    const { notes: n, inTimeOf } = tupletShape(ts, step.name, step.value);
+    const unit = step.units / grammar.unitsPerBeat / n;
+    const values = grammar.values;
 
-    // Fallback: if absolutely nothing is selected, default to quarter notes
-    const effectiveSubdiv = !hasAnySubdiv && !hasAnyTuplet ? { ...subdiv, quarter: true } : subdiv;
-    const isDotted = effectiveSubdiv.dotted !== false;
-
-    if (ts === '6/8') {
-      return this.partitionCompoundMeasure(effectiveSubdiv, tuplets, allowRests, isDotted);
-    }
-
-    if (ts === '3/4') {
-      return this.partitionThreeFourMeasure(effectiveSubdiv, tuplets, allowRests, isDotted);
-    }
-
-    if (ts === '2/4') {
-      return this.partitionTwoBeats(effectiveSubdiv, tuplets, allowRests, isDotted);
-    }
-
-    // 4/4 meter
-    return this.partitionFourFourMeasure(effectiveSubdiv, tuplets, allowRests, isDotted);
-  }
-
-  /**
-   * Fills one sixteenth's worth of time (`unit / 2` beats, where `unit` is the beat span of
-   * an eighth: 0.5 in simple meters, 1 in 6/8) with a 16 or two 32nds, uniformly among the
-   * enabled values. Only called when thirtySecond is on.
-   */
-  private partitionSixteenthSpan(subdiv: SubdivisionOptions, allowRests: boolean, unit: number): PartitionItem[] {
-    const candidates: Array<() => PartitionItem[]> = [];
-    if (subdiv.sixteenth) {
-      candidates.push(() => [{ duration: '16', beatDuration: unit / 2, isRest: allowRests && Math.random() < 0.12 }]);
-    }
-    candidates.push(() => [
-      { duration: '32', beatDuration: unit / 4, isRest: allowRests && Math.random() < 0.12 },
-      { duration: '32', beatDuration: unit / 4, isRest: allowRests && Math.random() < 0.12 },
-    ]);
-    return pick(candidates)();
-  }
-
-  /**
-   * Fills one eighth's worth of time (`unit` beats) with every placement-legal figure built
-   * from 8, 16, 16d and 32 (ties.ts: sub-eighth values never cross the eighth):
-   * 8 | {16, 32 32} x {16, 32 32} | 16d 32 | 32 16d | 32 16 32. Only called when thirtySecond is on.
-   */
-  private partitionEighthSpan(
-    subdiv: SubdivisionOptions,
-    allowRests: boolean,
-    isDotted: boolean,
-    unit: number
-  ): PartitionItem[] {
-    const rest = (): boolean => allowRests && Math.random() < 0.12;
-    const candidates: Array<() => PartitionItem[]> = [];
-    if (subdiv.eighth) {
-      candidates.push(() => [{ duration: '8', beatDuration: unit, isRest: allowRests && Math.random() < 0.15 }]);
-    }
-    candidates.push(() => [
-      ...this.partitionSixteenthSpan(subdiv, allowRests, unit),
-      ...this.partitionSixteenthSpan(subdiv, allowRests, unit),
-    ]);
-    if (subdiv.sixteenth && isDotted) {
-      candidates.push(() => [
-        { duration: '16d', beatDuration: (unit * 3) / 4, isRest: rest() },
-        { duration: '32', beatDuration: unit / 4, isRest: rest() },
-      ]);
-      candidates.push(() => [
-        { duration: '32', beatDuration: unit / 4, isRest: rest() },
-        { duration: '16d', beatDuration: (unit * 3) / 4, isRest: rest() },
-      ]);
-    }
-    if (subdiv.sixteenth) {
-      candidates.push(() => [
-        { duration: '32', beatDuration: unit / 4, isRest: rest() },
-        { duration: '16', beatDuration: unit / 2, isRest: rest() },
-        { duration: '32', beatDuration: unit / 4, isRest: rest() },
-      ]);
-    }
-    return pick(candidates)();
-  }
-
-  /**
-   * Fills one half beat (an eighth's worth) in simple meters with any placement-legal
-   * figure: 8 | 16 16, plus every 32nd-bearing figure of partitionEighthSpan when
-   * thirtySecond is on. Lets the half-beat slots of `qd 8`, `8 qd` and `8 q 8` take
-   * sub-eighth values (ADR 0064).
-   */
-  private partitionHalfBeat(subdiv: SubdivisionOptions, allowRests: boolean, isDotted: boolean): PartitionItem[] {
-    if (subdiv.thirtySecond) return this.partitionEighthSpan(subdiv, allowRests, isDotted, 0.5);
-    const candidates: Array<() => PartitionItem[]> = [];
-    if (subdiv.eighth) {
-      candidates.push(() => [{ duration: '8', beatDuration: 0.5, isRest: allowRests && Math.random() < 0.15 }]);
-    }
-    if (subdiv.sixteenth) {
-      candidates.push(() => [
-        { duration: '16', beatDuration: 0.25, isRest: allowRests && Math.random() < 0.12 },
-        { duration: '16', beatDuration: 0.25, isRest: allowRests && Math.random() < 0.12 },
-      ]);
-    }
-    return pick(candidates)();
-  }
-
-  /**
-   * Compound 6/8 meter partitioning (6 eighth-note pulses total).
-   */
-  private partitionCompoundMeasure(
-    subdiv: SubdivisionOptions,
-    tuplets: TupletOptions | undefined,
-    allowRests: boolean,
-    isDotted: boolean
-  ): PartitionItem[] {
-    // 1. Full-measure dotted half note (6 eighth-note beats)
-    if (subdiv.half && isDotted && Math.random() < 0.18) {
-      return [
-        {
-          duration: 'hd',
-          beatDuration: 6,
-          isRest: allowRests && Math.random() < 0.1,
-        },
-      ];
-    }
-
-    // 2. Full-measure duple tuplets: 2 or 4 quarters in the time of 3 (the whole bar)
-    if (tuplets?.duplet['1/4'] && Math.random() < 0.3) {
-      return this.makeTupletItems(2, 3, 'q', 6, true);
-    }
-    if (tuplets?.quadruplet['1/4'] && Math.random() < 0.3) {
-      return this.makeTupletItems(4, 3, 'q', 6, true);
-    }
-
-    // 3. Two compound groups of 3 eighth-note beats each (beats 0..2 and beats 3..5)
-    const result: PartitionItem[] = [];
-    for (let group = 0; group < 2; group++) {
-      const groupItems = this.partitionCompoundGroup(subdiv, tuplets, allowRests, isDotted);
-      result.push(...groupItems);
-    }
-    return result;
-  }
-
-  /**
-   * Partitions a single compound group (3 eighth-note beats) in 6/8 meter.
-   * Generates qd, q+8, 8+q, 8+8+8, sixteenth permutations, and compound tuplets.
-   */
-  private partitionCompoundGroup(
-    subdiv: SubdivisionOptions,
-    tuplets: TupletOptions | undefined,
-    allowRests: boolean,
-    isDotted: boolean
-  ): PartitionItem[] {
-    const candidates: Array<() => PartitionItem[]> = [];
-
-    // Candidate 1: Dotted quarter note (qd = 3 eighths)
-    // ONLY if quarter is active AND dotted is active
-    if (subdiv.quarter && isDotted) {
-      candidates.push(() => [
-        {
-          duration: 'qd',
-          beatDuration: 3,
-          isRest: allowRests && Math.random() < 0.15,
-        },
-      ]);
-    }
-
-    // Candidate 2: Quarter + Eighth (q + 8 = 2 + 1 eighths)
-    if (subdiv.quarter && (subdiv.eighth || allowRests)) {
-      candidates.push(() => {
-        const rest1 = allowRests && Math.random() < 0.15;
-        const rest2 = allowRests && (Math.random() < 0.15 || !subdiv.eighth);
-        return [
-          { duration: 'q', beatDuration: 2, isRest: rest1 },
-          { duration: '8', beatDuration: 1, isRest: rest2 },
-        ];
-      });
-    }
-
-    // Candidate 3: Eighth + Quarter (8 + q = 1 + 2 eighths)
-    if (subdiv.quarter && (subdiv.eighth || allowRests)) {
-      candidates.push(() => {
-        const rest1 = allowRests && (Math.random() < 0.15 || !subdiv.eighth);
-        const rest2 = allowRests && Math.random() < 0.15;
-        return [
-          { duration: '8', beatDuration: 1, isRest: rest1 },
-          { duration: 'q', beatDuration: 2, isRest: rest2 },
-        ];
-      });
-    }
-
-    // Candidate 4: Quarter + Two Sixteenths (q + 16 + 16 = 2 + 0.5 + 0.5 eighths)
-    if (subdiv.quarter && subdiv.sixteenth) {
-      candidates.push(() => {
-        const rest1 = allowRests && Math.random() < 0.15;
-        const rest2 = allowRests && Math.random() < 0.12;
-        const rest3 = allowRests && Math.random() < 0.12;
-        return [
-          { duration: 'q', beatDuration: 2, isRest: rest1 },
-          { duration: '16', beatDuration: 0.5, isRest: rest2 },
-          { duration: '16', beatDuration: 0.5, isRest: rest3 },
-        ];
-      });
-    }
-
-    // Candidate 5: Two Sixteenths + Quarter (16 + 16 + q = 0.5 + 0.5 + 2 eighths)
-    if (subdiv.quarter && subdiv.sixteenth) {
-      candidates.push(() => {
-        const rest1 = allowRests && Math.random() < 0.12;
-        const rest2 = allowRests && Math.random() < 0.12;
-        const rest3 = allowRests && Math.random() < 0.15;
-        return [
-          { duration: '16', beatDuration: 0.5, isRest: rest1 },
-          { duration: '16', beatDuration: 0.5, isRest: rest2 },
-          { duration: 'q', beatDuration: 2, isRest: rest3 },
-        ];
-      });
-    }
-
-    // Candidates 5b/5c: Quarter + any 32nd-bearing eighth figure, and its mirror
-    if (subdiv.quarter && subdiv.thirtySecond) {
-      candidates.push(() => [
-        { duration: 'q', beatDuration: 2, isRest: allowRests && Math.random() < 0.15 },
-        ...this.partitionEighthSpan(subdiv, allowRests, isDotted, 1),
-      ]);
-      candidates.push(() => [
-        ...this.partitionEighthSpan(subdiv, allowRests, isDotted, 1),
-        { duration: 'q', beatDuration: 2, isRest: allowRests && Math.random() < 0.15 },
-      ]);
-    }
-
-    // Candidate 6: Eighth-level subdivisions (three eighth units: 1 + 1 + 1)
-    // With 32nds on, each eighth may also be any partitionEighthSpan figure, and the 8d pair
-    // may end in 32 32 instead of 16.
-    if (subdiv.eighth || subdiv.sixteenth || subdiv.thirtySecond) {
-      candidates.push(() => {
-        const items: PartitionItem[] = [];
-        let beat = 0;
-        while (beat < 3) {
-          if (tuplets?.triplet['1/16'] && Math.random() < 0.35) {
-            items.push(...this.makeTupletItems(3, 2, '16', 1));
-            beat++;
-          } else if (subdiv.sixteenth && isDotted && beat <= 1 && Math.random() < 0.25) {
-            // Dotted eighth + sixteenth (1.5 + 0.5 = 2 eighth beats)
-            const r1 = allowRests && Math.random() < 0.12;
-            const r2 = allowRests && Math.random() < 0.12;
-            items.push(
-              { duration: '8d', beatDuration: 1.5, isRest: r1 },
-              { duration: '16', beatDuration: 0.5, isRest: r2 }
-            );
-            beat += 2;
-          } else if (subdiv.thirtySecond && subdiv.eighth && isDotted && beat <= 1 && Math.random() < 0.15) {
-            // Dotted eighth + a sixteenth's span of 32nds (8d 32 32)
-            items.push(
-              { duration: '8d', beatDuration: 1.5, isRest: allowRests && Math.random() < 0.12 },
-              ...this.partitionSixteenthSpan(subdiv, allowRests, 1)
-            );
-            beat += 2;
-          } else if (subdiv.thirtySecond && (Math.random() < 0.45 || (!subdiv.eighth && !subdiv.sixteenth))) {
-            items.push(...this.partitionEighthSpan(subdiv, allowRests, isDotted, 1));
-            beat++;
-          } else if (subdiv.sixteenth && (Math.random() < 0.45 || !subdiv.eighth)) {
-            const restIdx = allowRests && Math.random() < 0.15 ? Math.floor(Math.random() * 2) : -1;
-            items.push(
-              { duration: '16', beatDuration: 0.5, isRest: restIdx === 0 },
-              { duration: '16', beatDuration: 0.5, isRest: restIdx === 1 }
-            );
-            beat++;
-          } else {
-            const isRest = allowRests && Math.random() < 0.18;
-            items.push({ duration: '8', beatDuration: 1, isRest });
-            beat++;
-          }
-        }
-        return items;
-      });
-    }
-
-    // Candidate 7: Compound Tuplets (Duplet 1/8 = 2:3, Quadruplet 1/8 = 4:3)
-    if (tuplets?.duplet['1/8']) {
-      candidates.push(() => this.makeTupletItems(2, 3, '8', 3));
-    }
-    if (tuplets?.quadruplet['1/8']) {
-      candidates.push(() => this.makeTupletItems(4, 3, '8', 3));
-    }
-    // Duple sixteenth tuplets on each dotted-eighth half of the group (1.5 eighths each):
-    // duplet = 2 sixteenths in the time of 3, quadruplet = 4 sixteenths in the time of 3
-    if (tuplets?.duplet['1/16']) {
-      candidates.push(() => [
-        ...this.makeTupletItems(2, 3, '16', 1.5),
-        ...this.makeTupletItems(2, 3, '16', 1.5),
-      ]);
-    }
-    if (tuplets?.quadruplet['1/16']) {
-      candidates.push(() => [
-        ...this.makeTupletItems(4, 3, '16', 1.5),
-        ...this.makeTupletItems(4, 3, '16', 1.5),
-      ]);
-    }
-
-    if (candidates.length === 0) {
-      // Safe fallback: 3 eighth notes
-      return [
-        { duration: '8', beatDuration: 1, isRest: false },
-        { duration: '8', beatDuration: 1, isRest: false },
-        { duration: '8', beatDuration: 1, isRest: false },
-      ];
-    }
-
-    const generator = candidates[Math.floor(Math.random() * candidates.length)];
-    return generator();
-  }
-
-  /**
-   * Partitions a single metric beat (1.0 quarter beat) in simple meters.
-   */
-  private partitionSingleBeat(
-    subdiv: SubdivisionOptions,
-    tuplets: TupletOptions | undefined,
-    allowRests: boolean,
-    isDotted: boolean
-  ): PartitionItem[] {
-    const candidates: Array<() => PartitionItem[]> = [];
-
-    // 1. Quarter note (1 beat)
-    if (subdiv.quarter) {
-      candidates.push(() => [
-        {
-          duration: 'q',
-          beatDuration: 1,
-          isRest: allowRests && Math.random() < 0.18,
-        },
-      ]);
-    }
-
-    // 2. Two eighth notes (0.5 + 0.5)
-    if (subdiv.eighth) {
-      candidates.push(() => {
-        const restIdx = allowRests && Math.random() < 0.2 ? Math.floor(Math.random() * 2) : -1;
-        return [
-          { duration: '8', beatDuration: 0.5, isRest: restIdx === 0 },
-          { duration: '8', beatDuration: 0.5, isRest: restIdx === 1 },
-        ];
-      });
-    }
-
-    // 3. Dotted eighth + sixteenth (0.75 + 0.25)
-    if (subdiv.eighth && subdiv.sixteenth && isDotted) {
-      candidates.push(() => {
-        const restIdx = allowRests && Math.random() < 0.15 ? Math.floor(Math.random() * 2) : -1;
-        return [
-          { duration: '8d', beatDuration: 0.75, isRest: restIdx === 0 },
-          { duration: '16', beatDuration: 0.25, isRest: restIdx === 1 },
-        ];
-      });
-    }
-
-    // 4. Sixteenth + dotted eighth (0.25 + 0.75) - Scotch snap
-    if (subdiv.eighth && subdiv.sixteenth && isDotted) {
-      candidates.push(() => {
-        const restIdx = allowRests && Math.random() < 0.15 ? Math.floor(Math.random() * 2) : -1;
-        return [
-          { duration: '16', beatDuration: 0.25, isRest: restIdx === 0 },
-          { duration: '8d', beatDuration: 0.75, isRest: restIdx === 1 },
-        ];
-      });
-    }
-
-    // 5. Four sixteenth notes (0.25 x 4)
-    if (subdiv.sixteenth) {
-      candidates.push(() => {
-        const restIdx = allowRests && Math.random() < 0.15 ? Math.floor(Math.random() * 4) : -1;
-        return [
-          { duration: '16', beatDuration: 0.25, isRest: restIdx === 0 },
-          { duration: '16', beatDuration: 0.25, isRest: restIdx === 1 },
-          { duration: '16', beatDuration: 0.25, isRest: restIdx === 2 },
-          { duration: '16', beatDuration: 0.25, isRest: restIdx === 3 },
-        ];
-      });
-    }
-
-    // 6. Eighth + two sixteenths (0.5 + 0.25 + 0.25)
-    if (subdiv.eighth && subdiv.sixteenth) {
-      candidates.push(() => {
-        const restIdx = allowRests && Math.random() < 0.15 ? Math.floor(Math.random() * 3) : -1;
-        return [
-          { duration: '8', beatDuration: 0.5, isRest: restIdx === 0 },
-          { duration: '16', beatDuration: 0.25, isRest: restIdx === 1 },
-          { duration: '16', beatDuration: 0.25, isRest: restIdx === 2 },
-        ];
-      });
-    }
-
-    // 7. Two sixteenths + eighth (0.25 + 0.25 + 0.5)
-    if (subdiv.eighth && subdiv.sixteenth) {
-      candidates.push(() => {
-        const restIdx = allowRests && Math.random() < 0.15 ? Math.floor(Math.random() * 3) : -1;
-        return [
-          { duration: '16', beatDuration: 0.25, isRest: restIdx === 0 },
-          { duration: '16', beatDuration: 0.25, isRest: restIdx === 1 },
-          { duration: '8', beatDuration: 0.5, isRest: restIdx === 2 },
-        ];
-      });
-    }
-
-    // 8. Syncopated sixteenth + eighth + sixteenth (0.25 + 0.5 + 0.25)
-    if (subdiv.eighth && subdiv.sixteenth) {
-      candidates.push(() => {
-        const restIdx = allowRests && Math.random() < 0.15 ? Math.floor(Math.random() * 3) : -1;
-        return [
-          { duration: '16', beatDuration: 0.25, isRest: restIdx === 0 },
-          { duration: '8', beatDuration: 0.5, isRest: restIdx === 1 },
-          { duration: '16', beatDuration: 0.25, isRest: restIdx === 2 },
-        ];
-      });
-    }
-
-    // 9. 32nd-note figures: each eighth half of the beat is any partitionEighthSpan figure,
-    // plus the figures whose middle crosses the half-beat (8d | 16-span, 16-span | 8d,
-    // 16-span 8 16-span), so every placement-legal 8/8d/16/16d/32 beat is reachable.
-    if (subdiv.thirtySecond) {
-      candidates.push(() => [
-        ...this.partitionEighthSpan(subdiv, allowRests, isDotted, 0.5),
-        ...this.partitionEighthSpan(subdiv, allowRests, isDotted, 0.5),
-      ]);
-      if (subdiv.eighth && isDotted) {
-        candidates.push(() => [
-          { duration: '8d', beatDuration: 0.75, isRest: allowRests && Math.random() < 0.12 },
-          ...this.partitionSixteenthSpan(subdiv, allowRests, 0.5),
-        ]);
-        candidates.push(() => [
-          ...this.partitionSixteenthSpan(subdiv, allowRests, 0.5),
-          { duration: '8d', beatDuration: 0.75, isRest: allowRests && Math.random() < 0.12 },
-        ]);
+    let members: number[];
+    do {
+      members = [1];
+      for (let i = 1; i < n; i++) {
+        if (Math.random() < TUPLET_MERGE_PROBABILITY) members[members.length - 1]++;
+        else members.push(1);
       }
-      if (subdiv.eighth) {
-        candidates.push(() => [
-          ...this.partitionSixteenthSpan(subdiv, allowRests, 0.5),
-          { duration: '8', beatDuration: 0.5, isRest: allowRests && Math.random() < 0.12 },
-          ...this.partitionSixteenthSpan(subdiv, allowRests, 0.5),
-        ]);
+    } while (members.length < 2 || members.some((m) => tupletMember(step.value, m, values) === null));
+
+    let silent: boolean[];
+    do {
+      silent = members.map((m) => allowRests && TUPLET_REST_UNITS.has(m) && Math.random() < SILENCE_PROBABILITY);
+    } while (silent.every(Boolean));
+
+    const parts: { units: number; isRest: boolean }[] = [];
+    for (let i = 0; i < members.length; ) {
+      if (!silent[i]) {
+        parts.push({ units: members[i], isRest: false });
+        i++;
+        continue;
       }
-    }
-
-    // 10. Single-beat tuplets
-    if (tuplets?.triplet['1/8']) {
-      candidates.push(() => this.makeTupletItems(3, 2, '8', 1));
-    }
-    if (tuplets?.quintuplet['1/16']) {
-      candidates.push(() => this.makeTupletItems(5, 4, '16', 1));
-    }
-    if (tuplets?.sextuplet['1/16']) {
-      candidates.push(() => this.makeTupletItems(6, 4, '16', 1));
-    }
-    if (tuplets?.septuplet['1/16']) {
-      candidates.push(() => this.makeTupletItems(7, 4, '16', 1));
-    }
-    if (tuplets?.triplet['1/16']) {
-      candidates.push(() => [
-        ...this.makeTupletItems(3, 2, '16', 0.5),
-        ...this.makeTupletItems(3, 2, '16', 0.5),
-      ]);
-    }
-
-    if (candidates.length === 0) {
-      return [{ duration: 'q', beatDuration: 1, isRest: false }];
-    }
-
-    const generator = candidates[Math.floor(Math.random() * candidates.length)];
-    return generator();
-  }
-
-  /**
-   * Partitions a 2-beat hyperbeat (2.0 quarter beats) in simple meters.
-   */
-  private partitionTwoBeats(
-    subdiv: SubdivisionOptions,
-    tuplets: TupletOptions | undefined,
-    allowRests: boolean,
-    isDotted: boolean
-  ): PartitionItem[] {
-    const candidates: Array<() => PartitionItem[]> = [];
-
-    // 1. Half note (2 beats)
-    if (subdiv.half) {
-      candidates.push(() => [
-        {
-          duration: 'h',
-          beatDuration: 2,
-          isRest: allowRests && Math.random() < 0.15,
-        },
-      ]);
-    }
-
-    // Candidates 2-4 fill each half-beat slot with any half-beat figure (8, 16 16, or a
-    // 32nd-bearing figure), so `qd 16 16`, `16 16 qd`, `16 16 q 8` etc. stay reachable (ADR 0064).
-    const halfBeat = subdiv.eighth || subdiv.sixteenth || subdiv.thirtySecond;
-
-    // 2. Dotted quarter + half beat (1.5 + 0.5 beats)
-    if (subdiv.quarter && isDotted && halfBeat) {
-      candidates.push(() => [
-        { duration: 'qd', beatDuration: 1.5, isRest: allowRests && Math.random() < 0.15 },
-        ...this.partitionHalfBeat(subdiv, allowRests, isDotted),
-      ]);
-    }
-
-    // 3. Half beat + dotted quarter (0.5 + 1.5 beats) - Syncopated dotted quarter
-    if (subdiv.quarter && isDotted && halfBeat) {
-      candidates.push(() => [
-        ...this.partitionHalfBeat(subdiv, allowRests, isDotted),
-        { duration: 'qd', beatDuration: 1.5, isRest: allowRests && Math.random() < 0.15 },
-      ]);
-    }
-
-    // 4. Syncopation: half beat + quarter + half beat (0.5 + 1.0 + 0.5)
-    if (subdiv.quarter && halfBeat) {
-      candidates.push(() => [
-        ...this.partitionHalfBeat(subdiv, allowRests, isDotted),
-        { duration: 'q', beatDuration: 1.0, isRest: allowRests && Math.random() < 0.12 },
-        ...this.partitionHalfBeat(subdiv, allowRests, isDotted),
-      ]);
-    }
-
-    // 5. 2-Beat Tuplets
-    if (tuplets?.triplet['1/4']) {
-      candidates.push(() => this.makeTupletItems(3, 2, 'q', 2, true));
-    }
-    if (tuplets?.quintuplet['1/8']) {
-      candidates.push(() => this.makeTupletItems(5, 4, '8', 2));
-    }
-    if (tuplets?.sextuplet['1/8']) {
-      candidates.push(() => this.makeTupletItems(6, 4, '8', 2));
-    }
-    if (tuplets?.septuplet['1/8']) {
-      candidates.push(() => this.makeTupletItems(7, 4, '8', 2));
-    }
-
-    // 6. Two independent 1-beat slices (1 + 1)
-    // Double-weighted so individual beat subdivisions participate actively
-    candidates.push(() => [
-      ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-      ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-    ]);
-    candidates.push(() => [
-      ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-      ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-    ]);
-
-    const generator = candidates[Math.floor(Math.random() * candidates.length)];
-    return generator();
-  }
-
-  /**
-   * Partitions a 3/4 measure (3 quarter beats total).
-   */
-  private partitionThreeFourMeasure(
-    subdiv: SubdivisionOptions,
-    tuplets: TupletOptions | undefined,
-    allowRests: boolean,
-    isDotted: boolean
-  ): PartitionItem[] {
-    // 1. Full measure dotted half note (3 beats) - ONLY if dotted is active and half/whole is active
-    if ((subdiv.half || subdiv.whole) && isDotted && Math.random() < 0.25) {
-      return [
-        {
-          duration: 'hd',
-          beatDuration: 3,
-          isRest: allowRests && Math.random() < 0.1,
-        },
-      ];
-    }
-
-    // 2. 3-beat tuplets
-    if (tuplets?.quadruplet['1/4'] && Math.random() < 0.35) {
-      return this.makeTupletItems(4, 3, 'q', 3, true);
-    }
-    if (tuplets?.duplet['1/4'] && Math.random() < 0.35) {
-      return this.makeTupletItems(2, 3, 'q', 3, true);
-    }
-    if (tuplets?.quadruplet['1/8'] && Math.random() < 0.35) {
-      return this.makeTupletItems(4, 6, '8', 3, false);
-    }
-
-    // 3. Sample uniformly between metric structures. All three are always offered:
-    // partitionTwoBeats falls back to 1+1, so no configuration can dead-end, and 2-beat
-    // figures (h, qd 8, 8 q 8, triplet ¼...) are reachable on either beat 1 or beat 2.
-    // Structure A: 2 beats + 1 beat (e.g. h + q, qd+8 + q, etc.)
-    // Structure B: 1 beat + 2 beats (e.g. q + h, q + 8 q 8, etc.)
-    // Structure C: 1 beat + 1 beat + 1 beat
-    const structure = pick(['2+1', '1+2', '1+1+1'] as const);
-
-    if (structure === '2+1') {
-      return [
-        ...this.partitionTwoBeats(subdiv, tuplets, allowRests, isDotted),
-        ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-      ];
-    }
-
-    if (structure === '1+2') {
-      return [
-        ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-        ...this.partitionTwoBeats(subdiv, tuplets, allowRests, isDotted),
-      ];
-    }
-
-    return [
-      ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-      ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-      ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-    ];
-  }
-
-  /**
-   * Partitions a 4/4 measure (4 quarter beats total).
-   */
-  private partitionFourFourMeasure(
-    subdiv: SubdivisionOptions,
-    tuplets: TupletOptions | undefined,
-    allowRests: boolean,
-    isDotted: boolean
-  ): PartitionItem[] {
-    // 1. Full measure whole note (4 beats)
-    if (subdiv.whole && Math.random() < 0.22) {
-      return [
-        {
-          duration: 'w',
-          beatDuration: 4,
-          isRest: allowRests && Math.random() < 0.1,
-        },
-      ];
-    }
-
-    // 2. Full measure 4-beat tuplets
-    if (tuplets?.quintuplet['1/4'] && Math.random() < 0.35) {
-      return this.makeTupletItems(5, 4, 'q', 4, true);
-    }
-    if (tuplets?.sextuplet['1/4'] && Math.random() < 0.35) {
-      return this.makeTupletItems(6, 4, 'q', 4, true);
-    }
-    if (tuplets?.septuplet['1/4'] && Math.random() < 0.35) {
-      return this.makeTupletItems(7, 4, 'q', 4, true);
-    }
-
-    // 3. Dotted half note patterns (3 + 1 or 1 + 3) if dotted is active and half note is active.
-    // The remaining single beat may be any single-beat figure, not only a quarter.
-    if (subdiv.half && isDotted && Math.random() < 0.2) {
-      const restHD = allowRests && Math.random() < 0.1;
-      if (Math.random() < 0.5) {
-        // hd + 1 beat (beats 0..3 + beat 3)
-        return [
-          { duration: 'hd', beatDuration: 3, isRest: restHD },
-          ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-        ];
-      } else {
-        // 1 beat + hd (beat 0 + beats 1..4)
-        return [
-          ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-          { duration: 'hd', beatDuration: 3, isRest: restHD },
-        ];
+      // Longest run of silent members that one enabled rest spells
+      let best = 1;
+      let units = 0;
+      for (let j = i; j < members.length && silent[j]; j++) {
+        units += members[j];
+        if (TUPLET_REST_UNITS.has(units) && tupletMember(step.value, units, values) !== null) best = j - i + 1;
       }
+      parts.push({ units: members.slice(i, i + best).reduce((a, b) => a + b, 0), isRest: true });
+      i += best;
     }
 
-    // 4. Default 4/4 metric partition, chosen uniformly:
-    //    2+2   : two 2-beat hyperbeats (beats 0..2 and 2..4)
-    //    1+2+1 : Gould's tolerated syncopation [1 beat, h, 1 beat] (q h q). Every other
-    //            figure straddling the middle of the bar (q qd 8, 8 q 8 on beats 2-3...)
-    //            must show beat 3, so it is reached via 2+2 plus a middle tie (ties.ts).
-    //            Without `half` the branch falls back to 2+2.
-    if (!subdiv.half || Math.random() < 0.5) {
-      return [
-        ...this.partitionTwoBeats(subdiv, tuplets, allowRests, isDotted),
-        ...this.partitionTwoBeats(subdiv, tuplets, allowRests, isDotted),
-      ];
-    }
-    return [
-      ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-      { duration: 'h', beatDuration: 2, isRest: allowRests && Math.random() < 0.15 },
-      ...this.partitionSingleBeat(subdiv, tuplets, allowRests, isDotted),
-    ];
+    const tupletGroup = ++this.tupletCounter;
+    return parts.map(({ units, isRest }) => ({
+      duration: TUPLET_MEMBERS[step.value][units],
+      beatDuration: units * unit,
+      isRest,
+      isTuplet: true,
+      tupletGroup,
+      tupletNumNotes: n,
+      tupletNotesOccupied: inTimeOf,
+      tupletUnit: unit,
+    }));
   }
 }

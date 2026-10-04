@@ -58,7 +58,7 @@ The user must have full control over the generation engine prior to and during a
        - **6/8**: duplet and quadruplet ¼ (across the bar), ⅛ (per compound beat) and 1/16 (per half compound beat); triplet 1/16.
    - **Dotted notes modifier**: Explicit toggle allowing dotted durations (`hd`, `qd`, `8d`, `16d`) when combined with enabled base durations.
    - **Tied notes toggle**: Explicit toggle allowing ties with pitch preservation wherever engraving requires one: across beats no single notehead can span (e.g. the middle of a 4/4 bar, the dotted beat in 6/8), across tuplet boundaries, and across the barline (chains allowed). Redundant ties that a single note already expresses (`q~q` on beat 1 = `h`) never appear.
-   - **Rest toggle**: Option to enable/disable rhythmic rests (quarter rests, eighth rests).
+   - **Rest toggle**: Option to enable/disable rests, spelled on the beat grid (a silent bar is one whole rest).
 5. **Melodic Intervals & Pitch Transitions**:
    - Selectable transition constraints:
      - *Stepwise only (Seconds)*: Scales, adjacent notes ($\pm 1$ diatonic step).
@@ -110,40 +110,37 @@ $$\forall M \in \mathcal{M}(\Omega), \quad P(M \mid \Omega) > 0$$
 
 Given an arbitrarily long practice session, the empirical distribution of generated figures converges to the uniform or stationary measure over $\mathcal{M}(\Omega)$. No valid rhythmic figure (such as `q 8` or `8 q` in 6/8, or `q h` and `h q` in 3/4) or melodic skip within the user's settings may have probability zero.
 
-### Rhythmic Generator: Ergodic Metric Tree Partitioning
-Rhythm generation decomposes each measure top-down through a metric tree structure based on meter and active subdivisions:
+### Rhythmic Generator: Grammar-Driven Sampler (ADR 0065)
+Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter beat in simple meters, 4 per eighth beat in 6/8 (a 4/4 bar is 32 units, 3/4 and 6/8 are 24, 2/4 is 16). The placement tables below are the only definition of legality; the sampler derives everything else from them.
 
-1. **Compound Meter Partitioning (6/8)**:
-   - A 6/8 measure consists of 2 compound beats of 3 eighth notes each ($3+3 = 6$ eighths).
-   - If dotted half (`hd`) is active with dotted enabled $\rightarrow$ full-measure dotted half ($3+3=6$).
-   - Otherwise, each 3-eighth beat group is independently partitioned via candidate branch sampling:
-     $$\mathcal{P}_{\text{compound}} = \{ [qd], [q, 8], [8, q], [8, 8, 8], [8, 16, 16], [16, 16, 8], [16, 16, 16, 16] \dots \}$$
-   - Filtered against active subdivisions. Standard quarter notes (`q`, 2 eighths) combined with eighth notes (`8`, 1 eighth) have equal stochastic selection probability alongside dotted quarters (`qd`, 3 eighths).
+1. **Values in play**: every enabled base value plus, with dotted on, its dotted form (`hd`, `qd`, `8d`, `16d`). With nothing selected, quarters.
+2. **Grammar** (`rhythmGrammar`, memoized per meter/values/tuplet cells, at most 64 entries). At each grid point $u$ the candidate steps are:
+   - every value whose notehead the placement table accepts at $u$ (canonical or tolerated) and that fits in the bar;
+   - every enabled tuplet cell whose `TUPLET_PLACEMENTS` grid contains $u$ and whose group fits.
 
-2. **Simple Triple Meter Partitioning (3/4)**:
-   - A 3/4 measure consists of 3 quarter beats ($1+1+1 = 3$).
-   - Allowed macro-partitions:
-     $$\mathcal{P}_{3/4} = \{ [hd], [2+1 \text{ beats}], [1+2 \text{ beats}], [1+1+1 \text{ beats}] \}$$
-   - The three beat structures are always sampled uniformly (not gated on `half`), so off-beat figures like $[8, q, 8]$ are reachable with any subdivision set. Dotted half $[hd]$ requires both `subdiv.half` and `subdiv.dotted`.
+   A **backward pass** marks the completable points ($c[\text{bar}] = 1$, $c[u] = \exists$ step $s$ at $u$ with $c[u + |s|]$) and keeps only steps that land on one, so sampling never reaches a dead end. A **forward pass** records which values and cells occur in at least one complete bar.
+3. **Beat-unit fallback**: the beat unit (`q`; `8` in 6/8) is added only if the enabled values cannot fill a bar (whole notes alone in 3/4, quarters alone in 6/8), or if it makes an enabled value or cell reachable that otherwise is not (`hd` in 4/4 with half and dotted only). Nothing else is ever added.
+4. **Sampling** (`composeRhythm`): at each grid point, a uniform draw among the note steps plus one aggregate "tuplet" option, which then picks a tuplet step uniformly. Every kept step lies on a complete bar, so every legal bar has $P(M) = \prod_i 1/(|\text{notes}(u_i)| + [\text{tuplets}(u_i) \ne \emptyset]) \cdot \ldots > 0$, and many enabled tuplet cells do not crowd out plain figures.
+5. **Tuplet placements** (`TUPLET_PLACEMENTS`, keys = `TUPLET_SUPPORT[ts]`, span = `tupletSpan()`): half-beat groups (`triplet:1/16`) on every half beat; one-beat groups on every beat; two-beat groups on beat 1 (and 3 in 4/4; in 3/4 beat 1 or 2); bar-long groups only at 0. In 6/8: `triplet:1/16` on every eighth, `duplet/quadruplet:1/16` every 1.5 eighths, `duplet/quadruplet:1/8` at 0 or 3, `duplet/quadruplet:1/4` at 0.
+6. **Tuplet members**: the $n$ units of a group merge at each inner boundary with probability 0.2 (`TUPLET_MERGE_PROBABILITY`), redrawn until every member is one enabled notehead of 1, 2, 3, 4 or 6 units (`3[q 8]`, `5[q 8 8 8]`, dotted members only with dotted on) and there are at least two members.
+7. **Rests** (rests on): each plain note and each 1-, 2- or 4-unit tuplet member is silent with probability 0.15 (`SILENCE_PROBABILITY`). A group is never all rests; adjacent silent members combine into the longest undotted rest. Each run of plain rests is re-spelled by `spellRest` from the **rest placement table** (`REST_PLACEMENTS`, metric beats):
+   - 4/4: h on either half of the bar; q, 8, 16, 32 on multiples of their own span (also 3/4, 2/4).
+   - 6/8: qd and q at a group start (0 or 3); 8, 16, 32 on multiples of their own span.
+   - No rest is dotted except the whole-group `qd` in 6/8. The spelling is greedy (longest legal rest first), preferring enabled values: with quarters only, a silent syncopated `q` is `8r 8r`, and no half rest appears when half notes are off.
+   - **A silence over the whole bar is always one whole rest**, in every meter, hanging from the fourth line and centred in the bar.
 
-3. **Simple Quadruple & Duple Partitioning (4/4, 2/4)**:
-   - In 4/4, the bar is split uniformly into either the half-bar structure $[2+2]$ or Gould's tolerated syncopation $[1, h, 1]$ (only when `half` is on; otherwise $[2+2]$). Every other figure straddling the middle of the bar (`q qd 8`, `8 q 8` on beats 2–3) must show beat 3, so it is reached through $[2+2]$ plus a middle tie:
-     $$\mathcal{P}_{4/4} = \{ [w], [hd, 1 \text{ beat}], [1 \text{ beat}, hd], [2+2 \text{ beats}], [1 \text{ beat}, h, 1 \text{ beat}] \}$$
-   - Two-beat groups evaluate $[h]$, $[qd, 8]$, $[8, qd]$, or independent 1-beat subdivisions.
-   - One-beat units evaluate $[q]$, $[8d, 16]$, $[8, 8]$, or 16th-note groupings. With 32nds on, a beat can also be two eighth spans, $[8d, S]$, $[S, 8d]$ or $[S, 8, S]$, where a sixteenth span $S$ is $[16]$ or $[32, 32]$. An eighth span is $[8]$, $[S, S]$, $[16d, 32]$, $[32, 16d]$ or $[32, 16, 32]$. In 6/8 the same eighth span fills any eighth of a compound group, including $[q, \text{eighth span}]$ and its mirror, and $[8d, 32, 32]$.
-
-4. **Tied Notes Engine**:
+8. **Tied Notes Engine**:
    - Ties are **notation, not decoration**: a tie appears only where no single well-placed notehead can express the sound. The grammar lives in `src/notation/ties.ts` and is independent of the subdivision/dotted toggles.
    - **Notehead placement table** (`NOTEHEAD_PLACEMENTS`, units = metric beats: quarters in simple meters, eighths in 6/8). Each value lists a period and the offsets where one notehead may start; a note must also fit in the bar. Placements are *canonical* or *tolerated*:
      - 4/4: w:4→[0]; hd:4→[0] (+tolerated 1); h:2→[0] (+tolerated 1); qd:2→[0,.5]; q:2→[0,.5,1]; 8d:1→[0,.25]; 8:1→[0,.25,.5]; 16:.5→[0,.125,.25]; 16d:.5→[0,.125]; 32:.125→[0].
      - 2/4: h:2→[0]; qd, q, 8d, 8, 16, 16d, 32 as in 4/4.
      - 3/4: hd:3→[0]; h:3→[0,1]; qd:.5→[0]; q:.5→[0]; 8d, 8, 16, 16d, 32 as in 4/4.
      - 6/8: hd:6→[0]; qd:3→[0]; q:3→[0,1]; 8d:3→[0,1]; 8:1→[0]; 16:1→[0,.25,.5]; 16d:1→[0,.25]; 32:.25→[0]. Sub-eighth values (16, 16d, 32) never cross their eighth; 16 on the middle 32nd is the `32 16 32` figure. `h` (4 eighths) has no placement, so that sound is always tied.
-   - Every non-tuplet item the partition tree produces is canonical or tolerated.
-   - **Legality.** A tie $a \frown b$ is legal iff both are sounding (never rests), they are not in the same tuplet group, and either the boundary is the **barline**, or $a$/$b$ belong to different tuplet contexts (no notehead spans tuplet and non-tuplet time), or the merged span $(\text{offset}(a), d_a + d_b)$ is **not canonical** (not a note value, misplaced, or only tolerated). Consequently ties never fall strictly inside a beat, `q~q` on beat 1, `qd~8`, `h~h` and 6/8 `qd~qd` never appear, while `q q~q q` and `8 qd~8` across the 4/4 middle and 6/8 `8~8` across the dotted beat do.
+   - The sampler writes only canonical or tolerated noteheads: the grammar draws its note steps from this table.
+   - **Legality.** A tie $a \frown b$ is legal iff both are sounding (never rests) and either the boundary is the **barline**, or $a$/$b$ belong to different tuplet contexts (no notehead spans tuplet and non-tuplet time), or the merged span $(\text{offset}(a), d_a + d_b)$ is **not canonical** (not a note value, misplaced, or only tolerated). Inside one tuplet group, the merged length in tuplet units must not be 1, 2, 3, 4 or 6 (`TUPLET_NOTEHEAD_UNITS`), i.e. not one member notehead: in a quintuplet of eighths `8~8`, `q~8` and `q~q` never appear, `q~qd` (5 units) may. Consequently ties never fall strictly inside a beat, `q~q` on beat 1, `qd~8`, `h~h` and 6/8 `qd~qd` never appear, while `q q~q q` and `8 qd~8` across the 4/4 middle and 6/8 `8~8` across the dotted beat do.
    - **Chain minimality.** When $b$ extends a chain $c_1 \frown \dots \frown a$ inside the bar, no suffix merge $(c_i \dots a) + b$ may be canonical, so every chain is the shortest spelling.
    - **Sampling.** `applyTies` ties every legal inner pair independently with $p_{\text{tie}} = 0.25$. The barline pair is decided with a one-measure rhythm lookahead (the next bar is composed early), tied with the same $p$ when both notes sound, and the tied note keeps the previous bar's pitch. A skipped measure index (background-tab catch-up) or a session reset drops the pending tie.
-   - **Ergodicity** is defined over the legal tied grammar: every legal tied spelling, including chains across several barlines and ties into or out of tuplets, has $P > 0$.
+   - **Ergodicity** is defined over the legal tied grammar: every legal tied spelling, including chains across several barlines, ties into or out of tuplets and legal ties inside a group, has $P > 0$.
    - Ties strictly preserve pitch identity across noteheads ($p_{i+1} = p_i$). Inner ties use VexFlow `StaveTie`; a cross-barline tie is drawn whole by both measures in their own coordinates and each canvas clips its half, so contiguous blitting shows one continuous arc.
 
 ### Melodic Generator (Ergodic Markov Random Walk)
@@ -156,8 +153,8 @@ Rhythm generation decomposes each measure top-down through a metric tree structu
    - **Pitch bounds** are diatonic step arithmetic ($\text{step} = 7 \cdot \text{octave} + \text{letter index}$) from the clef's bottom staff line $b$: $\text{low} = b - (2 \cdot \text{below} + 1)$, $\text{high} = b + 8 + (2 \cdot \text{above} + 1)$. The session's first note is the clef's default anchor clamped into $[\text{low}, \text{high}]$.
    - **Feasibility filter**: before the weighted pick, interval classes that fit in neither direction from the current pitch are dropped (a step $s$ fits if $i + s \le n - 1$ or $i - s \ge 0$; `9+` fits if the larger room is $\ge 8$; unison always fits) and the weights renormalize, so every in-range move keeps $P > 0$ and no interval is mislabeled by clamping. At the default ±3 (23 notes) the filter never removes anything.
    - **Fallback**: if no selected interval fits (only possible with a small pool and wide intervals, e.g. octaves only at 0/0 from mid-staff), the pitch moves by the largest step that fits toward the side with more room.
-2. **Boundary Reflection Bias**:
-   - Inside the ledger-line zone, transition weights bias inward (85% toward the staff) to prevent clipping without truncating state reachability. The zone per side is $\min(4, 2n)$ pool notes from the edge for $n$ ledger lines on that side: 4 at the default ±3, none at 0, so a staff-only drill walks the staff uniformly.
+2. **Symmetric Walk**:
+   - When an interval fits both up and down, the direction is a fair coin. The feasibility filter alone keeps the walk in range, so no inward bias is applied and the notes at the edge of the pool are as reachable as the middle (ADR 0065).
 3. **Scale Degrees & Accidentals**:
    - Natural diatonic scales (C Major / A Minor) map cleanly to staff lines/spaces.
    - When chromatic accidentals are enabled, inflected pitches are sampled uniformly over the chromatic gamut.

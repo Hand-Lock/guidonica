@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   MusicGenerator,
   CLEF_PITCH_RANGES,
+  rhythmGrammar,
   pitchBounds,
   pitchPool,
 } from '../src/notation/generator';
@@ -11,7 +12,9 @@ import {
   AppSettings,
   Clef,
   MeasureData,
+  SubdivisionOptions,
   TUPLET_NAMES,
+  TUPLET_PLACEMENTS,
   TUPLET_SUPPORT,
   TUPLET_VALUES,
   TimeSignature,
@@ -43,7 +46,32 @@ const EXPECTED_TUPLET_SHAPE: Record<TupletName, number> = {
   sextuplet: 6,
   septuplet: 7,
 };
-const EXPECTED_TUPLET_DURATION: Record<TupletValue, string> = { '1/4': 'q', '1/8': '8', '1/16': '16' };
+/** Values a member of each tuplet cell may take: 1, 2, 3, 4 or 6 tuplet units (ADR 0065). */
+const TUPLET_MEMBER_VALUES: Record<TupletValue, readonly string[]> = {
+  '1/4': ['q', 'h', 'hd', 'w'],
+  '1/8': ['8', 'q', 'qd', 'h', 'hd'],
+  '1/16': ['16', '8', '8d', 'q', 'qd'],
+};
+
+/** Tuplet groups of a measure, keyed by group id. */
+function tupletGroups(m: MeasureData): MeasureData['notes'][] {
+  const groups = new Map<number, MeasureData['notes']>();
+  for (const n of m.notes) {
+    if (!n.isTuplet || n.tupletGroup === undefined) continue;
+    const group = groups.get(n.tupletGroup) ?? [];
+    group.push(n);
+    groups.set(n.tupletGroup, group);
+  }
+  return [...groups.values()];
+}
+
+/** Base value of a tuplet group: its span divided by the count it is "in the time of". */
+function tupletValueOf(ts: TimeSignature, group: MeasureData['notes']): TupletValue | undefined {
+  const span = group.reduce((sum, n) => sum + n.beatDuration, 0);
+  const valueBeats = span / (group[0].tupletNotesOccupied ?? 1);
+  const quarter = ts === '6/8' ? 2 : 1;
+  return TUPLET_VALUES.find((v) => Math.abs(valueBeats - quarter / { '1/4': 1, '1/8': 2, '1/16': 4 }[v]) < 1e-9);
+}
 
 function generateMany(settings: AppSettings, count: number = N): MeasureData[] {
   const generator = new MusicGenerator();
@@ -458,7 +486,7 @@ describe('MusicGenerator', () => {
       for (let m = 0; m < 20; m++) {
         const measure = generator.generateMeasure(m, settings, m * 4);
         for (const note of measure.notes) {
-          if (note.isRest) {
+          if (note.isRest && note.duration !== 'w') {
             foundRest = true;
             expect(note.keys[0]).toBe(expectedCenterPitches[clef]);
           }
@@ -627,17 +655,24 @@ describe('MusicGenerator', () => {
             400
           );
           let found = false;
+          let foundBase = false;
           for (const m of measures) {
             const total = m.notes.reduce((sum, n) => sum + n.beatDuration, 0);
             expect(total).toBeCloseTo(m.beatsPerMeasure, 9);
-            for (const n of m.notes) {
-              if (!n.isTuplet) continue;
-              expect(n.tupletNumNotes).toBe(EXPECTED_TUPLET_SHAPE[name]);
-              expect(n.duration).toBe(EXPECTED_TUPLET_DURATION[value]);
+            for (const group of tupletGroups(m)) {
+              expect(group.length).toBeGreaterThanOrEqual(2);
+              expect(group.every((n) => n.isRest)).toBe(false);
+              expect(tupletValueOf(ts, group)).toBe(value);
+              for (const n of group) {
+                expect(n.tupletNumNotes).toBe(EXPECTED_TUPLET_SHAPE[name]);
+                expect(TUPLET_MEMBER_VALUES[value]).toContain(n.duration);
+                if (n.duration === TUPLET_MEMBER_VALUES[value][0]) foundBase = true;
+              }
               found = true;
             }
           }
           expect(found).toBe(true);
+          expect(foundBase).toBe(true);
         });
       }
     }
@@ -655,13 +690,10 @@ describe('MusicGenerator', () => {
         const shapeToName = Object.fromEntries(
           Object.entries(EXPECTED_TUPLET_SHAPE).map(([k, v]) => [v, k])
         ) as Record<number, TupletName>;
-        const durationToValue = Object.fromEntries(
-          Object.entries(EXPECTED_TUPLET_DURATION).map(([k, v]) => [v, k])
-        ) as Record<string, TupletValue>;
         for (const m of measures) {
-          for (const n of m.notes) {
-            if (!n.isTuplet || n.tupletNumNotes === undefined) continue;
-            const cell: TupletCell = `${shapeToName[n.tupletNumNotes]}:${durationToValue[n.duration]}`;
+          for (const group of tupletGroups(m)) {
+            const numNotes = group[0].tupletNumNotes ?? 0;
+            const cell = `${shapeToName[numNotes]}:${tupletValueOf(ts, group)}` as TupletCell;
             expect(TUPLET_SUPPORT[ts].has(cell)).toBe(true);
           }
         }
@@ -850,4 +882,151 @@ describe('User-selectable ledger lines', () => {
     }
     expect(violations).toEqual([]);
   }, 20000);
+});
+
+describe('Rhythm grammar (ADR 0065)', () => {
+  const METERS: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
+  const NONE: SubdivisionOptions = {
+    whole: false,
+    half: false,
+    quarter: false,
+    eighth: false,
+    sixteenth: false,
+    thirtySecond: false,
+    dotted: false,
+  };
+  const BASES = ['whole', 'half', 'quarter', 'eighth', 'sixteenth', 'thirtySecond'] as const;
+
+  it('keys TUPLET_PLACEMENTS by exactly the cells of TUPLET_SUPPORT', () => {
+    for (const ts of METERS) {
+      expect(new Set(Object.keys(TUPLET_PLACEMENTS[ts]))).toEqual(new Set(TUPLET_SUPPORT[ts]));
+    }
+  });
+
+  it('fills every bar without dead ends, for every subdivision set and every lone tuplet cell', () => {
+    const configs: [SubdivisionOptions, AppSettings['tuplets'] | undefined][] = [];
+    for (let mask = 0; mask < 1 << (BASES.length + 1); mask++) {
+      const subdiv: SubdivisionOptions = { ...NONE };
+      BASES.forEach((base, i) => (subdiv[base] = Boolean(mask & (1 << i))));
+      subdiv.dotted = Boolean(mask & (1 << BASES.length));
+      configs.push([subdiv, undefined]);
+    }
+    for (const ts of METERS) {
+      const lone = [...TUPLET_SUPPORT[ts]].map((cell) => {
+        const [name, value] = cell.split(':') as [TupletName, TupletValue];
+        const tuplets = structuredClone(DEFAULT_APP_SETTINGS.tuplets);
+        tuplets[name][value] = true;
+        return [NONE, tuplets] as [SubdivisionOptions, AppSettings['tuplets']];
+      });
+      for (const [subdiv, tuplets] of [...configs, ...lone]) {
+        const g = rhythmGrammar(ts, subdiv, tuplets);
+        const reached = new Array<boolean>(g.barUnits + 1).fill(false);
+        reached[0] = true;
+        for (let u = 0; u < g.barUnits; u++) {
+          if (!reached[u]) continue;
+          const steps = [...g.notes[u], ...g.tuplets[u]];
+          expect(steps.length, `${ts} ${JSON.stringify(subdiv)} @${u}`).toBeGreaterThan(0);
+          for (const step of steps) reached[u + step.units] = true;
+        }
+        expect(reached[g.barUnits]).toBe(true);
+      }
+    }
+  });
+
+  it('adds the beat unit only when the enabled values need it', () => {
+    const values = (ts: TimeSignature, subdiv: Partial<SubdivisionOptions>): string[] =>
+      [...rhythmGrammar(ts, { ...NONE, ...subdiv }).values].sort();
+    // Not needed: the enabled values fill the bar and all occur
+    expect(values('4/4', { whole: true })).toEqual(['w']);
+    expect(values('4/4', { half: true })).toEqual(['h']);
+    expect(values('2/4', { eighth: true })).toEqual(['8']);
+    expect(values('4/4', { quarter: true })).toEqual(['q']);
+    // Needed to fill the bar
+    expect(values('3/4', { whole: true })).toEqual(['q', 'w']);
+    expect(values('6/8', { quarter: true })).toEqual(['8', 'q']);
+    // Needed to reach an enabled value: hd in 4/4
+    expect(values('4/4', { half: true, dotted: true })).toEqual(['h', 'hd', 'q']);
+    const g = rhythmGrammar('4/4', { ...NONE, half: true, dotted: true });
+    expect(g.notes[0].map((s) => s.duration)).toContain('hd');
+  });
+
+  it('reaches hd in 4/4 with only half and dotted enabled', () => {
+    const measures = generateMany(
+      { ...DEFAULT_APP_SETTINGS, subdivisions: { ...NONE, half: true, dotted: true } },
+      300
+    );
+    expect(measures.some((m) => m.notes.some((n) => n.duration === 'hd'))).toBe(true);
+  });
+
+  it('memoizes the grammar per configuration', () => {
+    const subdiv = { ...NONE, quarter: true, eighth: true };
+    expect(rhythmGrammar('3/4', subdiv)).toBe(rhythmGrammar('3/4', { ...subdiv }));
+    expect(rhythmGrammar('3/4', subdiv)).not.toBe(rhythmGrammar('2/4', subdiv));
+  });
+});
+
+describe('Generated tuplet members (ADR 0065)', () => {
+  function settingsWith(cells: TupletCell[], rests: boolean): AppSettings {
+    const tuplets = structuredClone(DEFAULT_APP_SETTINGS.tuplets);
+    for (const cell of cells) {
+      const [name, value] = cell.split(':') as [TupletName, TupletValue];
+      tuplets[name][value] = true;
+    }
+    return {
+      ...DEFAULT_APP_SETTINGS,
+      subdivisions: { ...DEFAULT_APP_SETTINGS.subdivisions, sixteenth: true },
+      tuplets,
+      rests,
+    };
+  }
+
+  it('merges adjacent units into one member: 3[q 8] and 3[8 q]', () => {
+    const figures = new Set<string>();
+    for (const m of generateMany(settingsWith(['triplet:1/8'], false), 1000)) {
+      for (const group of tupletGroups(m)) figures.add(group.map((n) => n.duration).join(' '));
+    }
+    expect(figures).toContain('q 8');
+    expect(figures).toContain('8 q');
+    expect(figures).toContain('8 8 8');
+  });
+
+  it('never silences a whole group and never dots a silent member', () => {
+    let silent = 0;
+    const cells: TupletCell[] = ['triplet:1/8', 'sextuplet:1/8', 'quintuplet:1/16', 'sextuplet:1/16'];
+    for (const m of generateMany(settingsWith(cells, true), 1500)) {
+      for (const group of tupletGroups(m)) {
+        expect(group.every((n) => n.isRest)).toBe(false);
+        for (const n of group) {
+          if (!n.isRest) continue;
+          silent++;
+          expect(n.duration.endsWith('d'), n.duration).toBe(false);
+        }
+      }
+    }
+    expect(silent).toBeGreaterThan(0);
+  });
+});
+
+describe('Symmetric pitch walk (ADR 0065)', () => {
+  it('steps up and down equally often wherever both directions fit', () => {
+    const ledgerLines = { above: 3, below: 3 };
+    const pool = pitchPool('treble', ledgerLines);
+    const settings: AppSettings = {
+      ...DEFAULT_APP_SETTINGS,
+      ledgerLines,
+      subdivisions: { ...DEFAULT_APP_SETTINGS.subdivisions, whole: false, half: false, eighth: false, dotted: false },
+      intervals: { ...NO_INTERVALS, second: true },
+    };
+    const idxs = generateMany(settings, 3000).flatMap((m) => m.notes.map((n) => pool.indexOf(n.keys[0])));
+    let up = 0;
+    let down = 0;
+    for (let i = 1; i < idxs.length; i++) {
+      const prev = idxs[i - 1];
+      if (prev === 0 || prev === pool.length - 1) continue;
+      if (idxs[i] > prev) up++;
+      else down++;
+    }
+    expect(up / (up + down)).toBeGreaterThan(0.47);
+    expect(up / (up + down)).toBeLessThan(0.53);
+  });
 });

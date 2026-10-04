@@ -193,6 +193,65 @@ export function tupletShape(
   return { notes, inTimeOf, beats: (inTimeOf * TUPLET_VALUE_WHOLES[value]) / beatWholes };
 }
 
+/** Where one tuplet group may start: offsets (metric beats) within a repeating period. */
+export interface TupletPlacement {
+  period: number;
+  offsets: readonly number[];
+}
+
+const ON_EACH_BEAT: TupletPlacement = { period: 1, offsets: [0] };
+const ON_EACH_HALF_BEAT: TupletPlacement = { period: 0.5, offsets: [0] };
+
+/** Two-beat groups: on beat 1 (and 3 in 4/4); in 3/4, on beat 1 or 2 (ADR 0065). */
+function simpleMeterTupletPlacements(twoBeat: TupletPlacement): Partial<Record<TupletCell, TupletPlacement>> {
+  return {
+    'triplet:1/4': twoBeat,
+    'triplet:1/8': ON_EACH_BEAT,
+    'triplet:1/16': ON_EACH_HALF_BEAT,
+    'quintuplet:1/8': twoBeat,
+    'quintuplet:1/16': ON_EACH_BEAT,
+    'sextuplet:1/8': twoBeat,
+    'sextuplet:1/16': ON_EACH_BEAT,
+    'septuplet:1/8': twoBeat,
+    'septuplet:1/16': ON_EACH_BEAT,
+  };
+}
+
+/**
+ * Tuplet placement table: where a group of each supported cell may start, the tuplet
+ * counterpart of NOTEHEAD_PLACEMENTS (ties.ts). Its keys are exactly TUPLET_SUPPORT[ts];
+ * a group's span comes from tupletSpan(). Bar-long cells start only at 0 (ADR 0065).
+ */
+export const TUPLET_PLACEMENTS: Record<TimeSignature, Partial<Record<TupletCell, TupletPlacement>>> = {
+  '2/4': simpleMeterTupletPlacements({ period: 2, offsets: [0] }),
+  '3/4': {
+    ...simpleMeterTupletPlacements({ period: 3, offsets: [0, 1] }),
+    'duplet:1/4': { period: 3, offsets: [0] },
+    'quadruplet:1/4': { period: 3, offsets: [0] },
+    'quadruplet:1/8': { period: 3, offsets: [0] },
+  },
+  '4/4': {
+    ...simpleMeterTupletPlacements({ period: 2, offsets: [0] }),
+    'quintuplet:1/4': { period: 4, offsets: [0] },
+    'sextuplet:1/4': { period: 4, offsets: [0] },
+    'septuplet:1/4': { period: 4, offsets: [0] },
+  },
+  '6/8': {
+    'duplet:1/4': { period: 6, offsets: [0] },
+    'quadruplet:1/4': { period: 6, offsets: [0] },
+    'duplet:1/8': { period: 3, offsets: [0] },
+    'quadruplet:1/8': { period: 3, offsets: [0] },
+    'duplet:1/16': { period: 1.5, offsets: [0] },
+    'quadruplet:1/16': { period: 1.5, offsets: [0] },
+    'triplet:1/16': ON_EACH_BEAT,
+  },
+};
+
+/** Span of one group of a supported cell in metric beats (eighths in 6/8). */
+export function tupletSpan(ts: TimeSignature, name: TupletName, value: TupletValue): number {
+  return tupletShape(ts, name, value).beats * (ts === '6/8' ? 3 : 1);
+}
+
 /** Returns a copy of `tuplets` with every cell unsupported by `ts` switched off. */
 export function supportedTuplets(ts: TimeSignature, tuplets: TupletOptions): TupletOptions {
   const result = structuredClone(DEFAULT_TUPLET_OPTIONS) as TupletOptions;
@@ -346,8 +405,6 @@ export interface NoteData {
   tupletGroup?: number;
   tupletNumNotes?: number; // e.g. 2, 3, 4, 5, 6, 7
   tupletNotesOccupied?: number; // e.g. 2, 3, 4
-  tupletBracketed?: boolean;
-  tupletRatioed?: boolean;
   tieStart?: boolean;
   tieEnd?: boolean;
   beatOffset: number; // Beat offset within the measure (0-indexed)

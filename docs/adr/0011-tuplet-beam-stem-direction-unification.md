@@ -1,6 +1,6 @@
 # 0011. Tuplet Beam Stem Direction Unification & Contiguous Non-Tuplet Grouping
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (one beam per run of beamable members)
 - **Date**: 2026-09-14
 - **Author**: Antigravity Assistant & A. C. Lo Cascio
 

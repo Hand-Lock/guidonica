@@ -1,6 +1,6 @@
 # 0010. Separate Tuplet Subdivision Matrix Menu & Arbitrary n-Tuplet Engine
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (`tupletBracketed`/`tupletRatioed` removed, members may merge)
 - **Date**: 2026-09-14
 - **Author**: Antigravity Assistant & A. C. Lo Cascio
 
