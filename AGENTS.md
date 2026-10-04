@@ -30,6 +30,7 @@ guidonica/
 ├── SPEC.md                 # Product and pedagogical specification
 ├── CONTRIBUTING.md         # Contributor guide: inbound MIT + DCO sign-off (ADR 0067)
 ├── TRADEMARKS.md           # Guidonica™ name & logo policy, AGPL §7(e) notice (ADR 0067)
+├── SECURITY.md            # Private vulnerability reporting to security@guidonica.it (ADR 0068)
 ├── package.json            # Minimal dependencies (vite, typescript, vexflow; @vexflow-fonts/bravura as font source)
 ├── tsconfig.json           # Strict TypeScript configuration
 ├── vite.config.ts          # Minimal Vite configuration + serviceWorker() build plugin (ADR 0063)
@@ -42,7 +43,7 @@ guidonica/
 │   └── workflows/
 │       ├── deploy.yml      # Typecheck, test, build and GitHub Pages deploy (ADR 0018)
 │       └── dco.yml         # Signed-off-by check on every pull request commit (ADR 0067)
-├── public/                 # Copied verbatim: favicon.svg/.ico, apple-touch-icon.png, icon-*.png, manifest.webmanifest, og-image.png (ADR 0061), robots.txt, sitemap.xml (ADR 0062), CNAME
+├── public/                 # Copied verbatim: favicon.svg/.ico, apple-touch-icon.png, icon-*.png, manifest.webmanifest, og-image.png (ADR 0061), robots.txt, sitemap.xml (ADR 0062), CNAME, .well-known/security.txt (ADR 0068)
 ├── scripts/
 │   ├── build-icons.mjs     # Guidonian Hand mark generator (npm run icons; ADRs 0046–0048)
 │   ├── build-music-font.py # Bravura → Guidonica Notation subset (npm run music-font; fontTools, dev-only; ADR 0058)

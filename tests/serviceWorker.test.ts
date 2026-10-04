@@ -31,7 +31,7 @@ describe('service worker routing (ADR 0063)', () => {
 describe('precache list (ADR 0063)', () => {
   const list = precacheList(
     ['index.html', 'assets/index-abc.js', 'assets/vexflow-def.js', 'assets/index-123.css'],
-    ['favicon.svg', 'icon-192.png', 'manifest.webmanifest', 'og-image.png', 'CNAME', 'robots.txt', 'sitemap.xml', '.DS_Store'],
+    ['favicon.svg', 'icon-192.png', 'manifest.webmanifest', 'og-image.png', 'CNAME', 'robots.txt', 'sitemap.xml', '.DS_Store', '.well-known'],
   );
 
   it('starts with the shell and includes hashed assets and icons', () => {
@@ -41,8 +41,8 @@ describe('precache list (ADR 0063)', () => {
     );
   });
 
-  it('excludes index.html, crawler, share and hosting files, and dotfiles', () => {
-    for (const name of ['index.html', 'og-image.png', 'CNAME', 'robots.txt', 'sitemap.xml', '.DS_Store']) {
+  it('excludes index.html, crawler, share and hosting files, and dotfiles such as .well-known (ADR 0068)', () => {
+    for (const name of ['index.html', 'og-image.png', 'CNAME', 'robots.txt', 'sitemap.xml', '.DS_Store', '.well-known']) {
       expect(list).not.toContain(name);
     }
   });

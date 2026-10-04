@@ -36,7 +36,7 @@ This directory documents the core architectural decisions, implementation method
 | [0028](0028-device-adaptive-zoom-and-sight-reading-forereading.md) | Device-Adaptive Zoom & Sight-Reading Forereading | Accepted | 2026-09-18 |
 | [0029](0029-stationary-count-in-wait-in-place.md) | Stationary Count-In Wait-In-Place | Accepted | 2026-09-18 |
 | [0030](0030-stacked-count-in-indicator-and-mobile-traffic-lights.md) | Stacked Count-In Indicator and Mobile Traffic Lights Geometry | Accepted | 2026-09-18 |
-| [0031](0031-custom-domain-guidonica-it.md) | Custom Domain Infrastructure (guidonica.it) via Register.it and GitHub Pages | Accepted | 2026-09-18 |
+| [0031](0031-custom-domain-guidonica-it.md) | Custom Domain Infrastructure (guidonica.it) via Register.it and GitHub Pages | Accepted; amended by 0068 | 2026-09-18 |
 | [0032](0032-olo-chromatic-accent-and-design-principle.md) | Olo (#00FFCC) Chromatic Accent, Perceptual Color Principle, and Liquid Gel Palette Architecture | Accepted | 2026-09-18 |
 | [0033](0033-fullscreen-api-feature-detection-and-selective-ui-presentation.md) | Fullscreen API Capability Detection & Selective UI Presentation | Accepted | 2026-09-18 |
 | [0034](0034-matched-segmented-square-fullscreen-icons.md) | Matched Segmented-Square Fullscreen Icons & Inverted Exit Geometry | Accepted | 2026-09-18 |
@@ -72,7 +72,8 @@ This directory documents the core architectural decisions, implementation method
 | [0064](0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Superseded by 0065 | 2026-10-03 |
 | [0065](0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066 | 2026-10-04 |
 | [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted | 2026-10-04 |
-| [0067](0067-contribution-licensing-dco-and-trademark-policy.md) | Contribution Licensing (Inbound MIT + DCO) & Trademark Policy | Accepted | 2026-10-04 |
+| [0067](0067-contribution-licensing-dco-and-trademark-policy.md) | Contribution Licensing (Inbound MIT + DCO) & Trademark Policy | Accepted; amended by 0068 | 2026-10-04 |
+| [0068](0068-project-email-guidonica-it-migadu.md) | Project Email on guidonica.it (Migadu), Contact Addresses & security.txt | Accepted | 2026-10-04 |
 
 ---
 

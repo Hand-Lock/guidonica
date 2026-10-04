@@ -3,7 +3,7 @@
 Date: 2026-09-18
 
 ## Status
-Accepted
+Accepted; amended by [0068](0068-project-email-guidonica-it-migadu.md)
 
 ## Context
 Following the formal project rebranding to **Guidonica** (ADR 0021), the domain **`guidonica.it`** was acquired on Register.it to serve as the permanent, authoritative home for the web application.
@@ -56,3 +56,9 @@ GitHub Pages automatically provisions a Let's Encrypt TLS certificate for `guido
 - **Zero Hosting & Certificate Costs**: Retains zero operational overhead and zero recurring server costs.
 - **Continuous Deployment Continuity**: Commits pushed to `origin/main` continue to build and publish automatically with zero custom domain disruption.
 - **Preserved Relative Asset Paths**: Thanks to `base: './'` in `vite.config.ts` (ADR 0018), scripts, stylesheets, and font glyphs resolve seamlessly at the root domain (`/`).
+
+---
+
+## Amendment (ADR 0068, 2026-10-04)
+
+The zone is no longer mail-free. [ADR 0068](0068-project-email-guidonica-it-migadu.md) adds the Migadu mail records (MX, SPF, three DKIM CNAMEs, DMARC and the `hosted-email-verify` TXT) for the project addresses. The four GitHub Pages `A` records and the `www` CNAME above are unchanged, and the zone still has no autodiscover/autoconfig, SRV or FTP records.

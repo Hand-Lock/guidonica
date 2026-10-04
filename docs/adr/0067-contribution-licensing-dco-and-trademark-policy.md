@@ -1,6 +1,6 @@
 # 0067. Contribution Licensing (Inbound MIT + DCO) & Trademark Policy
 
-- **Status**: Accepted (amends [0019](0019-licensing-strict-copyleft-agplv3.md) and [0020](0020-in-app-license-and-repository-ui.md))
+- **Status**: Accepted (amends [0019](0019-licensing-strict-copyleft-agplv3.md) and [0020](0020-in-app-license-and-repository-ui.md)); amended by [0068](0068-project-email-guidonica-it-migadu.md)
 - **Date**: 2026-10-04
 - **Author**: Claude & A. C. Lo Cascio
 
@@ -60,7 +60,7 @@ The DCO's clause (a) refers to "the open source license indicated in the file". 
 - allows, without asking: unmodified redistribution and self-hosting, factual references ("based on Guidonica"), and articles, reviews and teaching material;
 - requires permission for: modified versions distributed or hosted under the marks, app-store listings, domain, product or company names containing the mark, implied endorsement, and confusingly similar marks;
 - gives forks a rebranding checklist, and asks them to keep the AGPL notices plus the attribution "based on Guidonica by A. C. Lo Cascio";
-- takes requests through GitHub issues only ("Trademark request", "Commercial licensing"). No email address is published.
+- takes requests at legal@guidonica.it, with the subject "Trademark request" or "Commercial licensing" ([ADR 0068](0068-project-email-guidonica-it-migadu.md)).
 
 **™, not ®.** The marks are unregistered, so they use ™. Using ® for an unregistered mark is unlawful in Italy (a false claim of registration, Codice della proprietà industriale, art. 127(2)). After a registration (UIBM or EUIPO, classes 9, 41, 42; optional, see "Manual follow-ups"), switch ™ to ® and update the status line in `TRADEMARKS.md`.
 

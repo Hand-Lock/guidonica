@@ -46,4 +46,4 @@ Keep the AGPL notices and the copyright lines, and include an attribution such a
 
 ## Contact
 
-For permission, or to ask about commercial licensing, open a GitHub issue titled **"Trademark request"** or **"Commercial licensing"** at [github.com/Hand-Lock/guidonica/issues](https://github.com/Hand-Lock/guidonica/issues).
+For permission, or to ask about commercial licensing, write to [legal@guidonica.it](mailto:legal@guidonica.it) with the subject **"Trademark request"** or **"Commercial licensing"**.

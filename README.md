@@ -38,6 +38,7 @@
 - [Continuous Deployment & Custom Domain](#continuous-deployment--custom-domain)
 - [Architectural Decision Records (ADRs)](#architectural-decision-records-adrs)
 - [Contributing](#contributing)
+- [Contact](#contact)
 - [License & Copyleft Terms](#license--copyleft-terms)
 
 ---
@@ -354,7 +355,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0028](docs/adr/0028-device-adaptive-zoom-and-sight-reading-forereading.md) | Device-Adaptive Zoom & Sight-Reading Forereading | Accepted |
 | [0029](docs/adr/0029-stationary-count-in-wait-in-place.md) | Stationary Count-In Wait-In-Place | Accepted |
 | [0030](docs/adr/0030-stacked-count-in-indicator-and-mobile-traffic-lights.md) | Stacked Count-In Indicator and Mobile Traffic Lights Geometry | Accepted |
-| [0031](docs/adr/0031-custom-domain-guidonica-it.md) | Custom Domain Infrastructure (guidonica.it) via Register.it and GitHub Pages | Accepted |
+| [0031](docs/adr/0031-custom-domain-guidonica-it.md) | Custom Domain Infrastructure (guidonica.it) via Register.it and GitHub Pages | Accepted; amended by 0068 |
 | [0032](docs/adr/0032-olo-chromatic-accent-and-design-principle.md) | Olo (#00FFCC) Chromatic Accent, Perceptual Color Principle, and Liquid Gel Palette Architecture | Accepted |
 | [0033](docs/adr/0033-fullscreen-api-feature-detection-and-selective-ui-presentation.md) | Fullscreen API Capability Detection & Selective UI Presentation | Accepted |
 | [0034](docs/adr/0034-matched-segmented-square-fullscreen-icons.md) | Matched Segmented-Square Fullscreen Icons & Inverted Exit Geometry | Accepted |
@@ -390,13 +391,24 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0064](docs/adr/0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Superseded by 0065 |
 | [0065](docs/adr/0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066 |
 | [0066](docs/adr/0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted |
-| [0067](docs/adr/0067-contribution-licensing-dco-and-trademark-policy.md) | Contribution Licensing (Inbound MIT + DCO) & Trademark Policy | Accepted |
+| [0067](docs/adr/0067-contribution-licensing-dco-and-trademark-policy.md) | Contribution Licensing (Inbound MIT + DCO) & Trademark Policy | Accepted; amended by 0068 |
+| [0068](docs/adr/0068-project-email-guidonica-it-migadu.md) | Project Email on guidonica.it (Migadu), Contact Addresses & security.txt | Accepted |
 
 ---
 
 ## Contributing
 
 Issues, translations and code are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request: every commit is signed off under the [Developer Certificate of Origin](CONTRIBUTING.md#developer-certificate-of-origin-11) (`git commit -s`), and contributions are licensed under MIT so they can ship in every edition of Guidonica (see [Dual Licensing](#dual-licensing)).
+
+---
+
+## Contact
+
+- **[hello@guidonica.it](mailto:hello@guidonica.it)**: teachers, schools, press and general questions.
+- **[legal@guidonica.it](mailto:legal@guidonica.it)**: trademark permissions, commercial licensing, takedown notices and privacy requests.
+- **[security@guidonica.it](mailto:security@guidonica.it)**: security vulnerabilities. Report them privately, never in a public issue; see [`SECURITY.md`](SECURITY.md).
+
+Bugs and feature requests go to [GitHub issues](https://github.com/Hand-Lock/guidonica/issues).
 
 ---
 
@@ -412,7 +424,7 @@ Copyright &copy; 2026 **A. C. Lo Cascio**.
 - **Third-Party Acknowledgements**: Music notation typesetting and stave vector layout are powered by [VexFlow](https://github.com/vexflow/vexflow), licensed under the [MIT License](https://github.com/vexflow/vexflow/blob/master/LICENSE.txt). Music glyphs come from [Bravura](https://github.com/steinbergmedia/bravura) © Steinberg Media Technologies GmbH, licensed under the [SIL Open Font License 1.1](src/notation/fonts/OFL.txt) and shipped as the renamed subset "Guidonica Notation". Text is set in [Alegreya](https://github.com/huertatipografica/Alegreya) and [Alegreya Sans](https://github.com/huertatipografica/Alegreya-Sans) (SIL Open Font License 1.1: [Alegreya](src/fonts/OFL-Alegreya.txt), [Alegreya Sans](src/fonts/OFL-AlegreyaSans.txt)) and [Ubuntu Mono](https://design.ubuntu.com/font) ([Ubuntu Font Licence 1.0](src/fonts/UFL.txt)), served from the same origin as the app.
 
 ### Dual Licensing
-The copyright holder also distributes Guidonica under other terms: paid app-store builds, **Guidonica Studio** for teachers and creators, and commercial licenses for the engine, for those who cannot accept the AGPL. That income funds the free web app, which stays AGPL-licensed and free forever. Outside contributions are accepted under the MIT License ([`CONTRIBUTING.md`](CONTRIBUTING.md)), which keeps this possible without changing the project license. For a commercial license, open a [GitHub issue](https://github.com/Hand-Lock/guidonica/issues) titled "Commercial licensing".
+The copyright holder also distributes Guidonica under other terms: paid app-store builds, **Guidonica Studio** for teachers and creators, and commercial licenses for the engine, for those who cannot accept the AGPL. That income funds the free web app, which stays AGPL-licensed and free forever. Outside contributions are accepted under the MIT License ([`CONTRIBUTING.md`](CONTRIBUTING.md)), which keeps this possible without changing the project license. For a commercial license, write to [legal@guidonica.it](mailto:legal@guidonica.it) with the subject "Commercial licensing".
 
 ### Trademarks
 **Guidonica™** and the Guidonian Hand logo are trademarks of A. C. Lo Cascio. Under Section 7(e) of the AGPL, the license grants no rights to use them: you may share unmodified copies and say your project is "based on Guidonica", but a modified version you publish must use its own name and logo. See [`TRADEMARKS.md`](TRADEMARKS.md).
