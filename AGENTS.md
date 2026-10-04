@@ -28,10 +28,17 @@ The core software architecture is strictly governed by an uncompromising "suckle
 guidonica/
 ├── AGENTS.md               # Strict developer & agent rules (this file)
 ├── SPEC.md                 # Product and pedagogical specification
+├── CONTRIBUTING.md         # Contributor guide: inbound MIT + DCO sign-off (ADR 0067)
+├── TRADEMARKS.md           # Guidonica™ name & logo policy, AGPL §7(e) notice (ADR 0067)
 ├── package.json            # Minimal dependencies (vite, typescript, vexflow; @vexflow-fonts/bravura as font source)
 ├── tsconfig.json           # Strict TypeScript configuration
 ├── vite.config.ts          # Minimal Vite configuration + serviceWorker() build plugin (ADR 0063)
 ├── index.html              # Minimal semantic HTML shell
+├── .github/
+│   ├── pull_request_template.md # DCO + MIT checkboxes and hygiene checklist (ADR 0067)
+│   └── workflows/
+│       ├── deploy.yml      # Typecheck, test, build and GitHub Pages deploy (ADR 0018)
+│       └── dco.yml         # Signed-off-by check on every pull request commit (ADR 0067)
 ├── public/                 # Copied verbatim: favicon.svg/.ico, apple-touch-icon.png, icon-*.png, manifest.webmanifest, og-image.png (ADR 0061), robots.txt, sitemap.xml (ADR 0062), CNAME
 ├── scripts/
 │   ├── build-icons.mjs     # Guidonian Hand mark generator (npm run icons; ADRs 0046–0048)
@@ -106,6 +113,13 @@ guidonica/
    - Whenever modifying the procedural generator (`src/notation/generator.ts` or related files), you must preserve metric and melodic ergodicity.
    - Never introduce hardcoded duration substitutions, silent omissions of valid rhythms, or hidden heuristics that reduce the reachable state space.
    - All musical capabilities (e.g., dotted notes, ties, rests) must be transparently controllable by the user and mathematically reachable in the generator's rhythm grammar.
+
+7. **Licensing & Provenance (ADR 0067)**:
+   - The project is AGPL-3.0-or-later, and the copyright holder also ships it under other terms (paid store builds, Guidonica Studio, commercial engine licenses). Keep every line of code relicensable.
+   - Runtime dependencies and vendored assets must be permissive (MIT, BSD, ISC, Apache-2.0; OFL or UFL for fonts). Never add copyleft (GPL/AGPL/LGPL) or non-commercial (CC BY-NC) material.
+   - Never paste third-party code of unknown or copyleft license.
+   - Merge outside contributions only when every commit is DCO signed off under the [`CONTRIBUTING.md`](CONTRIBUTING.md) terms, and keep the `Signed-off-by` trailers (rebase or merge commit; a squash message must carry them all).
+   - Use of the name and logo follows [`TRADEMARKS.md`](TRADEMARKS.md). Write Guidonica™, never ®, until a registration is granted.
 
 ---
 

@@ -191,6 +191,8 @@ const en = {
   copyleftHeading: 'Strict Copyleft (AGPLv3)',
   copyleftHtml:
     'This software is free and open-source under the <strong>GNU Affero General Public License v3.0 or later</strong>. You are free to run, study, and modify it. In accordance with Section 13, any modified version deployed as a service over a computer network must make its complete source code available to all users.',
+  trademarkHeading: 'Trademarks',
+  trademarkHtml: `Guidonica™ and the Guidonian Hand logo are trademarks of A. C. Lo Cascio. The AGPL covers the code, not the brand: modified versions must use a different name and logo (see the <a href="https://github.com/Hand-Lock/guidonica/blob/main/TRADEMARKS.md" ${LINK}>trademark policy</a>).`,
   thanksHeading: 'Third-Party Acknowledgements',
   thanksHtml: `Music notation layout and rendering powered by <a href="https://github.com/vexflow/vexflow" ${LINK}>VexFlow 5</a> (MIT License). Music glyphs from <a href="https://github.com/steinbergmedia/bravura" ${LINK}>Bravura</a> © Steinberg Media Technologies GmbH (SIL Open Font License 1.1), shipped as the renamed subset “Guidonica Notation”. Text set in <a href="https://github.com/huertatipografica/Alegreya" ${LINK}>Alegreya</a> and <a href="https://github.com/huertatipografica/Alegreya-Sans" ${LINK}>Alegreya Sans</a> (SIL Open Font License 1.1) and <a href="https://design.ubuntu.com/font" ${LINK}>Ubuntu Mono</a> (Ubuntu Font Licence 1.0), served from this site.`,
   viewLicense: 'View Full LICENSE',

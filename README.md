@@ -37,6 +37,7 @@
 - [Available Scripts](#available-scripts)
 - [Continuous Deployment & Custom Domain](#continuous-deployment--custom-domain)
 - [Architectural Decision Records (ADRs)](#architectural-decision-records-adrs)
+- [Contributing](#contributing)
 - [License & Copyleft Terms](#license--copyleft-terms)
 
 ---
@@ -341,8 +342,8 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0016](docs/adr/0016-default-woodblock-metronome-and-auto-theme.md) | Default Woodblock Metronome Profile and Auto OS Theme Mode | Accepted |
 | [0017](docs/adr/0017-vector-music-icons-cross-platform-ui.md) | Vector Music Notation Icons for Cross-Platform UI Controls | Accepted |
 | [0018](docs/adr/0018-github-actions-pages-continuous-deployment.md) | Continuous Deployment to GitHub Pages via GitHub Actions & Custom Domain Readiness | Accepted |
-| [0019](docs/adr/0019-licensing-strict-copyleft-agplv3.md) | Strict Copyleft Open-Source Licensing (GNU AGPLv3) | Accepted |
-| [0020](docs/adr/0020-in-app-license-and-repository-ui.md) | In-App License and Repository Presentation Architecture | Accepted |
+| [0019](docs/adr/0019-licensing-strict-copyleft-agplv3.md) | Strict Copyleft Open-Source Licensing (GNU AGPLv3) | Accepted; amended by 0067 |
+| [0020](docs/adr/0020-in-app-license-and-repository-ui.md) | In-App License and Repository Presentation Architecture | Accepted; amended by 0067 |
 | [0021](docs/adr/0021-project-rebranding-guidonica.md) | Project, Web-App, and Repository Rebranding to Guidonica | Accepted |
 | [0022](docs/adr/0022-aero-skeuomorphic-design-system-and-manifesto.md) | Aero-Guidonica Skeuomorphic Design System, Alegreya Typography, and Design Manifesto | Accepted |
 | [0023](docs/adr/0023-ubuntu-mono-monospace-typography.md) | Ubuntu Mono Monospace Typography and Numeric System | Accepted |
@@ -371,8 +372,31 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0046](docs/adr/0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Superseded in part by 0047 |
 | [0047](docs/adr/0047-guidonian-hand-v2.md) | Guidonian Hand v2: Anatomical Proportions, Volume Shading & 3D Thread | Accepted |
 | [0048](docs/adr/0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted; amended by 0063 |
+| [0049](docs/adr/0049-level-presets-onboarding-intro.md) | Level Presets & Onboarding Intro ("What's your level?") | Accepted; amended by 0053, 0059 |
+| [0050](docs/adr/0050-intro-notation-previews.md) | Procedural Notation Previews in the Onboarding Intro | Accepted; amended by 0051, 0052 |
+| [0051](docs/adr/0051-intro-preview-representation-presets.md) | Representation Presets for the Intro Level Previews | Accepted; amended by 0052 |
+| [0052](docs/adr/0052-intro-preview-signature-check.md) | Signature Check for the Intro Level Previews | Accepted |
+| [0053](docs/adr/0053-header-level-button.md) | Header Level Button with a Live Difficulty Meter | Accepted; amended by 0054 |
+| [0054](docs/adr/0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055 |
+| [0055](docs/adr/0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056 |
+| [0056](docs/adr/0056-notch-safe-notation-stage.md) | Notch-Safe Notation Stage | Accepted |
+| [0057](docs/adr/0057-canvas-bounded-beams-and-tuplet-numbers.md) | Canvas-Bounded Beams & Tuplet Numbers | Accepted |
+| [0058](docs/adr/0058-music-font-audit-and-bravura-subset.md) | Music Font Audit: Keep Bravura, Ship a Renamed Subset | Accepted |
+| [0059](docs/adr/0059-localization-and-national-note-naming.md) | Localization & national note naming | Accepted |
+| [0060](docs/adr/0060-self-hosted-text-fonts-and-privacy-note.md) | Self-Hosted Text Fonts & a No-Tracking Privacy Note | Accepted |
+| [0061](docs/adr/0061-social-preview-card-and-share-metadata.md) | Social Preview Card & Share Metadata | Accepted |
+| [0062](docs/adr/0062-robots-txt-and-sitemap.md) | robots.txt & sitemap.xml | Accepted |
 | [0063](docs/adr/0063-offline-service-worker.md) | Offline Service Worker | Accepted |
-| [0064](docs/adr/0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Accepted |
+| [0064](docs/adr/0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Superseded by 0065 |
+| [0065](docs/adr/0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066 |
+| [0066](docs/adr/0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted |
+| [0067](docs/adr/0067-contribution-licensing-dco-and-trademark-policy.md) | Contribution Licensing (Inbound MIT + DCO) & Trademark Policy | Accepted |
+
+---
+
+## Contributing
+
+Issues, translations and code are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request: every commit is signed off under the [Developer Certificate of Origin](CONTRIBUTING.md#developer-certificate-of-origin-11) (`git commit -s`), and contributions are licensed under MIT so they can ship in every edition of Guidonica (see [Dual Licensing](#dual-licensing)).
 
 ---
 
@@ -386,3 +410,9 @@ Copyright &copy; 2026 **A. C. Lo Cascio**.
 - **User Freedoms**: You are free to run, study, inspect, modify, and redistribute this software.
 - **Network Copyleft**: In accordance with Section 13 of the GNU AGPLv3, if you modify this program and run it on a server or host it as a network or cloud service where users interact with it remotely over a computer network, you **must make the complete Corresponding Source code of your modified version available to all users at no charge**, via a prominent network facility (such as a public Git repository).
 - **Third-Party Acknowledgements**: Music notation typesetting and stave vector layout are powered by [VexFlow](https://github.com/vexflow/vexflow), licensed under the [MIT License](https://github.com/vexflow/vexflow/blob/master/LICENSE.txt). Music glyphs come from [Bravura](https://github.com/steinbergmedia/bravura) © Steinberg Media Technologies GmbH, licensed under the [SIL Open Font License 1.1](src/notation/fonts/OFL.txt) and shipped as the renamed subset "Guidonica Notation". Text is set in [Alegreya](https://github.com/huertatipografica/Alegreya) and [Alegreya Sans](https://github.com/huertatipografica/Alegreya-Sans) (SIL Open Font License 1.1: [Alegreya](src/fonts/OFL-Alegreya.txt), [Alegreya Sans](src/fonts/OFL-AlegreyaSans.txt)) and [Ubuntu Mono](https://design.ubuntu.com/font) ([Ubuntu Font Licence 1.0](src/fonts/UFL.txt)), served from the same origin as the app.
+
+### Dual Licensing
+The copyright holder also distributes Guidonica under other terms: paid app-store builds, **Guidonica Studio** for teachers and creators, and commercial licenses for the engine, for those who cannot accept the AGPL. That income funds the free web app, which stays AGPL-licensed and free forever. Outside contributions are accepted under the MIT License ([`CONTRIBUTING.md`](CONTRIBUTING.md)), which keeps this possible without changing the project license. For a commercial license, open a [GitHub issue](https://github.com/Hand-Lock/guidonica/issues) titled "Commercial licensing".
+
+### Trademarks
+**Guidonica™** and the Guidonian Hand logo are trademarks of A. C. Lo Cascio. Under Section 7(e) of the AGPL, the license grants no rights to use them: you may share unmodified copies and say your project is "based on Guidonica", but a modified version you publish must use its own name and logo. See [`TRADEMARKS.md`](TRADEMARKS.md).

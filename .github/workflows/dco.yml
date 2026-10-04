@@ -1,0 +1,40 @@
+# Developer Certificate of Origin check (ADR 0067): every commit in a pull request
+# must carry a Signed-off-by trailer for its author's email. Self-contained, no
+# third-party app. Direct pushes to main are not pull requests and never run it.
+name: DCO
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  sign-off:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check Signed-off-by trailers
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          status=0
+          for sha in $(git rev-list --no-merges "$BASE..$HEAD"); do
+            email=$(git show -s --format='%ae' "$sha")
+            trailers=$(git show -s --format='%(trailers:key=Signed-off-by,valueonly)' "$sha")
+            if ! grep -qiF -- "<$email>" <<< "$trailers"; then
+              echo "::error::Commit $(git show -s --format='%h' "$sha") has no Signed-off-by trailer for its author <$email>."
+              status=1
+            fi
+          done
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Sign off every commit (see CONTRIBUTING.md). One commit: git commit --amend -s --no-edit && git push --force-with-lease. Several: git fetch origin && git rebase --signoff origin/main && git push --force-with-lease."
+          fi
+          exit "$status"
