@@ -62,7 +62,7 @@ The DCO's clause (a) refers to "the open source license indicated in the file". 
 - gives forks a rebranding checklist, and asks them to keep the AGPL notices plus the attribution "based on Guidonica by A. C. Lo Cascio";
 - takes requests through GitHub issues only ("Trademark request", "Commercial licensing"). No email address is published.
 
-**™, not ®.** The marks are unregistered, so they use ™. Using ® for an unregistered mark is unlawful in Italy (a false claim of registration, Codice della proprietà industriale, art. 127(2)). After a registration (EUIPO, classes 9, 41, 42), switch ™ to ® and update the status line in `TRADEMARKS.md`.
+**™, not ®.** The marks are unregistered, so they use ™. Using ® for an unregistered mark is unlawful in Italy (a false claim of registration, Codice della proprietà industriale, art. 127(2)). After a registration (UIBM or EUIPO, classes 9, 41, 42; optional, see "Manual follow-ups"), switch ™ to ® and update the status line in `TRADEMARKS.md`.
 
 ### 6. In-app notice
 
@@ -77,6 +77,8 @@ Store builds, Studio and commercially licensed engines are proprietary distribut
 - the MIT copyright and permission notice of **every contributor** whose code they contain (an in-app "Acknowledgements" screen or a bundled `NOTICES` file);
 - **VexFlow's** MIT notice;
 - the **SIL OFL 1.1** texts for Bravura (as the "Guidonica Notation" subset), Alegreya and Alegreya Sans, and the **Ubuntu Font Licence 1.0** text. These fonts may be bundled in a paid app, but never sold on their own (OFL condition 1 and the matching UFL condition).
+
+**Paid-only features stay out of this repository.** Anything pushed here is AGPL for everyone, so a free fork could copy it legally. Store-only extras and the Studio features (video and PDF export) live in a private repository or package that builds on top of this engine. The public repository holds only what the free web app ships.
 
 **App stores:** Apple's App Store terms add usage restrictions that conflict with the AGPL for *third parties* distributing AGPL code. The copyright holder is not bound by their own license, and inbound MIT gives them the right to relicense the contributed code, so the conflict does not apply to official store builds. A third-party fork in the App Store would still face it, which is one more reason forks need their own name.
 
@@ -98,10 +100,16 @@ If the project grows to many regular contributors, or a commercial partner asks 
 - A contributor's code is MIT, so a third party could take *that file* from the contribution under MIT. The combined project is still AGPL, and the rest of the code remains the owner's under the AGPL. This is accepted as the cost of symmetry with contributors.
 - Paid builds must collect and display contributor MIT notices. This is a small, recurring compliance task.
 - The trademark is unregistered, so enforcement rests on Italian and EU unregistered-mark and unfair-competition law until it is registered.
+- Someone else could register "Guidonica" first. Prior use (the git history and the guidonica.it deploys) would probably still let the project keep the name, but might not let it stop the other registrant. App-store trademark complaints are also harder to win without a registration number.
 - First-time contributors who forget `-s` see a red check. The `::error::` message gives the exact fix.
 
 ## Manual follow-ups (owner)
 
 - ~~GitHub → Settings → General → enable "Require contributors to sign off on web-based commits".~~ Done.
 - ~~Optional: a ruleset that requires the DCO check on pull requests to `main`, with an owner bypass.~~ Done: "Require DCO sign-off on main" (see §3).
-- Search TMview, then file an EUIPO application in classes 9, 41 and 42. After registration, switch ™ → ® and update `TRADEMARKS.md`.
+- Optional, when budget allows: registration. The policy stays valid while the mark is unregistered. The AGPL §7(e) term binds every licensee whether or not the mark is registered, and the unregistered mark is protected by Italian law (c.c. art. 2571, prior use) and by unfair-competition law (c.c. art. 2598). The path, cheapest first (check current fees before filing):
+  1. Search [TMview](https://www.tmdn.org/tmview/) for "Guidonica" (free).
+  2. File a national application at UIBM in classes 9, 41 and 42 (roughly €100–€200). This also gives a 6-month Paris Convention priority for a later EU filing.
+  3. File an EUIPO application (€850 for one class, +€50 for the second, +€150 for each further class), claiming the UIBM priority if it is still within 6 months.
+
+  After any registration is granted, switch ™ → ® and update the status line in `TRADEMARKS.md`.

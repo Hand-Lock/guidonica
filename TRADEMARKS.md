@@ -8,7 +8,7 @@ Guidonica's code is free software under the [GNU AGPL v3.0 or later](LICENSE): y
 - The **Guidonian Hand logo**, in every form and size, including [`docs/brand/guidonica-mark.svg`](docs/brand/guidonica-mark.svg), `public/favicon.svg`, `public/favicon.ico`, `public/icon-*.png`, `public/apple-touch-icon.png` and `public/og-image.png`.
 
 **Owner:** A. C. Lo Cascio.
-**Status:** unregistered. The marks are written with ™, never ®, until a registration is granted.
+**Status:** unregistered. The name has been in use since 14 September 2026, the date of the first commit to [github.com/Hand-Lock/guidonica](https://github.com/Hand-Lock/guidonica), and the app has been published at [guidonica.it](https://guidonica.it) since 18 September 2026. The marks are written with ™, never ®, until a registration is granted.
 
 ## Relation to the AGPL
 

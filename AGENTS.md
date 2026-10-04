@@ -123,6 +123,7 @@ guidonica/
    - Never paste third-party code of unknown or copyleft license.
    - Merge outside contributions only when every commit is DCO signed off under the [`CONTRIBUTING.md`](CONTRIBUTING.md) terms, and keep the `Signed-off-by` trailers (rebase or merge commit; a squash message must carry them all).
    - Use of the name and logo follows [`TRADEMARKS.md`](TRADEMARKS.md). Write Guidonica™, never ®, until a registration is granted.
+   - Never commit paid-only features (store extras, Guidonica Studio such as video or PDF export) to this public repository. Anything pushed here is AGPL for everyone; those features live in a private repository.
 
 ---
 
