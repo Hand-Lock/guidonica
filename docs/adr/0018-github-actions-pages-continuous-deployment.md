@@ -1,7 +1,7 @@
 # ADR 0018: Continuous Deployment to GitHub Pages via GitHub Actions & Custom Domain Readiness
 
 ## Status
-Accepted
+Accepted; amended by [0069](0069-security-privacy-audit.md) (least-privilege permissions, SHA-pinned actions)
 
 ## Date
 2026-09-17

@@ -1,6 +1,6 @@
 # 0068. Project Email on guidonica.it (Migadu), Contact Addresses & security.txt
 
-- **Status**: Accepted (amends [0031](0031-custom-domain-guidonica-it.md) and [0067](0067-contribution-licensing-dco-and-trademark-policy.md))
+- **Status**: Accepted (amends [0031](0031-custom-domain-guidonica-it.md) and [0067](0067-contribution-licensing-dco-and-trademark-policy.md)); amended by [0069](0069-security-privacy-audit.md)
 - **Date**: 2026-10-04
 - **Author**: Claude & A. C. Lo Cascio
 
@@ -16,7 +16,7 @@ Until now the project had no email. [ADR 0031](0031-custom-domain-guidonica-it.m
 
 ### 1. Zone records added to the ADR 0031 zone
 
-Mail is hosted by Migadu (Micro plan). These records were added at Register.it:
+Mail is hosted by Migadu. These records were added at Register.it:
 
 | Type | Name | Value |
 |---|---|---|
@@ -54,7 +54,7 @@ There is **no catch-all**, **no wildcard MX** and **no autoconfig, autodiscover 
 
 ### 5. DMARC: quarantine, then reject
 
-DMARC starts at `p=quarantine`. After about two weeks of clean sending (no legitimate mail failing SPF or DKIM), it is tightened to `p=reject`, so receivers drop mail that spoofs guidonica.it instead of filing it as spam.
+DMARC starts at `p=quarantine`, with aggregate reports sent to `postmaster@` (`rua=mailto:postmaster@guidonica.it`, added by [ADR 0069](0069-security-privacy-audit.md)). The reports show which servers send as guidonica.it and whether they pass SPF and DKIM. After about two weeks of clean reports (no legitimate mail failing SPF or DKIM), the policy is tightened to `p=reject`, so receivers drop mail that spoofs guidonica.it instead of filing it as spam.
 
 ### 6. Published addresses
 
@@ -93,14 +93,13 @@ Vite copies `public/` verbatim, so it ships at `dist/.well-known/security.txt`. 
 
 **Negative / trade-offs**
 
-- Migadu Micro is a paid plan with daily limits: 20 outgoing and 200 incoming messages. That is ample for a contact inbox, but not for newsletters or bulk mail.
+- Migadu is a paid plan with daily sending and receiving limits. That is fine for a contact inbox, but not for newsletters or bulk mail.
 - Mail is one more service to keep alive: the plan must be renewed, and the zone records must survive any future DNS change.
 - `security.txt` has an expiry date, which creates a recurring task (below).
 
 ## Maintenance duties
 
 - **Renew `Expires`** in `public/.well-known/security.txt` before 2027-10-01, keeping it less than a year ahead (RFC 9116 §2.5.5 recommends that).
-- **Tighten DMARC** from `p=quarantine` to `p=reject` after about two weeks of clean sending, at Register.it (`_dmarc` TXT).
+- **Tighten DMARC** from `p=quarantine` to `p=reject` after about two weeks of clean `rua` reports, at Register.it (`_dmarc` TXT).
 - **`actions/upload-pages-artifact`:** `.github/workflows/deploy.yml` uses `@v3`, which includes hidden files such as `.well-known/`. Version 4 excludes them by default; if the workflow moves to v4, add `include-hidden-files: true`, or `security.txt` silently disappears from the site.
-- **Migadu limits:** 20 outgoing and 200 incoming messages a day on Micro. Upgrade the plan if the volume grows.
 - **New public addresses** follow §2: an alias (and an identity if it needs to send), never a new mailbox, and never the login address.

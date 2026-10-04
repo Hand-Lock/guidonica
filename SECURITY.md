@@ -2,7 +2,12 @@
 
 ## Reporting a vulnerability
 
-Report security vulnerabilities privately to **[security@guidonica.it](mailto:security@guidonica.it)**. Never open a public GitHub issue, pull request or discussion for one: that discloses it before a fix is deployed.
+Report security vulnerabilities privately, through either channel:
+
+- email **[security@guidonica.it](mailto:security@guidonica.it)**;
+- GitHub's private vulnerability reporting: **[Report a vulnerability](https://github.com/Hand-Lock/guidonica/security/advisories/new)** on the repository's Security tab. Use it if the email bounces or gets no reply.
+
+Never open a public GitHub issue, pull request or discussion for one: that discloses it before a fix is deployed.
 
 Please include:
 

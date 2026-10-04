@@ -1,6 +1,6 @@
 # 0067. Contribution Licensing (Inbound MIT + DCO) & Trademark Policy
 
-- **Status**: Accepted (amends [0019](0019-licensing-strict-copyleft-agplv3.md) and [0020](0020-in-app-license-and-repository-ui.md)); amended by [0068](0068-project-email-guidonica-it-migadu.md)
+- **Status**: Accepted (amends [0019](0019-licensing-strict-copyleft-agplv3.md) and [0020](0020-in-app-license-and-repository-ui.md)); amended by [0068](0068-project-email-guidonica-it-migadu.md) and [0069](0069-security-privacy-audit.md)
 - **Date**: 2026-10-04
 - **Author**: Claude & A. C. Lo Cascio
 
