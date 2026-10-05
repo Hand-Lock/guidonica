@@ -400,6 +400,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0072](docs/adr/0072-three-level-beat-accent-hierarchy.md) | Three-Level Beat Accent Hierarchy in the Traffic Lights and Click | Accepted |
 | [0073](docs/adr/0073-level-button-dumbbell-icon.md) | Dumbbell Icon for the Header Level Button | Accepted |
 | [0074](docs/adr/0074-donations-ko-fi-link.md) | Donations: a Plain Ko-fi Link | Accepted |
+| [0075](docs/adr/0075-ai-assistance-disclosure.md) | AI-Assistance Disclosure in the About Dialog | Accepted |
 
 ---
 
@@ -425,6 +426,8 @@ Bugs and feature requests go to [GitHub issues](https://github.com/Hand-Lock/gui
 This project is free and open-source software licensed under the **[GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)](LICENSE)**.
 
 Copyright &copy; 2026 **A. C. Lo Cascio**.
+
+**How Guidonica is made**: A. C. Lo Cascio designs, tests and maintains Guidonica, writes much of its code with an AI coding assistant (Anthropic's Claude) and reviews every change. No AI runs inside the app: exercises come from a random generator whose rules are documented in the source, and the metronome is synthesized live in the browser ([ADR 0075](docs/adr/0075-ai-assistance-disclosure.md)).
 
 ### Copyleft & Network Reciprocity (Section 13)
 - **User Freedoms**: You are free to run, study, inspect, modify, and redistribute this software.

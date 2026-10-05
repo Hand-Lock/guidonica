@@ -198,6 +198,9 @@ const en = {
     'This software is free and open-source under the <strong>GNU Affero General Public License v3.0 or later</strong>. You are free to run, study, and modify it. In accordance with Section 13, any modified version deployed as a service over a computer network must make its complete source code available to all users.',
   trademarkHeading: 'Trademarks',
   trademarkHtml: `Guidonica™ and the Guidonian Hand logo are trademarks of A. C. Lo Cascio. The AGPL covers the code, not the brand: modified versions must use a different name and logo (see the <a href="https://github.com/Hand-Lock/guidonica/blob/main/TRADEMARKS.md" ${LINK}>trademark policy</a>).`,
+  madeHeading: 'How Guidonica is made',
+  madeBody:
+    "Guidonica is designed, tested and maintained by A. C. Lo Cascio, who writes much of its code with an AI coding assistant (Anthropic's Claude) and reviews every change. No AI runs inside the app: exercises come from a random generator whose rules are documented in the source, and the metronome is synthesized live in your browser.",
   donate: 'Support',
   donateTitle: 'Support Guidonica',
   donateBody:

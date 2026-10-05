@@ -179,6 +179,9 @@ const de: Messages = {
   trademarkHeading: 'Marken',
   trademarkHtml: `Guidonica™ und das Logo der Guidonischen Hand sind Marken von A. C. Lo Cascio. Die AGPL gilt für den Code, nicht für die Marke: Veränderte Versionen müssen einen anderen Namen und ein anderes Logo verwenden (siehe <a href="https://github.com/Hand-Lock/guidonica/blob/main/TRADEMARKS.md" ${LINK}>Markenrichtlinie</a>).`,
   donate: 'Unterstützen',
+  madeHeading: 'Wie Guidonica entsteht',
+  madeBody:
+    'A. C. Lo Cascio entwirft, testet und pflegt Guidonica, schreibt einen Großteil des Codes mit einem KI-Programmierassistenten (Claude von Anthropic) und prüft jede Änderung. In der App selbst läuft keine KI: Die Übungen stammen aus einem Zufallsgenerator, dessen Regeln im Quellcode dokumentiert sind, und das Metronom wird live in Ihrem Browser synthetisiert.',
   donateTitle: 'Guidonica unterstützen',
   donateBody:
     'Guidonica ist kostenlos, ohne Werbung und ohne Tracking. Wenn es Ihnen beim Üben hilft, finanziert ein freiwilliges Trinkgeld die Weiterentwicklung. Ein Trinkgeld schaltet nichts frei, es ist einfach ein Dankeschön.',
