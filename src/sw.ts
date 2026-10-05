@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Guidonica - Offline Service Worker (ADR 0063)
+// Guidonica - Offline Service Worker (ADRs 0063, 0078)
 // Copyright (C) 2026 A. C. Lo Cascio
 
 // Compiled to a classic script `sw.js` by the `serviceWorker()` plugin in vite.config.ts,
-// which also defines the two constants below. They are read only inside the handlers,
-// so tests can import route() without them.
+// which also defines the constants below. They are read only inside the handlers,
+// so tests can import route() and staleCaches() without them.
 declare const __SW_VERSION__: string;
 declare const __SW_PRECACHE__: string[];
+declare const __SW_CHANNEL__: Channel;
 
 // The DOM lib has no worker types; these are the few members this worker uses.
 interface ExtendableEvent extends Event {
@@ -29,18 +30,45 @@ declare const self: WorkerScope;
 
 export type Route = 'bypass' | 'shell' | 'asset';
 
+/** Release serves the site root, nightly its /nightly/ subdirectory on the same origin (ADR 0078). */
+export type Channel = 'release' | 'nightly';
+
+const NIGHTLY_PREFIX = 'guidonica-nightly-';
+
+/** Each channel names its caches apart, so neither worker deletes the other's. */
+export function cachePrefix(channel: Channel): string {
+  return channel === 'nightly' ? NIGHTLY_PREFIX : 'guidonica-';
+}
+
+/** This channel's caches other than `keep`, deleted when a new worker activates. */
+export function staleCaches(names: string[], keep: string, channel: Channel): string[] {
+  return names.filter(
+    (name) =>
+      name !== keep &&
+      name.startsWith(cachePrefix(channel)) &&
+      (channel === 'nightly' || !name.startsWith(NIGHTLY_PREFIX)),
+  );
+}
+
 /** Navigation deadline: past it, a stalled connection falls back to the cached shell. */
 const NAVIGATE_TIMEOUT_MS = 3000;
 
-/** Decides how a request is served. Pure, so it is unit-tested. */
-export function route(request: Request, scopeUrl: string): Route {
+/**
+ * Decides how a request is served. Pure, so it is unit-tested. The release worker's scope
+ * contains nightly/, which it leaves to the network and the nightly worker: its own shell
+ * must never answer a nightly navigation.
+ */
+export function route(request: Request, scopeUrl: string, channel: Channel = 'release'): Route {
   if (request.method !== 'GET') return 'bypass';
-  if (new URL(request.url).origin !== new URL(scopeUrl).origin) return 'bypass';
+  const url = new URL(request.url);
+  const scope = new URL(scopeUrl);
+  if (url.origin !== scope.origin) return 'bypass';
+  if (channel === 'release' && url.pathname.startsWith(new URL('nightly/', scope).pathname)) return 'bypass';
   return request.mode === 'navigate' ? 'shell' : 'asset';
 }
 
 function cacheName(): string {
-  return 'guidonica-' + __SW_VERSION__;
+  return cachePrefix(__SW_CHANNEL__) + __SW_VERSION__;
 }
 
 async function precache(): Promise<void> {
@@ -51,11 +79,8 @@ async function precache(): Promise<void> {
 }
 
 async function dropOldCaches(): Promise<void> {
-  const keep = cacheName();
-  const names = await caches.keys();
-  await Promise.all(
-    names.filter((name) => name.startsWith('guidonica-') && name !== keep).map((name) => caches.delete(name)),
-  );
+  const stale = staleCaches(await caches.keys(), cacheName(), __SW_CHANNEL__);
+  await Promise.all(stale.map((name) => caches.delete(name)));
   await self.clients.claim();
 }
 
@@ -86,7 +111,7 @@ if (typeof self !== 'undefined' && 'registration' in self) {
   self.addEventListener('install', (event) => event.waitUntil(precache()));
   self.addEventListener('activate', (event) => event.waitUntil(dropOldCaches()));
   self.addEventListener('fetch', (event) => {
-    const kind = route(event.request, self.registration.scope);
+    const kind = route(event.request, self.registration.scope, __SW_CHANNEL__);
     if (kind === 'shell') event.respondWith(serveShell(event.request));
     else if (kind === 'asset') event.respondWith(serveAsset(event.request));
   });

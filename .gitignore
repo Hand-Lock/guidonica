@@ -3,6 +3,7 @@ node_modules/
 
 # Production build artifacts
 dist/
+site/
 
 # macOS system files
 .DS_Store

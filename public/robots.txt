@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+# Nightly channel: the latest main commit, untested (ADR 0078)
+Disallow: /nightly/
 
 Sitemap: https://guidonica.it/sitemap.xml

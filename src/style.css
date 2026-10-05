@@ -1648,6 +1648,64 @@ dialog.about-dialog::backdrop {
   gap: 4px;
 }
 
+/* Version link and its "What's new" button (ADR 0078) */
+.about-version {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.about-version a {
+  font-family: var(--font-mono);
+}
+
+/* What's new: one block per release, newest first (ADR 0078) */
+.whats-new-release {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.whats-new-release + .whats-new-release {
+  padding-top: 14px;
+  border-top: 1px solid var(--well-border);
+}
+
+.whats-new-release h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.whats-new-release time {
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.whats-new-release h4 {
+  margin-top: 6px;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.whats-new-release ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 18px;
+}
+
 /* Ko-fi tip button keeps its own width in the column (ADR 0074) */
 .donate-link {
   align-self: flex-start;

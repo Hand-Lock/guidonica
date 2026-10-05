@@ -175,6 +175,22 @@ const fr: Messages = {
   metaRepository: 'Dépôt',
   metaPrivacy: 'Confidentialité',
   privacyNote: `Aucun compte, aucun cookie, aucun pistage${NB}: rien ne quitte votre appareil.`,
+  metaVersion: 'Version',
+  whatsNewButton: 'Nouveautés',
+  nightly: 'Nightly',
+
+  // What's new (ADR 0078)
+  whatsNewTitle: 'Nouveautés',
+  unreleased: 'Pas encore publié',
+  fullChangelog: 'Historique complet sur GitHub ↗',
+  changeKinds: {
+    added: 'Nouveau',
+    changed: 'Modifié',
+    fixed: 'Corrigé',
+    removed: 'Supprimé',
+    security: 'Sécurité',
+  },
+
   copyleftHeading: 'Copyleft fort (AGPLv3)',
   copyleftHtml:
     "Ce logiciel est libre et open source sous la <strong>GNU Affero General Public License v3.0 ou ultérieure</strong>. Vous êtes libre de l'exécuter, de l'étudier et de le modifier. Conformément à la section 13, toute version modifiée proposée comme service sur un réseau doit mettre son code source complet à la disposition de tous ses utilisateurs.",

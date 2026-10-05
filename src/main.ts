@@ -77,8 +77,20 @@ import {
   hasStoredSettings,
   isOnboarded,
   isOrientationTipDismissed,
+  loadSeenVersion,
   markOnboarded,
+  saveSeenVersion,
 } from './storage';
+import {
+  APP_VERSION,
+  NOTES_LOADERS,
+  ReleaseNotes,
+  bootAction,
+  releasesToShow,
+  renderReleaseNotes,
+  versionHref,
+  versionLabel,
+} from './whatsNew';
 import {
   INTRO_CLEFS,
   INTRO_METERS,
@@ -198,6 +210,10 @@ class GuidonicaApp {
   private btnAboutClose: HTMLButtonElement | null;
   private btnAboutDismiss: HTMLButtonElement | null;
   private btnFooterAbout: HTMLButtonElement | null;
+
+  // What's new (ADR 0078)
+  private modalWhatsNew: HTMLDialogElement | null;
+  private whatsNewBody: HTMLElement | null;
 
   // Level, clef & meter intro (ADRs 0049, 0071)
   private modalIntro: HTMLDialogElement | null;
@@ -321,6 +337,8 @@ class GuidonicaApp {
     this.btnAboutClose = document.getElementById('btn-about-close') as HTMLButtonElement | null;
     this.btnAboutDismiss = document.getElementById('btn-about-dismiss') as HTMLButtonElement | null;
     this.btnFooterAbout = document.getElementById('btn-footer-about') as HTMLButtonElement | null;
+    this.modalWhatsNew = document.getElementById('modal-whats-new') as HTMLDialogElement | null;
+    this.whatsNewBody = document.getElementById('whats-new-body');
 
     this.modalIntro = document.getElementById('modal-intro') as HTMLDialogElement | null;
     this.introStepLevel = document.getElementById('intro-step-level');
@@ -358,6 +376,8 @@ class GuidonicaApp {
     // 4. Setup event wiring and subscriptions
     this.bindEvents();
     this.bindAboutModalEvents();
+    this.bindWhatsNewEvents();
+    this.updateVersionInfo();
     this.bindIntroModalEvents();
     this.bindKeyboardShortcuts();
     this.bindAudioEvents();
@@ -378,6 +398,11 @@ class GuidonicaApp {
     if (showIntro) {
       this.openIntro(true);
     }
+
+    // 9. Returning visitors see the release notes they missed; new ones never do (ADR 0078)
+    const boot = bootAction(showIntro, loadSeenVersion(), APP_VERSION);
+    if (boot.kind === 'store') saveSeenVersion(APP_VERSION);
+    else if (boot.kind === 'show') void this.openWhatsNew(boot.since);
   }
 
   private hydrateUI(settings: typeof globalState.settings): void {
@@ -1110,6 +1135,60 @@ class GuidonicaApp {
     });
   }
 
+  private bindWhatsNewEvents(): void {
+    const dialog = this.modalWhatsNew;
+    if (!dialog) return;
+    const close = (): void => {
+      if (dialog.open) dialog.close();
+    };
+    document.getElementById('btn-whats-new')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      void this.openWhatsNew(null);
+    });
+    document.getElementById('btn-whats-new-close')?.addEventListener('click', close);
+    document.getElementById('btn-whats-new-dismiss')?.addEventListener('click', close);
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) close();
+    });
+    // Escape, buttons and backdrop all end here: the shown notes count as seen
+    dialog.addEventListener('close', () => saveSeenVersion(APP_VERSION));
+  }
+
+  /**
+   * Shows the releases after `since` in the active language, or with null the full
+   * history (Unreleased on top in nightly). A notes chunk that cannot load (offline and
+   * not cached) skips the boot popup without marking the notes seen.
+   */
+  private async openWhatsNew(since: string | null): Promise<void> {
+    const dialog = this.modalWhatsNew;
+    const body = this.whatsNewBody;
+    if (!dialog || !body || dialog.open || typeof dialog.showModal !== 'function') return;
+    const lang = getLanguage();
+    let notes: ReleaseNotes[];
+    try {
+      notes = (await NOTES_LOADERS[lang]()).default;
+    } catch {
+      return;
+    }
+    const releases = since === null ? notes : releasesToShow(notes, since, APP_VERSION);
+    if (releases.length === 0) {
+      if (since !== null) saveSeenVersion(APP_VERSION);
+      return;
+    }
+    if (dialog.open) return;
+    renderReleaseNotes(body, releases, t(), lang);
+    body.scrollTop = 0;
+    dialog.showModal();
+  }
+
+  /** About's version row: the release, or the nightly build and its commit (ADR 0078). */
+  private updateVersionInfo(): void {
+    const link = document.getElementById('about-version') as HTMLAnchorElement | null;
+    if (!link) return;
+    link.textContent = versionLabel(t());
+    link.href = versionHref();
+  }
+
   private bindIntroModalEvents(): void {
     const levelContainer = document.getElementById('intro-level-options');
     const clefContainer = document.getElementById('intro-clef-options');
@@ -1334,6 +1413,7 @@ class GuidonicaApp {
     this.updateClefRangeHint();
     this.updatePitchClassLabels();
     this.translateIntro();
+    this.updateVersionInfo();
     if (settings.solfegeLabelMode !== 'none') {
       this.rerenderBuffer();
       // The Beginner strip shows note labels too
@@ -1441,8 +1521,8 @@ class GuidonicaApp {
         return;
       }
 
-      // If a modal (About, level intro) is open, ignore global app shortcuts
-      if (this.modalAbout?.open || this.modalIntro?.open) {
+      // If a modal (About, What's new, level intro) is open, ignore global app shortcuts
+      if (this.modalAbout?.open || this.modalIntro?.open || this.modalWhatsNew?.open) {
         return;
       }
 

@@ -23,7 +23,7 @@ const STEP_KINDS = ['click', 'press', 'wait', 'scroll', 'text', 'eval', 'shot'];
 
 const USAGE = `usage: driver.mjs --setup
        driver.mjs [--url URL] [--lang ${LANGS.join('|')}] [--theme ${THEMES.join('|')}]
-                  [--size WxH] [--dpr N] [--intro] [--out DIR] <step>...
+                  [--size WxH] [--dpr N] [--intro] [--seen VERSION] [--out DIR] <step>...
 steps: click:<sel> press:<Key> wait:<ms> scroll:<sel> text:<sel> eval:<js> shot:<name>`;
 
 function fail(message) {
@@ -87,7 +87,7 @@ function setup() {
 }
 
 function parseArgs(argv) {
-  const opts = { url: 'http://localhost:3000', lang: null, theme: null, width: 1280, height: 900, dpr: 2, intro: false, out: join(tmpdir(), 'guidonica-shots') };
+  const opts = { url: 'http://localhost:3000', lang: null, theme: null, width: 1280, height: 900, dpr: 2, intro: false, seen: null, out: join(tmpdir(), 'guidonica-shots') };
   const steps = [];
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -101,6 +101,7 @@ function parseArgs(argv) {
       opts.height = Number(m[2]);
     } else if (arg === '--dpr') opts.dpr = Number(value());
     else if (arg === '--intro') opts.intro = true;
+    else if (arg === '--seen') opts.seen = value();
     else if (arg === '--out') opts.out = resolve(value());
     else if (arg.startsWith('--')) fail(`unknown option ${arg}\n${USAGE}`);
     else {
@@ -137,19 +138,24 @@ async function run(opts, steps) {
   page.on('console', (m) => m.type() === 'error' && errors.push(`console: ${m.text()}`));
 
   // The intro shows only when neither key is stored (src/main.ts), so --intro seeds nothing
-  // and the language then comes from the context locale.
+  // and the language then comes from the context locale. Both channels' namespaces are
+  // seeded (ADR 0078), so --url …/nightly/ behaves the same. The seen version defaults to
+  // one far ahead, which the app treats as a rollback, so "What's new" stays closed.
   if (!opts.intro) {
-    await page.addInitScript(({ lang, theme }) => {
-      localStorage.setItem('guidonica_onboarded_v1', '1');
-      if (lang === null && theme === null) return;
-      let settings = {};
-      try {
-        settings = JSON.parse(localStorage.getItem('guidonica_settings_v1') ?? '{}') ?? {};
-      } catch {}
-      if (lang !== null) settings.language = lang;
-      if (theme !== null) settings.theme = theme;
-      localStorage.setItem('guidonica_settings_v1', JSON.stringify(settings));
-    }, { lang: opts.lang, theme: opts.theme });
+    await page.addInitScript(({ lang, theme, seen }) => {
+      for (const prefix of ['guidonica_', 'guidonica_nightly_']) {
+        localStorage.setItem(`${prefix}onboarded_v1`, '1');
+        localStorage.setItem(`${prefix}seen_version`, seen ?? '9999.0.0');
+        if (lang === null && theme === null) continue;
+        let settings = {};
+        try {
+          settings = JSON.parse(localStorage.getItem(`${prefix}settings_v1`) ?? '{}') ?? {};
+        } catch {}
+        if (lang !== null) settings.language = lang;
+        if (theme !== null) settings.theme = theme;
+        localStorage.setItem(`${prefix}settings_v1`, JSON.stringify(settings));
+      }
+    }, { lang: opts.lang, theme: opts.theme, seen: opts.seen });
   }
 
   let failed = false;

@@ -32,9 +32,20 @@ const COMPOUND_PULSE_MODES: readonly CompoundPulseMode[] = ['dotted-quarter', 'e
 const THEME_MODES: readonly ThemeMode[] = ['auto', 'light', 'dark'];
 const ZOOM_MODES: readonly ZoomMode[] = ['auto', 'manual'];
 
-export const STORAGE_KEY = 'guidonica_settings_v1';
+/**
+ * A localStorage key in the channel's namespace (ADR 0078): release keeps the original
+ * `guidonica_` keys, nightly on the same origin uses `guidonica_nightly_`.
+ */
+export function storageKey(name: string, channel: 'release' | 'nightly' = __APP_CHANNEL__): string {
+  return (channel === 'nightly' ? 'guidonica_nightly_' : 'guidonica_') + name;
+}
+
+export const STORAGE_KEY = storageKey('settings_v1');
 export const LEGACY_STORAGE_KEY_V2 = 'solfege_scroller_settings_v2';
 export const LEGACY_STORAGE_KEY_V1 = 'solfege_scroller_settings_v1';
+/** Keys read before STORAGE_KEY existed; nightly never had them and never reads them. */
+const LEGACY_KEYS: readonly string[] =
+  __APP_CHANNEL__ === 'nightly' ? [] : [LEGACY_STORAGE_KEY_V2, LEGACY_STORAGE_KEY_V1];
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   tempo: 60,
@@ -146,12 +157,10 @@ export function loadStoredSettings(): AppSettings {
   try {
     let raw = window.localStorage.getItem(STORAGE_KEY);
     let isLegacyV1 = false;
-    if (!raw) {
-      raw = window.localStorage.getItem(LEGACY_STORAGE_KEY_V2);
-    }
-    if (!raw) {
-      raw = window.localStorage.getItem(LEGACY_STORAGE_KEY_V1);
-      if (raw) isLegacyV1 = true;
+    for (const key of LEGACY_KEYS) {
+      if (raw) break;
+      raw = window.localStorage.getItem(key);
+      isLegacyV1 = raw !== null && key === LEGACY_STORAGE_KEY_V1;
     }
     if (!raw) {
       return defaults();
@@ -233,13 +242,13 @@ export function saveStoredSettings(settings: AppSettings): void {
   }
 }
 
-export const ONBOARDED_KEY = 'guidonica_onboarded_v1';
+export const ONBOARDED_KEY = storageKey('onboarded_v1');
 
 /** True when any current or legacy settings record exists (i.e. a returning user). */
 export function hasStoredSettings(): boolean {
   try {
     const storage = window.localStorage;
-    return [STORAGE_KEY, LEGACY_STORAGE_KEY_V2, LEGACY_STORAGE_KEY_V1].some(
+    return [STORAGE_KEY, ...LEGACY_KEYS].some(
       (key) => storage.getItem(key) !== null
     );
   } catch {
@@ -264,7 +273,7 @@ export function markOnboarded(): void {
   }
 }
 
-export const ORIENTATION_TIP_KEY = 'guidonica_orientation_tip_v1';
+export const ORIENTATION_TIP_KEY = storageKey('orientation_tip_v1');
 
 /** True once the portrait "use landscape" tip has been dismissed (ADR 0055). */
 export function isOrientationTipDismissed(): boolean {
@@ -278,6 +287,25 @@ export function isOrientationTipDismissed(): boolean {
 export function dismissOrientationTip(): void {
   try {
     window.localStorage.setItem(ORIENTATION_TIP_KEY, '1');
+  } catch {
+    // Ignore quota or private-browsing errors
+  }
+}
+
+export const SEEN_VERSION_KEY = storageKey('seen_version');
+
+/** The release whose notes the user last saw (ADR 0078); null before versioning or on error. */
+export function loadSeenVersion(): string | null {
+  try {
+    return window.localStorage.getItem(SEEN_VERSION_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveSeenVersion(version: string): void {
+  try {
+    window.localStorage.setItem(SEEN_VERSION_KEY, version);
   } catch {
     // Ignore quota or private-browsing errors
   }

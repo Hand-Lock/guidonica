@@ -173,6 +173,22 @@ const it: Messages = {
   metaRepository: 'Repository',
   metaPrivacy: 'Privacy',
   privacyNote: 'Nessun account, nessun cookie, nessun tracciamento: nulla lascia il tuo dispositivo.',
+  metaVersion: 'Versione',
+  whatsNewButton: 'Novità',
+  nightly: 'Nightly',
+
+  // What's new (ADR 0078)
+  whatsNewTitle: 'Novità',
+  unreleased: 'Non ancora rilasciato',
+  fullChangelog: 'Registro completo delle modifiche su GitHub ↗',
+  changeKinds: {
+    added: 'Nuove funzioni',
+    changed: 'Modifiche',
+    fixed: 'Correzioni',
+    removed: 'Rimozioni',
+    security: 'Sicurezza',
+  },
+
   copyleftHeading: 'Copyleft forte (AGPLv3)',
   copyleftHtml:
     "Questo software è libero e open source secondo la <strong>GNU Affero General Public License v3.0 o successiva</strong>. Puoi eseguirlo, studiarlo e modificarlo liberamente. Ai sensi della Sezione 13, ogni versione modificata offerta come servizio in rete deve rendere disponibile a tutti gli utenti il proprio codice sorgente completo.",

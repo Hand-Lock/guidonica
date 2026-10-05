@@ -35,6 +35,7 @@
 - [Quickstart & Local Development](#quickstart--local-development)
 - [macOS & Apple Silicon Guide](#macos--apple-silicon-m1m2m3m4-guide)
 - [Available Scripts](#available-scripts)
+- [Releases & Nightly](#releases--nightly)
 - [Continuous Deployment & Custom Domain](#continuous-deployment--custom-domain)
 - [Architectural Decision Records (ADRs)](#architectural-decision-records-adrs)
 - [Contributing](#contributing)
@@ -296,10 +297,25 @@ Guidonica is fully tested and optimized for macOS and Apple Silicon:
 | `pnpm test:watch` | Runs Vitest in interactive watch mode for test-driven development. |
 | `pnpm build` | Executes strict typecheck and compiles production bundle into `dist/`. |
 | `pnpm preview` | Serves the production build locally for verification. |
+| `pnpm build:site` | Builds the deployed site into `site/`: the latest release tag at the root, the working tree in `site/nightly/` (ADR 0078). |
+| `pnpm release` | Cuts the next CalVer release in `CHANGELOG.md` and `package.json`, without committing (maintainer only; ADR 0078). |
 | `pnpm icons` | Regenerates the Guidonian Hand vector outputs (`favicon.svg`, the README logo, the header glyph) from `scripts/build-icons.mjs`. |
 | `pnpm icons -- --raster` | Also re-renders the PNG/ICO icons (touch, manifest and favicon) through headless Firefox (must be installed). |
 | `pnpm ui-fonts` | Re-downloads the self-hosted text fonts (`src/fonts/`) and their licences from Google Fonts via `scripts/fetch-ui-fonts.mjs`. Dev-only; the output is committed, so normal development never runs it. |
 | `pnpm music-font` | Regenerates the Guidonica Notation font (`src/notation/fonts/`) from Bravura via `scripts/build-music-font.py`. Dev-only, needs Python with `pip install fonttools brotli`; the output is committed, so normal development never runs it. |
+
+---
+
+## Releases & Nightly
+
+Guidonica ships on two channels (ADR 0078):
+
+| Channel | URL | Contents |
+| :--- | :--- | :--- |
+| **Release** | [guidonica.it](https://guidonica.it) | The latest tagged release, chosen on purpose. |
+| **Nightly** | [guidonica.it/nightly/](https://guidonica.it/nightly/) | The latest commit on `main`, for testing. Its settings and offline cache are kept apart from the release's. |
+
+Versions use calendar versioning, `YEAR.MONTH.MICRO` (for example `2026.10.0`). Every change is recorded in [`CHANGELOG.md`](CHANGELOG.md) when it is made. After an update, returning users see what changed in a "What's new" dialog, in their language; About shows the running version and the full history. Each release also has a [GitHub Release](https://github.com/Hand-Lock/guidonica/releases).
 
 ---
 
@@ -310,8 +326,8 @@ This repository is configured for automated testing, building, and zero-downtime
 ### Automated CI/CD Workflow
 Every commit pushed to the `main` branch automatically triggers [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
 1. **Validation**: Strictly typechecks TypeScript (`tsc --noEmit`) and runs all unit tests.
-2. **Build**: Compiles production bundles with relative asset paths (`base: './'`) and isolates VexFlow into a cached vendor chunk.
-3. **Deploy**: Uploads the production artifact and publishes it to GitHub Pages.
+2. **Build**: `pnpm build:site` builds the latest release tag at the root and the pushed commit under `/nightly/`, with relative asset paths (`base: './'`) and VexFlow in a cached vendor chunk.
+3. **Deploy**: Uploads the site and publishes it to GitHub Pages. Pushing a `v*` release tag also creates its GitHub Release from `CHANGELOG.md`.
 
 ### Custom Domain Architecture (`guidonica.it`)
 The production application is served under the apex domain **`https://guidonica.it`**:
@@ -344,7 +360,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0015](docs/adr/0015-italian-solfege-and-cross-platform-auto-night-mode.md) | Italian Solfège Syllables and Cross-Platform OS-Aligned Auto Night Mode | Accepted |
 | [0016](docs/adr/0016-default-woodblock-metronome-and-auto-theme.md) | Default Woodblock Metronome Profile and Auto OS Theme Mode | Accepted |
 | [0017](docs/adr/0017-vector-music-icons-cross-platform-ui.md) | Vector Music Notation Icons for Cross-Platform UI Controls | Accepted |
-| [0018](docs/adr/0018-github-actions-pages-continuous-deployment.md) | Continuous Deployment to GitHub Pages via GitHub Actions & Custom Domain Readiness | Accepted; amended by 0069 |
+| [0018](docs/adr/0018-github-actions-pages-continuous-deployment.md) | Continuous Deployment to GitHub Pages via GitHub Actions & Custom Domain Readiness | Accepted; amended by 0069, 0077, 0078 |
 | [0019](docs/adr/0019-licensing-strict-copyleft-agplv3.md) | Strict Copyleft Open-Source Licensing (GNU AGPLv3) | Accepted; amended by 0067 |
 | [0020](docs/adr/0020-in-app-license-and-repository-ui.md) | In-App License and Repository Presentation Architecture | Accepted; amended by 0067 |
 | [0021](docs/adr/0021-project-rebranding-guidonica.md) | Project, Web-App, and Repository Rebranding to Guidonica | Accepted |
@@ -389,7 +405,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0060](docs/adr/0060-self-hosted-text-fonts-and-privacy-note.md) | Self-Hosted Text Fonts & a No-Tracking Privacy Note | Accepted |
 | [0061](docs/adr/0061-social-preview-card-and-share-metadata.md) | Social Preview Card & Share Metadata | Accepted |
 | [0062](docs/adr/0062-robots-txt-and-sitemap.md) | robots.txt & sitemap.xml | Accepted |
-| [0063](docs/adr/0063-offline-service-worker.md) | Offline Service Worker | Accepted |
+| [0063](docs/adr/0063-offline-service-worker.md) | Offline Service Worker | Accepted; amended by 0078 |
 | [0064](docs/adr/0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Superseded by 0065 |
 | [0065](docs/adr/0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066 |
 | [0066](docs/adr/0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted; amended by 0070 |
@@ -402,6 +418,9 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0073](docs/adr/0073-level-button-dumbbell-icon.md) | Dumbbell Icon for the Header Level Button | Accepted |
 | [0074](docs/adr/0074-donations-ko-fi-link.md) | Donations: a Plain Ko-fi Link | Accepted |
 | [0075](docs/adr/0075-ai-assistance-disclosure.md) | AI-Assistance Disclosure in the About Dialog | Accepted |
+| [0076](docs/adr/0076-compound-triple-and-quadruple-meters.md) | Compound Triple and Quadruple Meters (9/8, 12/8) | Accepted |
+| [0077](docs/adr/0077-ci-actions-node-24.md) | CI Actions on Node 24 Releases | Accepted |
+| [0078](docs/adr/0078-release-channels-calver-changelog-whats-new.md) | Release Channels, CalVer Changelog and "What's New" | Accepted |
 
 ---
 

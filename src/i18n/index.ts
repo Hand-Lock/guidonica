@@ -131,7 +131,8 @@ export function applyDom(root: Document | Element = document): void {
   }
   if (isDocument(root)) {
     root.documentElement.lang = currentLanguage;
-    root.title = m.docTitle;
+    // The nightly channel keeps one untranslated name, matching its shell (ADR 0078)
+    root.title = __APP_CHANNEL__ === 'nightly' ? 'Guidonica Nightly' : m.docTitle;
   }
 }
 

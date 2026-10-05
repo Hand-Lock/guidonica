@@ -1,7 +1,7 @@
 # ADR 0018: Continuous Deployment to GitHub Pages via GitHub Actions & Custom Domain Readiness
 
 ## Status
-Accepted; amended by [0069](0069-security-privacy-audit.md) (least-privilege permissions, SHA-pinned actions)
+Accepted; amended by [0069](0069-security-privacy-audit.md) (least-privilege permissions, SHA-pinned actions), [0077](0077-ci-actions-node-24.md) (actions on Node 24) and [0078](0078-release-channels-calver-changelog-whats-new.md) (the root serves the latest release tag, `/nightly/` the latest `main` commit; tags create GitHub Releases)
 
 ## Date
 2026-09-17

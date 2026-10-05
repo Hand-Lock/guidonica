@@ -1,5 +1,16 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DEFAULT_APP_SETTINGS, STORAGE_KEY, loadStoredSettings, saveStoredSettings } from '../src/storage';
+import {
+  DEFAULT_APP_SETTINGS,
+  ONBOARDED_KEY,
+  ORIENTATION_TIP_KEY,
+  SEEN_VERSION_KEY,
+  STORAGE_KEY,
+  loadSeenVersion,
+  loadStoredSettings,
+  saveSeenVersion,
+  saveStoredSettings,
+  storageKey,
+} from '../src/storage';
 import { AppSettings, resolveTheme } from '../src/notation/types';
 
 describe('storage module', () => {
@@ -299,5 +310,31 @@ describe('storage module', () => {
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ pitchClasses: 'cde' }));
     expect(loadStoredSettings().pitchClasses).toEqual(ALL);
+  });
+});
+
+describe('channel storage namespaces (ADR 0078)', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it('keeps the release keys unchanged and puts nightly under its own prefix', () => {
+    expect(storageKey('settings_v1', 'release')).toBe('guidonica_settings_v1');
+    expect(storageKey('settings_v1', 'nightly')).toBe('guidonica_nightly_settings_v1');
+    expect(storageKey('seen_version', 'nightly')).toBe('guidonica_nightly_seen_version');
+  });
+
+  it('uses the release namespace in the test build', () => {
+    expect(STORAGE_KEY).toBe('guidonica_settings_v1');
+    expect(ONBOARDED_KEY).toBe('guidonica_onboarded_v1');
+    expect(ORIENTATION_TIP_KEY).toBe('guidonica_orientation_tip_v1');
+    expect(SEEN_VERSION_KEY).toBe('guidonica_seen_version');
+  });
+
+  it('stores and reloads the last version whose notes were seen', () => {
+    expect(loadSeenVersion()).toBeNull();
+    saveSeenVersion('2026.10.0');
+    expect(loadSeenVersion()).toBe('2026.10.0');
+    expect(window.localStorage.getItem('guidonica_seen_version')).toBe('2026.10.0');
   });
 });

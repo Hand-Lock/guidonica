@@ -193,6 +193,22 @@ const en = {
   metaRepository: 'Repository',
   metaPrivacy: 'Privacy',
   privacyNote: 'No accounts, no cookies, no tracking: nothing leaves your device.',
+  metaVersion: 'Version',
+  whatsNewButton: "What's new",
+  nightly: 'Nightly',
+
+  // What's new (ADR 0078)
+  whatsNewTitle: "What's new",
+  unreleased: 'Unreleased',
+  fullChangelog: 'Full changelog on GitHub ↗',
+  changeKinds: {
+    added: 'New',
+    changed: 'Changed',
+    fixed: 'Fixed',
+    removed: 'Removed',
+    security: 'Security',
+  },
+
   copyleftHeading: 'Strict Copyleft (AGPLv3)',
   copyleftHtml:
     'This software is free and open-source under the <strong>GNU Affero General Public License v3.0 or later</strong>. You are free to run, study, and modify it. In accordance with Section 13, any modified version deployed as a service over a computer network must make its complete source code available to all users.',

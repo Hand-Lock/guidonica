@@ -229,6 +229,10 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter beat i
 - Tempo terms (Grave … Prestissimo) and "BPM" stay untranslated, as universal musical vocabulary.
 - Non-English pages stay hidden until their dictionary has loaded, so no English text flashes.
 
+### Releases & Update Notes
+- guidonica.it serves the latest tagged release; guidonica.it/nightly/ serves the latest commit, marked "Nightly", hidden from search engines, with its own settings, onboarding and offline cache (see ADR 0078). Versions are calendar-based, `YEAR.MONTH.MICRO`.
+- After an update, a returning user sees a "What's new" dialog listing every release since their last visit, newest first, in the interface language. A first-time user never sees it, and a notes file that cannot load (offline) is simply retried on a later visit. About shows the running version, linking to its release (or, on nightly, its commit), and a "What's new" button with the full history.
+
 ### Keyboard Controls
 - `Space`: Toggle Play / Pause.
 - `R` or `Escape`: Reset session to start.

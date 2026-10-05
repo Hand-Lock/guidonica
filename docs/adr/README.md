@@ -23,7 +23,7 @@ This directory documents the core architectural decisions, implementation method
 | [0015](0015-italian-solfege-and-cross-platform-auto-night-mode.md) | Italian Solfège Syllables and Cross-Platform OS-Aligned Auto Night Mode | Accepted; amended by 0059 | 2026-09-16 |
 | [0016](0016-default-woodblock-metronome-and-auto-theme.md) | Default Woodblock Metronome Profile and Auto OS Theme Mode | Accepted | 2026-09-16 |
 | [0017](0017-vector-music-icons-cross-platform-ui.md) | Vector Music Notation Icons for Cross-Platform UI Controls | Accepted | 2026-09-16 |
-| [0018](0018-github-actions-pages-continuous-deployment.md) | Continuous Deployment to GitHub Pages via GitHub Actions & Custom Domain Readiness | Accepted; amended by 0069, 0077 | 2026-09-17 |
+| [0018](0018-github-actions-pages-continuous-deployment.md) | Continuous Deployment to GitHub Pages via GitHub Actions & Custom Domain Readiness | Accepted; amended by 0069, 0077, 0078 | 2026-09-17 |
 | [0019](0019-licensing-strict-copyleft-agplv3.md) | Strict Copyleft Open-Source Licensing (GNU AGPLv3) | Accepted; amended by 0067 | 2026-09-17 |
 | [0020](0020-in-app-license-and-repository-ui.md) | In-App License and Repository Presentation Architecture | Accepted; amended by 0067 | 2026-09-17 |
 | [0021](0021-project-rebranding-guidonica.md) | Project, Web-App, and Repository Rebranding to Guidonica | Accepted | 2026-09-17 |
@@ -68,7 +68,7 @@ This directory documents the core architectural decisions, implementation method
 | [0060](0060-self-hosted-text-fonts-and-privacy-note.md) | Self-Hosted Text Fonts & a No-Tracking Privacy Note | Accepted | 2026-10-03 |
 | [0061](0061-social-preview-card-and-share-metadata.md) | Social Preview Card & Share Metadata | Accepted | 2026-10-03 |
 | [0062](0062-robots-txt-and-sitemap.md) | robots.txt & sitemap.xml | Accepted | 2026-10-03 |
-| [0063](0063-offline-service-worker.md) | Offline Service Worker | Accepted | 2026-10-03 |
+| [0063](0063-offline-service-worker.md) | Offline Service Worker | Accepted; amended by 0078 | 2026-10-03 |
 | [0064](0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Superseded by 0065 | 2026-10-03 |
 | [0065](0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066, 0076 | 2026-10-04 |
 | [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted; amended by 0070 | 2026-10-04 |
@@ -83,6 +83,7 @@ This directory documents the core architectural decisions, implementation method
 | [0075](0075-ai-assistance-disclosure.md) | AI-Assistance Disclosure in the About Dialog | Accepted | 2026-10-05 |
 | [0076](0076-compound-triple-and-quadruple-meters.md) | Compound Triple and Quadruple Meters (9/8, 12/8) | Accepted | 2026-10-05 |
 | [0077](0077-ci-actions-node-24.md) | CI Actions on Node 24 Releases | Accepted | 2026-10-05 |
+| [0078](0078-release-channels-calver-changelog-whats-new.md) | Release Channels, CalVer Changelog and "What's New" | Accepted | 2026-10-05 |
 
 ---
 

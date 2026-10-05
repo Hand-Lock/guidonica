@@ -615,6 +615,10 @@
                 <span class="meta-label" data-i18n="metaPrivacy">Privacy</span>
                 <span class="meta-value" data-i18n="privacyNote">No accounts, no cookies, no tracking: nothing leaves your device.</span>
               </div>
+              <div class="about-meta-row">
+                <span class="meta-label" data-i18n="metaVersion">Version</span>
+                <span class="meta-value about-version"><a id="about-version" href="https://github.com/Hand-Lock/guidonica/releases" target="_blank" rel="noopener noreferrer" class="link-external"></a><button id="btn-whats-new" class="btn-link" type="button" data-i18n="whatsNewButton">What's new</button></span>
+              </div>
             </div>
 
             <div class="about-section">
@@ -658,6 +662,23 @@
           <div class="about-dialog-footer">
             <a href="https://github.com/Hand-Lock/guidonica/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" data-i18n="viewLicense">View Full LICENSE</a>
             <button id="btn-about-dismiss" class="btn btn-primary" type="button" data-i18n="close">Close</button>
+          </div>
+        </div>
+      </dialog>
+
+      <!-- What's new (ADR 0078): release notes missed since the last visit, or the full history from About -->
+      <dialog id="modal-whats-new" class="about-dialog" aria-labelledby="whats-new-title">
+        <div class="about-dialog-content">
+          <div class="about-dialog-header">
+            <h2 id="whats-new-title" data-i18n="whatsNewTitle">What's new</h2>
+            <button id="btn-whats-new-close" class="btn-close" type="button" aria-label="Close dialog" data-i18n-aria-label="closeDialog"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+          </div>
+
+          <div id="whats-new-body" class="about-dialog-body whats-new-body"></div>
+
+          <div class="about-dialog-footer">
+            <a href="https://github.com/Hand-Lock/guidonica/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" data-i18n="fullChangelog">Full changelog on GitHub ↗</a>
+            <button id="btn-whats-new-dismiss" class="btn btn-primary" type="button" data-i18n="close">Close</button>
           </div>
         </div>
       </dialog>
