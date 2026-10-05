@@ -101,5 +101,5 @@ Vite copies `public/` verbatim, so it ships at `dist/.well-known/security.txt`. 
 
 - **Renew `Expires`** in `public/.well-known/security.txt` before 2027-10-01, keeping it less than a year ahead (RFC 9116 §2.5.5 recommends that).
 - **Tighten DMARC** from `p=quarantine` to `p=reject` after about two weeks of clean `rua` reports, at Register.it (`_dmarc` TXT).
-- **`actions/upload-pages-artifact`:** `.github/workflows/deploy.yml` uses `@v3`, which includes hidden files such as `.well-known/`. Version 4 excludes them by default; if the workflow moves to v4, add `include-hidden-files: true`, or `security.txt` silently disappears from the site.
+- **`actions/upload-pages-artifact`:** since v4 the action excludes hidden files such as `.well-known/` by default. `.github/workflows/deploy.yml` (v5 since [ADR 0077](0077-ci-actions-node-24.md)) sets `include-hidden-files: true`; keep it on every bump, or `security.txt` silently disappears from the site.
 - **New public addresses** follow §2: an alias (and an identity if it needs to send), never a new mailbox, and never the login address.

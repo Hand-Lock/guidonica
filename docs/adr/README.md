@@ -23,7 +23,7 @@ This directory documents the core architectural decisions, implementation method
 | [0015](0015-italian-solfege-and-cross-platform-auto-night-mode.md) | Italian Solfège Syllables and Cross-Platform OS-Aligned Auto Night Mode | Accepted; amended by 0059 | 2026-09-16 |
 | [0016](0016-default-woodblock-metronome-and-auto-theme.md) | Default Woodblock Metronome Profile and Auto OS Theme Mode | Accepted | 2026-09-16 |
 | [0017](0017-vector-music-icons-cross-platform-ui.md) | Vector Music Notation Icons for Cross-Platform UI Controls | Accepted | 2026-09-16 |
-| [0018](0018-github-actions-pages-continuous-deployment.md) | Continuous Deployment to GitHub Pages via GitHub Actions & Custom Domain Readiness | Accepted; amended by 0069 | 2026-09-17 |
+| [0018](0018-github-actions-pages-continuous-deployment.md) | Continuous Deployment to GitHub Pages via GitHub Actions & Custom Domain Readiness | Accepted; amended by 0069, 0077 | 2026-09-17 |
 | [0019](0019-licensing-strict-copyleft-agplv3.md) | Strict Copyleft Open-Source Licensing (GNU AGPLv3) | Accepted; amended by 0067 | 2026-09-17 |
 | [0020](0020-in-app-license-and-repository-ui.md) | In-App License and Repository Presentation Architecture | Accepted; amended by 0067 | 2026-09-17 |
 | [0021](0021-project-rebranding-guidonica.md) | Project, Web-App, and Repository Rebranding to Guidonica | Accepted | 2026-09-17 |
@@ -73,8 +73,8 @@ This directory documents the core architectural decisions, implementation method
 | [0065](0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066, 0076 | 2026-10-04 |
 | [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted; amended by 0070 | 2026-10-04 |
 | [0067](0067-contribution-licensing-dco-and-trademark-policy.md) | Contribution Licensing (Inbound MIT + DCO) & Trademark Policy | Accepted; amended by 0068, 0069 | 2026-10-04 |
-| [0068](0068-project-email-guidonica-it-migadu.md) | Project Email on guidonica.it (Migadu), Contact Addresses & security.txt | Accepted; amended by 0069 | 2026-10-04 |
-| [0069](0069-security-privacy-audit.md) | Security & Privacy Audit: History Rewrite, CI Least Privilege & Repository Hardening | Accepted | 2026-10-04 |
+| [0068](0068-project-email-guidonica-it-migadu.md) | Project Email on guidonica.it (Migadu), Contact Addresses & security.txt | Accepted; amended by 0069, 0077 | 2026-10-04 |
+| [0069](0069-security-privacy-audit.md) | Security & Privacy Audit: History Rewrite, CI Least Privilege & Repository Hardening | Accepted; amended by 0077 | 2026-10-04 |
 | [0070](0070-note-selection-and-level-progression.md) | Note Selection Toggles & Reworked Level Progression | Accepted | 2026-10-05 |
 | [0071](0071-intro-meter-step.md) | Time Signature Step in the Onboarding Intro | Accepted; amended by 0076 | 2026-10-05 |
 | [0072](0072-three-level-beat-accent-hierarchy.md) | Three-Level Beat Accent Hierarchy in the Traffic Lights and Click | Accepted; amended by 0076 | 2026-10-05 |
@@ -82,6 +82,7 @@ This directory documents the core architectural decisions, implementation method
 | [0074](0074-donations-ko-fi-link.md) | Donations: a Plain Ko-fi Link | Accepted | 2026-10-05 |
 | [0075](0075-ai-assistance-disclosure.md) | AI-Assistance Disclosure in the About Dialog | Accepted | 2026-10-05 |
 | [0076](0076-compound-triple-and-quadruple-meters.md) | Compound Triple and Quadruple Meters (9/8, 12/8) | Accepted | 2026-10-05 |
+| [0077](0077-ci-actions-node-24.md) | CI Actions on Node 24 Releases | Accepted | 2026-10-05 |
 
 ---
 
