@@ -27,11 +27,11 @@ English reference copy (`madeHeading`, `madeBody`):
 
 Rules for this copy and its translations:
 
-- Say "AI coding assistant" and name the tool. Avoid slang such as "vibe-coded" and vague phrases such as "AI-powered", which suggest a model runs in the app.
+- Say "AI coding assistant". Avoid slang such as "vibe-coded" and vague phrases such as "AI-powered", which suggest a model runs in the app.
+- Name the tool (Anthropic's Claude) rather than keeping the copy AI-agnostic. A generic "AI" makes readers ask which one and how much, which is the suspicion this note exists to remove. The name also matches the repository, where commits carry `Co-Authored-By: Claude` trailers. The cost is that the copy goes stale if the tool changes; see Consequences.
 - State that no AI runs inside the app, and say what does: the documented random generator (SPEC, [0065](0065-grammar-driven-rhythm-sampler.md)) and the live Web Audio synthesis.
 - Keep it factual and non-defensive: no apology and no argument for AI.
 - Keep "reviews every change" only while it stays true. The owner confirmed it on 2026-10-05.
-- Refer to the author by name, without gendered pronouns or gendered relative pronouns (the German copy uses an active sentence with the author as subject for this reason).
 
 ### 3. Strings
 
@@ -44,6 +44,6 @@ The License section of `README.md` carries the same statement right after the co
 ## Consequences
 
 - Users learn how the app is made from the app itself, in their own language, without a prompt that frames Guidonica as an AI product.
-- If the workflow changes (for example, changes are no longer reviewed one by one, or a model is ever run inside the app), this copy, the README sentence and this ADR must be updated together in all locales.
+- If the workflow changes (for example, a different coding assistant is used, changes are no longer reviewed one by one, or a model is ever run inside the app), this copy, the README sentence and this ADR must be updated together in all locales.
 - Store builds keep the section: unlike `.donate`, it carries no store-policy restriction.
 - Bundle impact: two strings per locale and one HTML section.
