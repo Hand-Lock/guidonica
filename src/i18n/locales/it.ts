@@ -161,6 +161,8 @@ const it: Messages = {
   keyAutoZoom: 'Zoom automatico',
   licenseInfo: 'Licenza e info',
   githubTitle: 'Codice sorgente su GitHub (AGPL-3.0-or-later)',
+  blueskyTitle: 'Guidonica su Bluesky (@guidonica.it)',
+  mastodonTitle: 'Guidonica su Mastodon (@guidonica@mastodon.social)',
 
   aboutTitle: 'Informazioni su Guidonica',
   closeDialog: 'Chiudi',
@@ -171,6 +173,7 @@ const it: Messages = {
   strictCopyleft: '(copyleft forte)',
   metaCopyright: 'Copyright',
   metaRepository: 'Repository',
+  metaFollow: 'Seguici',
   metaPrivacy: 'Privacy',
   privacyNote: 'Nessun account, nessun cookie, nessun tracciamento: nulla lascia il tuo dispositivo.',
   metaVersion: 'Versione',

@@ -180,6 +180,8 @@ const en = {
   keyAutoZoom: 'Auto Zoom',
   licenseInfo: 'License & Info',
   githubTitle: 'View Source Code on GitHub (AGPL-3.0-or-later)',
+  blueskyTitle: 'Guidonica on Bluesky (@guidonica.it)',
+  mastodonTitle: 'Guidonica on Mastodon (@guidonica@mastodon.social)',
 
   // About
   aboutTitle: 'About Guidonica',
@@ -191,6 +193,7 @@ const en = {
   strictCopyleft: '(Strict Copyleft)',
   metaCopyright: 'Copyright',
   metaRepository: 'Repository',
+  metaFollow: 'Follow',
   metaPrivacy: 'Privacy',
   privacyNote: 'No accounts, no cookies, no tracking: nothing leaves your device.',
   metaVersion: 'Version',

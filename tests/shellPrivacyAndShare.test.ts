@@ -52,6 +52,17 @@ describe('HTML shell: social preview card (ADR 0061)', () => {
   });
 });
 
+describe('HTML shell: social profile links (ADRs 0080, 0082)', () => {
+  it('links every rel="me" profile visibly, and only those profiles', () => {
+    const me = new Set([...indexHtml.matchAll(/<link rel="me" href="([^"]+)"/g)].map((m) => m[1]));
+    const visible = new Set(
+      [...indexHtml.matchAll(/<a\b[^>]*\bclass="[^"]*\bsocial-link\b[^"]*"[^>]*\bhref="([^"]+)"/g)].map((m) => m[1]),
+    );
+    expect(me.size).toBeGreaterThan(0);
+    expect([...visible].sort()).toEqual([...me].sort());
+  });
+});
+
 describe('crawler files (ADR 0062)', () => {
   const robots = fs.readFileSync(path.join(root, 'public/robots.txt'), 'utf-8');
   const sitemap = fs.readFileSync(path.join(root, 'public/sitemap.xml'), 'utf-8');

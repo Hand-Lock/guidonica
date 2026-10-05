@@ -1524,6 +1524,12 @@ kbd {
   text-underline-offset: 2px;
 }
 
+/* Icon-only Bluesky and Mastodon links (ADR 0082) */
+.footer-source .social-link .icon {
+  width: 15px;
+  height: 15px;
+}
+
 .btn-link {
   padding: 0;
   text-decoration: underline;
@@ -1704,6 +1710,25 @@ dialog.about-dialog::backdrop {
   flex-direction: column;
   gap: 4px;
   padding-left: 18px;
+}
+
+/* Bluesky and Mastodon: monochrome logos in the link color (ADR 0082) */
+.social-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 14px;
+}
+
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.social-link .icon {
+  width: 14px;
+  height: 14px;
 }
 
 /* Ko-fi tip button keeps its own width in the column (ADR 0074) */

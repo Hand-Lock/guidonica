@@ -14,6 +14,10 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ## [Unreleased]
 
+### Added
+
+- The About dialog and footer link to Guidonica on Bluesky and Mastodon (ADR 0082).
+
 ### Fixed
 
 - The What's new and About buttons no longer overflow the dialog on narrow phones; long labels wrap instead.

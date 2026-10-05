@@ -1,6 +1,6 @@
 # 0080. Social Profiles: rel="me" Verification and Bluesky Domain Handle
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by 0082
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
 
@@ -60,3 +60,5 @@ browser never fetches a `rel="me"` URL, so the ADR 0060 no-third-party-requests 
 - Changing a handle or a server means changing these links.
 - Visible links to the profiles (About dialog, README) are deferred until the profiles have
   content, as with Instagram.
+  *Amended by [0082](0082-visible-social-links.md)*: the About dialog, the footer and the README
+  now link to Bluesky and Mastodon. Instagram is still deferred.
