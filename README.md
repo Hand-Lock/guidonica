@@ -396,6 +396,10 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0068](docs/adr/0068-project-email-guidonica-it-migadu.md) | Project Email on guidonica.it (Migadu), Contact Addresses & security.txt | Accepted; amended by 0069 |
 | [0069](docs/adr/0069-security-privacy-audit.md) | Security & Privacy Audit: History Rewrite, CI Least Privilege & Repository Hardening | Accepted |
 | [0070](docs/adr/0070-note-selection-and-level-progression.md) | Note Selection Toggles & Reworked Level Progression | Accepted |
+| [0071](docs/adr/0071-intro-meter-step.md) | Time Signature Step in the Onboarding Intro | Accepted |
+| [0072](docs/adr/0072-three-level-beat-accent-hierarchy.md) | Three-Level Beat Accent Hierarchy in the Traffic Lights and Click | Accepted |
+| [0073](docs/adr/0073-level-button-dumbbell-icon.md) | Dumbbell Icon for the Header Level Button | Accepted |
+| [0074](docs/adr/0074-donations-ko-fi-link.md) | Donations: a Plain Ko-fi Link | Accepted |
 
 ---
 
@@ -410,6 +414,7 @@ Issues, translations and code are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING
 - **[hello@guidonica.it](mailto:hello@guidonica.it)**: teachers, schools, press and general questions.
 - **[legal@guidonica.it](mailto:legal@guidonica.it)**: trademark permissions, commercial licensing, takedown notices and privacy requests.
 - **[security@guidonica.it](mailto:security@guidonica.it)**: security vulnerabilities. Report them privately, never in a public issue; see [`SECURITY.md`](SECURITY.md).
+- **Support**: Guidonica is free; voluntary tips go through [Ko-fi](https://ko-fi.com/guidonica).
 
 Bugs and feature requests go to [GitHub issues](https://github.com/Hand-Lock/guidonica/issues).
 

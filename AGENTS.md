@@ -39,6 +39,7 @@ guidonica/
 │   └── skills/
 │       └── run-guidonica/  # Agent run/screenshot skill + Playwright driver (dev-only)
 ├── .github/
+│   ├── FUNDING.yml         # Sponsor button: Ko-fi only until GitHub Sponsors is approved (ADR 0074)
 │   ├── pull_request_template.md # DCO + MIT checkboxes and hygiene checklist (ADR 0067)
 │   └── workflows/
 │       ├── deploy.yml      # Typecheck, test, build and GitHub Pages deploy (ADR 0018)

@@ -1631,6 +1631,11 @@ dialog.about-dialog::backdrop {
   gap: 4px;
 }
 
+/* Ko-fi tip button keeps its own width in the column (ADR 0074) */
+.donate-link {
+  align-self: flex-start;
+}
+
 .about-section h3 {
   font-family: var(--font-title);
   font-style: italic;

@@ -79,6 +79,7 @@ This directory documents the core architectural decisions, implementation method
 | [0071](0071-intro-meter-step.md) | Time Signature Step in the Onboarding Intro | Accepted | 2026-10-05 |
 | [0072](0072-three-level-beat-accent-hierarchy.md) | Three-Level Beat Accent Hierarchy in the Traffic Lights and Click | Accepted | 2026-10-05 |
 | [0073](0073-level-button-dumbbell-icon.md) | Dumbbell Icon for the Header Level Button | Accepted | 2026-10-05 |
+| [0074](0074-donations-ko-fi-link.md) | Donations: a Plain Ko-fi Link | Accepted | 2026-10-05 |
 
 ---
 
