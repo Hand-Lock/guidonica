@@ -10,6 +10,7 @@ import {
   MAX_ZOOM,
   MIN_TEMPO,
   MIN_ZOOM,
+  PitchClassOptions,
   Pulse68Mode,
   SolfegeLabelMode,
   SoundProfile,
@@ -63,6 +64,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     octave: false,
     ninthPlus: false,
   },
+  pitchClasses: { c: true, d: true, e: true, f: true, g: true, a: true, b: true },
   solfegeLabelMode: 'none',
   language: 'en', // Replaced by the detected browser language on load
   soundProfile: 'woodblock',
@@ -114,6 +116,12 @@ function pickLedgerLines(value: unknown): LedgerLineOptions {
   const count = (v: unknown, fallback: number): number =>
     Math.round(pickNumber(v, 0, MAX_LEDGER_LINES, fallback));
   return { above: count(value.above, d.above), below: count(value.below, d.below) };
+}
+
+/** Pitch-class toggles; a record with every note off loads as all on, like the UI's last-chip guard. */
+function pickPitchClasses(value: unknown): PitchClassOptions {
+  const classes = pickBoolRecord(value, DEFAULT_APP_SETTINGS.pitchClasses);
+  return Object.values(classes).some(Boolean) ? classes : { ...DEFAULT_APP_SETTINGS.pitchClasses };
 }
 
 function pickTuplets(value: unknown): TupletOptions {
@@ -185,6 +193,7 @@ export function loadStoredSettings(): AppSettings {
       rests: pickBool(parsed.rests, d.rests),
       ties: pickBool(parsed.ties, d.ties),
       intervals: pickBoolRecord(parsed.intervals, d.intervals),
+      pitchClasses: pickPitchClasses(parsed.pitchClasses),
       solfegeLabelMode: LEGACY_SYLLABLE_MODES.includes(String(parsed.solfegeLabelMode))
         ? 'syllables'
         : pickEnum<SolfegeLabelMode>(parsed.solfegeLabelMode, SOLFEGE_LABEL_MODES, d.solfegeLabelMode),

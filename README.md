@@ -70,7 +70,7 @@ Guidonica is constructed upon an uncompromising **suckless, ultra-lightweight, a
    - Written exclusively in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and the Web Audio API directly.
    - Zero React, Vue, Svelte, or Angular. Zero Virtual DOM reconciliation overhead.
    - Zero external state management libraries (no Redux, MobX, Zustand, or Pinia).
-   - Entire shipped JavaScript is **~123 kB gzipped**: ~29 kB of application code plus ~93 kB of VexFlow's font-free `vexflow/core` build. The music font is a separate **19.6 kB** Bravura subset ([ADR 0058](docs/adr/0058-music-font-audit-and-bravura-subset.md)) instead of the ~600 kB of base64 fonts the full VexFlow entry inlines.
+   - Entire shipped JavaScript is **~125 kB gzipped**: ~31 kB of application code plus ~93 kB of VexFlow's font-free `vexflow/core` build. The music font is a separate **19.6 kB** Bravura subset ([ADR 0058](docs/adr/0058-music-font-audit-and-bravura-subset.md)) instead of the ~600 kB of base64 fonts the full VexFlow entry inlines.
 2. **Single Authoritative Hardware Clock (`AudioContext.currentTime`)**:
    - Visual scroller movement and synthesized audio pulse scheduling are mathematically locked to the hardware audio clock (`AudioContext.currentTime`).
    - Zero `setInterval`, `setTimeout`, or visual delta-time accumulators.
@@ -92,7 +92,7 @@ Guidonica is constructed upon an uncompromising **suckless, ultra-lightweight, a
 7. **Pure CSS3 Liquid Glass UI (Zero CSS Frameworks)**:
    - The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed with 100% pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled glass borders, tactile inset/drop shadows).
    - Zero Tailwind runtime, zero CSS-in-JS runtimes, zero heavy sprite textures.
-   - Entire stylesheet is only **~7.8 kB gzipped** (`37 kB` minified). The text fonts (Alegreya, Alegreya Sans, Ubuntu Mono) are self-hosted Latin subsets, so the page makes no third-party requests ([ADR 0060](docs/adr/0060-self-hosted-text-fonts-and-privacy-note.md)).
+   - Entire stylesheet is only **~7.9 kB gzipped** (`37 kB` minified). The text fonts (Alegreya, Alegreya Sans, Ubuntu Mono) are self-hosted Latin subsets, so the page makes no third-party requests ([ADR 0060](docs/adr/0060-self-hosted-text-fonts-and-privacy-note.md)).
 8. **Native Device & Lifecycle Resilience**:
    - Integrates modern Web APIs including Screen Wake Lock (`navigator.wakeLock`), Page Visibility lifecycle auto-pause, dynamic iOS `AVAudioSession` category switching (`playback` mode to bypass physical silent switches), and Fullscreen API.
 
@@ -111,7 +111,7 @@ flowchart TD
     end
 
     subgraph GenerationPipeline["Procedural Generation Pipeline"]
-        PARAM["Session Parameters\n(Clef, Meter, Subdivs, Dotted, Ties, Intervals, Rests)"]
+        PARAM["Session Parameters\n(Clef, Meter, Subdivs, Dotted, Ties, Intervals, Notes, Rests)"]
         ERGMET["Ergodic Metric Tree Partitioner\n(Compound 6/8 & Simple 4/4, 3/4, 2/4)"]
         MARKOV["Pitch Random Walk\n(Clef Range ±3 Ledgers, Irreducible Digraph)"]
         PARAM --> ERGMET
@@ -169,6 +169,7 @@ A dedicated tuplet configuration menu allows selecting any combinations of:
 ### 4. Multi-Interval Pitch Random Walk
 Pitch transitions are governed by an irreducible, symmetric Markov chain:
 - **Selectable Intervals**: Granular checkboxes for Unison (1st), Second (2nd / stepwise), Third (3rd / skip), Fourth (4th), Fifth (5th), Sixth (6th), Seventh (7th), Octave (8ve leap), and Ninth Plus (9+ compound intervals).
+- **Note Selection**: Seven pitch-class toggles (C … B) narrow the walk to the chosen notes in every octave of the range, e.g. only C and G. Intervals that no two selected notes can form are dimmed, and if none of the selected ones can occur, every interval that joins two selected notes is used, with a hint ([ADR 0070](docs/adr/0070-note-selection-and-level-progression.md)).
 - **Feasible, Symmetric Steps**: Only intervals that fit inside the selected ledger-line range are drawn, and up and down are equally likely whenever both fit, so the walk never leaves the range and reaches every note of it, edges included.
 
 ### 5. Solfège Syllable Overlays & Note Labels
@@ -330,7 +331,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0003](docs/adr/0003-infinite-stream-stave-alignment-and-barlines.md) | Infinite Streaming Buffer, Stave Alignment & Barline Rendering | Accepted |
 | [0004](docs/adr/0004-beaming-geometry-and-stave-attachment.md) | Beaming Geometry, Stave Attachment & Stem Extension Alignment | Accepted |
 | [0005](docs/adr/0005-dynamic-subdivision-beat-width-and-stave-padding-compensation.md) | Dynamic Subdivision Beat Width & Stave Padding Compensation | Accepted |
-| [0006](docs/adr/0006-multi-interval-selection-and-clef-pitch-pools.md) | Multi-Interval Checkbox Selection & Clef-Dependent Pitch Pools (±3 Ledger Lines) | Accepted |
+| [0006](docs/adr/0006-multi-interval-selection-and-clef-pitch-pools.md) | Multi-Interval Checkbox Selection & Clef-Dependent Pitch Pools (±3 Ledger Lines) | Accepted; amended by 0070 |
 | [0007](docs/adr/0007-comprehensive-system-audit-and-optimizations.md) | Comprehensive System Audit, Glitch Elimination & Performance Optimizations | Accepted |
 | [0008](docs/adr/0008-pause-and-resume-state-synchronization.md) | Pause and Resume State Synchronization & Beat Grid Phase Alignment | Accepted |
 | [0009](docs/adr/0009-cross-platform-portability-and-github-synchronization.md) | Cross-Platform Portability, macOS Apple Silicon Support & GitHub Synchronization | Accepted |
@@ -373,10 +374,10 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0046](docs/adr/0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Superseded in part by 0047 |
 | [0047](docs/adr/0047-guidonian-hand-v2.md) | Guidonian Hand v2: Anatomical Proportions, Volume Shading & 3D Thread | Accepted |
 | [0048](docs/adr/0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted; amended by 0063 |
-| [0049](docs/adr/0049-level-presets-onboarding-intro.md) | Level Presets & Onboarding Intro ("What's your level?") | Accepted; amended by 0053, 0059 |
+| [0049](docs/adr/0049-level-presets-onboarding-intro.md) | Level Presets & Onboarding Intro ("What's your level?") | Accepted; amended by 0053, 0059, 0070 |
 | [0050](docs/adr/0050-intro-notation-previews.md) | Procedural Notation Previews in the Onboarding Intro | Accepted; amended by 0051, 0052 |
-| [0051](docs/adr/0051-intro-preview-representation-presets.md) | Representation Presets for the Intro Level Previews | Accepted; amended by 0052 |
-| [0052](docs/adr/0052-intro-preview-signature-check.md) | Signature Check for the Intro Level Previews | Accepted |
+| [0051](docs/adr/0051-intro-preview-representation-presets.md) | Representation Presets for the Intro Level Previews | Accepted; amended by 0052, 0070 |
+| [0052](docs/adr/0052-intro-preview-signature-check.md) | Signature Check for the Intro Level Previews | Accepted; amended by 0070 |
 | [0053](docs/adr/0053-header-level-button.md) | Header Level Button with a Live Difficulty Meter | Accepted; amended by 0054 |
 | [0054](docs/adr/0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055 |
 | [0055](docs/adr/0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056 |
@@ -390,10 +391,11 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0063](docs/adr/0063-offline-service-worker.md) | Offline Service Worker | Accepted |
 | [0064](docs/adr/0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Superseded by 0065 |
 | [0065](docs/adr/0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066 |
-| [0066](docs/adr/0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted |
+| [0066](docs/adr/0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted; amended by 0070 |
 | [0067](docs/adr/0067-contribution-licensing-dco-and-trademark-policy.md) | Contribution Licensing (Inbound MIT + DCO) & Trademark Policy | Accepted; amended by 0068, 0069 |
 | [0068](docs/adr/0068-project-email-guidonica-it-migadu.md) | Project Email on guidonica.it (Migadu), Contact Addresses & security.txt | Accepted; amended by 0069 |
 | [0069](docs/adr/0069-security-privacy-audit.md) | Security & Privacy Audit: History Rewrite, CI Least Privilege & Repository Hardening | Accepted |
+| [0070](docs/adr/0070-note-selection-and-level-progression.md) | Note Selection Toggles & Reworked Level Progression | Accepted |
 
 ---
 

@@ -11,12 +11,12 @@
 
 ### The Suckless Engineering Axioms
 Guidonica rejects modern web bloat in favor of mathematical simplicity, client-side sovereignty, and mechanical sympathy:
-1. **Zero Framework Bloat (Vanilla TypeScript)**: Direct DOM APIs and native canvas contexts; no React/Vue/Svelte virtual DOM overhead (~123 kB gzipped JS, VexFlow included).
+1. **Zero Framework Bloat (Vanilla TypeScript)**: Direct DOM APIs and native canvas contexts; no React/Vue/Svelte virtual DOM overhead (~125 kB gzipped JS, VexFlow included).
 2. **Single Authoritative Hardware Clock (`AudioContext.currentTime`)**: Synchronizes audio synthesis and the visual scroller to eliminate visual-auditory drift mathematically.
 3. **GPU Measure Blitting Pipeline**: Offscreen VexFlow measure caching rendered once; the 60/120 FPS animation loop purely executes `ctx.drawImage()`, keeping CPU usage < 1%.
 4. **Bounded Ring-Buffer Memory Discipline**: Only 4 to 6 measures kept in memory; expired canvases are immediately dereferenced for leak-free infinite sessions.
 5. **Sample-Free Audio Synthesis**: Metronome clicks synthesized live via Web Audio oscillators; 0 bytes of audio sample files over the wire.
-6. **Pure CSS3 Liquid Glass UI**: 100% vector and CSS3-powered Frutiger Aero / Aqua styling; zero CSS framework runtimes (~7.8 kB gzipped CSS).
+6. **Pure CSS3 Liquid Glass UI**: 100% vector and CSS3-powered Frutiger Aero / Aqua styling; zero CSS framework runtimes (~7.9 kB gzipped CSS).
 7. **Ergodic State-Space Completeness**: Procedural algorithms never artificially censor or prune mathematically and grammatically valid permutations of the user's active settings ($P(\omega) > 0, \forall \omega \in \Omega$). All rhythm partitioning and pitch walks are strictly ergodic.
 
 ---
@@ -66,6 +66,7 @@ The user must have full control over the generation engine prior to and during a
      - *Octave leaps*: Allows wide jumps and octave displacement.
      - *Any interval*: Unrestricted random walk within clef range.
    - Tonality: Natural notes (diatonic C Major / A Minor) as the clean default baseline, with optional chromatic accidental toggles.
+   - **Notes (pitch classes)**: seven toggles C … B, each applying in every octave of the clef and ledger-line range; at least one stays selected (default: all). Chip text follows the Labels setting (letters or syllables; with Labels off, the language's convention). Interval classes that no two selected notes can span are dimmed; if none of the selected moving intervals can occur, every interval that joins two selected notes is used and a hint says so (ADR 0070).
 6. **Count-In / Lead-In**:
    - 1-measure metronome lead-in with visual beat indicators where the score waits in place at the true first measure (Measure 0) under the playhead, allowing the musician to prepare and internalize tempo before tape scrolling begins on beat 1.
 
@@ -103,7 +104,7 @@ The central mathematical doctrine of Guidonica's procedural generator is **ergod
 
 #### Mathematical Formulation
 Let the user's active session configuration define a discrete musical parameter space:
-$$\Omega = (\text{Clef}, \text{TimeSignature}, \text{Subdivisions}, \text{Dotted}, \text{Ties}, \text{Intervals}, \text{Accidentals})$$
+$$\Omega = (\text{Clef}, \text{TimeSignature}, \text{Subdivisions}, \text{Dotted}, \text{Ties}, \text{Intervals}, \text{Notes}, \text{Accidentals})$$
 
 A generated measure $M = (r_1, p_1), (r_2, p_2), \dots, (r_k, p_k)$ consists of a sequence of durations $r_i$ and pitches $p_i$. Let $\mathcal{M}(\Omega)$ denote the set of all syntactically and grammatically valid measures conforming to $\Omega$. The generator is strictly ergodic:
 $$\forall M \in \mathcal{M}(\Omega), \quad P(M \mid \Omega) > 0$$
@@ -145,17 +146,18 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter beat i
 
 ### Melodic Generator (Ergodic Markov Random Walk)
 1. **Strongly Connected Pitch Digraph**:
-   - The allowed pitches within the clef's range forms a finite state graph $V$.
+   - The allowed pitches form a finite state graph $V$: the sorted diatonic steps within the clef's range whose pitch class is selected (all seven by default; ADR 0070).
    - Edges $E$ are defined by active interval constraints ($\pm 1$ step, skips, leaps).
    - Because the graph is undirected (or symmetric) and strongly connected, the Markov chain is irreducible and recurrent.
    - Repeated notes are damped, not capped: after $u$ consecutive unisons the unison weight is $1/(1+u)$ against 1 for every other interval class, so any run length stays reachable.
-   - The `9+` interval class samples any step in $[8, \text{maxStep}]$ in a direction with enough room, so every leap up to the full clef range is reachable.
+   - The `9+` interval class picks a direction that has a pool pitch at least 8 steps away, then any such pitch uniformly, so every leap up to the full clef range is reachable.
    - **Pitch bounds** are diatonic step arithmetic ($\text{step} = 7 \cdot \text{octave} + \text{letter index}$) from the clef's bottom staff line $b$: $\text{low} = b - (2 \cdot \text{below} + 1)$, $\text{high} = b + 8 + (2 \cdot \text{above} + 1)$.
-   - **Connected start** (`startIndex`, ADR 0066): a pitch is *live* if at least one selected interval fits from it. The session's first note is the clef's default anchor clamped into $[\text{low}, \text{high}]$ when the anchor is live and its component of the interval graph holds every live pitch (every connected set, so every preset). Otherwise (thirds only reach the lines or the spaces, fourths and fifths a few residues, unison never moves) it is a uniformly random live pitch, so every component and every melody inside it has $P > 0$ per session.
-   - **Feasibility filter**: before the weighted pick, interval classes that fit in neither direction from the current pitch are dropped (a step $s$ fits if $i + s \le n - 1$ or $i - s \ge 0$; `9+` fits if the larger room is $\ge 8$; unison always fits) and the weights renormalize, so every in-range move keeps $P > 0$ and no interval is mislabeled by clamping. At the default ±3 (23 notes) the filter never removes anything.
-   - **No dead ends**: every move is reversible (a step $s$ from $i$ lands on $i \pm s$, which has room for $s$ back; a `9+` leap of $s \ge 8$ leaves room $\ge 8$), so from a live start some selected interval always fits and every written interval is a selected one. There is no fallback move.
+   - **Effective intervals** (`effectiveIntervals`, ADR 0070): an interval class is *realizable* if some pair of pool pitches spans it (`9+`: the pool spans $\ge 8$ steps; unison always). The walk uses the selected realizable classes. If the user selected a moving class but none is realizable, every realizable moving class is used instead (the graph is then complete: any two pitches are $d \le 7$ or $d \ge 8$ apart). Unison only stays unison only; a one-pitch pool repeats its note. The UI dims the unrealizable chips and shows a hint while the fallback is active.
+   - **Connected start** (`startIndex`, ADR 0066, 0070): a pitch is *live* if at least one effective interval has a target from it. The session's first note is the pool pitch nearest the clef's default anchor clamped into $[\text{low}, \text{high}]$ (the lower one on a tie) when the anchor is live and its component of the interval graph holds every live pitch (every connected set, so every preset). Otherwise (thirds only reach the lines or the spaces, fourths and fifths a few residues, unison never moves) it is a uniformly random live pitch, so every component and every melody inside it has $P > 0$ per session.
+   - **Feasibility filter**: before the weighted pick, interval classes with no target from the current pitch are dropped (a step $s$ has a target if a pool pitch lies exactly $s$ steps above or below; `9+` if one lies $\ge 8$ steps away; unison always) and the weights renormalize, so every in-range move keeps $P > 0$ and no interval is mislabeled by clamping. At the default ±3 (23 notes) the filter never removes anything.
+   - **No dead ends**: every move is reversible (a move by $s$ between two pool pitches is a move by $s$ back; a `9+` leap of $s \ge 8$ leaves a `9+` leap back), so from a live start some selected interval always fits and every written interval is a selected one. There is no fallback move.
 2. **Symmetric Walk**:
-   - When an interval fits both up and down, the direction is a fair coin. The feasibility filter alone keeps the walk in range, so no inward bias is applied (ADR 0065). The walk reflects at the edges, so with all intervals the edge notes still come up about half as often as the middle (measured ratio 1.9); every note keeps $P > 0$ and this is left as is (ADR 0066).
+   - When an interval has a target both up and down, the direction is a fair coin. The feasibility filter alone keeps the walk in range, so no inward bias is applied (ADR 0065). The walk reflects at the edges, so with all intervals the edge notes still come up about half as often as the middle (measured ratio 1.9); every note keeps $P > 0$ and this is left as is (ADR 0066).
 3. **Scale Degrees & Accidentals**:
    - Natural diatonic scales (C Major / A Minor) map cleanly to staff lines/spaces.
    - When chromatic accidentals are enabled, inflected pitches are sampled uniformly over the chromatic gamut. *Not yet implemented: the app is diatonic only, so the Accidentals axis of $\Omega$ is a single point (ADR 0066).*
@@ -195,13 +197,14 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter beat i
   - Clef selector
   - Time signature selector
   - Subdivisions checklist
+  - Notes (pitch-class) toggles
   - Intervals selector
 - Live visual indicator for the active beat / count-in.
 
 ### Onboarding & Level Presets
 - On a first visit, the welcome step also shows the five languages as endonym chips (English · Italiano · Français · Deutsch · Español), preselected from the browser language; picking one re-translates the intro at once. Later visits omit the chips; the language stays changeable in Settings → Practice.
 - On a first visit (no saved settings, no onboarding flag), a two-step intro asks **"What's your level?"** (Beginner · Elementary · Intermediate · Advanced · Virtuoso) and then **"Which clef would you like to read?"** (Treble · Bass · Alto · Tenor).
-- The answers load a preset of existing, user-visible settings: tempo, ledger lines, note values, dotted notes, rests, ties, tuplets, intervals, labels and count-in, all in 4/4. Theme, volume, zoom and sound are left unchanged.
+- The answers load a preset of existing, user-visible settings: tempo, ledger lines, note values, dotted notes, rests, ties, tuplets, intervals, notes, labels and count-in, all in 4/4. Beginner reads the do-pentatonic (C D E G A) at 60 BPM with 2nds and 3rds; Elementary (70 BPM) adds every note, 4ths, 5ths and octaves; Intermediate (80 BPM) every interval up to the octave and 16ths; Advanced (90 BPM) every leap and 32nds; Virtuoso (120 BPM) everything (ADR 0070). Theme, volume, zoom and sound are left unchanged.
 - "Skip", Esc or a click outside keeps the defaults and never asks again. The header Level button reopens it at any time. Its five-bar meter lights up to the current level, or stays dim with the label "Custom" when the settings match no preset (see ADR 0053).
 - Presets never alter the generator; every preset is an ordinary point of the configuration space Ω (see ADR 0049).
 - Level cards show freshly generated examples from a narrowed, published sub-configuration of each preset (toggles only switched off, Ω_preview ⊆ Ω_preset), so each card shows the figures typical of its level (see ADR 0051).

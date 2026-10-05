@@ -5,18 +5,25 @@ import {
   SILENCE_CONTINUE_PROBABILITY,
   SILENCE_PROBABILITY,
   drawTupletMembers,
+  effectiveIntervals,
   enabledValues,
   rhythmGrammar,
   pitchBounds,
   pitchPool,
+  pitchSteps,
+  startIndex,
   tupletCompositions,
 } from '../src/notation/generator';
 import { formatRange } from '../src/i18n';
 import en from '../src/i18n/locales/en';
 import {
   AppSettings,
+  CLEFS,
   Clef,
+  IntervalOptions,
   MeasureData,
+  PITCH_CLASSES,
+  PitchClassOptions,
   SubdivisionOptions,
   TUPLET_NAMES,
   TUPLET_PLACEMENTS,
@@ -1262,5 +1269,181 @@ describe('Tuplet member shapes (ADR 0066)', () => {
         expect(Math.abs(count / draws - 1 / grouped.length)).toBeLessThan(0.02);
       }
     }
+  });
+});
+
+describe('Note selection (ADR 0070)', () => {
+  const LETTERS = 'cdefgab';
+  const stepOf = (key: string): number => {
+    const [letter, octave] = key.split('/');
+    return Number(octave) * 7 + LETTERS.indexOf(letter);
+  };
+  const intervalsOf = (...keys: (keyof IntervalOptions)[]): IntervalOptions =>
+    Object.fromEntries(INTERVAL_KEYS.map((k) => [k, keys.includes(k)])) as unknown as IntervalOptions;
+  const classesOf = (mask: number): PitchClassOptions =>
+    Object.fromEntries(PITCH_CLASSES.map((pc, i) => [pc, Boolean(mask & (1 << i))])) as unknown as PitchClassOptions;
+  const QUARTERS_ONLY: SubdivisionOptions = {
+    whole: false, half: false, quarter: true, eighth: false, sixteenth: false, thirtySecond: false, dotted: false,
+  };
+  const POOLS: [Clef, AppSettings['ledgerLines']][] = [
+    ['treble', { above: 0, below: 0 }],
+    ['alto', { above: 3, below: 3 }],
+    ['bass', { above: 1, below: 2 }],
+  ];
+  const INTERVAL_SETS: IntervalOptions[] = [
+    intervalsOf('second', 'third'),
+    intervalsOf('unison'),
+    intervalsOf('fourth'),
+    intervalsOf('fifth', 'octave'),
+    intervalsOf('ninthPlus'),
+    intervalsOf('unison', 'second'),
+    intervalsOf(...INTERVAL_KEYS),
+  ];
+  /** Whether a diatonic distance is one move of an interval toggle. */
+  const isMoveOf = (key: keyof IntervalOptions, d: number): boolean =>
+    key === 'ninthPlus' ? d >= 8 : d === INTERVAL_KEYS.indexOf(key);
+
+  /** Brute force: the interval toggles some pair of pool steps spans (unison always). */
+  const realizable = (steps: number[]): Set<keyof IntervalOptions> => {
+    const out = new Set<keyof IntervalOptions>(['unison']);
+    for (let i = 0; i < steps.length; i++) {
+      for (let j = i + 1; j < steps.length; j++) {
+        for (const key of INTERVAL_KEYS) if (isMoveOf(key, steps[j] - steps[i])) out.add(key);
+      }
+    }
+    return out;
+  };
+
+  /** Sounding pitches of `sessions` fresh sessions of `bars` quarter-note bars. */
+  const sessionsOf = (settings: AppSettings, sessions: number, bars: number): string[][] => {
+    const generator = new MusicGenerator();
+    const out: string[][] = [];
+    for (let s = 0; s < sessions; s++) {
+      generator.resetPitch();
+      const keys: string[] = [];
+      for (let m = 0; m < bars; m++) {
+        for (const note of generator.generateMeasure(m, settings, m * 4).notes) keys.push(note.keys[0]);
+      }
+      out.push(keys);
+    }
+    return out;
+  };
+
+  it('keeps every pitch in a selected class and every move an effective interval', () => {
+    const violations: string[] = [];
+    for (let mask = 1; mask < 128; mask++) {
+      const pitchClasses = classesOf(mask);
+      for (const [clef, ledgerLines] of POOLS) {
+        const steps = pitchSteps(clef, ledgerLines, pitchClasses);
+        const pool = new Set(steps);
+        for (const intervals of INTERVAL_SETS) {
+          const { choices } = effectiveIntervals(intervals, steps);
+          const allowed = (d: number): boolean => choices.some((c) => (c === '9+' ? d >= 8 : d === c));
+          const settings: AppSettings = {
+            ...DEFAULT_APP_SETTINGS, clef, ledgerLines, intervals, pitchClasses, subdivisions: QUARTERS_ONLY,
+          };
+          for (const keys of sessionsOf(settings, 2, 6)) {
+            const label = `${clef} #${mask} ${JSON.stringify(intervals)}`;
+            for (let i = 0; i < keys.length; i++) {
+              const step = stepOf(keys[i]);
+              if (!pool.has(step)) violations.push(`${label}: ${keys[i]} not in pool`);
+              if (i > 0 && !allowed(Math.abs(step - stepOf(keys[i - 1])))) {
+                violations.push(`${label}: ${keys[i - 1]} -> ${keys[i]}`);
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  }, 60000);
+
+  it('falls back exactly when no selected moving interval joins two selected notes', () => {
+    for (let mask = 1; mask < 128; mask++) {
+      for (const [clef, ledgerLines] of POOLS) {
+        const steps = pitchSteps(clef, ledgerLines, classesOf(mask));
+        const real = realizable(steps);
+        for (let imask = 1; imask < 512; imask++) {
+          const selected = INTERVAL_KEYS.filter((_, i) => imask & (1 << i));
+          const intervals = intervalsOf(...selected);
+          const moving = selected.filter((k) => k !== 'unison');
+          const expectFallback = moving.length > 0 && !moving.some((k) => real.has(k));
+          const { choices, dormant, fallback } = effectiveIntervals(intervals, steps);
+          expect(fallback, `#${mask} ${selected}`).toBe(expectFallback);
+          expect(dormant).toEqual(INTERVAL_KEYS.filter((k) => !real.has(k)));
+          const expected = INTERVAL_KEYS.filter(
+            (k) => real.has(k) && (selected.includes(k) || (expectFallback && k !== 'unison'))
+          );
+          const keys = choices.map((c) => INTERVAL_KEYS[c === '9+' ? 8 : c]);
+          expect(keys, `#${mask} ${selected}`).toEqual(expected.length > 0 ? expected : ['unison']);
+        }
+      }
+    }
+  }, 30000);
+
+  it('uses the selection unchanged when every note is on', () => {
+    for (const clef of CLEFS) {
+      const steps = pitchSteps(clef, { above: 0, below: 0 }, classesOf(127));
+      expect(steps).toEqual(pitchSteps(clef, { above: 0, below: 0 }));
+      for (const intervals of INTERVAL_SETS) {
+        const { dormant, fallback } = effectiveIntervals(intervals, steps);
+        expect(dormant).toEqual([]);
+        expect(fallback).toBe(false);
+      }
+    }
+  });
+
+  it('never moves with unison only', () => {
+    for (let mask = 1; mask < 128; mask += 3) {
+      for (const [clef, ledgerLines] of POOLS) {
+        const settings: AppSettings = {
+          ...DEFAULT_APP_SETTINGS, clef, ledgerLines, intervals: intervalsOf('unison'),
+          pitchClasses: classesOf(mask), subdivisions: QUARTERS_ONLY,
+        };
+        for (const keys of sessionsOf(settings, 3, 4)) expect(new Set(keys).size).toBe(1);
+      }
+    }
+  });
+
+  it('reaches every pool pitch with C and G and the 2nd/3rd fallback', () => {
+    const pitchClasses = { ...classesOf(0), c: true, g: true };
+    const ledgerLines = { above: 3, below: 3 };
+    const steps = pitchSteps('treble', ledgerLines, pitchClasses);
+    const { dormant, fallback } = effectiveIntervals(intervalsOf('second', 'third'), steps);
+    expect(fallback).toBe(true);
+    expect(dormant).toEqual(expect.arrayContaining(['second', 'third']));
+    const settings: AppSettings = {
+      ...DEFAULT_APP_SETTINGS, ledgerLines, pitchClasses, intervals: intervalsOf('second', 'third'),
+      subdivisions: QUARTERS_ONLY,
+    };
+    const seen = new Set(sessionsOf(settings, 1, 400)[0]);
+    expect([...seen].sort()).toEqual(pitchPool('treble', ledgerLines, pitchClasses).sort());
+  });
+
+  it('starts the Beginner pentatonic on the clef anchor in every clef and ledger setting', () => {
+    const pentatonic = { ...classesOf(127), f: false, b: false };
+    const intervals = intervalsOf('unison', 'second', 'third');
+    for (const clef of CLEFS) {
+      for (let above = 0; above <= 3; above++) {
+        for (let below = 0; below <= 3; below++) {
+          const ledgerLines = { above, below };
+          const steps = pitchSteps(clef, ledgerLines, pentatonic);
+          // Widest gap a 3rd: 2nds and 3rds join every neighbour
+          for (let i = 1; i < steps.length; i++) expect(steps[i] - steps[i - 1]).toBeLessThanOrEqual(2);
+          const anchor = stepOf(CLEF_PITCH_RANGES[clef].defaultAnchor);
+          const nearest = steps.reduce((best, s) => (Math.abs(s - anchor) < Math.abs(best - anchor) ? s : best));
+          for (let s = 0; s < 10; s++) expect(steps[startIndex(intervals, clef, steps)]).toBe(nearest);
+          const settings: AppSettings = { ...DEFAULT_APP_SETTINGS, clef, ledgerLines, intervals, pitchClasses: pentatonic };
+          const first = new MusicGenerator().generateMeasure(0, settings, 0).notes[0];
+          expect(stepOf(first.keys[0]), `${clef} ${above}/${below}`).toBe(nearest);
+        }
+      }
+    }
+  });
+
+  it('treats no selected class as every note', () => {
+    expect(pitchSteps('treble', { above: 1, below: 1 }, classesOf(0))).toEqual(
+      pitchSteps('treble', { above: 1, below: 1 })
+    );
   });
 });

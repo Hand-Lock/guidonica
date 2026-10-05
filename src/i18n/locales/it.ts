@@ -92,6 +92,8 @@ const it: Messages = {
   tupletUnavailable: (meter) => `Non disponibile in ${meter}`,
 
   sectionMelody: 'Melodia',
+  pitchClasses: 'Note',
+  pitchClassesTitle: "Note da leggere, in ogni ottava dell'estensione",
   intervals: 'Intervalli',
   intervalUnison: 'Unisono',
   intervalSecond: '2ª',
@@ -111,6 +113,8 @@ const it: Messages = {
   intervalSeventhTitle: 'Settima - 6 gradi',
   intervalOctaveTitle: "Ottava - 7 gradi, salto d'ottava",
   intervalNinthPlusTitle: 'Nona e oltre - intervalli composti (8 gradi o più)',
+  intervalDormant: 'Impossibile tra le note scelte',
+  intervalsFallback: 'Nessun intervallo scelto unisce due delle note scelte: si usano tutti quelli che le uniscono.',
 
   sectionPractice: 'Esercizio',
   language: 'Lingua',
@@ -192,11 +196,11 @@ const it: Messages = {
   back: 'Indietro',
   startPractising: 'Inizia a esercitarti',
   levels: {
-    beginner: { name: 'Principiante', description: 'Seconde e terze · dalla semibreve alla semiminima · nomi delle note · 50 BPM' },
-    elementary: { name: 'Elementare', description: 'Fino alla 4ª · crome, punti e pause · 60 BPM' },
-    intermediate: { name: 'Intermedio', description: 'Fino alla 5ª · legature e terzine di crome · 72 BPM' },
-    advanced: { name: 'Avanzato', description: "Fino all'ottava · semicrome e terzine · 80 BPM" },
-    virtuoso: { name: 'Virtuoso', description: 'Ogni salto · biscrome e tutti i gruppi irregolari · 92 BPM' },
+    beginner: { name: 'Principiante', description: 'Do re mi sol la · seconde e terze · dalla semibreve alla semiminima · nomi delle note · 60 BPM' },
+    elementary: { name: 'Elementare', description: "Tutte le note · fino alla 5ª e all'ottava · crome, punti e pause · 70 BPM" },
+    intermediate: { name: 'Intermedio', description: "Fino all'ottava · semicrome, legature e terzine di crome · 80 BPM" },
+    advanced: { name: 'Avanzato', description: 'Ogni salto · biscrome e terzine · 90 BPM' },
+    virtuoso: { name: 'Virtuoso', description: 'Tutto · tutti i gruppi irregolari · 120 BPM' },
   },
   introClefs: {
     treble: { name: 'Violino', description: 'Chiave di Sol · voce, violino, flauto, mano destra del pianoforte' },

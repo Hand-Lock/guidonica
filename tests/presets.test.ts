@@ -104,7 +104,7 @@ describe('intro preview representations (ADR 0051)', () => {
   const FORBIDDEN: Record<LevelId, readonly string[]> = {
     beginner: ['w'],
     elementary: ['w', 'h', 'hd'],
-    intermediate: ['w', 'h', 'hd', 'q', 'qd'],
+    intermediate: ['w', 'h', 'hd', 'q', 'qd', '8', '8d'],
     advanced: ['w', 'h', 'hd', 'q', 'qd'],
     virtuoso: ['w', 'h', 'hd', 'q', 'qd', '8', '8d'],
   };
@@ -147,9 +147,9 @@ describe('intro preview representations (ADR 0051)', () => {
   // Kept diatonic distances per level, in steps (2nd = 1 … 8ve = 7, 9th+ = 8 and up)
   const BAND: Record<LevelId, readonly [number, number]> = {
     beginner: [1, 2],
-    elementary: [2, 3],
-    intermediate: [3, 4],
-    advanced: [5, 7],
+    elementary: [2, 7],
+    intermediate: [3, 7],
+    advanced: [5, Infinity],
     virtuoso: [7, Infinity],
   };
 
@@ -203,11 +203,17 @@ describe('intro preview signature check (ADR 0052)', () => {
       accept: ['qd 8 q', '8 q 8 q', 'qd 8 qr'],
       reject: ['q q 8 8', 'qr qd 8r', '8 8 q q'],
     },
-    intermediate: { accept: ['8 8 3x8 3x8 3x8'], reject: ['8 8 8 8'] },
-    advanced: { accept: ['16 16 16 16 8d 16'], reject: ['8 8 8 8', '16 16 16 16 3x8 3x8 3x8'] },
+    intermediate: {
+      accept: ['16 16 16 16 3x8 3x8 3x8'],
+      reject: ['8 8 3x8 3x8 3x8', '16 16 16 16 16 16 16 16'],
+    },
+    advanced: {
+      accept: ['32 32 32 32 16 16 32 32 16 8'],
+      reject: ['16 16 16 16 8d 16', '32 32 16 16 16 16 16 16 16'],
+    },
     virtuoso: {
       accept: ['32 32 16 16 16 3x16 3x16 3x16 3x16 3x16 3x16'],
-      reject: ['16 16 16 16 16 16 16 16', '32 32 16 16 16 16 16 16 16'],
+      reject: ['16 16 16 16 16 16 16 16', '32 32 16 16 16 32 32 16 16 8'],
     },
   };
 
@@ -273,6 +279,55 @@ describe('header level meter index (ADR 0053)', () => {
       const settings = full(buildPresetSettings(preset.id, 'treble'));
       settings.subdivisions = { ...settings.subdivisions, quarter: !settings.subdivisions.quarter };
       expect(levelIndex(settings)).toBe(0);
+    }
+  });
+});
+
+describe('level progression (ADR 0070)', () => {
+  const settingsOf = (id: LevelId): AppSettings => full(buildPresetSettings(id, 'treble'));
+  const onIntervals = (s: AppSettings): string[] =>
+    Object.entries(s.intervals).filter(([, on]) => on).map(([key]) => key);
+  const onNotes = (s: AppSettings): string =>
+    Object.entries(s.pitchClasses).filter(([, on]) => on).map(([key]) => key).join('');
+
+  it('sets the tempo, notes, intervals and new values of each level', () => {
+    expect(LEVEL_PRESETS.map((p) => p.settings.tempo)).toEqual([60, 70, 80, 90, 120]);
+    expect(onNotes(settingsOf('beginner'))).toBe('cdega');
+    for (const id of ['elementary', 'intermediate', 'advanced', 'virtuoso'] as const) {
+      expect(onNotes(settingsOf(id)), id).toBe('cdefgab');
+    }
+    expect(onIntervals(settingsOf('beginner'))).toEqual(['unison', 'second', 'third']);
+    expect(onIntervals(settingsOf('elementary'))).toEqual(['unison', 'second', 'third', 'fourth', 'fifth', 'octave']);
+    expect(onIntervals(settingsOf('intermediate'))).toEqual([
+      'unison', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'octave',
+    ]);
+    expect(Object.values(settingsOf('advanced').intervals).every(Boolean)).toBe(true);
+    expect(Object.values(settingsOf('virtuoso').intervals).every(Boolean)).toBe(true);
+    expect(settingsOf('elementary').subdivisions.sixteenth).toBe(false);
+    expect(settingsOf('intermediate').subdivisions.sixteenth).toBe(true);
+    expect(settingsOf('intermediate').subdivisions.thirtySecond).toBe(false);
+    expect(settingsOf('advanced').subdivisions.thirtySecond).toBe(true);
+  });
+
+  for (const clef of INTRO_CLEFS) {
+    it(`beginner / ${clef}: only C D E G A, only by unison, 2nd or 3rd`, () => {
+      const sounding = generateMeasures(full(buildPresetSettings('beginner', clef))).flatMap((m) =>
+        m.notes.filter((n) => !n.isRest)
+      );
+      for (let i = 0; i < sounding.length; i++) {
+        expect('cdega').toContain(sounding[i].keys[0].split('/')[0]);
+        if (i === 0) continue;
+        const distance = Math.abs(diatonicStep(sounding[i].keys[0]) - diatonicStep(sounding[i - 1].keys[0]));
+        expect(distance, `note ${i}`).toBeLessThanOrEqual(2);
+      }
+    });
+  }
+
+  it('reads Custom when the notes differ from the preset', () => {
+    for (const preset of LEVEL_PRESETS) {
+      const settings = full(buildPresetSettings(preset.id, 'treble'));
+      settings.pitchClasses = { ...settings.pitchClasses, c: !settings.pitchClasses.c };
+      expect(matchLevel(settings), preset.id).toBeNull();
     }
   });
 });

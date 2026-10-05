@@ -92,6 +92,8 @@ const es: Messages = {
   tupletUnavailable: (meter) => `No disponible en ${meter}`,
 
   sectionMelody: 'Melodía',
+  pitchClasses: 'Notas',
+  pitchClassesTitle: 'Notas para leer, en cada octava del registro',
   intervals: 'Intervalos',
   intervalUnison: 'Unísono',
   intervalSecond: '2.ª',
@@ -111,6 +113,8 @@ const es: Messages = {
   intervalSeventhTitle: 'Séptima - 6 grados',
   intervalOctaveTitle: 'Octava - 7 grados, salto de octava',
   intervalNinthPlusTitle: 'Novena y más - intervalos compuestos (8 grados o más)',
+  intervalDormant: 'Imposible entre las notas elegidas',
+  intervalsFallback: 'Ningún intervalo elegido une dos de las notas elegidas: se usan todos los que las unen.',
 
   sectionPractice: 'Práctica',
   language: 'Idioma',
@@ -192,11 +196,11 @@ const es: Messages = {
   back: 'Atrás',
   startPractising: 'Empezar a practicar',
   levels: {
-    beginner: { name: 'Principiante', description: 'Segundas y terceras · de redonda a negra · nombres de notas · 50 BPM' },
-    elementary: { name: 'Elemental', description: 'Hasta la 4.ª · corcheas, puntillos y silencios · 60 BPM' },
-    intermediate: { name: 'Intermedio', description: 'Hasta la 5.ª · ligaduras y tresillos de corchea · 72 BPM' },
-    advanced: { name: 'Avanzado', description: 'Hasta la octava · semicorcheas y tresillos · 80 BPM' },
-    virtuoso: { name: 'Virtuoso', description: 'Cualquier salto · fusas y todos los grupos especiales · 92 BPM' },
+    beginner: { name: 'Principiante', description: 'Do re mi sol la · segundas y terceras · de redonda a negra · nombres de notas · 60 BPM' },
+    elementary: { name: 'Elemental', description: 'Todas las notas · hasta la 5.ª y la octava · corcheas, puntillos y silencios · 70 BPM' },
+    intermediate: { name: 'Intermedio', description: 'Hasta la octava · semicorcheas, ligaduras y tresillos de corchea · 80 BPM' },
+    advanced: { name: 'Avanzado', description: 'Cualquier salto · fusas y tresillos · 90 BPM' },
+    virtuoso: { name: 'Virtuoso', description: 'Todo · todos los grupos especiales · 120 BPM' },
   },
   introClefs: {
     treble: { name: 'Sol', description: 'Clave de sol · voz, violín, flauta, mano derecha del piano' },

@@ -5,6 +5,7 @@ import {
   IntervalOptions,
   MeasureData,
   NoteData,
+  PitchClassOptions,
   SubdivisionOptions,
   TUPLET_NAMES,
   TUPLET_VALUES,
@@ -33,6 +34,7 @@ export type PresetSettings = Pick<
   | 'rests'
   | 'ties'
   | 'intervals'
+  | 'pitchClasses'
   | 'solfegeLabelMode'
   | 'countIn'
 >;
@@ -112,11 +114,16 @@ const ALL_TUPLET_CELLS: readonly TupletCell[] = TUPLET_NAMES.flatMap((name) =>
   TUPLET_VALUES.map((value): TupletCell => `${name}:${value}`)
 );
 
+const ALL_PITCH_CLASSES: Readonly<PitchClassOptions> = { c: true, d: true, e: true, f: true, g: true, a: true, b: true };
+
+// Do-pentatonic: its widest gap is a 3rd, so 2nds and 3rds join it in every clef (ADR 0070)
+const DO_PENTATONIC: Readonly<PitchClassOptions> = { ...ALL_PITCH_CLASSES, f: false, b: false };
+
 export const LEVEL_PRESETS: readonly LevelPreset[] = [
   {
     id: 'beginner',
     settings: {
-      tempo: 50,
+      tempo: 60,
       timeSignature: PRESET_METER,
       ledgerLines: { above: 1, below: 1 },
       subdivisions: {
@@ -142,6 +149,7 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
         octave: false,
         ninthPlus: false,
       },
+      pitchClasses: { ...DO_PENTATONIC },
       solfegeLabelMode: 'syllables',
       countIn: true,
     },
@@ -153,7 +161,7 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
   {
     id: 'elementary',
     settings: {
-      tempo: 60,
+      tempo: 70,
       timeSignature: PRESET_METER,
       ledgerLines: { above: 2, below: 2 },
       subdivisions: {
@@ -173,16 +181,17 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
         second: true,
         third: true,
         fourth: true,
-        fifth: false,
+        fifth: true,
         sixth: false,
         seventh: false,
-        octave: false,
+        octave: true,
         ninthPlus: false,
       },
+      pitchClasses: { ...ALL_PITCH_CLASSES },
       solfegeLabelMode: 'none',
       countIn: true,
     },
-    // Keep q for qd 8 / 8 q 8; show the new eighths, dots & rests with 3rds and 4ths
+    // Keep q for qd 8 / 8 q 8; show the new eighths, dots & rests with 3rds to octaves
     preview: { subdivisions: ['whole', 'half'], intervals: ['unison', 'second'] },
     // The dotted or syncopated figure, never rest clutter
     check: (w) => count(w, (n) => n.isRest) <= 1 && (count(w, (n) => base(n) === 'qd') > 0 || hasSyncopation(w)),
@@ -190,7 +199,7 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
   {
     id: 'intermediate',
     settings: {
-      tempo: 72,
+      tempo: 80,
       timeSignature: PRESET_METER,
       ledgerLines: { above: 2, below: 2 },
       subdivisions: {
@@ -198,7 +207,7 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
         half: true,
         quarter: true,
         eighth: true,
-        sixteenth: false,
+        sixteenth: true,
         thirtySecond: false,
         dotted: true,
       },
@@ -211,27 +220,28 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
         third: true,
         fourth: true,
         fifth: true,
-        sixth: false,
-        seventh: false,
-        octave: false,
+        sixth: true,
+        seventh: true,
+        octave: true,
         ninthPlus: false,
       },
+      pitchClasses: { ...ALL_PITCH_CLASSES },
       solfegeLabelMode: 'none',
       countIn: true,
     },
-    // Eighths only: every beat is 8 8 or an eighth triplet, with ties, 4ths and 5ths
+    // Only the new 16th figures beside eighth triplets, with ties and 4ths to octaves
     preview: {
-      subdivisions: ['whole', 'half', 'quarter'],
+      subdivisions: ['whole', 'half', 'quarter', 'eighth'],
       intervals: ['unison', 'second', 'third'],
       rests: false,
     },
-    // Eighth triplets beside eighth pairs
-    check: (w) => count(w, (n) => n.isTuplet === true) > 0,
+    // 16ths and eighth triplets in one window
+    check: (w) => count(w, (n) => n.isTuplet === true) > 0 && count(w, (n) => !n.isTuplet && base(n) === '16') > 0,
   },
   {
     id: 'advanced',
     settings: {
-      tempo: 80,
+      tempo: 90,
       timeSignature: PRESET_METER,
       ledgerLines: { above: 3, below: 3 },
       subdivisions: {
@@ -240,7 +250,7 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
         quarter: true,
         eighth: true,
         sixteenth: true,
-        thirtySecond: false,
+        thirtySecond: true,
         dotted: true,
       },
       tuplets: tuplets(['triplet:1/4', 'triplet:1/8']),
@@ -255,25 +265,26 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
         sixth: true,
         seventh: true,
         octave: true,
-        ninthPlus: false,
+        ninthPlus: true,
       },
+      pitchClasses: { ...ALL_PITCH_CLASSES },
       solfegeLabelMode: 'none',
       countIn: true,
     },
-    // No plain quarters or quarter triplets: 16th figures and eighth triplets, 6th to octave leaps
+    // No long values or quarter triplets: the new 32nds among 16ths and eighths, 6ths to 9th+ leaps
     preview: {
       subdivisions: ['whole', 'half', 'quarter'],
       intervals: ['unison', 'second', 'third', 'fourth', 'fifth'],
       tupletValues: ['1/4'],
       rests: false,
     },
-    // 16th figures on the visible beats
-    check: (w) => beatsWith(w, (n) => !n.isTuplet && base(n) === '16') >= need(w),
+    // 32nd figures on the visible beats
+    check: (w) => beatsWith(w, (n) => !n.isTuplet && base(n) === '32') >= need(w),
   },
   {
     id: 'virtuoso',
     settings: {
-      tempo: 92,
+      tempo: 120,
       timeSignature: PRESET_METER,
       ledgerLines: { above: 3, below: 3 },
       subdivisions: {
@@ -300,6 +311,7 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
         octave: true,
         ninthPlus: true,
       },
+      pitchClasses: { ...ALL_PITCH_CLASSES },
       solfegeLabelMode: 'none',
       countIn: true,
     },
@@ -310,8 +322,10 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       tupletValues: ['1/4', '1/8'],
       rests: false,
     },
-    // 32nds or fast tuplets on the visible beats
-    check: (w) => beatsWith(w, (n) => base(n) === '32' || (n.isTuplet === true && base(n) === '16')) >= need(w),
+    // A 1/16 tuplet in view, with 32nds or fast tuplets on the visible beats
+    check: (w) =>
+      count(w, (n) => n.isTuplet === true) > 0 &&
+      beatsWith(w, (n) => base(n) === '32' || (n.isTuplet === true && base(n) === '16')) >= need(w),
   },
 ];
 

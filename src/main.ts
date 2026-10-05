@@ -7,8 +7,10 @@ import {
   Clef,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
+  IntervalOptions,
   MAX_ZOOM,
   MIN_ZOOM,
+  PITCH_CLASSES,
   Pulse68Mode,
   ResolvedTheme,
   SolfegeLabelMode,
@@ -34,7 +36,7 @@ import {
 } from './notation/types';
 import { globalState, SessionState } from './state';
 import { MetronomeEngine } from './audio/metronome';
-import { MusicGenerator, pitchBounds } from './notation/generator';
+import { INTERVAL_KEYS, MusicGenerator, effectiveIntervals, pitchSteps } from './notation/generator';
 import { MeasureRenderer } from './notation/renderer';
 import { releasePreview, renderClefIcon, renderLevelPreview } from './notation/preview';
 import { MeasureBuffer } from './scroller/buffer';
@@ -52,8 +54,22 @@ import {
   getLanguage,
   isLanguage,
   loadLocale,
+  pitchClassNames,
   t,
 } from './i18n';
+
+/** Tooltip of each interval chip, to which a dormant chip appends why (ADR 0070). */
+const INTERVAL_TITLE_KEYS = {
+  unison: 'intervalUnisonTitle',
+  second: 'intervalSecondTitle',
+  third: 'intervalThirdTitle',
+  fourth: 'intervalFourthTitle',
+  fifth: 'intervalFifthTitle',
+  sixth: 'intervalSixthTitle',
+  seventh: 'intervalSeventhTitle',
+  octave: 'intervalOctaveTitle',
+  ninthPlus: 'intervalNinthPlusTitle',
+} as const satisfies Record<keyof IntervalOptions, string>;
 import {
   dismissOrientationTip,
   hasStoredSettings,
@@ -141,7 +157,9 @@ class GuidonicaApp {
   private btnPillZoomIn: HTMLButtonElement;
 
 
-  // Intervals & Subdivisions
+  // Notes, Intervals & Subdivisions
+  private noteCheckboxes: HTMLInputElement[]; // Indexed like PITCH_CLASSES
+  private intervalsFallbackHint: HTMLElement;
   private intervalUnison: HTMLInputElement;
   private intervalSecond: HTMLInputElement;
   private intervalThird: HTMLInputElement;
@@ -237,6 +255,9 @@ class GuidonicaApp {
     this.btnPillZoomReset = document.getElementById('btn-pill-zoom-reset') as HTMLButtonElement;
     this.pillZoomText = document.getElementById('pill-zoom-text') as HTMLElement;
     this.btnPillZoomIn = document.getElementById('btn-pill-zoom-in') as HTMLButtonElement;
+
+    this.noteCheckboxes = PITCH_CLASSES.map((pc) => document.getElementById(`note-${pc}`) as HTMLInputElement);
+    this.intervalsFallbackHint = document.getElementById('intervals-fallback-hint') as HTMLElement;
 
     this.intervalUnison = document.getElementById('interval-unison') as HTMLInputElement;
     this.intervalSecond = document.getElementById('interval-second') as HTMLInputElement;
@@ -395,6 +416,13 @@ class GuidonicaApp {
     this.intervalSeventh.checked = settings.intervals.seventh;
     this.intervalOctave.checked = settings.intervals.octave;
     this.intervalNinthPlus.checked = settings.intervals.ninthPlus;
+
+    // Notes (ADR 0070)
+    PITCH_CLASSES.forEach((pc, i) => {
+      this.noteCheckboxes[i].checked = settings.pitchClasses[pc];
+    });
+    this.updatePitchClassLabels();
+    this.updateMelodyAvailability();
 
     // Subdivisions
     this.subdivQuarter.checked = settings.subdivisions.quarter;
@@ -674,6 +702,7 @@ class GuidonicaApp {
     this.selectSolfegeMode.addEventListener('change', (e) => {
       const mode = (e.target as HTMLSelectElement).value as SolfegeLabelMode;
       globalState.updateSettings({ solfegeLabelMode: mode });
+      this.updatePitchClassLabels();
       this.rerenderBuffer();
     });
 
@@ -776,11 +805,31 @@ class GuidonicaApp {
           ninthPlus: this.intervalNinthPlus.checked,
         },
       });
+      this.updateMelodyAvailability();
       this.resetSession();
     };
 
     for (const cb of this.intervalCheckboxes) {
       cb.addEventListener('change', handleIntervalChange);
+    }
+
+    // Notes: ensure at least one note remains checked (ADR 0070)
+    const handleNoteChange = (e: Event): void => {
+      if (!this.noteCheckboxes.some((cb) => cb.checked)) {
+        (e.target as HTMLInputElement).checked = true;
+        return;
+      }
+      const pitchClasses = { ...globalState.settings.pitchClasses };
+      PITCH_CLASSES.forEach((pc, i) => {
+        pitchClasses[pc] = this.noteCheckboxes[i].checked;
+      });
+      globalState.updateSettings({ pitchClasses });
+      this.updateClefRangeHint();
+      this.resetSession();
+    };
+
+    for (const cb of this.noteCheckboxes) {
+      cb.addEventListener('change', handleNoteChange);
     }
 
     // Subdivisions: ensure at least one base subdivision or tuplet remains checked
@@ -1255,6 +1304,7 @@ class GuidonicaApp {
     this.syncFullscreenGlyph();
     this.applyTupletAvailability(settings.timeSignature);
     this.updateClefRangeHint();
+    this.updatePitchClassLabels();
     this.translateIntro();
     if (settings.solfegeLabelMode !== 'none') {
       this.rerenderBuffer();
@@ -1624,11 +1674,41 @@ class GuidonicaApp {
     }
   }
 
+  /** Lowest and highest selected pitch, then the interval chips that depend on the pool. */
   private updateClefRangeHint(): void {
-    const { clef, ledgerLines } = globalState.settings;
-    const { low, high } = pitchBounds(clef, ledgerLines);
-    this.clefRangeHint.textContent = formatRange(low, high);
+    const { clef, ledgerLines, pitchClasses } = globalState.settings;
+    const steps = pitchSteps(clef, ledgerLines, pitchClasses);
+    this.clefRangeHint.textContent = formatRange(steps[0], steps[steps.length - 1]);
     this.clefRangeHint.title = t().rangeTitle;
+    this.updateMelodyAvailability();
+  }
+
+  /** Notes chip names: the Labels table, else the national convention (ADR 0070). */
+  private updatePitchClassLabels(): void {
+    const names = pitchClassNames(globalState.settings.solfegeLabelMode);
+    this.noteCheckboxes.forEach((cb, i) => {
+      const label = cb.nextElementSibling;
+      if (label) label.textContent = names[i];
+    });
+  }
+
+  /**
+   * Dims the interval chips no pair of selected notes spans (they stay clickable) and shows
+   * the fallback hint when the walk uses every joining interval instead (ADR 0070).
+   */
+  private updateMelodyAvailability(): void {
+    const { clef, ledgerLines, pitchClasses, intervals } = globalState.settings;
+    const { dormant, fallback } = effectiveIntervals(intervals, pitchSteps(clef, ledgerLines, pitchClasses));
+    const m = t();
+    INTERVAL_KEYS.forEach((key, i) => {
+      const label = this.intervalCheckboxes[i].closest('label');
+      if (!label) return;
+      const isDormant = dormant.includes(key);
+      label.classList.toggle('is-dormant', isDormant);
+      const title = m[INTERVAL_TITLE_KEYS[key]];
+      label.title = isDormant ? `${title} · ${m.intervalDormant}` : title;
+    });
+    this.intervalsFallbackHint.classList.toggle('hidden', !fallback);
   }
 
   private resetSession(): void {

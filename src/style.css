@@ -992,6 +992,20 @@ select:focus-visible {
   }
 }
 
+/* Dormant interval: no pair of selected notes spans it. Dimmed, still clickable (ADR 0070) */
+.checkbox-item.is-dormant span {
+  opacity: 0.45;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.melody-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
 /* Volume */
 .volume-group {
   flex: 1 1 180px;

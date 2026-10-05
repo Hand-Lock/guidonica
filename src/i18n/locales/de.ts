@@ -92,6 +92,8 @@ const de: Messages = {
   tupletUnavailable: (meter) => `Im ${meter}-Takt nicht verfügbar`,
 
   sectionMelody: 'Melodie',
+  pitchClasses: 'Töne',
+  pitchClassesTitle: 'Zu lesende Töne, in jeder Oktave des Tonumfangs',
   intervals: 'Intervalle',
   intervalUnison: 'Prime',
   intervalSecond: 'Sek.',
@@ -111,6 +113,8 @@ const de: Messages = {
   intervalSeventhTitle: 'Septime - 6 Stufen',
   intervalOctaveTitle: 'Oktave - 7 Stufen, Oktavsprung',
   intervalNinthPlusTitle: 'None und darüber - zusammengesetzte Intervalle (8 Stufen und mehr)',
+  intervalDormant: 'Zwischen den gewählten Tönen nicht möglich',
+  intervalsFallback: 'Kein gewähltes Intervall verbindet zwei der gewählten Töne, daher werden alle Intervalle verwendet, die das tun.',
 
   sectionPractice: 'Übung',
   language: 'Sprache',
@@ -192,11 +196,11 @@ const de: Messages = {
   back: 'Zurück',
   startPractising: 'Üben beginnen',
   levels: {
-    beginner: { name: 'Anfänger', description: 'Sekunden & Terzen · Ganze bis Viertel · Notennamen · 50 BPM' },
-    elementary: { name: 'Grundstufe', description: 'Bis zur Quarte · Achtel, Punktierungen & Pausen · 60 BPM' },
-    intermediate: { name: 'Mittelstufe', description: 'Bis zur Quinte · Haltebögen & Achteltriolen · 72 BPM' },
-    advanced: { name: 'Fortgeschritten', description: 'Bis zur Oktave · Sechzehntel & Triolen · 80 BPM' },
-    virtuoso: { name: 'Virtuose', description: 'Jeder Sprung · 32tel & alle N-tolen · 92 BPM' },
+    beginner: { name: 'Anfänger', description: 'C D E G A · Sekunden & Terzen · Ganze bis Viertel · Notennamen · 60 BPM' },
+    elementary: { name: 'Grundstufe', description: 'Alle Töne · bis zur Quinte & Oktave · Achtel, Punktierungen & Pausen · 70 BPM' },
+    intermediate: { name: 'Mittelstufe', description: 'Bis zur Oktave · Sechzehntel, Haltebögen & Achteltriolen · 80 BPM' },
+    advanced: { name: 'Fortgeschritten', description: 'Jeder Sprung · 32tel & Triolen · 90 BPM' },
+    virtuoso: { name: 'Virtuose', description: 'Alles · alle N-tolen · 120 BPM' },
   },
   introClefs: {
     treble: { name: 'Violinschlüssel', description: 'G-Schlüssel · Gesang, Violine, Flöte, rechte Hand am Klavier' },

@@ -17,6 +17,7 @@ import {
   getText,
   loadLocale,
   noteLabels,
+  pitchClassNames,
   t,
 } from '../src/i18n';
 import { pitchBounds } from '../src/notation/generator';
@@ -249,6 +250,43 @@ describe('Language and label settings', () => {
     const beginner = { ...DEFAULT_APP_SETTINGS, ...LEVEL_PRESETS[0].settings };
     for (const language of SUPPORTED_LANGUAGES) {
       expect(levelIndex({ ...beginner, language })).toBe(1);
+    }
+  });
+});
+
+describe('Notes chips (ADR 0070)', () => {
+  it('offers one chip per pitch class, titled by the dictionary', () => {
+    const doc = parseBody();
+    const ids = [...doc.querySelectorAll<HTMLInputElement>('.notes-grid input')].map((el) => el.id);
+    expect(ids).toEqual(['note-c', 'note-d', 'note-e', 'note-f', 'note-g', 'note-a', 'note-b']);
+    for (const id of ids) {
+      const label = doc.getElementById(id)?.closest('label');
+      expect(label?.getAttribute('data-i18n-title')).toBe('pitchClassesTitle');
+    }
+    expect(doc.getElementById('intervals-fallback-hint')?.dataset.i18n).toBe('intervalsFallback');
+  });
+
+  it('names the chips by the Labels setting, else by the national convention', () => {
+    const NONE: Record<string, string> = {
+      en: 'C D E F G A B',
+      it: 'Do Re Mi Fa Sol La Si',
+      fr: 'Do Ré Mi Fa Sol La Si',
+      de: 'C D E F G A H',
+      es: 'Do Re Mi Fa Sol La Si',
+    };
+    for (const [lang, m] of Object.entries(LOCALES)) {
+      expect(pitchClassNames('none', m).join(' '), lang).toBe(NONE[lang]);
+      expect(pitchClassNames('syllables', m)).toEqual(m.noteNames.syllables);
+      expect(pitchClassNames('letters', m)).toEqual(m.noteNames.letters);
+    }
+  });
+
+  it('localizes the new melody strings in every language', () => {
+    for (const [lang, m] of Object.entries(LOCALES)) {
+      for (const key of ['pitchClasses', 'pitchClassesTitle', 'intervalDormant', 'intervalsFallback'] as const) {
+        expect(m[key].length, `${lang}.${key}`).toBeGreaterThan(0);
+        if (lang !== 'en' && key !== 'pitchClasses') expect(m[key], `${lang}.${key}`).not.toBe(en[key]);
+      }
     }
   });
 });

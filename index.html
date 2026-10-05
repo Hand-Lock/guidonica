@@ -409,6 +409,39 @@
 
             <section class="settings-section section-melody" aria-labelledby="section-melody-title">
               <h2 id="section-melody-title" class="section-title" data-i18n="sectionMelody">Melody</h2>
+              <fieldset class="control-group notes-group">
+                <legend data-i18n="pitchClasses">Notes</legend>
+                <div class="checkbox-grid notes-grid">
+                  <label class="checkbox-item" title="Notes to read, in every octave of the range" data-i18n-title="pitchClassesTitle">
+                    <input type="checkbox" id="note-c" checked />
+                    <span>C</span>
+                  </label>
+                  <label class="checkbox-item" title="Notes to read, in every octave of the range" data-i18n-title="pitchClassesTitle">
+                    <input type="checkbox" id="note-d" checked />
+                    <span>D</span>
+                  </label>
+                  <label class="checkbox-item" title="Notes to read, in every octave of the range" data-i18n-title="pitchClassesTitle">
+                    <input type="checkbox" id="note-e" checked />
+                    <span>E</span>
+                  </label>
+                  <label class="checkbox-item" title="Notes to read, in every octave of the range" data-i18n-title="pitchClassesTitle">
+                    <input type="checkbox" id="note-f" checked />
+                    <span>F</span>
+                  </label>
+                  <label class="checkbox-item" title="Notes to read, in every octave of the range" data-i18n-title="pitchClassesTitle">
+                    <input type="checkbox" id="note-g" checked />
+                    <span>G</span>
+                  </label>
+                  <label class="checkbox-item" title="Notes to read, in every octave of the range" data-i18n-title="pitchClassesTitle">
+                    <input type="checkbox" id="note-a" checked />
+                    <span>A</span>
+                  </label>
+                  <label class="checkbox-item" title="Notes to read, in every octave of the range" data-i18n-title="pitchClassesTitle">
+                    <input type="checkbox" id="note-b" checked />
+                    <span>B</span>
+                  </label>
+                </div>
+              </fieldset>
               <fieldset class="control-group intervals-group">
                 <legend data-i18n="intervals">Intervals</legend>
                 <div class="checkbox-grid intervals-grid">
@@ -449,6 +482,7 @@
                   <span data-i18n="intervalNinthPlus">9+</span>
                 </label>
                 </div>
+                <p id="intervals-fallback-hint" class="melody-hint hidden" data-i18n="intervalsFallback">No selected interval joins two of the selected notes, so every interval that does is used.</p>
               </fieldset>
             </section>
 

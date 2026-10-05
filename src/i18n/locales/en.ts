@@ -107,6 +107,8 @@ const en = {
 
   // Melody
   sectionMelody: 'Melody',
+  pitchClasses: 'Notes',
+  pitchClassesTitle: 'Notes to read, in every octave of the range',
   intervals: 'Intervals',
   intervalUnison: 'Unison',
   intervalSecond: '2nd',
@@ -126,6 +128,8 @@ const en = {
   intervalSeventhTitle: 'Seventh (7th) - 6 steps',
   intervalOctaveTitle: 'Octave (8ve) - 7 steps / octave leap',
   intervalNinthPlusTitle: 'Ninth and plus (9+) - Compound intervals (8+ steps)',
+  intervalDormant: 'Cannot occur between the selected notes',
+  intervalsFallback: 'No selected interval joins two of the selected notes, so every interval that does is used.',
 
   // Practice
   sectionPractice: 'Practice',
@@ -212,11 +216,11 @@ const en = {
   back: 'Back',
   startPractising: 'Start practising',
   levels: {
-    beginner: { name: 'Beginner', description: 'Steps & skips · whole to quarter notes · solfège labels · 50 BPM' },
-    elementary: { name: 'Elementary', description: 'Up to 4ths · eighths, dots & rests · 60 BPM' },
-    intermediate: { name: 'Intermediate', description: 'Up to 5ths · ties & eighth-note triplets · 72 BPM' },
-    advanced: { name: 'Advanced', description: 'Up to the octave · sixteenths & triplets · 80 BPM' },
-    virtuoso: { name: 'Virtuoso', description: 'Any leap · 32nds & every tuplet · 92 BPM' },
+    beginner: { name: 'Beginner', description: 'Do re mi sol la · steps & skips · whole to quarter notes · solfège labels · 60 BPM' },
+    elementary: { name: 'Elementary', description: 'All notes · up to 5ths & octaves · eighths, dots & rests · 70 BPM' },
+    intermediate: { name: 'Intermediate', description: 'Up to the octave · sixteenths, ties & eighth triplets · 80 BPM' },
+    advanced: { name: 'Advanced', description: 'Any leap · 32nds & triplets · 90 BPM' },
+    virtuoso: { name: 'Virtuoso', description: 'Everything · every tuplet · 120 BPM' },
   } as LevelText,
   introClefs: {
     treble: { name: 'Treble', description: 'G clef · voice, violin, flute, piano right hand' },

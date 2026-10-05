@@ -141,6 +141,17 @@ export function noteLabels(mode: SolfegeLabelMode): readonly string[] | null {
   return mode === 'syllables' ? current.noteNames.syllables : current.noteNames.letters;
 }
 
+/**
+ * Names of the Notes chips, indexed by c d e f g a b (ADR 0070): the Labels table when one is
+ * on, else the national convention, syllables where the octave hint uses them (it, fr, es)
+ * and letters elsewhere (en, de with H).
+ */
+export function pitchClassNames(mode: SolfegeLabelMode, m: Messages = current): readonly string[] {
+  if (mode === 'syllables') return m.noteNames.syllables;
+  if (mode === 'letters') return m.noteNames.letters;
+  return m.pitchNotation === 'franco-belgian' ? m.noteNames.syllables : m.noteNames.letters;
+}
+
 const SUPERSCRIPT = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 const SUBSCRIPT = '₀₁₂₃₄₅₆₇₈₉';
 

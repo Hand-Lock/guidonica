@@ -74,6 +74,13 @@ export interface IntervalOptions {
   ninthPlus: boolean; // 9+: ninth and plus / compound intervals (8+ steps)
 }
 
+/** The seven diatonic pitch classes, indexed like the generator's step letters (c = 0 ... b = 6). */
+export const PITCH_CLASSES = ['c', 'd', 'e', 'f', 'g', 'a', 'b'] as const;
+export type PitchClass = (typeof PITCH_CLASSES)[number];
+
+/** Notes the walk may use, in every octave of the clef and ledger-line range (ADR 0070). */
+export type PitchClassOptions = Record<PitchClass, boolean>;
+
 /** Ledger lines reachable above / below the staff (0 to MAX_LEDGER_LINES each). */
 export const MAX_LEDGER_LINES = 3; // Bounded by the MEASURE_CANVAS_HEIGHT geometry
 
@@ -377,6 +384,7 @@ export interface AppSettings {
   rests: boolean;
   ties: boolean;
   intervals: IntervalOptions;
+  pitchClasses: PitchClassOptions;
   solfegeLabelMode: SolfegeLabelMode;
   language: Language; // UI language and national note naming (ADR 0059)
   soundProfile: SoundProfile;

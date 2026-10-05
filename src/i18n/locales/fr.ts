@@ -94,6 +94,8 @@ const fr: Messages = {
   tupletUnavailable: (meter) => `Indisponible en ${meter}`,
 
   sectionMelody: 'Mélodie',
+  pitchClasses: 'Notes',
+  pitchClassesTitle: "Notes à lire, dans chaque octave de l'ambitus",
   intervals: 'Intervalles',
   intervalUnison: 'Unisson',
   intervalSecond: '2de',
@@ -113,6 +115,8 @@ const fr: Messages = {
   intervalSeventhTitle: 'Septième - 6 degrés',
   intervalOctaveTitle: "Octave - 7 degrés, saut d'octave",
   intervalNinthPlusTitle: 'Neuvième et au-delà - intervalles redoublés (8 degrés ou plus)',
+  intervalDormant: 'Impossible entre les notes choisies',
+  intervalsFallback: 'Aucun intervalle choisi ne relie deux des notes choisies : tous ceux qui les relient sont utilisés.',
 
   sectionPractice: 'Pratique',
   language: 'Langue',
@@ -194,11 +198,11 @@ const fr: Messages = {
   back: 'Retour',
   startPractising: 'Commencer',
   levels: {
-    beginner: { name: 'Débutant', description: 'Secondes et tierces · de la ronde à la noire · noms des notes · 50 BPM' },
-    elementary: { name: 'Élémentaire', description: "Jusqu'à la quarte · croches, points et silences · 60 BPM" },
-    intermediate: { name: 'Intermédiaire', description: "Jusqu'à la quinte · liaisons et triolets de croches · 72 BPM" },
-    advanced: { name: 'Avancé', description: "Jusqu'à l'octave · doubles croches et triolets · 80 BPM" },
-    virtuoso: { name: 'Virtuose', description: 'Tout saut · triples croches et toutes les valeurs irrégulières · 92 BPM' },
+    beginner: { name: 'Débutant', description: 'Do ré mi sol la · secondes et tierces · de la ronde à la noire · noms des notes · 60 BPM' },
+    elementary: { name: 'Élémentaire', description: "Toutes les notes · jusqu'à la quinte et l'octave · croches, points et silences · 70 BPM" },
+    intermediate: { name: 'Intermédiaire', description: "Jusqu'à l'octave · doubles croches, liaisons et triolets de croches · 80 BPM" },
+    advanced: { name: 'Avancé', description: 'Tout saut · triples croches et triolets · 90 BPM' },
+    virtuoso: { name: 'Virtuose', description: 'Tout · toutes les valeurs irrégulières · 120 BPM' },
   },
   introClefs: {
     treble: { name: 'Sol', description: 'Clé de sol · voix, violon, flûte, main droite du piano' },

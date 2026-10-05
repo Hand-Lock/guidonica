@@ -7,6 +7,8 @@ import {
   METER,
   MeasureData,
   NoteData,
+  PITCH_CLASSES,
+  PitchClassOptions,
   SubdivisionOptions,
   TUPLET_NAMES,
   TUPLET_PLACEMENTS,
@@ -300,74 +302,135 @@ export function pitchBounds(clef: Clef, ledger: LedgerLineOptions): { low: numbe
   };
 }
 
-/** Ascending diatonic pitch pool (VexFlow keys) for a clef and ledger-line setting. */
-export function pitchPool(clef: Clef, ledger: LedgerLineOptions): string[] {
+/**
+ * Ascending absolute diatonic steps of a clef's pool whose letter is a selected pitch class
+ * (ADR 0070). No classes (or none selected) means every step in the bounds.
+ */
+export function pitchSteps(clef: Clef, ledger: LedgerLineOptions, classes?: PitchClassOptions): number[] {
   const { low, high } = pitchBounds(clef, ledger);
-  return Array.from({ length: high - low + 1 }, (_, i) => toKey(low + i));
+  const all = Array.from({ length: high - low + 1 }, (_, i) => low + i);
+  if (classes === undefined || !PITCH_CLASSES.some((pc) => classes[pc])) return all;
+  return all.filter((step) => classes[PITCH_CLASSES[((step % 7) + 7) % 7]]);
+}
+
+/** Ascending diatonic pitch pool (VexFlow keys) for a clef, ledger-line and note setting. */
+export function pitchPool(clef: Clef, ledger: LedgerLineOptions, classes?: PitchClassOptions): string[] {
+  return pitchSteps(clef, ledger, classes).map(toKey);
 }
 
 /** A selected melodic move: a diatonic step count (0 = unison) or any leap of a 9th or more. */
 type IntervalChoice = number | '9+';
 
+/** Interval toggles in move order: index = diatonic steps for unison … octave, then 9+. */
+export const INTERVAL_KEYS = [
+  'unison',
+  'second',
+  'third',
+  'fourth',
+  'fifth',
+  'sixth',
+  'seventh',
+  'octave',
+  'ninthPlus',
+] as const satisfies readonly (keyof IntervalOptions)[];
+
+const choiceOf = (index: number): IntervalChoice => (index === 8 ? '9+' : index);
+
 /** The interval toggles as moves; nothing selected falls back to seconds and thirds. */
 function selectedIntervals(intervals: IntervalOptions): IntervalChoice[] {
-  const flags = [
-    intervals.unison,
-    intervals.second,
-    intervals.third,
-    intervals.fourth,
-    intervals.fifth,
-    intervals.sixth,
-    intervals.seventh,
-    intervals.octave,
-  ];
-  const choices: IntervalChoice[] = flags.flatMap((on, steps) => (on ? [steps] : []));
-  if (intervals.ninthPlus) choices.push('9+');
+  const choices = INTERVAL_KEYS.flatMap((key, i) => (intervals[key] ? [choiceOf(i)] : []));
   return choices.length > 0 ? choices : [1, 2];
 }
 
-/** Whether a move fits in at least one direction with the given room above and below. */
-function fits(choice: IntervalChoice, upRoom: number, downRoom: number): boolean {
-  return choice === '9+' ? Math.max(upRoom, downRoom) >= 8 : choice <= upRoom || choice <= downRoom;
+/** Whether a diatonic distance is one move of a choice (9+: a 9th or more). */
+function isMove(choice: IntervalChoice, distance: number): boolean {
+  return choice === '9+' ? distance >= 8 : distance === choice;
 }
 
-/** Pool indices one selected move away from `idx` in a pool of n notes. */
-function movesFrom(idx: number, choices: readonly IntervalChoice[], n: number): number[] {
+/** Pool indices one move of `choice` above and below `idx`, each side nearest first. */
+function targetsOf(idx: number, choice: IntervalChoice, steps: readonly number[]): { up: number[]; down: number[] } {
+  const up: number[] = [];
+  const down: number[] = [];
+  if (choice === 0) return { up: [idx], down: [] };
+  for (let j = idx + 1; j < steps.length; j++) if (isMove(choice, steps[j] - steps[idx])) up.push(j);
+  for (let j = idx - 1; j >= 0; j--) if (isMove(choice, steps[idx] - steps[j])) down.push(j);
+  return { up, down };
+}
+
+/** Pool indices one move away from `idx` (unison counts). */
+function movesFrom(idx: number, choices: readonly IntervalChoice[], steps: readonly number[]): number[] {
   const targets = new Set<number>();
   for (const c of choices) {
-    const steps = c === '9+' ? Array.from({ length: Math.max(0, n - 8) }, (_, k) => 8 + k) : [c];
-    for (const s of steps) {
-      if (idx + s < n) targets.add(idx + s);
-      if (idx - s >= 0) targets.add(idx - s);
-    }
+    const { up, down } = targetsOf(idx, c, steps);
+    for (const j of [...up, ...down]) targets.add(j);
   }
   return [...targets];
 }
 
-/** Pool indices with at least one selected move (unison counts). */
-function livePitches(choices: readonly IntervalChoice[], n: number): number[] {
-  return Array.from({ length: n }, (_, i) => i).filter((i) => movesFrom(i, choices, n).length > 0);
+/** Pool indices with at least one move (unison counts). */
+function livePitches(choices: readonly IntervalChoice[], steps: readonly number[]): number[] {
+  return steps.map((_, i) => i).filter((i) => movesFrom(i, choices, steps).length > 0);
+}
+
+/** The intervals a walk over `steps` actually uses (ADR 0070). */
+export interface EffectiveIntervals {
+  /** Moves the walk draws from. */
+  choices: IntervalChoice[];
+  /** Interval toggles no pair of pool pitches spans: they cannot occur with these notes. */
+  dormant: (keyof IntervalOptions)[];
+  /** True when no selected move joins two pool pitches, so every move that does is used. */
+  fallback: boolean;
 }
 
 /**
- * First pitch of a session, as a pool index (ADR 0066). The clamped clef anchor when its
- * component of the move graph holds every live pitch, which keeps ADR 0006's tonal
- * reference for every connected interval set. Otherwise (thirds only reach the lines or the
- * spaces, unison only never moves) a uniformly random live pitch, so every component and
- * every melody within it has P > 0 per session. Every move is reversible (k from i lands on
- * i ± k, which has room for k back; a 9+ leap leaves room ≥ 8), so a live start never
- * reaches a pitch without a move.
+ * Single source of truth for the generator and the Settings UI. A class is realizable when
+ * some pair of pool pitches spans it (unison always is). The walk uses the selected
+ * realizable classes; when the selection asks for motion but none of its moving classes
+ * joins two pool pitches, every realizable moving class is used instead, like the
+ * "nothing selected → 2nds & 3rds" rule. Unison only stays unison only. With the full
+ * diatonic pool (≥ 11 pitches) every class is realizable, so choices equal the selection.
  */
-export function startIndex(intervals: IntervalOptions, clef: Clef, low: number, high: number): number {
-  const n = high - low + 1;
-  const choices = selectedIntervals(intervals);
-  const anchor = Math.max(low, Math.min(high, toStep(CLEF_PITCH_RANGES[clef].defaultAnchor))) - low;
-  const live = livePitches(choices, n);
+export function effectiveIntervals(intervals: IntervalOptions, steps: readonly number[]): EffectiveIntervals {
+  const span = steps.length > 0 ? steps[steps.length - 1] - steps[0] : 0;
+  const distances = new Set<number>();
+  for (let i = 0; i < steps.length; i++) {
+    for (let j = i + 1; j < steps.length && steps[j] - steps[i] <= 7; j++) distances.add(steps[j] - steps[i]);
+  }
+  const realizable = (c: IntervalChoice): boolean => (c === '9+' ? span >= 8 : c === 0 || distances.has(c));
+
+  const selected = selectedIntervals(intervals);
+  let choices = selected.filter(realizable);
+  let fallback = false;
+  const moving = (c: IntervalChoice): boolean => c !== 0;
+  if (selected.some(moving) && !choices.some(moving)) {
+    fallback = true;
+    const all = INTERVAL_KEYS.map((_, i) => choiceOf(i));
+    choices = [...choices, ...all.filter((c) => moving(c) && realizable(c))];
+  }
+  // A one-pitch pool can only repeat its note
+  if (choices.length === 0) choices = [0];
+  const dormant = INTERVAL_KEYS.filter((_, i) => !realizable(choiceOf(i)));
+  return { choices, dormant, fallback };
+}
+
+/** Index of the pool pitch nearest `step`, the lower one on a tie. */
+function nearestIndex(steps: readonly number[], step: number): number {
+  let best = 0;
+  for (let i = 1; i < steps.length; i++) {
+    if (Math.abs(steps[i] - step) < Math.abs(steps[best] - step)) best = i;
+  }
+  return best;
+}
+
+/** startIndex over already-resolved moves. */
+function startFrom(choices: readonly IntervalChoice[], clef: Clef, steps: readonly number[]): number {
+  const anchor = nearestIndex(steps, toStep(CLEF_PITCH_RANGES[clef].defaultAnchor));
+  const live = livePitches(choices, steps);
   const seen = new Set<number>([anchor]);
   const queue = [anchor];
   while (queue.length > 0) {
     const idx = queue.shift() as number;
-    for (const next of movesFrom(idx, choices, n)) {
+    for (const next of movesFrom(idx, choices, steps)) {
       if (!seen.has(next)) {
         seen.add(next);
         queue.push(next);
@@ -375,6 +438,20 @@ export function startIndex(intervals: IntervalOptions, clef: Clef, low: number, 
     }
   }
   return live.includes(anchor) && live.every((i) => seen.has(i)) ? anchor : pick(live);
+}
+
+/**
+ * First pitch of a session, as an index into `steps` (ADR 0066, 0070). The pool pitch
+ * nearest the clef anchor (the clamped anchor when every note is on) when its component of
+ * the move graph holds every live pitch, which keeps ADR 0006's tonal reference for every
+ * connected setup. Otherwise (thirds only reach the lines or the spaces, unison only never
+ * moves) a uniformly random live pitch, so every component and every melody within it has
+ * P > 0 per session. Every move is reversible (a move by k between two pool pitches is a
+ * move by k back; a 9+ leap leaves a 9+ leap back), so a live start never reaches a pitch
+ * without a move.
+ */
+export function startIndex(intervals: IntervalOptions, clef: Clef, steps: readonly number[]): number {
+  return startFrom(effectiveIntervals(intervals, steps).choices, clef, steps);
 }
 
 /** Last note of the previously generated measure, source of an incoming barline tie. */
@@ -426,8 +503,10 @@ export class MusicGenerator {
    * pair (last note here, first note there) can be tied with both notes known.
    */
   public generateMeasure(measureIndex: number, settings: AppSettings, startBeat: number): MeasureData {
-    const { timeSignature, clef, subdivisions, tuplets, ties, intervals, ledgerLines } = settings;
-    const { low, high } = pitchBounds(clef, ledgerLines);
+    const { timeSignature, clef, subdivisions, tuplets, ties, intervals, ledgerLines, pitchClasses } = settings;
+    // At most 23 pitches: resolved once per measure (ADR 0070)
+    const steps = pitchSteps(clef, ledgerLines, pitchClasses);
+    const { choices } = effectiveIntervals(intervals, steps);
     const { beatsPerMeasure, beatValue } = METER[timeSignature];
     const beatWidth = computeBeatWidth(subdivisions, timeSignature, tuplets);
     const measureWidth = beatsPerMeasure * beatWidth;
@@ -467,12 +546,12 @@ export class MusicGenerator {
         pitch = this.lastSoundingPitch;
       } else if (this.isFirstNoteOfSession || this.lastStep === null) {
         this.isFirstNoteOfSession = false;
-        // Anchor clamped into the pool (treble with 0 ledger lines below starts on D4), or a
+        // Pool pitch nearest the anchor (treble with 0 ledger lines below starts on D4), or a
         // random live pitch when the anchor cannot reach the whole pool
-        this.lastStep = low + startIndex(intervals, clef, low, high);
+        this.lastStep = steps[startFrom(choices, clef, steps)];
         pitch = toKey(this.lastStep);
       } else {
-        pitch = this.sampleNextPitch(intervals, clef, this.lastStep, low, high);
+        pitch = this.sampleNextPitch(choices, clef, this.lastStep, steps);
       }
 
       if (!item.isRest) {
@@ -529,88 +608,75 @@ export class MusicGenerator {
   }
 
   /**
-   * Markov random-walk step over the diatonic pool [low, high]. Only interval choices that
-   * fit in at least one direction are drawn (weights renormalize over them), so every
-   * in-range move keeps P > 0 and no interval is ever mislabeled by clamping. The walk is
-   * symmetric: up and down are equally likely whenever both fit (ADR 0065). The walk starts
-   * on a live pitch (startIndex) and every move is reversible, so some choice always fits.
+   * Markov random-walk step over the pool `steps` (ascending diatonic steps of the selected
+   * notes). Only moves with a target from the current pitch are drawn (weights renormalize
+   * over them), so every in-range move keeps P > 0 and no interval is ever mislabeled by
+   * clamping. The walk is symmetric: up and down are equally likely whenever both exist
+   * (ADR 0065). The walk starts on a live pitch (startIndex) and every move is reversible,
+   * so some move always exists. With every note on, `steps` is contiguous and the draws
+   * (and their Math.random() order) are those of the index walk before ADR 0070.
    */
   private sampleNextPitch(
-    intervals: IntervalOptions,
+    choices: readonly IntervalChoice[],
     clef: Clef,
     lastStep: number,
-    low: number,
-    high: number
+    steps: readonly number[]
   ): string {
-    const rangeLen = high - low + 1;
-    const currentIdx = Math.max(0, Math.min(rangeLen - 1, lastStep - low));
-    const upRoom = rangeLen - 1 - currentIdx;
-    const downRoom = currentIdx;
+    const currentIdx = nearestIndex(steps, lastStep);
     const commit = (idx: number): string => {
-      this.lastStep = low + idx;
+      this.lastStep = steps[idx];
       return toKey(this.lastStep);
     };
 
-    // Feasibility: keep choices that fit in at least one direction from the current pitch.
-    // With the default ±3 pool (23 notes) nothing is ever removed.
-    const activeChoices = selectedIntervals(intervals).filter((c) => fits(c, upRoom, downRoom));
+    // Feasibility: keep moves with at least one target from the current pitch. With the
+    // default ±3 pool (23 notes) and every note on, nothing is ever removed.
+    const active = choices
+      .map((choice) => ({ choice, ...targetsOf(currentIdx, choice, steps) }))
+      .filter((m) => m.up.length + m.down.length > 0);
 
-    if (activeChoices.length === 0) {
+    if (active.length === 0) {
       // Unreachable from a live start; guards a pool or interval change without a reset
       this.consecutiveUnisons = 0;
-      return commit(startIndex(intervals, clef, low, high));
+      return commit(startFrom(choices, clef, steps));
     }
 
     // Pick an interval step size from the active set. Unison is softly down-weighted
     // by 1 / (1 + run length) against weight 1 for every moving interval, so long
     // repeated-note runs grow rarer but never become impossible (P > 0).
-    const weights = activeChoices.map((c) => (c === 0 ? 1 / (1 + this.consecutiveUnisons) : 1));
+    const weights = active.map((m) => (m.choice === 0 ? 1 / (1 + this.consecutiveUnisons) : 1));
     const totalWeight = weights.reduce((sum, w) => sum + w, 0);
     let r = Math.random() * totalWeight;
-    let chosen: IntervalChoice = activeChoices[activeChoices.length - 1];
-    for (let i = 0; i < activeChoices.length; i++) {
+    let chosen = active[active.length - 1];
+    for (let i = 0; i < active.length; i++) {
       r -= weights[i];
       if (r < 0) {
-        chosen = activeChoices[i];
+        chosen = active[i];
         break;
       }
     }
 
-    if (chosen === 0) {
+    if (chosen.choice === 0) {
       this.consecutiveUnisons++;
       return commit(currentIdx);
     }
 
     this.consecutiveUnisons = 0;
 
-    let chosenStep: number;
-    let direction: number;
-
-    if (chosen === '9+') {
-      // Ninth and plus: every compound leap from a 9th (8 steps) up to the range edge
-      const directions: number[] = [];
-      if (upRoom >= 8) directions.push(1);
-      if (downRoom >= 8) directions.push(-1);
-      direction = pick(directions);
-      const maxStep = direction === 1 ? upRoom : downRoom;
-      chosenStep = 8 + Math.floor(Math.random() * (maxStep - 7));
-    } else {
-      chosenStep = chosen;
-      const canGoUp = chosenStep <= upRoom;
-      const canGoDown = chosenStep <= downRoom;
-
-      if (canGoUp && canGoDown) {
-        // Both directions fit: a fair coin. Feasibility alone keeps the walk in range, so
-        // no inward bias is applied and the edge notes stay as reachable as the middle
-        direction = Math.random() < 0.5 ? 1 : -1;
-      } else if (canGoUp) {
-        direction = 1;
-      } else {
-        direction = -1;
-      }
+    if (chosen.choice === '9+') {
+      // Ninth and plus: a direction with a compound leap, then any of its leaps uniformly
+      const directions: number[][] = [];
+      if (chosen.up.length > 0) directions.push(chosen.up);
+      if (chosen.down.length > 0) directions.push(chosen.down);
+      return commit(pick(pick(directions)));
     }
 
-    return commit(currentIdx + direction * chosenStep);
+    // A fixed step lands on at most one pitch per side. Both exist: a fair coin.
+    // Feasibility alone keeps the walk in range, so no inward bias is applied and the
+    // edge notes stay as reachable as the middle
+    if (chosen.up.length > 0 && chosen.down.length > 0) {
+      return commit(Math.random() < 0.5 ? chosen.up[0] : chosen.down[0]);
+    }
+    return commit(chosen.up.length > 0 ? chosen.up[0] : chosen.down[0]);
   }
 
   /**

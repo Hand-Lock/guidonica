@@ -264,7 +264,27 @@ describe('storage module', () => {
     const a = loadStoredSettings();
     a.tuplets.triplet['1/4'] = true;
     a.intervals.unison = true;
+    a.pitchClasses.c = false;
     expect(DEFAULT_APP_SETTINGS.tuplets.triplet['1/4']).toBe(false);
     expect(DEFAULT_APP_SETTINGS.intervals.unison).toBe(false);
+    expect(DEFAULT_APP_SETTINGS.pitchClasses.c).toBe(true);
+  });
+
+  it('validates pitch classes: all on by default, per-note fallback, all off loads as all on (ADR 0070)', () => {
+    const ALL = { c: true, d: true, e: true, f: true, g: true, a: true, b: true };
+    expect(loadStoredSettings().pitchClasses).toEqual(ALL);
+
+    saveStoredSettings({ ...DEFAULT_APP_SETTINGS, pitchClasses: { ...ALL, f: false, b: false } });
+    expect(loadStoredSettings().pitchClasses).toEqual({ ...ALL, f: false, b: false });
+
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ pitchClasses: { c: false, d: 'no', x: false } }));
+    expect(loadStoredSettings().pitchClasses).toEqual({ ...ALL, c: false });
+
+    const none = { c: false, d: false, e: false, f: false, g: false, a: false, b: false };
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ pitchClasses: none }));
+    expect(loadStoredSettings().pitchClasses).toEqual(ALL);
+
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ pitchClasses: 'cde' }));
+    expect(loadStoredSettings().pitchClasses).toEqual(ALL);
   });
 });
