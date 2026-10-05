@@ -545,19 +545,39 @@ input {
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
-/* Header difficulty meter (ADR 0053): data-level lights the first n bars, 0 = Custom */
-.btn-level-toggle .lv-bar {
-  opacity: 0.3;
-  transition: opacity var(--fast) ease;
+/* Header level dumbbell (ADR 0073): data-level sizes the plates, 0 = Custom stays neutral */
+.btn-level-toggle .lv-plate {
+  --lv-weight: 0.75;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scaleY(var(--lv-weight));
+  transition:
+    transform var(--fast) ease,
+    fill var(--fast) ease;
 }
 
-.btn-level-toggle[data-level='1'] .lv-bar:nth-child(-n + 1),
-.btn-level-toggle[data-level='2'] .lv-bar:nth-child(-n + 2),
-.btn-level-toggle[data-level='3'] .lv-bar:nth-child(-n + 3),
-.btn-level-toggle[data-level='4'] .lv-bar:nth-child(-n + 4),
-.btn-level-toggle[data-level='5'] .lv-bar:nth-child(-n + 5) {
-  stroke: var(--accent);
-  opacity: 1;
+.btn-level-toggle[data-level='1'] .lv-plate {
+  --lv-weight: 0.5;
+}
+
+.btn-level-toggle[data-level='2'] .lv-plate {
+  --lv-weight: 0.625;
+}
+
+.btn-level-toggle[data-level='3'] .lv-plate {
+  --lv-weight: 0.75;
+}
+
+.btn-level-toggle[data-level='4'] .lv-plate {
+  --lv-weight: 0.875;
+}
+
+.btn-level-toggle[data-level='5'] .lv-plate {
+  --lv-weight: 1;
+}
+
+.btn-level-toggle:not([data-level='0']) .lv-plate {
+  fill: var(--accent);
 }
 
 /* Widest name ("Intermediate"): the header holds still as the level changes */

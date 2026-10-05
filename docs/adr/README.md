@@ -78,6 +78,7 @@ This directory documents the core architectural decisions, implementation method
 | [0070](0070-note-selection-and-level-progression.md) | Note Selection Toggles & Reworked Level Progression | Accepted | 2026-10-05 |
 | [0071](0071-intro-meter-step.md) | Time Signature Step in the Onboarding Intro | Accepted | 2026-10-05 |
 | [0072](0072-three-level-beat-accent-hierarchy.md) | Three-Level Beat Accent Hierarchy in the Traffic Lights and Click | Accepted | 2026-10-05 |
+| [0073](0073-level-button-dumbbell-icon.md) | Dumbbell Icon for the Header Level Button | Accepted | 2026-10-05 |
 
 ---
 

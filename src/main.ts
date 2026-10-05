@@ -1844,7 +1844,7 @@ class GuidonicaApp {
     dots.forEach((dot) => dot.classList.remove('active', 'downbeat', 'secondary'));
   }
 
-  /** Lights the header meter's bars and names the matching preset, or Custom (ADR 0053). */
+  /** Sizes the header dumbbell's plates and names the matching preset, or Custom (ADR 0053, 0073). */
   private syncLevelButton(settings: Readonly<AppSettings>, force: boolean = false): void {
     // updateSettings replaces the object: identity skips the beat-rate notifications
     if (!this.btnLevelToggle || (settings === this.levelSyncedSettings && !force)) return;

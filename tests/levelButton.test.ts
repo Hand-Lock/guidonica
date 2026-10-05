@@ -14,12 +14,13 @@ describe('Header level button (ADR 0053)', () => {
     expect(buttons.indexOf('btn-level-toggle')).toBeLessThan(buttons.indexOf('btn-drawer-toggle'));
   });
 
-  it('opens the level dialog and carries a five-bar meter', () => {
+  it('opens the level dialog and carries the dumbbell icon', () => {
     const btn = doc.getElementById('btn-level-toggle');
     expect(btn).not.toBeNull();
     expect(btn?.getAttribute('aria-haspopup')).toBe('dialog');
     expect(btn?.getAttribute('aria-controls')).toBe('modal-intro');
-    expect(btn?.querySelectorAll('.lv-bar')).toHaveLength(5);
+    expect(btn?.querySelectorAll('.lv-plate')).toHaveLength(2);
+    expect(btn?.querySelector('.lv-bar')).toBeNull();
     expect(btn?.querySelector('.btn-label')).not.toBeNull();
     expect(doc.getElementById('modal-intro')).not.toBeNull();
     expect(doc.getElementById('intro-title-text')).not.toBeNull();

@@ -18,6 +18,8 @@ Before this change, level presets (ADR 0049) could be reopened only from Setting
 
 ### 2. Icon: an inline five-bar meter
 
+> Amended by ADR 0073: the five bars are replaced by an inline dumbbell whose plates scale with `data-level`, because the bars read as a signal-strength indicator.
+
 - Five vertical stroked bars (`.lv-bar`) on the 16-unit grid: stroke 2, round caps, x = 2/5/8/11/14, heights rising to the full box.
 - The SVG is **inline**, like the fullscreen icon (ADR 0034). CSS can't select individual shapes inside a `<use>` shadow tree, and the meter has to light bars one by one.
 - The button carries `data-level="0…5"`. `.btn-level-toggle[data-level='n'] .lv-bar:nth-child(-n + n)` gives the first *n* bars `stroke: var(--accent)` at opacity 1, and unlit bars sit at 0.3. Level 0 (Custom) leaves every bar dim. Only `opacity` transitions, and reduced-motion already zeroes that.
