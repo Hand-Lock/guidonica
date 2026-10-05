@@ -112,7 +112,7 @@ flowchart TD
 
     subgraph GenerationPipeline["Procedural Generation Pipeline"]
         PARAM["Session Parameters\n(Clef, Meter, Subdivs, Dotted, Ties, Intervals, Notes, Rests)"]
-        ERGMET["Ergodic Metric Tree Partitioner\n(Compound 6/8 & Simple 4/4, 3/4, 2/4)"]
+        ERGMET["Ergodic Metric Tree Partitioner\n(Compound 6/8, 9/8, 12/8 & Simple 4/4, 3/4, 2/4)"]
         MARKOV["Pitch Random Walk\n(Clef Range ±3 Ledgers, Irreducible Digraph)"]
         PARAM --> ERGMET
         PARAM --> MARKOV
@@ -154,9 +154,10 @@ Pitches are strictly bounded to the stave lines plus exactly **$\pm 3$ ledger li
 ### 2. Ergodic Metric Tree Rhythm Generation
 The rhythm engine decomposes each measure top-down based on exact rational time signature fractions:
 - **Compound Meter (6/8)**: Supports macro-dotted-half measures (`hd`), paired dotted-quarters (`qd qd`), quarter-eighth figures (`q 8` and `8 q`), running eighth notes (`8 8 8`), and sixteenth-note subdivisions.
+- **Compound Triple & Quadruple (9/8, 12/8)**: 9/8 reads like 3/4 one level up (`hd qd` and `qd hd`); 12/8 like 4/4 (dotted whole `wd`, dotted halves on either half, the tolerated `qd hd qd`). Beams group the eighths in threes (ADR 0076).
 - **Simple Triple Meter (3/4)**: Generates dotted-half notes (`hd`), half-quarter pairings (`h q` and `q h`), and individual beat subdivisions.
 - **Simple Quadruple & Duple (4/4, 2/4)**: Partitions measures preserving metric half-bar clarity (beats 1–2 and beats 3–4), supporting whole notes (`w`), half notes (`h`), dotted quarters with eighths (`qd 8` and `8 qd`), quarter notes (`q`), eighth notes (`8`), and sixteenth notes (`16`).
-- **Dotted Rhythms**: Dedicated toggle enabling dotted figures (`hd`, `qd`, `8d`) without breaking metric integrity.
+- **Dotted Rhythms**: Dedicated toggle enabling dotted figures (`wd` in 12/8, `hd`, `qd`, `8d`, `16d`) without breaking metric integrity.
 - **Cross-Beat Tied Notes**: Ties notes across metric subdivisions with pitch preservation ($p_{i+1} = p_i$) and VexFlow `StaveTie` rendering.
 - **Rhythmic Rests**: Toggleable rests (quarter and eighth rests) embedded directly into metric subdivisions.
 
@@ -184,7 +185,7 @@ Overhead syllable and letter indicators assist ear training and note identificat
   - **Woodblock (Default)**: Organic resonant woodblock synthesized via exponentially damped high-frequency sines with bandpass character.
   - **Electronic Triangle**: Crisp, uncolored triangle-wave oscillator clicks.
 - **Accented Beats**: Downbeats synthesize at a higher pitch (1200 Hz) than subsequent beats (800 Hz).
-- **6/8 Pulse Grouping**: Selectable between 2 compound beats (dotted-quarter pulses ♩.) or 6 metric beats (eighth-note pulses ♪).
+- **Compound Pulse Grouping**: In 6/8, 9/8 and 12/8, the click sounds on every dotted-quarter beat (♩.) or on every eighth (♪). The beat LEDs read in threes either way.
 - **Volume & Mute**: Direct volume slider with instant mute toggle.
 
 ### 7. Stationary Wait-In-Place Count-In

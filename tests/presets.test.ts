@@ -9,6 +9,7 @@ import {
   TUPLET_VALUES,
   TupletCell,
   computeBeatWidth,
+  isCompound,
 } from '../src/notation/types';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import {
@@ -248,7 +249,7 @@ describe('intro preview signature check (ADR 0052)', () => {
 
   // 32 attempts all failing has probability (1 − rate)^32 < 1e-4 when rate ≥ 25%.
   // Cards of 229–510 px show ≈ 1–4 beats; only the 220/360 px beats get down to one.
-  // In 6/8 a beat is an eighth at 80–180 px: the same cards show ≈ 1.8–10.8 eighths.
+  // In compound meters a beat is an eighth at 80–180 px: the same cards show ≈ 1.8–10.8 eighths.
   const WINDOWS = 300;
   const LENGTHS: Record<LevelId, readonly number[]> = {
     beginner: [1.3, 2, 4],
@@ -257,7 +258,7 @@ describe('intro preview signature check (ADR 0052)', () => {
     advanced: [1, 1.3, 2, 4],
     virtuoso: [1, 1.3, 2, 4],
   };
-  const LENGTHS_68: Record<LevelId, readonly number[]> = {
+  const LENGTHS_COMPOUND: Record<LevelId, readonly number[]> = {
     beginner: [4, 7, 10.8],
     elementary: [4, 7, 10.8],
     intermediate: [2.9, 5, 7.8],
@@ -266,7 +267,7 @@ describe('intro preview signature check (ADR 0052)', () => {
   };
   for (const preset of LEVEL_PRESETS) {
     for (const meter of INTRO_METERS) {
-      for (const length of (meter === '6/8' ? LENGTHS_68 : LENGTHS)[preset.id]) {
+      for (const length of (isCompound(meter) ? LENGTHS_COMPOUND : LENGTHS)[preset.id]) {
         it(`${preset.id} / ${meter}: ≥ 25% of ${length}-beat windows pass`, () => {
           const settings = full(buildPreviewSettings(preset.id, 'treble', meter));
           let accepted = 0;
@@ -376,12 +377,14 @@ describe('intro meter step (ADR 0071)', () => {
     }
   });
 
-  it('swaps triplets for their duplet counterparts in 6/8', () => {
-    expect(onCells(buildPresetSettings('beginner', 'treble', '6/8'))).toEqual([]);
-    expect(onCells(buildPresetSettings('elementary', 'treble', '6/8'))).toEqual([]);
-    expect(onCells(buildPresetSettings('intermediate', 'treble', '6/8'))).toEqual(['duplet:1/8']);
-    expect(onCells(buildPresetSettings('advanced', 'treble', '6/8'))).toEqual(['duplet:1/4', 'duplet:1/8']);
-    expect(onCells(buildPresetSettings('virtuoso', 'treble', '6/8')).sort()).toEqual([...TUPLET_SUPPORT['6/8']].sort());
+  it('swaps triplets for their duplet counterparts in every compound meter', () => {
+    for (const meter of ['6/8', '9/8', '12/8'] as const) {
+      expect(onCells(buildPresetSettings('beginner', 'treble', meter))).toEqual([]);
+      expect(onCells(buildPresetSettings('elementary', 'treble', meter))).toEqual([]);
+      expect(onCells(buildPresetSettings('intermediate', 'treble', meter))).toEqual(['duplet:1/8']);
+      expect(onCells(buildPresetSettings('advanced', 'treble', meter))).toEqual(['duplet:1/4', 'duplet:1/8']);
+      expect(onCells(buildPresetSettings('virtuoso', 'treble', meter)).sort()).toEqual([...TUPLET_SUPPORT[meter]].sort());
+    }
     for (const meter of ['4/4', '3/4', '2/4'] as const) {
       expect(onCells(buildPresetSettings('intermediate', 'treble', meter))).toEqual(['triplet:1/8']);
       expect(onCells(buildPresetSettings('advanced', 'treble', meter))).toEqual(['triplet:1/4', 'triplet:1/8']);

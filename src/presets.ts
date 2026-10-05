@@ -15,6 +15,7 @@ import {
   TupletOptions,
   TupletValue,
   TIME_SIGNATURES,
+  isCompound,
   isTupletSupported,
   supportedTuplets,
 } from './notation/types';
@@ -104,8 +105,8 @@ export const INTRO_CLEFS: readonly IntroClef[] = ['treble', 'bass', 'alto', 'ten
 export const INTRO_METERS: readonly TimeSignature[] = TIME_SIGNATURES;
 
 /**
- * 6/8 has no triplets: a level's triplet cell becomes the duplet of the same value,
- * the compound meter's two-in-the-time-of-three (ADR 0071).
+ * Compound meters have no ¼ or ⅛ triplets: a level's triplet cell becomes the duplet of
+ * the same value, the compound meter's two-in-the-time-of-three (ADR 0071, 0076).
  */
 const COMPOUND_COUNTERPART: Partial<Record<TupletCell, TupletCell>> = {
   'triplet:1/4': 'duplet:1/4',
@@ -171,7 +172,7 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
     },
     // Window ≈ 1 bar: a whole note would fill it; repeats show no motion
     preview: { subdivisions: ['whole'], intervals: ['unison'] },
-    // Motion longer than one beat (h or w; q and longer in 6/8), not only beat notes
+    // Motion longer than one beat (h or w; q and longer in compound meters), not only beat notes
     check: (w) => count(w, (n) => !n.isRest && n.beatDuration > 1) > 0,
   },
   {
@@ -249,7 +250,7 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       intervals: ['unison', 'second', 'third'],
       rests: false,
     },
-    // 16ths and eighth triplets in one window, or a lone tuplet filling a short one (a 6/8 duplet spans 3 eighths)
+    // 16ths and eighth triplets in one window, or a lone tuplet filling a short one (a compound duplet spans 3 eighths)
     check: (w) => {
       const tupletNotes = count(w, (n) => n.isTuplet === true);
       return tupletNotes > 0 && (tupletNotes === w.notes.length || count(w, (n) => !n.isTuplet && base(n) === '16') > 0);
@@ -372,13 +373,13 @@ export function acceptsPreview(level: LevelId, window: PreviewWindow): boolean {
 }
 
 /**
- * Settings patch for a level, clef and meter: deep-cloned, in 6/8 each triplet swapped
+ * Settings patch for a level, clef and meter: deep-cloned, in compound meters each triplet swapped
  * for its duplet counterpart, then tuplets limited to the meter.
  */
 export function buildPresetSettings(level: LevelId, clef: Clef, meter: TimeSignature = '4/4'): Partial<AppSettings> {
   const settings = structuredClone(findPreset(level).settings) as PresetSettings;
   const { tuplets } = settings;
-  if (meter === '6/8') {
+  if (isCompound(meter)) {
     for (const [cell, counterpart] of Object.entries(COMPOUND_COUNTERPART) as [TupletCell, TupletCell][]) {
       const [name, value] = cellParts(cell);
       const [toName, toValue] = cellParts(counterpart);

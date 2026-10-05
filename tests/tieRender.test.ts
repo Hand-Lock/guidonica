@@ -3,7 +3,7 @@ import { StaveNote, StaveTie } from 'vexflow/core';
 import { MusicGenerator } from '../src/notation/generator';
 import { MeasureRenderer, tieAnchorRightX } from '../src/notation/renderer';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
-import { AppSettings, MeasureData, NOTE_START_OFFSET, TimeSignature } from '../src/notation/types';
+import { AppSettings, MeasureData, NOTE_START_OFFSET, TIME_SIGNATURES } from '../src/notation/types';
 import en from '../src/i18n/locales/en';
 
 const SIMPLE_BEATS: Record<string, number> = {
@@ -52,7 +52,7 @@ describe('Cross-barline tie rendering', () => {
 
   it('renders generated measures with incoming and outgoing ties in every meter', () => {
     const renderer = new MeasureRenderer();
-    for (const ts of ['4/4', '3/4', '2/4', '6/8'] as TimeSignature[]) {
+    for (const ts of TIME_SIGNATURES) {
       const settings: AppSettings = {
         ...structuredClone(DEFAULT_APP_SETTINGS),
         timeSignature: ts,

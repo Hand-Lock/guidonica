@@ -47,10 +47,10 @@ const it: Messages = {
   rangeTitle: 'Estensione (Do3 = Do centrale)',
   meter: 'Metro',
   meterAria: 'Scegli il metro',
-  pulse68: 'Pulsazione 6/8',
-  pulse68Aria: 'Raggruppamento della pulsazione in 6/8',
-  pulse68Two: '2 movimenti (♩.)',
-  pulse68Six: '6 movimenti (♪)',
+  compoundPulse: 'Pulsazione',
+  compoundPulseAria: 'Raggruppamento della pulsazione nei tempi composti',
+  compoundPulseDotted: 'Semiminima puntata (♩.)',
+  compoundPulseEighth: 'Croma (♪)',
 
   sectionRhythm: 'Ritmo',
   noteValues: 'Valori',
@@ -61,7 +61,7 @@ const it: Messages = {
   valueSixteenth: 'Semicroma',
   valueThirtySecond: 'Biscroma',
   dotted: 'Puntate',
-  dottedTitle: 'Note puntate (minima, semiminima, croma, semicroma). La croma puntata richiede semicrome o biscrome, la semicroma puntata le biscrome',
+  dottedTitle: 'Note puntate (semibreve in 12/8, minima, semiminima, croma, semicroma). La croma puntata richiede semicrome o biscrome, la semicroma puntata le biscrome',
   tupletsFigures: 'Gruppi irregolari e figure',
   tuplets: 'Gruppi',
   tupletsToggleTitle: 'Configura i gruppi irregolari',
@@ -222,6 +222,8 @@ const it: Messages = {
     '3/4': 'Semplice ternario · tre movimenti di semiminima',
     '2/4': 'Semplice binario · due movimenti di semiminima',
     '6/8': 'Composto binario · due movimenti di semiminima puntata, di tre crome',
+    '9/8': 'Composto ternario · tre movimenti di semiminima puntata, di tre crome',
+    '12/8': 'Composto quaternario · quattro movimenti di semiminima puntata, di tre crome',
   },
 
   noteNames: {

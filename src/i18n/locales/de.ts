@@ -47,10 +47,10 @@ const de: Messages = {
   rangeTitle: 'Tonumfang (c¹ = eingestrichenes c)',
   meter: 'Taktart',
   meterAria: 'Taktart wählen',
-  pulse68: '6/8-Puls',
-  pulse68Aria: 'Zählweise im 6/8-Takt',
-  pulse68Two: '2 Zählzeiten (♩.)',
-  pulse68Six: '6 Zählzeiten (♪)',
+  compoundPulse: 'Puls',
+  compoundPulseAria: 'Zählweise im zusammengesetzten Takt',
+  compoundPulseDotted: 'Punktierte Viertel (♩.)',
+  compoundPulseEighth: 'Achtel (♪)',
 
   sectionRhythm: 'Rhythmus',
   noteValues: 'Notenwerte',
@@ -61,7 +61,7 @@ const de: Messages = {
   valueSixteenth: '16tel',
   valueThirtySecond: '32tel',
   dotted: 'Punktiert',
-  dottedTitle: 'Punktierte Noten (Halbe, Viertel, Achtel, 16tel). Punktierte Achtel brauchen 16tel oder 32tel, punktierte 16tel brauchen 32tel',
+  dottedTitle: 'Punktierte Noten (Ganze im 12/8, Halbe, Viertel, Achtel, 16tel). Punktierte Achtel brauchen 16tel oder 32tel, punktierte 16tel brauchen 32tel',
   tupletsFigures: 'N-tolen & Figuren',
   tuplets: 'N-tolen',
   tupletsToggleTitle: 'N-tolen konfigurieren',
@@ -222,6 +222,8 @@ const de: Messages = {
     '3/4': 'Einfacher Dreiertakt · drei Viertelschläge',
     '2/4': 'Einfacher Zweiertakt · zwei Viertelschläge',
     '6/8': 'Zusammengesetzter Zweiertakt · zwei punktierte Viertel aus je drei Achteln',
+    '9/8': 'Zusammengesetzter Dreiertakt · drei punktierte Viertel aus je drei Achteln',
+    '12/8': 'Zusammengesetzter Vierertakt · vier punktierte Viertel aus je drei Achteln',
   },
 
   noteNames: {

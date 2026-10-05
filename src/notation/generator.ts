@@ -19,6 +19,7 @@ import {
   TupletOptions,
   TupletValue,
   computeBeatWidth,
+  isCompound,
   supportedTuplets,
   tupletShape,
   tupletSpan,
@@ -62,15 +63,15 @@ export const SILENCE_CONTINUE_PROBABILITY = 0.5;
 
 /**
  * The note values a configuration draws from: every enabled base value plus, with dotted
- * on, the dotted value of each enabled base (hd needs half, qd quarter, 8d eighth, 16d
- * sixteenth). Ordered longest first (ADR 0065). A dotted value only fills a bar beside its
+ * on, the dotted value of each enabled base (wd needs whole, hd half, qd quarter, 8d
+ * eighth, 16d sixteenth). Ordered longest first (ADR 0065). Only 12/8 can place wd (ADR 0076). A dotted value only fills a bar beside its
  * shorter partner: 8d needs 16 or 32, 16d needs 32, and qd in 4/4 and 2/4 needs 8 or
  * shorter, so without it the value is in the alphabet but never written (ADR 0066).
  */
 export function enabledValues(subdiv: SubdivisionOptions): string[] {
   const dotted = subdiv.dotted !== false;
   const values: string[] = [];
-  if (subdiv.whole) values.push('w');
+  if (subdiv.whole) values.push('w', ...(dotted ? ['wd'] : []));
   if (subdiv.half) values.push('h', ...(dotted ? ['hd'] : []));
   if (subdiv.quarter) values.push('q', ...(dotted ? ['qd'] : []));
   if (subdiv.eighth) values.push('8', ...(dotted ? ['8d'] : []));
@@ -94,7 +95,7 @@ interface TupletStep {
 
 /**
  * Every legal, completable step at each grid point of one bar. The grid is the 32nd: 8
- * units per quarter beat in simple meters, 4 per eighth beat in 6/8.
+ * units per quarter beat in simple meters, 4 per eighth beat in compound meters.
  */
 export interface RhythmGrammar {
   unitsPerBeat: number;
@@ -112,7 +113,7 @@ interface GrammarDraft extends RhythmGrammar {
 }
 
 function buildGrammar(ts: TimeSignature, values: readonly string[], cells: readonly TupletCell[]): GrammarDraft {
-  const unitsPerBeat = ts === '6/8' ? 4 : 8;
+  const unitsPerBeat = isCompound(ts) ? 4 : 8;
   const barUnits = METER[ts].beatsPerMeasure * unitsPerBeat;
   const allNotes: NoteStep[][] = [];
   const allTuplets: TupletStep[][] = [];
@@ -172,7 +173,7 @@ const GRAMMAR_MEMO_LIMIT = 64;
  * Rhythm grammar of a configuration, memoized. When the enabled values cannot fill a bar
  * (whole notes only in 3/4), or when the beat unit would make an enabled value or cell
  * reachable that otherwise is not (q in 4/4 with half and dotted only, for the hd), the
- * beat unit (q; 8 in 6/8) joins the values. Nothing else is ever added (ADR 0065).
+ * beat unit (q; 8 in compound meters) joins the values. Nothing else is ever added (ADR 0065).
  */
 export function rhythmGrammar(ts: TimeSignature, subdiv: SubdivisionOptions, tuplets?: TupletOptions): RhythmGrammar {
   const active = tuplets && supportedTuplets(ts, tuplets);
@@ -191,7 +192,7 @@ export function rhythmGrammar(ts: TimeSignature, subdiv: SubdivisionOptions, tup
   if (memo) return memo;
 
   let grammar = buildGrammar(ts, values, cells);
-  const beatUnit = ts === '6/8' ? '8' : 'q';
+  const beatUnit = isCompound(ts) ? '8' : 'q';
   if (!values.includes(beatUnit)) {
     const unused = [...values, ...cells].filter((k) => !grammar.used.has(k));
     if (!grammar.complete || unused.length > 0) {

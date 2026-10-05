@@ -47,10 +47,10 @@ const es: Messages = {
   rangeTitle: 'Ámbito (Do3 = do central)',
   meter: 'Compás',
   meterAria: 'Elegir el compás',
-  pulse68: 'Pulso 6/8',
-  pulse68Aria: 'Agrupación del pulso en 6/8',
-  pulse68Two: '2 pulsos (♩.)',
-  pulse68Six: '6 pulsos (♪)',
+  compoundPulse: 'Pulso',
+  compoundPulseAria: 'Agrupación del pulso en compases compuestos',
+  compoundPulseDotted: 'Negra con puntillo (♩.)',
+  compoundPulseEighth: 'Corchea (♪)',
 
   sectionRhythm: 'Ritmo',
   noteValues: 'Figuras',
@@ -61,7 +61,7 @@ const es: Messages = {
   valueSixteenth: 'Semicorchea',
   valueThirtySecond: 'Fusa',
   dotted: 'Con puntillo',
-  dottedTitle: 'Notas con puntillo (blanca, negra, corchea, semicorchea). La corchea con puntillo necesita semicorcheas o fusas; la semicorchea con puntillo, fusas',
+  dottedTitle: 'Notas con puntillo (redonda en 12/8, blanca, negra, corchea, semicorchea). La corchea con puntillo necesita semicorcheas o fusas; la semicorchea con puntillo, fusas',
   tupletsFigures: 'Grupos especiales y figuras',
   tuplets: 'Grupos',
   tupletsToggleTitle: 'Configurar los grupos de valoración especial',
@@ -222,6 +222,8 @@ const es: Messages = {
     '3/4': 'Compás simple ternario · tres pulsos de negra',
     '2/4': 'Compás simple binario · dos pulsos de negra',
     '6/8': 'Compás compuesto binario · dos pulsos de negra con puntillo, de tres corcheas',
+    '9/8': 'Compás compuesto ternario · tres pulsos de negra con puntillo, de tres corcheas',
+    '12/8': 'Compás compuesto cuaternario · cuatro pulsos de negra con puntillo, de tres corcheas',
   },
 
   noteNames: {

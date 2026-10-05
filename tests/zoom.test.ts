@@ -14,6 +14,7 @@ import {
   ZOOM_STEP,
   computeBeatWidth,
   computeOptimalZoom,
+  TIME_SIGNATURES,
 } from '../src/notation/types';
 import type { MeasureData } from '../src/notation/types';
 import { MeasureRenderer } from '../src/notation/renderer';
@@ -149,7 +150,7 @@ describe('In-App Notation Zoom Pipeline', () => {
       'baritone-c',
       'bass',
     ];
-    const timeSigs: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
+    const timeSigs = TIME_SIGNATURES;
 
     for (const clef of clefs) {
       for (const ts of timeSigs) {

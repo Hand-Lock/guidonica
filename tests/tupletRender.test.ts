@@ -19,6 +19,7 @@ import {
   TUPLET_SUPPORT,
   TupletName,
   TupletValue,
+  TIME_SIGNATURES,
 } from '../src/notation/types';
 import en from '../src/i18n/locales/en';
 
@@ -46,7 +47,7 @@ describe('Renderer accepts every supported tuplet cell with ties', () => {
     HTMLCanvasElement.prototype.getContext = originalGetContext;
   });
 
-  for (const ts of ['4/4', '3/4', '2/4', '6/8'] as const) {
+  for (const ts of TIME_SIGNATURES) {
     it(`renders ${ts} measures for each supported tuplet cell`, () => {
       const renderer = new MeasureRenderer();
       for (const cell of TUPLET_SUPPORT[ts]) {
@@ -178,7 +179,7 @@ describe('Long tuplet beams and numbers stay inside the measure canvas (ADR 0057
     expectTupletNumbersInsideCanvas();
   });
 
-  for (const ts of ['4/4', '3/4', '2/4', '6/8'] as const) {
+  for (const ts of TIME_SIGNATURES) {
     it(`keeps every beam and tuplet number of generated ${ts} measures on canvas`, () => {
       const renderer = new MeasureRenderer();
       for (const clef of ['treble', 'bass'] as const) {
@@ -294,7 +295,7 @@ describe('Tuplet beam runs, brackets and the bar rest (ADR 0065)', () => {
   });
 
   it('centres a bar-long whole rest in the bar', () => {
-    for (const [ts, beats, beatValue] of [['3/4', 3, 4], ['2/4', 2, 4], ['4/4', 4, 4], ['6/8', 6, 8]] as const) {
+    for (const [ts, beats, beatValue] of [['3/4', 3, 4], ['2/4', 2, 4], ['4/4', 4, 4], ['6/8', 6, 8], ['9/8', 9, 8], ['12/8', 12, 8]] as const) {
       noteDraw.mockClear();
       const width = NOTE_START_OFFSET + beats * BEAT_WIDTH;
       const data: MeasureData = {

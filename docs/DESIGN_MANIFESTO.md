@@ -173,12 +173,13 @@ Only the loaded faces may be used: Alegreya 700 (plus italic 400/700), Alegreya 
 - The beads sit in a well capsule.
 - Inactive beads are recessed pearls.
 - Active sub-beats are Olo spheres, scaled to 1.28.
-- The active secondary beat (6/8 beat 4, 4/4 beat 3) is an orange gem, scaled to 1.35.
+- The active secondary beat (4/4 beat 3; 6/8 beat 4; 9/8 beats 4, 7; 12/8 beats 4, 7, 10) is an orange gem, scaled to 1.35.
+- In compound meters the beads read in threes: the bead that starts each dotted-quarter beat is full size (13px), the two eighths after it are 5px pearls, 2px apart with 6px between groups (ADR 0076).
 - The active downbeat is a ruby gem, scaled to 1.42.
 - The COUNT-IN badge floats absolutely above the capsule, so the capsule's width never changes.
 
 #### F. Settings: four titled sections
-The settings are grouped as **Staff** (clef, ledger lines, meter, 6/8 pulse) · **Rhythm** (note values, tuplets, rests, ties) · **Melody** (intervals) · **Practice** (labels, assists, click, volume, theme).
+The settings are grouped as **Staff** (clef, ledger lines, meter, compound pulse) · **Rhythm** (note values, tuplets, rests, ties) · **Melody** (intervals) · **Practice** (labels, assists, click, volume, theme).
 - Each group is a `<section class="settings-section">` well card.
 - Each card has an Alegreya italic `<h2 class="section-title">` followed by a hairline rule.
 - New settings must join one of these sections, never float free.
@@ -190,14 +191,14 @@ The settings are grouped as **Staff** (clef, ledger lines, meter, 6/8 pulse) · 
 #### H. Responsive Layout Contract
 | Width | Header grid | Settings |
 |-------|-------------|----------|
-| > 1140px | One row: `brand · transport · tempo · beats · utils` | In-flow card grid (4 columns, 2 columns between 961 and 1279px), collapsible. Open by default only when the staff still gets 220px × zoom (ADR 0054). |
-| 961–1140px | The same row, compacted: 12px column gap, tempo shrinks to a 160px minimum, Reset and Settings collapse to icons | As above |
+| > 1150px | One row: `brand · transport · tempo · beats · utils` | In-flow card grid (4 columns, 2 columns between 961 and 1279px), collapsible. Open by default only when the staff still gets 220px × zoom (ADR 0054). |
+| 961–1150px | The same row, compacted: 12px column gap, 6px LED well padding, tempo shrinks to a 160px minimum, Reset and Settings collapse to icons | As above |
 | ≤ 960px | Two rows: `brand · utils` / `transport · tempo · beats`. The utilities span the cell above tempo, so they never size the beats column. | Absolutely positioned **glass sheet overlaying the canvas** (the canvas never reflows). Its height is the viewport minus the header (`calc(100dvh - 100%)`). It scrolls internally, closes on a canvas tap, and the tuplets popover becomes an in-flow accordion. Footer hidden. |
 | ≤ 600px | Three rows: `brand · utils` / `transport · beats` / `tempo` (full width, long slider track) | One column. The Settings and Reset labels collapse to icons. |
 
 Below 1280px, the Level button collapses to its meter and the header theme toggle hides. The theme stays in Settings → Practice (ADR 0053).
 
-On phones, the brand and transport collapse by the room their column actually gets (container queries), not by viewport width. Touch targets and 6/8's six beat dots move the thresholds. Below 183px the SOLFÈGE badge hides. Below 118px the wordmark is visually hidden but stays readable by assistive tech, so only the hand remains. When the transport has less than 148px, Start drops its label and keeps its play/pause icon (ADR 0054).
+On phones, the brand and transport collapse by the room their column actually gets (container queries), not by viewport width. Touch targets and 12/8's twelve beat dots move the thresholds. Below 183px the SOLFÈGE badge hides. Below 118px the wordmark is visually hidden but stays readable by assistive tech, so only the hand remains. When the transport has less than 148px, Start drops its label and keeps its play/pause icon (ADR 0054).
 
 On desktop, the tuplets popover is capped to the room below it and scrolls internally.
 

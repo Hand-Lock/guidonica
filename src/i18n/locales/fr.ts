@@ -49,10 +49,10 @@ const fr: Messages = {
   rangeTitle: 'Ambitus (Do3 = do central)',
   meter: 'Mesure',
   meterAria: 'Choisir la mesure',
-  pulse68: 'Pulsation 6/8',
-  pulse68Aria: 'Regroupement de la pulsation en 6/8',
-  pulse68Two: '2 temps (♩.)',
-  pulse68Six: '6 temps (♪)',
+  compoundPulse: 'Pulsation',
+  compoundPulseAria: 'Regroupement de la pulsation en mesure composée',
+  compoundPulseDotted: 'Noire pointée (♩.)',
+  compoundPulseEighth: 'Croche (♪)',
 
   sectionRhythm: 'Rythme',
   noteValues: 'Valeurs',
@@ -63,7 +63,7 @@ const fr: Messages = {
   valueSixteenth: 'Double',
   valueThirtySecond: 'Triple',
   dotted: 'Pointées',
-  dottedTitle: 'Notes pointées (blanche, noire, croche, double croche). La croche pointée demande des doubles ou triples croches, la double croche pointée des triples croches',
+  dottedTitle: 'Notes pointées (ronde en 12/8, blanche, noire, croche, double croche). La croche pointée demande des doubles ou triples croches, la double croche pointée des triples croches',
   tupletsFigures: 'Valeurs irrégulières et figures',
   tuplets: 'N-olets',
   tupletsToggleTitle: 'Configurer les valeurs irrégulières',
@@ -223,6 +223,8 @@ const fr: Messages = {
     '3/4': 'Mesure simple à trois temps · trois temps à la noire',
     '2/4': 'Mesure simple à deux temps · deux temps à la noire',
     '6/8': 'Mesure composée à deux temps · deux temps à la noire pointée, de trois croches',
+    '9/8': 'Mesure composée à trois temps · trois temps à la noire pointée, de trois croches',
+    '12/8': 'Mesure composée à quatre temps · quatre temps à la noire pointée, de trois croches',
   },
 
   noteNames: {

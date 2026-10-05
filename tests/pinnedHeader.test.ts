@@ -10,6 +10,7 @@ import {
   PINNED_HEADER_WIDTH,
   PLAYHEAD_MIN_CLEARANCE,
   TimeSignature,
+  TIME_SIGNATURES,
 } from '../src/notation/types';
 import { MeasureRenderer } from '../src/notation/renderer';
 
@@ -73,7 +74,7 @@ describe('Stationary Clef and Time Signature Left Stave Header', () => {
       'baritone-c',
       'bass',
     ];
-    const timeSignatures: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
+    const timeSignatures = TIME_SIGNATURES;
 
     for (const clef of clefs) {
       for (const ts of timeSignatures) {

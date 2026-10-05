@@ -1,12 +1,13 @@
 import {
   AudioSessionType,
   BeatAccent,
+  CompoundPulseMode,
   METER,
-  Pulse68Mode,
   SoundProfile,
   TimeSignature,
   beatAccent,
   clampTempo,
+  isCompound,
 } from '../notation/types';
 
 /** Beat currently being heard, derived from the hardware audio clock (no timers). */
@@ -29,7 +30,7 @@ export class MetronomeEngine {
   private volume: number = 0.8;
   private isMuted: boolean = false;
   private soundProfile: SoundProfile = 'woodblock';
-  private pulse68: Pulse68Mode = 'dotted-quarter';
+  private compoundPulse: CompoundPulseMode = 'dotted-quarter';
 
   private beatsPerMeasure: number = 4;
   private secondsPerBeat: number = 1.0;
@@ -213,12 +214,12 @@ export class MetronomeEngine {
     return this.soundProfile;
   }
 
-  public setPulse68(mode: Pulse68Mode): void {
-    this.pulse68 = mode;
+  public setCompoundPulse(mode: CompoundPulseMode): void {
+    this.compoundPulse = mode;
   }
 
-  public getPulse68(): Pulse68Mode {
-    return this.pulse68;
+  public getCompoundPulse(): CompoundPulseMode {
+    return this.compoundPulse;
   }
 
   private updateMasterGain(): void {
@@ -333,8 +334,9 @@ export class MetronomeEngine {
         : this.scheduledBeatCount - this.countInBeatsTotal;
       const beatNumber = (beatIndex % this.beatsPerMeasure) + 1;
 
-      const isCompound68 = this.timeSignature === '6/8' && this.pulse68 === 'dotted-quarter';
-      const shouldClick = !isCompound68 || beatNumber === 1 || beatNumber === 4;
+      // Dotted-quarter pulse: only the eighth that starts each beat clicks (1, 4, 7, 10)
+      const dottedPulse = isCompound(this.timeSignature) && this.compoundPulse === 'dotted-quarter';
+      const shouldClick = !dottedPulse || (beatNumber - 1) % 3 === 0;
 
       if (shouldClick) {
         this.scheduleClick(beatTime, beatAccent(this.timeSignature, beatNumber));

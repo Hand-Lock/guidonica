@@ -21,6 +21,7 @@ import {
   CLEFS,
   Clef,
   IntervalOptions,
+  METER,
   MeasureData,
   PITCH_CLASSES,
   PitchClassOptions,
@@ -29,10 +30,12 @@ import {
   TUPLET_PLACEMENTS,
   TUPLET_SUPPORT,
   TUPLET_VALUES,
+  TIME_SIGNATURES,
   TimeSignature,
   TupletCell,
   TupletName,
   TupletValue,
+  isCompound,
 } from '../src/notation/types';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 
@@ -117,7 +120,7 @@ function tupletGroups(m: MeasureData): MeasureData['notes'][] {
 function tupletValueOf(ts: TimeSignature, group: MeasureData['notes']): TupletValue | undefined {
   const span = group.reduce((sum, n) => sum + n.beatDuration, 0);
   const valueBeats = span / (group[0].tupletNotesOccupied ?? 1);
-  const quarter = ts === '6/8' ? 2 : 1;
+  const quarter = isCompound(ts) ? 2 : 1;
   return TUPLET_VALUES.find((v) => Math.abs(valueBeats - quarter / { '1/4': 1, '1/8': 2, '1/16': 4 }[v]) < 1e-9);
 }
 
@@ -134,7 +137,7 @@ function generateMany(settings: AppSettings, count: number = N): MeasureData[] {
 }
 
 describe('MusicGenerator', () => {
-  const timeSignatures: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
+  const timeSignatures = TIME_SIGNATURES;
   const clefs: Clef[] = [
     'treble',
     'soprano',
@@ -150,7 +153,7 @@ describe('MusicGenerator', () => {
     const generator = new MusicGenerator();
 
     for (const ts of timeSignatures) {
-      const beatsPerMeasure = ts === '6/8' ? 6 : ts === '3/4' ? 3 : ts === '2/4' ? 2 : 4;
+      const { beatsPerMeasure } = METER[ts];
 
       const settings: AppSettings = {
         ...DEFAULT_APP_SETTINGS,
@@ -696,7 +699,7 @@ describe('MusicGenerator', () => {
       dotted: true,
     };
 
-    for (const ts of ['4/4', '3/4', '2/4', '6/8'] as const) {
+    for (const ts of TIME_SIGNATURES) {
       for (const cell of TUPLET_SUPPORT[ts]) {
         it(`${ts}: ${cell} generates its tuplet and conserves beat totals`, () => {
           const [name, value] = cell.split(':') as [TupletName, TupletValue];
@@ -734,7 +737,7 @@ describe('MusicGenerator', () => {
       for (const name of TUPLET_NAMES) {
         for (const value of TUPLET_VALUES) allOn[name][value] = true;
       }
-      for (const ts of ['4/4', '3/4', '2/4', '6/8'] as const) {
+      for (const ts of TIME_SIGNATURES) {
         const measures = generateMany(
           { ...DEFAULT_APP_SETTINGS, timeSignature: ts, subdivisions: subdiv, tuplets: allOn },
           400
@@ -757,7 +760,7 @@ describe('MusicGenerator', () => {
 describe('MusicGenerator 32nd notes', () => {
   const SUBDIV_32 = { whole: true, half: true, quarter: true, eighth: true, sixteenth: true, thirtySecond: true, dotted: true };
   const ONLY_32 = { whole: false, half: false, quarter: false, eighth: false, sixteenth: false, thirtySecond: true, dotted: true };
-  const METERS: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
+  const METERS = TIME_SIGNATURES;
 
   function generate(ts: TimeSignature, subdivisions: AppSettings['subdivisions'], count: number): MeasureData[] {
     const generator = new MusicGenerator();
@@ -782,9 +785,9 @@ describe('MusicGenerator 32nd notes', () => {
   });
 
   it('reaches 32, 16d, 32 16 32 and 8d 32 32 (P > 0)', () => {
-    for (const ts of ['4/4', '6/8'] as TimeSignature[]) {
+    for (const ts of ['4/4', '6/8', '9/8', '12/8'] as TimeSignature[]) {
       // Beat span of one eighth note in this meter
-      const unit = ts === '6/8' ? 1 : 0.5;
+      const unit = isCompound(ts) ? 1 : 0.5;
       const seen = { thirtySecond: false, dottedSixteenth: false, middleSixteenth: false, dottedEighth32: false };
       for (const m of generate(ts, SUBDIV_32, N)) {
         m.notes.forEach((n, i) => {
@@ -992,7 +995,7 @@ describe('User-selectable ledger lines', () => {
 });
 
 describe('Rhythm grammar (ADR 0065)', () => {
-  const METERS: TimeSignature[] = ['4/4', '3/4', '2/4', '6/8'];
+  const METERS = TIME_SIGNATURES;
   const NONE: SubdivisionOptions = {
     whole: false,
     half: false,
@@ -1057,6 +1060,23 @@ describe('Rhythm grammar (ADR 0065)', () => {
     expect(g.notes[0].map((s) => s.duration)).toContain('hd');
   });
 
+  it('reaches the 9/8 and 12/8 figures of 3/4 and 4/4 one level up (ADR 0076)', () => {
+    const rhythms = (ts: TimeSignature, subdivisions: SubdivisionOptions): Set<string> =>
+      new Set(
+        generateMany({ ...DEFAULT_APP_SETTINGS, timeSignature: ts, subdivisions, ties: false, rests: false }, 1500).map(
+          (m) => m.notes.map((n) => n.duration).join(' ')
+        )
+      );
+    const nine = rhythms('9/8', { ...NONE, half: true, quarter: true, eighth: true, dotted: true });
+    for (const bar of ['hd qd', 'qd hd', 'q 8 qd qd', '8 q qd qd', 'qd qd qd']) {
+      expect(nine.has(bar), `9/8 ${bar}`).toBe(true);
+    }
+    const twelve = rhythms('12/8', { ...NONE, whole: true, half: true, quarter: true, dotted: true });
+    for (const bar of ['wd', 'hd hd', 'qd hd qd', 'qd qd qd qd', 'hd qd qd']) {
+      expect(twelve.has(bar), `12/8 ${bar}`).toBe(true);
+    }
+  });
+
   it('reaches hd in 4/4 with only half and dotted enabled', () => {
     const measures = generateMany(
       { ...DEFAULT_APP_SETTINGS, subdivisions: { ...NONE, half: true, dotted: true } },
@@ -1072,7 +1092,8 @@ describe('Rhythm grammar (ADR 0065)', () => {
       return enabledValues(sub).filter(
         (v) =>
           (v === 'w' && ts !== '4/4') ||
-          (v === 'h' && ts === '6/8') ||
+          (v === 'h' && isCompound(ts)) ||
+          (v === 'wd' && ts !== '12/8') ||
           (v === 'hd' && ts === '2/4') ||
           (v === 'qd' && (ts === '4/4' || ts === '2/4') && !shorter) ||
           (v === '8d' && !(sub.sixteenth || sub.thirtySecond)) ||

@@ -26,11 +26,12 @@ describe('Responsive header fit (ADR 0054)', () => {
     expect(styleCss).not.toContain('@media (max-width: 380px)');
   });
 
-  it('compacts the one-row ribbon between 961 and 1140px', () => {
-    const block = styleCss.match(/@media \(min-width: 961px\) and \(max-width: 1140px\) \{([\s\S]*?)\n\}/);
+  it('compacts the one-row ribbon between 961 and 1150px', () => {
+    const block = styleCss.match(/@media \(min-width: 961px\) and \(max-width: 1150px\) \{([\s\S]*?)\n\}/);
     expect(block).not.toBeNull();
     expect(block?.[1]).toContain('minmax(160px, 380px)');
     expect(block?.[1]).toMatch(/\.btn-drawer-toggle \.btn-label/);
+    expect(block?.[1]).toMatch(/\.beat-indicator-container \{\s*padding: 0 6px;/);
   });
 
   it('lets the tablet utilities span the empty cell above tempo', () => {

@@ -822,6 +822,23 @@ input[type='range']:focus-visible::-moz-range-thumb {
   transform: scale(1.35);
 }
 
+/* Compound meters: one LED per eighth, read in threes. The LED that starts each
+   dotted-quarter beat keeps its size; the two eighths after it are 5px and sit 2px
+   apart, with 6px between groups. 12/8 is then 4×13 + 8×5 + 8×2 + 3×6 = 126px, the
+   widest cluster, which the ribbon budgets for (ADR 0054, 0076). */
+.beat-dots.compound {
+  gap: 2px;
+}
+
+.beat-dots.compound .beat-dot:not(.sub):not(:first-child) {
+  margin-left: 4px;
+}
+
+.beat-dot.sub {
+  width: 5px;
+  height: 5px;
+}
+
 /* ==========================================================================
    Settings drawer: sectioned cards
    ========================================================================== */
@@ -1917,7 +1934,7 @@ dialog.intro-dialog {
 /* ==========================================================================
    Responsive contract
    Desktop (>960): one-row ribbon, in-flow card drawer (open by default while
-                   the staff keeps 220px × zoom); 961–1140 compacts the ribbon
+                   the staff keeps 220px × zoom); 961–1150 compacts the ribbon
    Tablet  (≤960): two-row ribbon, drawer becomes an overlay glass sheet
    Phone   (≤600): brand+utils / transport+LEDs / full-width tempo, brand and
                    transport collapse by container width (ADR 0054)
@@ -1929,13 +1946,18 @@ dialog.intro-dialog {
   }
 }
 
-/* 961–1140px: the one-row ribbon needs up to 1135px (touch + 6/8), so tighten the
-   gaps, let tempo give way down to 160px and collapse Reset and Settings to icons.
-   Worst case at 961px (touch, 6/8) still leaves tempo 171px (ADR 0054). */
-@media (min-width: 961px) and (max-width: 1140px) {
+/* 961–1150px: the one-row ribbon needs up to 1143px (touch + 12/8), so tighten the
+   gaps and the LED well, let tempo give way down to 160px and collapse Reset and
+   Settings to icons. Worst case at 961px (touch, 12/8, Italian) still leaves tempo
+   163px (ADR 0054, 0076). */
+@media (min-width: 961px) and (max-width: 1150px) {
   .primary-bar {
     column-gap: 12px;
     grid-template-columns: auto auto minmax(160px, 380px) auto 1fr;
+  }
+
+  .beat-indicator-container {
+    padding: 0 6px;
   }
 
   .btn-drawer-toggle,
@@ -1950,10 +1972,10 @@ dialog.intro-dialog {
   }
 }
 
-/* 1141–1439px in the longer languages (ADR 0059): "Zurücksetzen", "Impostazioni" and
-   the labelled Level button need up to 63px more than English (touch + 6/8 at 1280px),
-   so the ribbon takes the 961–1140 gaps and tempo floor while keeping every label. */
-@media (min-width: 1141px) and (max-width: 1439px) {
+/* 1151–1439px in the longer languages (ADR 0059): "Zurücksetzen", "Impostazioni" and
+   the labelled Level button need up to 63px more than English (touch + 12/8 at 1280px),
+   so the ribbon takes the 961–1150 gaps and tempo floor while keeping every label. */
+@media (min-width: 1151px) and (max-width: 1439px) {
   .primary-bar:not(:lang(en)) {
     column-gap: 12px;
     grid-template-columns: auto auto minmax(160px, 380px) auto 1fr;
@@ -2065,7 +2087,7 @@ dialog.intro-dialog {
   }
 
   /* Brand and transport collapse by the room their minmax(0, 1fr) column gives
-     them, not by viewport width: 44px touch targets and 6/8's wider LED cluster
+     them, not by viewport width: 44px touch targets and 12/8's wider LED cluster
      move the thresholds (ADR 0054). Containment is safe only here; on the desktop
      auto columns it would collapse them to zero. */
   .brand {

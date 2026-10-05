@@ -6,13 +6,13 @@ import {
   AppSettings,
   BeatAccent,
   Clef,
+  CompoundPulseMode,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
   IntervalOptions,
   MAX_ZOOM,
   MIN_ZOOM,
   PITCH_CLASSES,
-  Pulse68Mode,
   ResolvedTheme,
   SolfegeLabelMode,
   SoundProfile,
@@ -28,6 +28,7 @@ import {
   clampTempo,
   computeOptimalZoom,
   getBeatsPerMeasure,
+  isCompound,
   isTupletSupported,
   resolveTheme,
   stageFitsStaff,
@@ -135,8 +136,8 @@ class GuidonicaApp {
 
   // Drawer Configuration Elements
   private selectTimeSig: HTMLSelectElement;
-  private groupPulse68: HTMLElement;
-  private selectPulse68: HTMLSelectElement;
+  private groupCompoundPulse: HTMLElement;
+  private selectCompoundPulse: HTMLSelectElement;
   private selectClef: HTMLSelectElement;
   private clefRangeHint: HTMLElement;
   private selectLedgerAbove: HTMLSelectElement;
@@ -240,8 +241,8 @@ class GuidonicaApp {
     this.controlsDrawer = document.getElementById('controls-drawer') as HTMLElement;
 
     this.selectTimeSig = document.getElementById('select-time-signature') as HTMLSelectElement;
-    this.groupPulse68 = document.getElementById('group-pulse-68') as HTMLElement;
-    this.selectPulse68 = document.getElementById('select-pulse-68') as HTMLSelectElement;
+    this.groupCompoundPulse = document.getElementById('group-compound-pulse') as HTMLElement;
+    this.selectCompoundPulse = document.getElementById('select-compound-pulse') as HTMLSelectElement;
     this.selectClef = document.getElementById('select-clef') as HTMLSelectElement;
     this.clefRangeHint = document.getElementById('clef-range-hint') as HTMLElement;
     this.selectLedgerAbove = document.getElementById('select-ledger-above') as HTMLSelectElement;
@@ -335,7 +336,7 @@ class GuidonicaApp {
     this.metronome.setVolume(initialSettings.volume);
     this.metronome.setMuted(initialSettings.isMuted);
     this.metronome.setSoundProfile(initialSettings.soundProfile);
-    this.metronome.setPulse68(initialSettings.pulse68);
+    this.metronome.setCompoundPulse(initialSettings.compoundPulse);
 
     this.generator = new MusicGenerator();
     this.renderer = new MeasureRenderer();
@@ -390,10 +391,10 @@ class GuidonicaApp {
     this.tempoNumber.value = String(settings.tempo);
     this.updateTempoTerm(settings.tempo);
 
-    // Time signature & 6/8 pulse
+    // Time signature & compound pulse
     this.selectTimeSig.value = settings.timeSignature;
-    this.groupPulse68.classList.toggle('hidden', settings.timeSignature !== '6/8');
-    this.selectPulse68.value = settings.pulse68;
+    this.groupCompoundPulse.classList.toggle('hidden', !isCompound(settings.timeSignature));
+    this.selectCompoundPulse.value = settings.compoundPulse;
 
     // Clef, ledger lines & range hint
     this.selectClef.value = settings.clef;
@@ -651,7 +652,7 @@ class GuidonicaApp {
     // Time Signature
     this.selectTimeSig.addEventListener('change', (e) => {
       const ts = (e.target as HTMLSelectElement).value as TimeSignature;
-      this.groupPulse68.classList.toggle('hidden', ts !== '6/8');
+      this.groupCompoundPulse.classList.toggle('hidden', !isCompound(ts));
       this.metronome.setTimeSignature(ts);
       this.renderBeatDots(ts);
       globalState.updateSettings({ timeSignature: ts });
@@ -665,11 +666,11 @@ class GuidonicaApp {
       this.resetSession();
     });
 
-    // 6/8 Pulse
-    this.selectPulse68.addEventListener('change', (e) => {
-      const pulse = (e.target as HTMLSelectElement).value as Pulse68Mode;
-      this.metronome.setPulse68(pulse);
-      globalState.updateSettings({ pulse68: pulse });
+    // Compound pulse
+    this.selectCompoundPulse.addEventListener('change', (e) => {
+      const pulse = (e.target as HTMLSelectElement).value as CompoundPulseMode;
+      this.metronome.setCompoundPulse(pulse);
+      globalState.updateSettings({ compoundPulse: pulse });
     });
 
     // Clef
@@ -1788,13 +1789,16 @@ class GuidonicaApp {
     this.scroller.renderFrame(settings);
   }
 
+  /** One LED per metric beat; compound meters group them in threes, beat-start LEDs full size (ADR 0076). */
   private renderBeatDots(ts: TimeSignature): void {
     this.beatDotsContainer.innerHTML = '';
+    const compound = isCompound(ts);
+    this.beatDotsContainer.classList.toggle('compound', compound);
     const dotsCount = getBeatsPerMeasure(ts);
 
     for (let i = 1; i <= dotsCount; i++) {
       const dot = document.createElement('div');
-      dot.className = 'beat-dot';
+      dot.className = compound && (i - 1) % 3 !== 0 ? 'beat-dot sub' : 'beat-dot';
       dot.dataset.beat = String(i);
       this.beatDotsContainer.appendChild(dot);
     }

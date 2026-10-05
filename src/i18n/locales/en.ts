@@ -58,10 +58,10 @@ const en = {
   rangeTitle: 'Pitch range (C4 = middle C)',
   meter: 'Meter',
   meterAria: 'Select musical time signature',
-  pulse68: '6/8 Pulse',
-  pulse68Aria: '6/8 Meter pulse grouping',
-  pulse68Two: '2 Beats (♩.)',
-  pulse68Six: '6 Beats (♪)',
+  compoundPulse: 'Pulse',
+  compoundPulseAria: 'Compound meter pulse grouping',
+  compoundPulseDotted: 'Dotted quarter (♩.)',
+  compoundPulseEighth: 'Eighth (♪)',
 
   // Rhythm
   sectionRhythm: 'Rhythm',
@@ -73,7 +73,7 @@ const en = {
   valueSixteenth: '16th',
   valueThirtySecond: '32nd',
   dotted: 'Dotted',
-  dottedTitle: 'Dotted Notes (hd, qd, 8d, 16d). 8d needs 16ths or 32nds, 16d needs 32nds',
+  dottedTitle: 'Dotted Notes (wd in 12/8, hd, qd, 8d, 16d). 8d needs 16ths or 32nds, 16d needs 32nds',
   tupletsFigures: 'Tuplets & figures',
   tuplets: 'Tuplets',
   tupletsToggleTitle: 'Configure n-tuplets and subdivisions',
@@ -243,6 +243,8 @@ const en = {
     '3/4': 'Simple triple · three quarter-note beats',
     '2/4': 'Simple duple · two quarter-note beats',
     '6/8': 'Compound duple · two dotted-quarter beats of three eighths',
+    '9/8': 'Compound triple · three dotted-quarter beats of three eighths',
+    '12/8': 'Compound quadruple · four dotted-quarter beats of three eighths',
   } as IntroMeterText,
 
   /** Note names indexed by c d e f g a b. Syllables keep the tonic sol-fa Ti. */

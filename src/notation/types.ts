@@ -14,11 +14,11 @@ export type Clef = (typeof CLEFS)[number];
 export const LANGUAGES = ['en', 'it', 'fr', 'de', 'es'] as const;
 export type Language = (typeof LANGUAGES)[number];
 
-export const TIME_SIGNATURES = ['4/4', '3/4', '2/4', '6/8'] as const;
+export const TIME_SIGNATURES = ['4/4', '3/4', '2/4', '6/8', '9/8', '12/8'] as const;
 export type TimeSignature = (typeof TIME_SIGNATURES)[number];
 
 export interface MeterConfig {
-  beatsPerMeasure: number; // Count of metric beats (6/8 counts eighth-note beats)
+  beatsPerMeasure: number; // Count of metric beats (compound meters count eighth-note beats)
   beatValue: number; // Denominator of the time signature
   secondsPerBeatFactor: number; // Metric beat length relative to one quarter-note BPM beat
 }
@@ -30,22 +30,34 @@ export const METER: Record<TimeSignature, MeterConfig> = {
   '2/4': { beatsPerMeasure: 2, beatValue: 4, secondsPerBeatFactor: 1 },
   // At tempo = 60 quarter BPM an eighth-note beat lasts 0.5 s
   '6/8': { beatsPerMeasure: 6, beatValue: 8, secondsPerBeatFactor: 0.5 },
+  '9/8': { beatsPerMeasure: 9, beatValue: 8, secondsPerBeatFactor: 0.5 },
+  '12/8': { beatsPerMeasure: 12, beatValue: 8, secondsPerBeatFactor: 0.5 },
 };
+
+/** Compound meter: eighth-note metric beats grouped in dotted quarters (ADR 0076). */
+export function isCompound(ts: TimeSignature): boolean {
+  return METER[ts].beatValue === 8;
+}
 
 export type BeatAccent = 'primary' | 'secondary' | 'weak';
 
-/** The bar's medium pulse, shared by the click and the beat LEDs (ADR 0072). */
-const SECONDARY_BEAT: Record<TimeSignature, number | null> = {
-  '4/4': 3,
-  '3/4': null,
-  '2/4': null,
-  '6/8': 4,
+/**
+ * The bar's medium pulses, shared by the click and the beat LEDs (ADR 0072): the middle
+ * of 4/4, and every dotted-quarter beat after the downbeat in compound meters (ADR 0076).
+ */
+const SECONDARY_BEATS: Record<TimeSignature, readonly number[]> = {
+  '4/4': [3],
+  '3/4': [],
+  '2/4': [],
+  '6/8': [4],
+  '9/8': [4, 7],
+  '12/8': [4, 7, 10],
 };
 
-/** Metric accent of a 1-based beat: downbeat, the bar's middle pulse, or weak (ADR 0072). */
+/** Metric accent of a 1-based beat: downbeat, a medium pulse, or weak (ADR 0072, 0076). */
 export function beatAccent(ts: TimeSignature, beatNumber: number): BeatAccent {
   if (beatNumber === 1) return 'primary';
-  return beatNumber === SECONDARY_BEAT[ts] ? 'secondary' : 'weak';
+  return SECONDARY_BEATS[ts].includes(beatNumber) ? 'secondary' : 'weak';
 }
 
 export const MIN_TEMPO = 30;
@@ -150,15 +162,26 @@ const SIMPLE_METER_TUPLETS: readonly TupletCell[] = [
   'septuplet:1/16',
 ];
 
+// Tuplets available in every compound meter: duple divisions of dotted groups (ADR 0076)
+const COMPOUND_METER_TUPLETS: readonly TupletCell[] = [
+  'duplet:1/4',
+  'duplet:1/8',
+  'duplet:1/16',
+  'triplet:1/16',
+  'quadruplet:1/4',
+  'quadruplet:1/8',
+  'quadruplet:1/16',
+];
+
 /**
  * Single source of truth for which tuplet cells are musically meaningful per meter.
  * The generator only draws from supported cells and the UI disables the rest, so
  * every enabled cell is reachable (P > 0) and no checked cell is silently ignored.
  * - Quint/sext/septuplet ¼ span a whole 4/4 bar (5/6/7:4).
  * - Duplet ¼ and quadruplet ¼/⅛ divide the 3-beat 3/4 bar (2:3, 4:3, 4:6).
- * - 6/8 uses duple divisions of its dotted groups: duplet/quadruplet ¼ across the bar,
- *   ⅛ across one dotted-quarter group, 1/16 across each dotted-eighth half-group;
- *   triplet 1/16 divides a single eighth.
+ * - Compound meters use duple divisions of their dotted groups: duplet/quadruplet ¼
+ *   across two dotted-quarter beats, ⅛ across one, 1/16 across each dotted-eighth
+ *   half-beat; triplet 1/16 divides a single eighth (ADR 0076).
  */
 export const TUPLET_SUPPORT: Record<TimeSignature, ReadonlySet<TupletCell>> = {
   '2/4': new Set(SIMPLE_METER_TUPLETS),
@@ -174,15 +197,9 @@ export const TUPLET_SUPPORT: Record<TimeSignature, ReadonlySet<TupletCell>> = {
     'sextuplet:1/4',
     'septuplet:1/4',
   ]),
-  '6/8': new Set<TupletCell>([
-    'duplet:1/4',
-    'duplet:1/8',
-    'duplet:1/16',
-    'triplet:1/16',
-    'quadruplet:1/4',
-    'quadruplet:1/8',
-    'quadruplet:1/16',
-  ]),
+  '6/8': new Set(COMPOUND_METER_TUPLETS),
+  '9/8': new Set(COMPOUND_METER_TUPLETS),
+  '12/8': new Set(COMPOUND_METER_TUPLETS),
 };
 
 export function isTupletSupported(ts: TimeSignature, name: TupletName, value: TupletValue): boolean {
@@ -203,7 +220,7 @@ const TUPLET_VALUE_WHOLES: Record<TupletValue, number> = { '1/4': 1 / 4, '1/8': 
 
 /**
  * Ratio and span of a supported tuplet cell in `ts`. `beats` counts the meter's beats
- * (dotted quarters in 6/8). Only 3/4 quadruplet 1/8 departs from the table: 4:6 across the bar.
+ * (dotted quarters in compound meters). Only 3/4 quadruplet 1/8 departs from the table: 4:6 across the bar.
  */
 export function tupletShape(
   ts: TimeSignature,
@@ -212,7 +229,7 @@ export function tupletShape(
 ): { notes: number; inTimeOf: number; beats: number } {
   const [notes, base] = TUPLET_RATIO[name];
   const inTimeOf = ts === '3/4' && name === 'quadruplet' && value === '1/8' ? 6 : base;
-  const beatWholes = ts === '6/8' ? 3 / 8 : 1 / 4;
+  const beatWholes = isCompound(ts) ? 3 / 8 : 1 / 4;
   return { notes, inTimeOf, beats: (inTimeOf * TUPLET_VALUE_WHOLES[value]) / beatWholes };
 }
 
@@ -241,6 +258,23 @@ function simpleMeterTupletPlacements(twoBeat: TupletPlacement): Partial<Record<T
 }
 
 /**
+ * Compound meters: ⅛ cells on each dotted-quarter beat, 1/16 duplets and quadruplets on
+ * each dotted-eighth half-beat, the 1/16 triplet on every eighth; two-beat ¼ cells where
+ * `twoBeat` puts them (ADR 0076).
+ */
+function compoundMeterTupletPlacements(twoBeat: TupletPlacement): Partial<Record<TupletCell, TupletPlacement>> {
+  return {
+    'duplet:1/4': twoBeat,
+    'quadruplet:1/4': twoBeat,
+    'duplet:1/8': { period: 3, offsets: [0] },
+    'quadruplet:1/8': { period: 3, offsets: [0] },
+    'duplet:1/16': { period: 1.5, offsets: [0] },
+    'quadruplet:1/16': { period: 1.5, offsets: [0] },
+    'triplet:1/16': ON_EACH_BEAT,
+  };
+}
+
+/**
  * Tuplet placement table: where a group of each supported cell may start, the tuplet
  * counterpart of NOTEHEAD_PLACEMENTS (ties.ts). Its keys are exactly TUPLET_SUPPORT[ts];
  * a group's span comes from tupletSpan(). Bar-long cells start only at 0 (ADR 0065).
@@ -259,20 +293,15 @@ export const TUPLET_PLACEMENTS: Record<TimeSignature, Partial<Record<TupletCell,
     'sextuplet:1/4': { period: 4, offsets: [0] },
     'septuplet:1/4': { period: 4, offsets: [0] },
   },
-  '6/8': {
-    'duplet:1/4': { period: 6, offsets: [0] },
-    'quadruplet:1/4': { period: 6, offsets: [0] },
-    'duplet:1/8': { period: 3, offsets: [0] },
-    'quadruplet:1/8': { period: 3, offsets: [0] },
-    'duplet:1/16': { period: 1.5, offsets: [0] },
-    'quadruplet:1/16': { period: 1.5, offsets: [0] },
-    'triplet:1/16': ON_EACH_BEAT,
-  },
+  // Two-beat ¼ cells: beats 1 (and 3) like 4/4's two-beat groups; in 9/8 beat 1 or 2, like 3/4
+  '6/8': compoundMeterTupletPlacements({ period: 6, offsets: [0] }),
+  '9/8': compoundMeterTupletPlacements({ period: 9, offsets: [0, 3] }),
+  '12/8': compoundMeterTupletPlacements({ period: 6, offsets: [0] }),
 };
 
-/** Span of one group of a supported cell in metric beats (eighths in 6/8). */
+/** Span of one group of a supported cell in metric beats (eighths in compound meters). */
 export function tupletSpan(ts: TimeSignature, name: TupletName, value: TupletValue): number {
-  return tupletShape(ts, name, value).beats * (ts === '6/8' ? 3 : 1);
+  return tupletShape(ts, name, value).beats * (isCompound(ts) ? 3 : 1);
 }
 
 /** Returns a copy of `tuplets` with every cell unsupported by `ts` switched off. */
@@ -300,7 +329,7 @@ export interface SubdivisionOptions {
 /** Note labels drawn beside noteheads; the UI language supplies the spelling (ADR 0059). */
 export type SolfegeLabelMode = 'none' | 'syllables' | 'letters';
 export type SoundProfile = 'triangle' | 'woodblock';
-export type Pulse68Mode = 'dotted-quarter' | 'eighth';
+export type CompoundPulseMode = 'dotted-quarter' | 'eighth';
 export type ThemeMode = 'auto' | 'light' | 'dark';
 export type ResolvedTheme = 'light' | 'dark';
 
@@ -404,7 +433,7 @@ export interface AppSettings {
   solfegeLabelMode: SolfegeLabelMode;
   language: Language; // UI language and national note naming (ADR 0059)
   soundProfile: SoundProfile;
-  pulse68: Pulse68Mode;
+  compoundPulse: CompoundPulseMode;
   countIn: boolean;
   theme: ThemeMode;
   volume: number; // 0.0 to 1.0
@@ -440,7 +469,7 @@ export interface MeasureData {
   notes: NoteData[];
   clef: Clef;
   timeSignature: TimeSignature;
-  beatsPerMeasure: number; // Count of metric beats (e.g., 4 for 4/4, 6 for 6/8)
+  beatsPerMeasure: number; // Count of metric beats (e.g., 4 for 4/4, 12 for 12/8)
   beatValue: number; // Denominator (e.g. 4 for 4/4, 8 for 6/8)
   beatWidth: number; // Metric beat width (px) dynamically sized for active subdivisions
   width: number; // Measure pixel width
@@ -522,8 +551,8 @@ export function computeBeatWidth(
       tuplets.triplet['1/8'] ||
       tuplets.duplet['1/8']);
 
-  if (timeSignature === '6/8') {
-    // 6/8 compound meter: 6 eighth-note beats per measure.
+  if (isCompound(timeSignature)) {
+    // Compound meters: per-eighth-beat widths, whatever the bar length.
     if (subdivisions.thirtySecond) {
       // 32nd note = 0.25 eighth beat -> 45px spacing per 32nd (180px per eighth beat)
       return 180;

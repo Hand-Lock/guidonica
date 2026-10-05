@@ -2,6 +2,7 @@ import {
   AppSettings,
   CLEFS,
   Clef,
+  CompoundPulseMode,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
   LedgerLineOptions,
@@ -11,7 +12,6 @@ import {
   MIN_TEMPO,
   MIN_ZOOM,
   PitchClassOptions,
-  Pulse68Mode,
   SolfegeLabelMode,
   SoundProfile,
   TIME_SIGNATURES,
@@ -28,7 +28,7 @@ const SOLFEGE_LABEL_MODES: readonly SolfegeLabelMode[] = ['none', 'syllables', '
 // Label modes before ADR 0059: both syllable spellings became the language-driven 'syllables'
 const LEGACY_SYLLABLE_MODES: readonly string[] = ['solfege', 'italian'];
 const SOUND_PROFILES: readonly SoundProfile[] = ['woodblock', 'triangle'];
-const PULSE_68_MODES: readonly Pulse68Mode[] = ['dotted-quarter', 'eighth'];
+const COMPOUND_PULSE_MODES: readonly CompoundPulseMode[] = ['dotted-quarter', 'eighth'];
 const THEME_MODES: readonly ThemeMode[] = ['auto', 'light', 'dark'];
 const ZOOM_MODES: readonly ZoomMode[] = ['auto', 'manual'];
 
@@ -68,7 +68,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   solfegeLabelMode: 'none',
   language: 'en', // Replaced by the detected browser language on load
   soundProfile: 'woodblock',
-  pulse68: 'dotted-quarter',
+  compoundPulse: 'dotted-quarter',
   countIn: true,
   theme: 'auto',
   volume: 0.8,
@@ -199,7 +199,12 @@ export function loadStoredSettings(): AppSettings {
         : pickEnum<SolfegeLabelMode>(parsed.solfegeLabelMode, SOLFEGE_LABEL_MODES, d.solfegeLabelMode),
       language: pickEnum(parsed.language, SUPPORTED_LANGUAGES, detectLanguage()),
       soundProfile,
-      pulse68: pickEnum<Pulse68Mode>(parsed.pulse68, PULSE_68_MODES, d.pulse68),
+      // `pulse68` is the key before 9/8 and 12/8 shared the setting (ADR 0076)
+      compoundPulse: pickEnum<CompoundPulseMode>(
+        parsed.compoundPulse ?? parsed.pulse68,
+        COMPOUND_PULSE_MODES,
+        d.compoundPulse
+      ),
       countIn: pickBool(parsed.countIn, d.countIn),
       theme,
       volume: pickNumber(parsed.volume, 0, 1, d.volume),
