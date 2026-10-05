@@ -14,6 +14,8 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ## [Unreleased]
 
+## [2026.10.0] - 2026-10-05
+
 ### Added
 
 - Practise 9/8 and 12/8: compound triple and quadruple meters, with the same pulse choice as 6/8 (ADR 0076).
@@ -46,5 +48,6 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - First public release.
 
-[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.0...HEAD
+[2026.10.0]: https://github.com/Hand-Lock/guidonica/compare/v1.0.0...v2026.10.0
 [1.0.0]: https://github.com/Hand-Lock/guidonica/releases/tag/v1.0.0
