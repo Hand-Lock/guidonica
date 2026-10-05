@@ -4,6 +4,7 @@
 
 import {
   AppSettings,
+  BeatAccent,
   Clef,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
@@ -1818,18 +1819,21 @@ class GuidonicaApp {
     if (!info.isCountIn && globalState.playbackState === 'counting-in') {
       globalState.setPlaybackState('playing');
     }
-    this.highlightBeatDot(info.beatNumber, info.isDownbeat);
+    this.highlightBeatDot(info.beatNumber, info.accent);
   }
 
-  private highlightBeatDot(beatNumber: number, isDownbeat: boolean): void {
+  /** Lights one LED in its accent colour: ruby downbeat, orange middle pulse, Olo weak beat (ADR 0072). */
+  private highlightBeatDot(beatNumber: number, accent: BeatAccent): void {
     const dots = this.beatDotsContainer.querySelectorAll('.beat-dot');
-    dots.forEach((dot) => dot.classList.remove('active', 'downbeat'));
+    dots.forEach((dot) => dot.classList.remove('active', 'downbeat', 'secondary'));
 
     const target = this.beatDotsContainer.querySelector(`[data-beat="${beatNumber}"]`);
     if (target) {
       target.classList.add('active');
-      if (isDownbeat) {
+      if (accent === 'primary') {
         target.classList.add('downbeat');
+      } else if (accent === 'secondary') {
+        target.classList.add('secondary');
       }
     }
   }
@@ -1837,7 +1841,7 @@ class GuidonicaApp {
   private resetBeatDots(): void {
     this.lastBeatIndex = null;
     const dots = this.beatDotsContainer.querySelectorAll('.beat-dot');
-    dots.forEach((dot) => dot.classList.remove('active', 'downbeat'));
+    dots.forEach((dot) => dot.classList.remove('active', 'downbeat', 'secondary'));
   }
 
   /** Lights the header meter's bars and names the matching preset, or Custom (ADR 0053). */

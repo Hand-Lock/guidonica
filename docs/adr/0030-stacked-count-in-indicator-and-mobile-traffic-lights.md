@@ -3,7 +3,7 @@
 Date: 2026-09-18
 
 ## Status
-Accepted
+Accepted; amended by [0072](0072-three-level-beat-accent-hierarchy.md) (orange secondary beat LED)
 
 ## Context
 Guidonica features a luminous beat indicator capsule ("traffic lights") in the primary navigation bar (`.primary-bar`), containing dynamic skeuomorphic LED glass spheres (`.beat-dot`) that pulse in synchronization with metronome beats.

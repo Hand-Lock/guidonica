@@ -178,6 +178,8 @@
   --led-on-glow: 0 0 10px #00ffcc, 0 0 20px rgba(0, 255, 204, 0.55), inset 0 1px 1px #ffffff;
   --led-down: radial-gradient(circle at 35% 35%, #ffffff 0%, #f43f5e 30%, #e11d48 80%, #9f1239 100%);
   --led-down-glow: 0 0 12px #f43f5e, 0 0 22px rgba(225, 29, 72, 0.6), inset 0 1px 1px #ffffff;
+  --led-mid: radial-gradient(circle at 35% 35%, #ffffff 0%, #fb923c 30%, #f97316 80%, #c2410c 100%);
+  --led-mid-glow: 0 0 11px #fb923c, 0 0 21px rgba(249, 115, 22, 0.6), inset 0 1px 1px #ffffff;
 }
 
 [data-theme='dark'] {
@@ -235,6 +237,7 @@
   --led-on: radial-gradient(circle at 35% 35%, #ffffff 0%, #00ffcc 30%, #00bfa5 75%, #005a4e 100%);
   --led-on-glow: 0 0 12px #00ffcc, 0 0 22px rgba(0, 255, 204, 0.65), inset 0 1px 1px #ffffff;
   --led-down-glow: 0 0 14px #f43f5e, 0 0 24px rgba(244, 63, 94, 0.7), inset 0 1px 1px #ffffff;
+  --led-mid-glow: 0 0 13px #fb923c, 0 0 23px rgba(251, 146, 60, 0.7), inset 0 1px 1px #ffffff;
 }
 
 /* ==========================================================================
@@ -791,6 +794,12 @@ input[type='range']:focus-visible::-moz-range-thumb {
   background: var(--led-down);
   box-shadow: var(--led-down-glow);
   transform: scale(1.42);
+}
+
+.beat-dot.active.secondary {
+  background: var(--led-mid);
+  box-shadow: var(--led-mid-glow);
+  transform: scale(1.35);
 }
 
 /* ==========================================================================

@@ -1,9 +1,11 @@
 import {
   AudioSessionType,
+  BeatAccent,
   METER,
   Pulse68Mode,
   SoundProfile,
   TimeSignature,
+  beatAccent,
   clampTempo,
 } from '../notation/types';
 
@@ -12,6 +14,7 @@ export interface BeatInfo {
   beatIndex: number; // Global integer beat (negative during count-in)
   beatNumber: number; // 1-based index within the measure
   isDownbeat: boolean;
+  accent: BeatAccent; // Metric weight shared with the click (ADR 0072)
   isCountIn: boolean;
 }
 
@@ -334,24 +337,15 @@ export class MetronomeEngine {
       const shouldClick = !isCompound68 || beatNumber === 1 || beatNumber === 4;
 
       if (shouldClick) {
-        this.scheduleClick(
-          beatTime,
-          beatNumber === 1,
-          this.timeSignature === '6/8' && beatNumber === 4
-        );
+        this.scheduleClick(beatTime, beatAccent(this.timeSignature, beatNumber));
       }
-
 
       this.scheduledBeatCount++;
       this.nextBeatTime += this.secondsPerBeat;
     }
   }
 
-  private scheduleClick(
-    time: number,
-    isDownbeat: boolean,
-    isCompoundSubaccent: boolean = false
-  ): void {
+  private scheduleClick(time: number, accent: BeatAccent): void {
     if (!this.ctx || !this.masterGainNode) return;
 
     const osc = this.ctx.createOscillator();
@@ -364,11 +358,11 @@ export class MetronomeEngine {
       let freqEnd = 550;
       let gainLevel = 0.9;
 
-      if (isDownbeat) {
+      if (accent === 'primary') {
         freqStart = 1600;
         freqEnd = 800;
         gainLevel = 1.0;
-      } else if (isCompoundSubaccent) {
+      } else if (accent === 'secondary') {
         freqStart = 1350;
         freqEnd = 675;
         gainLevel = 0.95;
@@ -391,10 +385,10 @@ export class MetronomeEngine {
       let freq = 800;
       let gainLevel = 0.7;
 
-      if (isDownbeat) {
+      if (accent === 'primary') {
         freq = 1300;
         gainLevel = 1.0;
-      } else if (isCompoundSubaccent) {
+      } else if (accent === 'secondary') {
         freq = 1050;
         gainLevel = 0.85;
       }
@@ -484,6 +478,7 @@ export class MetronomeEngine {
       beatIndex,
       beatNumber,
       isDownbeat: beatNumber === 1,
+      accent: beatAccent(this.timeSignature, beatNumber),
       isCountIn: beatIndex < 0,
     };
   }

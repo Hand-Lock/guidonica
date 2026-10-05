@@ -32,6 +32,22 @@ export const METER: Record<TimeSignature, MeterConfig> = {
   '6/8': { beatsPerMeasure: 6, beatValue: 8, secondsPerBeatFactor: 0.5 },
 };
 
+export type BeatAccent = 'primary' | 'secondary' | 'weak';
+
+/** The bar's medium pulse, shared by the click and the beat LEDs (ADR 0072). */
+const SECONDARY_BEAT: Record<TimeSignature, number | null> = {
+  '4/4': 3,
+  '3/4': null,
+  '2/4': null,
+  '6/8': 4,
+};
+
+/** Metric accent of a 1-based beat: downbeat, the bar's middle pulse, or weak (ADR 0072). */
+export function beatAccent(ts: TimeSignature, beatNumber: number): BeatAccent {
+  if (beatNumber === 1) return 'primary';
+  return beatNumber === SECONDARY_BEAT[ts] ? 'secondary' : 'weak';
+}
+
 export const MIN_TEMPO = 30;
 export const MAX_TEMPO = 240;
 

@@ -173,6 +173,7 @@ Only the loaded faces may be used: Alegreya 700 (plus italic 400/700), Alegreya 
 - The beads sit in a well capsule.
 - Inactive beads are recessed pearls.
 - Active sub-beats are Olo spheres, scaled to 1.28.
+- The active secondary beat (6/8 beat 4, 4/4 beat 3) is an orange gem, scaled to 1.35.
 - The active downbeat is a ruby gem, scaled to 1.42.
 - The COUNT-IN badge floats absolutely above the capsule, so the capsule's width never changes.
 

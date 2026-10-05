@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { MetronomeEngine } from '../src/audio/metronome';
+import { BeatAccent, TimeSignature, beatAccent } from '../src/notation/types';
 
 describe('MetronomeEngine', () => {
   let metronome: MetronomeEngine;
@@ -197,7 +198,7 @@ describe('MetronomeEngine', () => {
   });
 
   describe('hardware-clock beat info and latency compensation', () => {
-    const makeCtx = (outputLatency = 0) => ({
+    const makeCtx = (outputLatency = 0, clickFrequencies: number[] = []) => ({
       currentTime: 10.0,
       outputLatency,
       baseLatency: 0,
@@ -216,7 +217,12 @@ describe('MetronomeEngine', () => {
         type: 'sine',
         connect: () => {},
         disconnect: () => {},
-        frequency: { setValueAtTime: () => {}, exponentialRampToValueAtTime: () => {} },
+        frequency: {
+          setValueAtTime: (value: number) => {
+            clickFrequencies.push(value);
+          },
+          exponentialRampToValueAtTime: () => {},
+        },
         start: () => {},
         stop: () => {},
       }),
@@ -283,5 +289,47 @@ describe('MetronomeEngine', () => {
         expect(metronome.getCurrentGlobalBeat()).toBeCloseTo(before, 5);
       });
     });
+
+    it('reports the secondary accent on beat 3 of a 4/4 bar', () => {
+      const ctx = makeCtx();
+      withCtx(ctx, () => {
+        metronome = new MetronomeEngine(60, '4/4');
+        metronome.start(false);
+        // measure 0 starts at 10.05
+        ctx.currentTime = 12.1;
+        expect(metronome.getBeatInfo()).toMatchObject({ beatNumber: 3, accent: 'secondary', isDownbeat: false });
+        ctx.currentTime = 13.1;
+        expect(metronome.getBeatInfo()).toMatchObject({ beatNumber: 4, accent: 'weak' });
+        ctx.currentTime = 14.1;
+        expect(metronome.getBeatInfo()).toMatchObject({ beatNumber: 1, accent: 'primary', isDownbeat: true });
+      });
+    });
+
+    it('clicks the medium woodblock (1350 Hz) on 4/4 beat 3', () => {
+      const starts: number[] = [];
+      const ctx = makeCtx(0, starts);
+      withCtx(ctx, () => {
+        metronome = new MetronomeEngine(60, '4/4');
+        metronome.start(false);
+        const tick = (metronome as unknown as { scheduler(): void }).scheduler.bind(metronome);
+        for (let i = 1; i < 4; i++) {
+          ctx.currentTime = 10 + i;
+          tick();
+        }
+        expect(starts).toEqual([1600, 1100, 1350, 1100]);
+      });
+    });
+  });
+
+  it('maps every meter to its beat accent hierarchy', () => {
+    const expected: Record<TimeSignature, BeatAccent[]> = {
+      '4/4': ['primary', 'weak', 'secondary', 'weak'],
+      '3/4': ['primary', 'weak', 'weak'],
+      '2/4': ['primary', 'weak'],
+      '6/8': ['primary', 'weak', 'weak', 'secondary', 'weak', 'weak'],
+    };
+    for (const [ts, accents] of Object.entries(expected) as [TimeSignature, BeatAccent[]][]) {
+      expect(accents.map((_, i) => beatAccent(ts, i + 1))).toEqual(accents);
+    }
   });
 });

@@ -179,7 +179,9 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter beat i
 - Synthesized clicks using native `OscillatorNode` and exponential `GainNode` envelopes (zero external audio file dependencies).
 - Distinct timbres:
   - **Beat 1 (Downbeat)**: Higher frequency accent pulse (e.g., 1200 Hz).
-  - **Subsequent Beats**: Lower frequency pulse (e.g., 800 Hz).
+  - **Secondary beat** (4/4 beat 3, 6/8 beat 4): Medium accent pulse between the two (ADR 0072).
+  - **Other Beats**: Lower frequency pulse (e.g., 800 Hz).
+- The beat LEDs follow the same three levels: ruby downbeat, orange secondary beat, turquoise weak beats, each a little smaller than the one before (ADR 0072).
 
 ---
 

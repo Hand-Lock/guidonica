@@ -69,4 +69,15 @@ describe('Metronome Traffic Lights & Count-In Indicator', () => {
     badge!.classList.add('hidden');
     expect(badge!.classList.contains('hidden')).toBe(true);
   });
+
+  it('lights the secondary beat as an orange gem between the weak and downbeat scales (ADR 0072)', () => {
+    expect(styleCss).toMatch(
+      /\.beat-dot\.active\.secondary\s*\{[^}]*background:\s*var\(--led-mid\);[^}]*transform:\s*scale\(1\.35\);/
+    );
+    expect(styleCss).toMatch(/\.beat-dot\.active\s*\{[^}]*transform:\s*scale\(1\.28\);/);
+    expect(styleCss).toMatch(/\.beat-dot\.active\.downbeat\s*\{[^}]*transform:\s*scale\(1\.42\);/);
+    expect(styleCss).toMatch(/--led-mid:\s*radial-gradient/);
+    // Light and dark themes both define the orange glow
+    expect(styleCss.match(/--led-mid-glow:/g)?.length).toBe(2);
+  });
 });
