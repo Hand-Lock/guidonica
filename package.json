@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "icons": "node scripts/build-icons.mjs",
+    "banners": "node scripts/build-banners.mjs",
     "music-font": "python3 scripts/build-music-font.py",
     "ui-fonts": "node scripts/fetch-ui-fonts.mjs",
     "release": "node scripts/release.mjs"

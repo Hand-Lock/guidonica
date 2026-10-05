@@ -301,6 +301,7 @@ Guidonica is fully tested and optimized for macOS and Apple Silicon:
 | `pnpm release` | Cuts the next CalVer release in `CHANGELOG.md` and `package.json`, without committing (maintainer only; ADR 0078). |
 | `pnpm icons` | Regenerates the Guidonian Hand vector outputs (`favicon.svg`, the README logo, the header glyph) from `scripts/build-icons.mjs`. |
 | `pnpm icons -- --raster` | Also re-renders the PNG/ICO icons (touch, manifest and favicon) through headless Firefox (must be installed). |
+| `pnpm banners` | Regenerates the social profile banners in `docs/brand/banners/` (Mastodon, Bluesky, X, YouTube) from live captures of the production build (ADR 0079). Dev-only, needs the run-guidonica Playwright setup; `--guides` also writes review copies with avatar and safe zones. |
 | `pnpm ui-fonts` | Re-downloads the self-hosted text fonts (`src/fonts/`) and their licences from Google Fonts via `scripts/fetch-ui-fonts.mjs`. Dev-only; the output is committed, so normal development never runs it. |
 | `pnpm music-font` | Regenerates the Guidonica Notation font (`src/notation/fonts/`) from Bravura via `scripts/build-music-font.py`. Dev-only, needs Python with `pip install fonttools brotli`; the output is committed, so normal development never runs it. |
 
@@ -421,6 +422,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0076](docs/adr/0076-compound-triple-and-quadruple-meters.md) | Compound Triple and Quadruple Meters (9/8, 12/8) | Accepted |
 | [0077](docs/adr/0077-ci-actions-node-24.md) | CI Actions on Node 24 Releases | Accepted |
 | [0078](docs/adr/0078-release-channels-calver-changelog-whats-new.md) | Release Channels, CalVer Changelog and "What's New" | Accepted |
+| [0079](docs/adr/0079-social-profile-banners.md) | Social Profile Banners | Accepted |
 
 ---
 

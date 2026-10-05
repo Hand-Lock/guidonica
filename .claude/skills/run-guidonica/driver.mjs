@@ -8,15 +8,12 @@
 // project's package.json keeps its minimal dependency list. See SKILL.md.
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { homedir, platform, tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { PW_CLI, PW_DIR, PW_ENTRY, browserCache, findChromium } from './chromium.mjs';
 
-const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-const PW_DIR = join(REPO, 'node_modules/.cache/run-guidonica');
-const PW_ENTRY = join(PW_DIR, 'node_modules/playwright-core/index.mjs');
-const PW_CLI = join(PW_DIR, 'node_modules/playwright-core/cli.js');
 const LANGS = ['en', 'it', 'fr', 'de', 'es'];
 const THEMES = ['light', 'dark', 'auto'];
 const STEP_KINDS = ['click', 'press', 'wait', 'scroll', 'text', 'eval', 'shot'];
@@ -29,44 +26,6 @@ steps: click:<sel> press:<Key> wait:<ms> scroll:<sel> text:<sel> eval:<js> shot:
 function fail(message) {
   console.error(`driver: ${message}`);
   process.exit(1);
-}
-
-/** Playwright's browser cache: PLAYWRIGHT_BROWSERS_PATH, else the per-OS default. */
-function browserCache() {
-  if (process.env.PLAYWRIGHT_BROWSERS_PATH) return process.env.PLAYWRIGHT_BROWSERS_PATH;
-  return platform() === 'darwin'
-    ? join(homedir(), 'Library/Caches/ms-playwright')
-    : join(homedir(), '.cache/ms-playwright');
-}
-
-const EXECUTABLES = new Set(['Google Chrome for Testing', 'Chromium', 'chrome', 'chrome-headless-shell', 'headless_shell']);
-
-function findExecutable(dir, depth) {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    const stat = statSync(path);
-    if (stat.isFile() && EXECUTABLES.has(name) && stat.mode & 0o111) return path;
-    if (stat.isDirectory() && depth > 0) {
-      const found = findExecutable(path, depth - 1);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-/** Newest cached Chromium; the full build wins over the headless shell at equal revision. */
-function findChromium() {
-  const cache = browserCache();
-  if (!existsSync(cache)) return null;
-  const dirs = readdirSync(cache)
-    .map((name) => /^(chromium|chromium_headless_shell)-(\d+)$/.exec(name))
-    .filter((m) => m !== null)
-    .sort((a, b) => Number(b[2]) - Number(a[2]) || (a[1] === 'chromium' ? -1 : 1));
-  for (const m of dirs) {
-    const exe = findExecutable(join(cache, m[0]), 5);
-    if (exe) return exe;
-  }
-  return null;
 }
 
 function setup() {

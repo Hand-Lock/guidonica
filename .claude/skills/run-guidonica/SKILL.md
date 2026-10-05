@@ -25,6 +25,8 @@ node .claude/skills/run-guidonica/driver.mjs --setup
 ```
 
 `--setup` installs `playwright-core` into `node_modules/.cache/run-guidonica/`.
+The Playwright and Chromium lookup lives in `chromium.mjs`, which
+`scripts/build-banners.mjs` (`pnpm banners`, ADR 0079) shares.
 That directory is gitignored, and `package.json` is deliberately left unchanged
 (AGENTS.md keeps the dependency list minimal). It then prints the Chromium it
 will use, which is the newest `chromium-*` or `chromium_headless_shell-*` in the

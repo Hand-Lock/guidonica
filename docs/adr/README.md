@@ -84,6 +84,7 @@ This directory documents the core architectural decisions, implementation method
 | [0076](0076-compound-triple-and-quadruple-meters.md) | Compound Triple and Quadruple Meters (9/8, 12/8) | Accepted | 2026-10-05 |
 | [0077](0077-ci-actions-node-24.md) | CI Actions on Node 24 Releases | Accepted | 2026-10-05 |
 | [0078](0078-release-channels-calver-changelog-whats-new.md) | Release Channels, CalVer Changelog and "What's New" | Accepted | 2026-10-05 |
+| [0079](0079-social-profile-banners.md) | Social Profile Banners | Accepted | 2026-10-05 |
 
 ---
 
