@@ -5,12 +5,15 @@ import {
   MeasureData,
   NoteData,
   TUPLET_NAMES,
+  TUPLET_SUPPORT,
   TUPLET_VALUES,
+  TupletCell,
   computeBeatWidth,
 } from '../src/notation/types';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import {
   INTRO_CLEFS,
+  INTRO_METERS,
   LEVEL_PRESETS,
   LevelId,
   PreviewWindow,
@@ -77,22 +80,24 @@ function diatonicStep(key: string): number {
 describe('intro preview representations (ADR 0051)', () => {
   for (const preset of LEVEL_PRESETS) {
     for (const clef of INTRO_CLEFS) {
-      it(`${preset.id} / ${clef}: preview Ω ⊆ preset Ω with the same spacing`, () => {
-        const previewPatch = buildPreviewSettings(preset.id, clef);
-        const presetPatch = buildPresetSettings(preset.id, clef);
-        expectSubset(previewPatch, presetPatch, preset.id);
+      for (const meter of INTRO_METERS) {
+        it(`${preset.id} / ${clef} / ${meter}: preview Ω ⊆ preset Ω with the same spacing`, () => {
+          const previewPatch = buildPreviewSettings(preset.id, clef, meter);
+          const presetPatch = buildPresetSettings(preset.id, clef, meter);
+          expectSubset(previewPatch, presetPatch, preset.id);
 
-        const preview = full(previewPatch);
-        const real = full(presetPatch);
-        expect(computeBeatWidth(preview.subdivisions, preview.timeSignature, preview.tuplets)).toBe(
-          computeBeatWidth(real.subdivisions, real.timeSignature, real.tuplets)
-        );
+          const preview = full(previewPatch);
+          const real = full(presetPatch);
+          expect(computeBeatWidth(preview.subdivisions, preview.timeSignature, preview.tuplets)).toBe(
+            computeBeatWidth(real.subdivisions, real.timeSignature, real.tuplets)
+          );
 
-        const { dotted: _dotted, ...values } = preview.subdivisions;
-        const anyTuplet = TUPLET_NAMES.some((n) => TUPLET_VALUES.some((v) => preview.tuplets[n][v]));
-        expect(Object.values(values).some(Boolean) || anyTuplet).toBe(true);
-        expect(Object.values(preview.intervals).some(Boolean)).toBe(true);
-      });
+          const { dotted: _dotted, ...values } = preview.subdivisions;
+          const anyTuplet = TUPLET_NAMES.some((n) => TUPLET_VALUES.some((v) => preview.tuplets[n][v]));
+          expect(Object.values(values).some(Boolean) || anyTuplet).toBe(true);
+          expect(Object.values(preview.intervals).some(Boolean)).toBe(true);
+        });
+      }
     }
 
     it(`${preset.id}: applying the level still loads the full preset`, () => {
@@ -225,6 +230,11 @@ describe('intro preview signature check (ADR 0052)', () => {
     });
   }
 
+  it('intermediate: accepts a lone tuplet group filling a short window', () => {
+    expect(acceptsPreview('intermediate', windowOf('3x8 3x8 3x8', 1))).toBe(true);
+    expect(acceptsPreview('intermediate', windowOf('8 3x8 3x8 3x8', 1.5))).toBe(false);
+  });
+
   it('previewWindow keeps only the notes starting before the visible beat', () => {
     const settings = full(buildPreviewSettings('beginner', 'treble'));
     const measures = generateMeasures(settings, 3);
@@ -238,6 +248,7 @@ describe('intro preview signature check (ADR 0052)', () => {
 
   // 32 attempts all failing has probability (1 − rate)^32 < 1e-4 when rate ≥ 25%.
   // Cards of 229–510 px show ≈ 1–4 beats; only the 220/360 px beats get down to one.
+  // In 6/8 a beat is an eighth at 80–180 px: the same cards show ≈ 1.8–10.8 eighths.
   const WINDOWS = 300;
   const LENGTHS: Record<LevelId, readonly number[]> = {
     beginner: [1.3, 2, 4],
@@ -246,26 +257,37 @@ describe('intro preview signature check (ADR 0052)', () => {
     advanced: [1, 1.3, 2, 4],
     virtuoso: [1, 1.3, 2, 4],
   };
+  const LENGTHS_68: Record<LevelId, readonly number[]> = {
+    beginner: [4, 7, 10.8],
+    elementary: [4, 7, 10.8],
+    intermediate: [2.9, 5, 7.8],
+    advanced: [1.8, 3, 4.8],
+    virtuoso: [1.8, 3, 4.8],
+  };
   for (const preset of LEVEL_PRESETS) {
-    for (const length of LENGTHS[preset.id]) {
-      it(`${preset.id}: ≥ 25% of ${length}-beat windows pass`, () => {
-        const settings = full(buildPreviewSettings(preset.id, 'treble'));
-        let accepted = 0;
-        for (let i = 0; i < WINDOWS; i++) {
-          const window = previewWindow(generateMeasures(settings, 3), length);
-          if (acceptsPreview(preset.id, window)) accepted++;
-        }
-        expect(accepted / WINDOWS).toBeGreaterThanOrEqual(0.25);
-      });
+    for (const meter of INTRO_METERS) {
+      for (const length of (meter === '6/8' ? LENGTHS_68 : LENGTHS)[preset.id]) {
+        it(`${preset.id} / ${meter}: ≥ 25% of ${length}-beat windows pass`, () => {
+          const settings = full(buildPreviewSettings(preset.id, 'treble', meter));
+          let accepted = 0;
+          for (let i = 0; i < WINDOWS; i++) {
+            const window = previewWindow(generateMeasures(settings, 3), length);
+            if (acceptsPreview(preset.id, window)) accepted++;
+          }
+          expect(accepted / WINDOWS).toBeGreaterThanOrEqual(0.25);
+        });
+      }
     }
   }
 });
 
 describe('header level meter index (ADR 0053)', () => {
-  it('ranks each preset 1–5 under every intro clef', () => {
+  it('ranks each preset 1–5 under every intro clef and meter', () => {
     LEVEL_PRESETS.forEach((preset, i) => {
       for (const clef of INTRO_CLEFS) {
-        expect(levelIndex(full(buildPresetSettings(preset.id, clef)))).toBe(i + 1);
+        for (const meter of INTRO_METERS) {
+          expect(levelIndex(full(buildPresetSettings(preset.id, clef, meter)))).toBe(i + 1);
+        }
       }
     });
   });
@@ -329,5 +351,52 @@ describe('level progression (ADR 0070)', () => {
       settings.pitchClasses = { ...settings.pitchClasses, c: !settings.pitchClasses.c };
       expect(matchLevel(settings), preset.id).toBeNull();
     }
+  });
+});
+
+describe('intro meter step (ADR 0071)', () => {
+  const onCells = (s: Partial<AppSettings>): TupletCell[] => {
+    const tuplets = s.tuplets;
+    if (!tuplets) return [];
+    return TUPLET_NAMES.flatMap((n) => TUPLET_VALUES.filter((v) => tuplets[n][v]).map((v): TupletCell => `${n}:${v}`));
+  };
+
+  it('sets the meter and keeps only the tuplets it supports', () => {
+    for (const preset of LEVEL_PRESETS) {
+      for (const clef of INTRO_CLEFS) {
+        for (const meter of INTRO_METERS) {
+          const patch = buildPresetSettings(preset.id, clef, meter);
+          expect(patch.timeSignature).toBe(meter);
+          expect(patch.clef).toBe(clef);
+          for (const cell of onCells(patch)) {
+            expect(TUPLET_SUPPORT[meter].has(cell), `${preset.id} ${meter} ${cell}`).toBe(true);
+          }
+        }
+      }
+    }
+  });
+
+  it('swaps triplets for their duplet counterparts in 6/8', () => {
+    expect(onCells(buildPresetSettings('beginner', 'treble', '6/8'))).toEqual([]);
+    expect(onCells(buildPresetSettings('elementary', 'treble', '6/8'))).toEqual([]);
+    expect(onCells(buildPresetSettings('intermediate', 'treble', '6/8'))).toEqual(['duplet:1/8']);
+    expect(onCells(buildPresetSettings('advanced', 'treble', '6/8'))).toEqual(['duplet:1/4', 'duplet:1/8']);
+    expect(onCells(buildPresetSettings('virtuoso', 'treble', '6/8')).sort()).toEqual([...TUPLET_SUPPORT['6/8']].sort());
+    for (const meter of ['4/4', '3/4', '2/4'] as const) {
+      expect(onCells(buildPresetSettings('intermediate', 'treble', meter))).toEqual(['triplet:1/8']);
+      expect(onCells(buildPresetSettings('advanced', 'treble', meter))).toEqual(['triplet:1/4', 'triplet:1/8']);
+    }
+  });
+
+  it('recognises each preset in each meter, and only in its own meter version', () => {
+    for (const preset of LEVEL_PRESETS) {
+      for (const meter of INTRO_METERS) {
+        expect(matchLevel(full(buildPresetSettings(preset.id, 'bass', meter))), `${preset.id} ${meter}`).toBe(preset.id);
+      }
+    }
+    // 4/4 Intermediate's eighth triplets switched to 6/8 are not 6/8 Intermediate
+    const moved = full(buildPresetSettings('intermediate', 'treble', '4/4'));
+    moved.timeSignature = '6/8';
+    expect(matchLevel(moved)).toBeNull();
   });
 });

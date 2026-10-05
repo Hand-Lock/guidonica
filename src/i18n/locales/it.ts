@@ -193,6 +193,7 @@ const it: Messages = {
   next: 'Avanti',
   introClefQuestion: 'Quale chiave vuoi leggere?',
   introClefNote: 'Le chiavi di soprano, mezzosoprano e baritono sono in Impostazioni → Pentagramma.',
+  introMeterQuestion: 'In quale metro vuoi leggere?',
   back: 'Indietro',
   startPractising: 'Inizia a esercitarti',
   levels: {
@@ -207,6 +208,12 @@ const it: Messages = {
     bass: { name: 'Basso', description: 'Chiave di Fa · violoncello, fagotto, trombone, mano sinistra del pianoforte' },
     alto: { name: 'Contralto', description: 'Chiave di Do in terza linea · viola' },
     tenor: { name: 'Tenore', description: 'Chiave di Do in quarta linea · registro acuto di violoncello e fagotto' },
+  },
+  introMeters: {
+    '4/4': 'Semplice quaternario · quattro movimenti di semiminima',
+    '3/4': 'Semplice ternario · tre movimenti di semiminima',
+    '2/4': 'Semplice binario · due movimenti di semiminima',
+    '6/8': 'Composto binario · due movimenti di semiminima puntata, di tre crome',
   },
 
   noteNames: {

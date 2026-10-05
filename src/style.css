@@ -1616,7 +1616,7 @@ dialog.about-dialog::backdrop {
 }
 
 /* ==========================================================================
-   Level & clef intro (glass sheet, acrylic option cards; ADR 0049)
+   Level, clef & meter intro (glass sheet, acrylic option cards; ADRs 0049, 0071)
    ========================================================================== */
 
 dialog.intro-dialog {
@@ -1720,21 +1720,23 @@ dialog.intro-dialog {
   pointer-events: none;
 }
 
-.intro-options-clefs .intro-option {
+.intro-options-clefs .intro-option,
+.intro-options-meters .intro-option {
   flex-direction: row;
   align-items: center;
   gap: 10px;
 }
 
-.intro-option-clef {
+.intro-option-icon {
   flex-shrink: 0;
-  width: 28px;
+  width: 28px; /* ICON_WIDTH 56 units × ICON_SCALE 0.5, src/notation/preview.ts */
   height: 46px; /* ICON_CROP (148 − 56) units × ICON_SCALE 0.5 */
   pointer-events: none;
 }
 
-/* The LED sits beside the clef icon, centred like the settings chips */
-.intro-options-clefs .intro-option::before {
+/* The LED sits beside the clef or meter icon, centred like the settings chips */
+.intro-options-clefs .intro-option::before,
+.intro-options-meters .intro-option::before {
   top: calc(50% - 4px);
 }
 

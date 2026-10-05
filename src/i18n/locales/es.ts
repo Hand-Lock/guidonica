@@ -193,6 +193,7 @@ const es: Messages = {
   next: 'Siguiente',
   introClefQuestion: '¿Qué clave quieres leer?',
   introClefNote: 'Las claves de soprano, mezzosoprano y barítono están en Ajustes → Pentagrama.',
+  introMeterQuestion: '¿En qué compás quieres leer?',
   back: 'Atrás',
   startPractising: 'Empezar a practicar',
   levels: {
@@ -207,6 +208,12 @@ const es: Messages = {
     bass: { name: 'Fa', description: 'Clave de fa · violonchelo, fagot, trombón, mano izquierda del piano' },
     alto: { name: 'Do en 3.ª', description: 'Clave de do en tercera línea · viola' },
     tenor: { name: 'Do en 4.ª', description: 'Clave de do en cuarta línea · registro agudo de violonchelo y fagot' },
+  },
+  introMeters: {
+    '4/4': 'Compás simple cuaternario · cuatro pulsos de negra',
+    '3/4': 'Compás simple ternario · tres pulsos de negra',
+    '2/4': 'Compás simple binario · dos pulsos de negra',
+    '6/8': 'Compás compuesto binario · dos pulsos de negra con puntillo, de tres corcheas',
   },
 
   noteNames: {

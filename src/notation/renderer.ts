@@ -409,9 +409,10 @@ export class MeasureRenderer {
 
   /**
    * Renders the stationary clef and selected time signature glyphs onto an offscreen
-   * canvas to pin at the left margin. A null time signature draws the clef alone.
+   * canvas to pin at the left margin. A null clef or time signature is left out
+   * (the intro's clef and meter icons draw one glyph alone).
    */
-  public renderPinnedClef(clef: Clef, timeSignature: TimeSignature | null, theme: ThemeMode): HTMLCanvasElement {
+  public renderPinnedClef(clef: Clef | null, timeSignature: TimeSignature | null, theme: ThemeMode): HTMLCanvasElement {
     const dpr = this.dpr;
     const zoom = this.zoom;
     const width = PINNED_HEADER_WIDTH;
@@ -441,7 +442,7 @@ export class MeasureRenderer {
       { visible: false },
     ]);
 
-    stave.addClef(clef);
+    if (clef) stave.addClef(clef);
     if (timeSignature) stave.addTimeSignature(timeSignature);
     stave.setStyle({ strokeStyle: headerColor, fillStyle: headerColor });
     for (const mod of stave.getModifiers()) {

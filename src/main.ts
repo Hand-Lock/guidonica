@@ -38,7 +38,7 @@ import { globalState, SessionState } from './state';
 import { MetronomeEngine } from './audio/metronome';
 import { INTERVAL_KEYS, MusicGenerator, effectiveIntervals, pitchSteps } from './notation/generator';
 import { MeasureRenderer } from './notation/renderer';
-import { releasePreview, renderClefIcon, renderLevelPreview } from './notation/preview';
+import { releasePreview, renderClefIcon, renderLevelPreview, renderMeterIcon } from './notation/preview';
 import { MeasureBuffer } from './scroller/buffer';
 import { ScrollerView } from './scroller/scroller';
 import { isMusicFontReady, waitForMusicFonts } from './notation/fonts';
@@ -79,6 +79,7 @@ import {
 } from './storage';
 import {
   INTRO_CLEFS,
+  INTRO_METERS,
   IntroClef,
   LEVEL_PRESETS,
   LevelId,
@@ -196,21 +197,26 @@ class GuidonicaApp {
   private btnAboutDismiss: HTMLButtonElement | null;
   private btnFooterAbout: HTMLButtonElement | null;
 
-  // Level & clef intro (ADR 0049)
+  // Level, clef & meter intro (ADRs 0049, 0071)
   private modalIntro: HTMLDialogElement | null;
   private introStepLevel: HTMLElement | null;
   private introStepClef: HTMLElement | null;
+  private introStepMeter: HTMLElement | null;
   private btnIntroNext: HTMLButtonElement | null;
   private introLevelButtons: HTMLButtonElement[] = [];
   private introClefButtons: HTMLButtonElement[] = [];
+  private introMeterButtons: HTMLButtonElement[] = [];
   private introLanguageButtons: HTMLButtonElement[] = [];
   private introFirstVisit: boolean = false;
   private introLevel: LevelId | null = null;
   private introClef: Clef = 'treble';
+  private introMeter: TimeSignature = '4/4';
   private introLevelPreviews = new Map<LevelId, HTMLCanvasElement>();
   private introClefIcons = new Map<Clef, HTMLCanvasElement>();
-  /** Clef the level strips were last drawn in; null when they hold no pixels. */
+  private introMeterIcons = new Map<TimeSignature, HTMLCanvasElement>();
+  /** Clef and meter the level strips were last drawn in; null when they hold no pixels. */
   private introPreviewClef: Clef | null = null;
+  private introPreviewMeter: TimeSignature | null = null;
 
   constructor() {
     // 0. First visit? Decide before hydration can persist any settings
@@ -317,6 +323,7 @@ class GuidonicaApp {
     this.modalIntro = document.getElementById('modal-intro') as HTMLDialogElement | null;
     this.introStepLevel = document.getElementById('intro-step-level');
     this.introStepClef = document.getElementById('intro-step-clef');
+    this.introStepMeter = document.getElementById('intro-step-meter');
     this.btnIntroNext = document.getElementById('btn-intro-next') as HTMLButtonElement | null;
 
     const canvas = document.getElementById('scroller-canvas') as HTMLCanvasElement;
@@ -1104,7 +1111,8 @@ class GuidonicaApp {
   private bindIntroModalEvents(): void {
     const levelContainer = document.getElementById('intro-level-options');
     const clefContainer = document.getElementById('intro-clef-options');
-    if (!this.modalIntro || !levelContainer || !clefContainer) return;
+    const meterContainer = document.getElementById('intro-meter-options');
+    if (!this.modalIntro || !levelContainer || !clefContainer || !meterContainer) return;
 
     const m = t();
     this.introLevelButtons = this.buildIntroOptions(
@@ -1124,6 +1132,15 @@ class GuidonicaApp {
       },
       (value, canvas) => this.introClefIcons.set(value as Clef, canvas)
     );
+    // A meter card is named by its time signature; the locale describes it
+    this.introMeterButtons = this.buildIntroOptions(
+      meterContainer,
+      INTRO_METERS.map((ts) => ({ value: ts, name: ts, description: m.introMeters[ts], preview: 'icon' })),
+      (value) => {
+        this.introMeter = value as TimeSignature;
+      },
+      (value, canvas) => this.introMeterIcons.set(value as TimeSignature, canvas)
+    );
     this.buildIntroLanguages();
 
     const closeIntro = (): void => {
@@ -1141,14 +1158,19 @@ class GuidonicaApp {
     document.getElementById('btn-intro-back')?.addEventListener('click', () => {
       // Show the step first: a hidden card reports clientWidth 0 to the window check
       this.showIntroStep('level');
-      // Level examples follow the clef picked on the second step
-      if (this.introPreviewClef !== null && this.introPreviewClef !== this.introClef) {
+      // Level examples follow the clef and meter picked on the later steps
+      if (
+        this.introPreviewClef !== null &&
+        (this.introPreviewClef !== this.introClef || this.introPreviewMeter !== this.introMeter)
+      ) {
         this.renderIntroLevelPreviews();
       }
     });
+    document.getElementById('btn-intro-clef-next')?.addEventListener('click', () => this.showIntroStep('meter'));
+    document.getElementById('btn-intro-meter-back')?.addEventListener('click', () => this.showIntroStep('clef'));
     document.getElementById('btn-intro-start')?.addEventListener('click', () => {
       if (this.introLevel) {
-        this.applyLevelPreset(this.introLevel, this.introClef);
+        this.applyLevelPreset(this.introLevel, this.introClef, this.introMeter);
       }
       closeIntro();
     });
@@ -1188,11 +1210,11 @@ class GuidonicaApp {
       desc.className = 'intro-option-desc';
       desc.textContent = item.description;
       if (item.preview === 'icon') {
-        // Clef glyph first, then the text column
+        // Clef or meter glyph first, then the text column
         const text = document.createElement('span');
         text.className = 'intro-option-text';
         text.append(name, desc);
-        btn.append(this.createIntroPreview('intro-option-clef', item.value, onPreview), text);
+        btn.append(this.createIntroPreview('intro-option-icon', item.value, onPreview), text);
       } else {
         btn.append(name, desc);
         if (item.preview === 'strip') {
@@ -1266,6 +1288,10 @@ class GuidonicaApp {
       const clef = btn.dataset.value as IntroClef;
       if (clef in m.introClefs) label(btn, m.introClefs[clef]);
     }
+    for (const btn of this.introMeterButtons) {
+      const ts = btn.dataset.value as TimeSignature;
+      if (ts in m.introMeters) label(btn, { name: ts, description: m.introMeters[ts] });
+    }
     const title = document.getElementById('intro-title-text');
     const skip = document.getElementById('btn-intro-skip');
     if (title) title.textContent = this.introFirstVisit ? m.introWelcome : m.introChooseLevel;
@@ -1327,28 +1353,34 @@ class GuidonicaApp {
     return canvas;
   }
 
-  /** Fresh examples of every level in the chosen clef, plus the clef icons. */
+  /** Fresh examples of every level in the chosen clef and meter, plus the clef and meter icons. */
   private renderIntroPreviews(): void {
     this.renderIntroLevelPreviews();
     const theme = globalState.settings.theme;
     for (const [clef, canvas] of this.introClefIcons) {
       renderClefIcon(canvas, clef, theme);
     }
+    for (const [ts, canvas] of this.introMeterIcons) {
+      renderMeterIcon(canvas, ts, theme);
+    }
   }
 
   /** Each strip samples its level's representation (ADR 0051), filtered by its signature (ADR 0052). */
   private renderIntroLevelPreviews(): void {
     for (const [level, canvas] of this.introLevelPreviews) {
-      const settings = { ...globalState.settings, ...buildPreviewSettings(level, this.introClef) };
+      const settings = { ...globalState.settings, ...buildPreviewSettings(level, this.introClef, this.introMeter) };
       renderLevelPreview(canvas, settings, (w) => acceptsPreview(level, w));
     }
     this.introPreviewClef = this.introClef;
+    this.introPreviewMeter = this.introMeter;
   }
 
   private releaseIntroPreviews(): void {
     for (const canvas of this.introLevelPreviews.values()) releasePreview(canvas);
     for (const canvas of this.introClefIcons.values()) releasePreview(canvas);
+    for (const canvas of this.introMeterIcons.values()) releasePreview(canvas);
     this.introPreviewClef = null;
+    this.introPreviewMeter = null;
   }
 
   /** First visit welcomes and offers Skip; a reopen from the header is a plain level picker. */
@@ -1362,8 +1394,10 @@ class GuidonicaApp {
     const settings = globalState.settings;
     this.introLevel = matchLevel(settings);
     this.introClef = (INTRO_CLEFS as readonly Clef[]).includes(settings.clef) ? settings.clef : 'treble';
+    this.introMeter = INTRO_METERS.includes(settings.timeSignature) ? settings.timeSignature : '4/4';
     setRadioSelection(this.introLevelButtons, this.introLevel);
     setRadioSelection(this.introClefButtons, this.introClef);
+    setRadioSelection(this.introMeterButtons, this.introMeter);
     if (this.btnIntroNext) this.btnIntroNext.disabled = this.introLevel === null;
     if (!this.modalIntro.open) this.modalIntro.showModal();
     this.showIntroStep('level');
@@ -1373,18 +1407,23 @@ class GuidonicaApp {
     });
   }
 
-  private showIntroStep(step: 'level' | 'clef'): void {
-    if (!this.introStepLevel || !this.introStepClef) return;
+  private showIntroStep(step: 'level' | 'clef' | 'meter'): void {
+    if (!this.introStepLevel || !this.introStepClef || !this.introStepMeter) return;
     this.introStepLevel.hidden = step !== 'level';
     this.introStepClef.hidden = step !== 'clef';
-    const buttons = step === 'level' ? this.introLevelButtons : this.introClefButtons;
+    this.introStepMeter.hidden = step !== 'meter';
+    const buttons = {
+      level: this.introLevelButtons,
+      clef: this.introClefButtons,
+      meter: this.introMeterButtons,
+    }[step];
     const checked = buttons.find((b) => b.getAttribute('aria-checked') === 'true');
     (checked ?? buttons[0]?.parentElement)?.focus();
   }
 
-  /** Loads a level preset with the chosen clef; only user-visible settings change. */
-  private applyLevelPreset(level: LevelId, clef: Clef): void {
-    globalState.updateSettings(buildPresetSettings(level, clef));
+  /** Loads a level preset with the chosen clef and meter; only user-visible settings change. */
+  private applyLevelPreset(level: LevelId, clef: Clef, meter: TimeSignature): void {
+    globalState.updateSettings(buildPresetSettings(level, clef, meter));
     const s = globalState.settings;
     this.metronome.setTempo(s.tempo);
     this.metronome.setTimeSignature(s.timeSignature);

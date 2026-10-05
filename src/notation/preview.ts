@@ -11,6 +11,7 @@ import {
   RenderedMeasure,
   STAVE_TOP_LINE_Y,
   ThemeMode,
+  TimeSignature,
   computeBeatWidth,
   resolveTheme,
 } from './types';
@@ -41,13 +42,15 @@ const MAX_PREVIEW_ATTEMPTS = 32;
 /** Strip x of the first bar's left edge, right after the pinned header. */
 const STRIP_START_X = (STRIP_HEADER_ADVANCE - FIRST_BARLINE_TRIM) * STRIP_SCALE;
 
-/** Clef icons are larger than the strips: a lone glyph must read at a glance. */
+/** Clef and meter icons are larger than the strips: a lone glyph must read at a glance. */
 const ICON_SCALE = 0.5;
-/** Clef icon window in header-canvas units: a short staff fragment around the glyph (size mirrored in style.css). */
-const ICON_CROP_X = 8;
+/** Icon window in header-canvas units: a short staff fragment around the glyph (sizes mirrored in style.css). */
 const ICON_WIDTH = 56;
 const ICON_CROP_TOP = 56;
 const ICON_CROP_BOTTOM = 148;
+/** Left crop per glyph; the time signature (units 16–30 without a clef) is centred in the window. */
+const CLEF_ICON_CROP_X = 8;
+const METER_ICON_CROP_X = -5;
 
 const renderer = new MeasureRenderer();
 
@@ -170,19 +173,35 @@ export function renderLevelPreview(
   });
 }
 
-/** Draws `clef` alone on a short staff fragment, so alto and tenor C clefs read apart. */
-export function renderClefIcon(target: HTMLCanvasElement, clef: Clef, theme: ThemeMode): void {
+/** Draws one header glyph on a short staff fragment, its window starting `cropX` units in. */
+function renderIcon(
+  target: HTMLCanvasElement,
+  clef: Clef | null,
+  timeSignature: TimeSignature | null,
+  cropX: number,
+  theme: ThemeMode
+): void {
   const width = ICON_WIDTH * ICON_SCALE;
   const height = (ICON_CROP_BOTTOM - ICON_CROP_TOP) * ICON_SCALE;
   const ctx = prepare(target, width, height, ICON_SCALE);
   if (!ctx) return;
   const palette = CANVAS_PALETTE[resolveTheme(theme)];
-  const offsetX = -ICON_CROP_X * ICON_SCALE;
+  const offsetX = -cropX * ICON_SCALE;
   const offsetY = -ICON_CROP_TOP * ICON_SCALE;
 
   drawStaff(ctx, 0, width, offsetY + STAVE_TOP_LINE_Y * ICON_SCALE, ICON_SCALE, palette.staff);
 
-  const header = renderer.renderPinnedClef(clef, null, theme);
+  const header = renderer.renderPinnedClef(clef, timeSignature, theme);
   ctx.drawImage(header, offsetX, offsetY, header.width / currentDpr(), header.height / currentDpr());
   releasePreview(header);
+}
+
+/** Draws `clef` alone on a short staff fragment, so alto and tenor C clefs read apart. */
+export function renderClefIcon(target: HTMLCanvasElement, clef: Clef, theme: ThemeMode): void {
+  renderIcon(target, clef, null, CLEF_ICON_CROP_X, theme);
+}
+
+/** Draws the time signature `ts` alone on a short staff fragment (ADR 0071). */
+export function renderMeterIcon(target: HTMLCanvasElement, ts: TimeSignature, theme: ThemeMode): void {
+  renderIcon(target, null, ts, METER_ICON_CROP_X, theme);
 }

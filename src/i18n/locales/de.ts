@@ -193,6 +193,7 @@ const de: Messages = {
   next: 'Weiter',
   introClefQuestion: 'Welchen Schlüssel möchtest du lesen?',
   introClefNote: 'Sopran-, Mezzosopran- und Baritonschlüssel findest du unter Einstellungen → Notensystem.',
+  introMeterQuestion: 'In welcher Taktart möchtest du lesen?',
   back: 'Zurück',
   startPractising: 'Üben beginnen',
   levels: {
@@ -207,6 +208,12 @@ const de: Messages = {
     bass: { name: 'Bassschlüssel', description: 'F-Schlüssel · Violoncello, Fagott, Posaune, linke Hand am Klavier' },
     alto: { name: 'Altschlüssel', description: 'C-Schlüssel auf der Mittellinie · Bratsche' },
     tenor: { name: 'Tenorschlüssel', description: 'C-Schlüssel auf der vierten Linie · hohes Violoncello & Fagott' },
+  },
+  introMeters: {
+    '4/4': 'Einfacher Vierertakt · vier Viertelschläge',
+    '3/4': 'Einfacher Dreiertakt · drei Viertelschläge',
+    '2/4': 'Einfacher Zweiertakt · zwei Viertelschläge',
+    '6/8': 'Zusammengesetzter Zweiertakt · zwei punktierte Viertel aus je drei Achteln',
   },
 
   noteNames: {

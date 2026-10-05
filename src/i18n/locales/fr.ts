@@ -195,6 +195,7 @@ const fr: Messages = {
   next: 'Suivant',
   introClefQuestion: `Quelle clé voulez-vous lire${NB}?`,
   introClefNote: 'Les clés de soprano, mezzo-soprano et baryton sont dans Réglages → Portée.',
+  introMeterQuestion: `Quelle mesure voulez-vous lire${NB}?`,
   back: 'Retour',
   startPractising: 'Commencer',
   levels: {
@@ -209,6 +210,12 @@ const fr: Messages = {
     bass: { name: 'Fa', description: 'Clé de fa · violoncelle, basson, trombone, main gauche du piano' },
     alto: { name: 'Ut 3e', description: 'Clé d’ut 3e ligne · alto' },
     tenor: { name: 'Ut 4e', description: 'Clé d’ut 4e ligne · aigu du violoncelle et du basson' },
+  },
+  introMeters: {
+    '4/4': 'Mesure simple à quatre temps · quatre temps à la noire',
+    '3/4': 'Mesure simple à trois temps · trois temps à la noire',
+    '2/4': 'Mesure simple à deux temps · deux temps à la noire',
+    '6/8': 'Mesure composée à deux temps · deux temps à la noire pointée, de trois croches',
   },
 
   noteNames: {

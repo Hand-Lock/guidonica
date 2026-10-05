@@ -2,11 +2,12 @@
 // English shell text must match it (tests/i18n.test.ts). Every other locale is typed
 // `Messages`, so a missing or extra key is a compile error.
 
-import type { TupletName, TupletValue } from '../../notation/types';
+import type { TimeSignature, TupletName, TupletValue } from '../../notation/types';
 import type { IntroClef, LevelId } from '../../presets';
 
 type LevelText = Record<LevelId, { name: string; description: string }>;
 type IntroClefText = Record<IntroClef, { name: string; description: string }>;
+type IntroMeterText = Record<TimeSignature, string>;
 
 const LINK = 'target="_blank" rel="noopener noreferrer" class="link-external"';
 
@@ -213,6 +214,7 @@ const en = {
   next: 'Next',
   introClefQuestion: 'Which clef would you like to read?',
   introClefNote: 'Soprano, mezzo-soprano and baritone clefs are in Settings → Staff.',
+  introMeterQuestion: 'Which time signature would you like to read?',
   back: 'Back',
   startPractising: 'Start practising',
   levels: {
@@ -228,6 +230,12 @@ const en = {
     alto: { name: 'Alto', description: 'C clef on the middle line · viola' },
     tenor: { name: 'Tenor', description: 'C clef on the fourth line · upper cello & bassoon' },
   } as IntroClefText,
+  introMeters: {
+    '4/4': 'Simple quadruple · four quarter-note beats',
+    '3/4': 'Simple triple · three quarter-note beats',
+    '2/4': 'Simple duple · two quarter-note beats',
+    '6/8': 'Compound duple · two dotted-quarter beats of three eighths',
+  } as IntroMeterText,
 
   /** Note names indexed by c d e f g a b. Syllables keep the tonic sol-fa Ti. */
   noteNames: {

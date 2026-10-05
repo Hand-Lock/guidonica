@@ -122,7 +122,7 @@ pnpm preview    # serves dist/ after pnpm build, with the service worker active
 
 ```bash
 pnpm typecheck
-pnpm test       # vitest + happy-dom: 28 files, 346 tests pass
+pnpm test       # vitest + happy-dom: 28 files, 476 tests pass
 ```
 
 ## Gotchas

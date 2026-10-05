@@ -11,8 +11,11 @@ import {
   TUPLET_VALUES,
   TimeSignature,
   TupletCell,
+  TupletName,
   TupletOptions,
   TupletValue,
+  TIME_SIGNATURES,
+  isTupletSupported,
   supportedTuplets,
 } from './notation/types';
 
@@ -24,10 +27,10 @@ import {
 
 export type LevelId = 'beginner' | 'elementary' | 'intermediate' | 'advanced' | 'virtuoso';
 
+/** The meter is not part of a level: the intro asks for it separately (ADR 0071). */
 export type PresetSettings = Pick<
   AppSettings,
   | 'tempo'
-  | 'timeSignature'
   | 'ledgerLines'
   | 'subdivisions'
   | 'tuplets'
@@ -97,8 +100,22 @@ export type IntroClef = 'treble' | 'bass' | 'alto' | 'tenor';
 /** Clefs offered by the intro; the remaining C/F clefs stay available in Settings. */
 export const INTRO_CLEFS: readonly IntroClef[] = ['treble', 'bass', 'alto', 'tenor'];
 
-// Every preset is in 4/4; buildPresetSettings() drops any tuplet cell 4/4 cannot realise
-const PRESET_METER: TimeSignature = '4/4';
+/** Meters offered by the intro: all of them (ADR 0071). */
+export const INTRO_METERS: readonly TimeSignature[] = TIME_SIGNATURES;
+
+/**
+ * 6/8 has no triplets: a level's triplet cell becomes the duplet of the same value,
+ * the compound meter's two-in-the-time-of-three (ADR 0071).
+ */
+const COMPOUND_COUNTERPART: Partial<Record<TupletCell, TupletCell>> = {
+  'triplet:1/4': 'duplet:1/4',
+  'triplet:1/8': 'duplet:1/8',
+  'triplet:1/16': 'duplet:1/16',
+};
+
+function cellParts(cell: TupletCell): [TupletName, TupletValue] {
+  return cell.split(':') as [TupletName, TupletValue];
+}
 
 function tuplets(cells: readonly TupletCell[]): TupletOptions {
   const result: TupletOptions = structuredClone(DEFAULT_TUPLET_OPTIONS);
@@ -124,7 +141,6 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
     id: 'beginner',
     settings: {
       tempo: 60,
-      timeSignature: PRESET_METER,
       ledgerLines: { above: 1, below: 1 },
       subdivisions: {
         whole: true,
@@ -155,14 +171,13 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
     },
     // Window ≈ 1 bar: a whole note would fill it; repeats show no motion
     preview: { subdivisions: ['whole'], intervals: ['unison'] },
-    // q h q / h h motion, not only quarters
-    check: (w) => count(w, (n) => base(n) === 'h') > 0,
+    // Motion longer than one beat (h or w; q and longer in 6/8), not only beat notes
+    check: (w) => count(w, (n) => !n.isRest && n.beatDuration > 1) > 0,
   },
   {
     id: 'elementary',
     settings: {
       tempo: 70,
-      timeSignature: PRESET_METER,
       ledgerLines: { above: 2, below: 2 },
       subdivisions: {
         whole: true,
@@ -200,7 +215,6 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
     id: 'intermediate',
     settings: {
       tempo: 80,
-      timeSignature: PRESET_METER,
       ledgerLines: { above: 2, below: 2 },
       subdivisions: {
         whole: true,
@@ -235,14 +249,16 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
       intervals: ['unison', 'second', 'third'],
       rests: false,
     },
-    // 16ths and eighth triplets in one window
-    check: (w) => count(w, (n) => n.isTuplet === true) > 0 && count(w, (n) => !n.isTuplet && base(n) === '16') > 0,
+    // 16ths and eighth triplets in one window, or a lone tuplet filling a short one (a 6/8 duplet spans 3 eighths)
+    check: (w) => {
+      const tupletNotes = count(w, (n) => n.isTuplet === true);
+      return tupletNotes > 0 && (tupletNotes === w.notes.length || count(w, (n) => !n.isTuplet && base(n) === '16') > 0);
+    },
   },
   {
     id: 'advanced',
     settings: {
       tempo: 90,
-      timeSignature: PRESET_METER,
       ledgerLines: { above: 3, below: 3 },
       subdivisions: {
         whole: true,
@@ -285,7 +301,6 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
     id: 'virtuoso',
     settings: {
       tempo: 120,
-      timeSignature: PRESET_METER,
       ledgerLines: { above: 3, below: 3 },
       subdivisions: {
         whole: true,
@@ -296,7 +311,7 @@ export const LEVEL_PRESETS: readonly LevelPreset[] = [
         thirtySecond: true,
         dotted: true,
       },
-      // Every cell requested; supportedTuplets() keeps only those 4/4 can realise
+      // Every cell requested; supportedTuplets() keeps only those the meter can realise
       tuplets: tuplets(ALL_TUPLET_CELLS),
       rests: true,
       ties: true,
@@ -356,11 +371,22 @@ export function acceptsPreview(level: LevelId, window: PreviewWindow): boolean {
   return findPreset(level).check(window);
 }
 
-/** Settings patch for a level and clef: deep-cloned, tuplets limited to the meter. */
-export function buildPresetSettings(level: LevelId, clef: Clef): Partial<AppSettings> {
+/**
+ * Settings patch for a level, clef and meter: deep-cloned, in 6/8 each triplet swapped
+ * for its duplet counterpart, then tuplets limited to the meter.
+ */
+export function buildPresetSettings(level: LevelId, clef: Clef, meter: TimeSignature = '4/4'): Partial<AppSettings> {
   const settings = structuredClone(findPreset(level).settings) as PresetSettings;
-  settings.tuplets = supportedTuplets(settings.timeSignature, settings.tuplets);
-  return { ...settings, clef };
+  const { tuplets } = settings;
+  if (meter === '6/8') {
+    for (const [cell, counterpart] of Object.entries(COMPOUND_COUNTERPART) as [TupletCell, TupletCell][]) {
+      const [name, value] = cellParts(cell);
+      const [toName, toValue] = cellParts(counterpart);
+      if (tuplets[name][value] && !isTupletSupported(meter, name, value)) tuplets[toName][toValue] = true;
+    }
+  }
+  settings.tuplets = supportedTuplets(meter, tuplets);
+  return { ...settings, timeSignature: meter, clef };
 }
 
 /**
@@ -368,8 +394,8 @@ export function buildPresetSettings(level: LevelId, clef: Clef): Partial<AppSett
  * level's `preview` omissions switched off. Toggles are only ever cleared, so the
  * preview's Ω is a subset of the level's Ω and every figure shown is reachable there.
  */
-export function buildPreviewSettings(level: LevelId, clef: Clef): Partial<AppSettings> {
-  const patch = buildPresetSettings(level, clef);
+export function buildPreviewSettings(level: LevelId, clef: Clef, meter: TimeSignature = '4/4'): Partial<AppSettings> {
+  const patch = buildPresetSettings(level, clef, meter);
   const { subdivisions, intervals, tuplets } = patch;
   if (!subdivisions || !intervals || !tuplets) return patch;
   const omit = findPreset(level).preview;
@@ -395,10 +421,10 @@ function sameValue(a: unknown, b: unknown): boolean {
   return true;
 }
 
-/** The level whose preset matches `settings` exactly (ignoring clef), if any. */
+/** The level whose preset matches `settings` exactly (ignoring clef and meter), if any. */
 export function matchLevel(settings: Readonly<AppSettings>): LevelId | null {
   for (const preset of LEVEL_PRESETS) {
-    const patch = buildPresetSettings(preset.id, settings.clef);
+    const patch = buildPresetSettings(preset.id, settings.clef, settings.timeSignature);
     const keys = Object.keys(patch) as (keyof AppSettings)[];
     if (keys.every((key) => sameValue(patch[key], settings[key]))) return preset.id;
   }

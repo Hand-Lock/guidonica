@@ -642,7 +642,7 @@
         </div>
       </dialog>
 
-      <!-- First-visit level & clef intro (ADR 0049); option cards are built from src/presets.ts -->
+      <!-- First-visit level, clef & meter intro (ADRs 0049, 0071); option cards are built from src/presets.ts -->
       <dialog id="modal-intro" class="about-dialog intro-dialog" aria-labelledby="intro-title">
         <div class="about-dialog-content">
           <div class="about-dialog-header">
@@ -671,6 +671,17 @@
             </div>
             <div class="about-dialog-footer intro-footer">
               <button id="btn-intro-back" class="btn btn-secondary" type="button" data-i18n="back">Back</button>
+              <button id="btn-intro-clef-next" class="btn btn-primary" type="button" data-i18n="next">Next</button>
+            </div>
+          </div>
+
+          <div id="intro-step-meter" class="intro-step" hidden>
+            <div class="about-dialog-body">
+              <h3 id="intro-meter-question" class="intro-question" data-i18n="introMeterQuestion">Which time signature would you like to read?</h3>
+              <div id="intro-meter-options" class="intro-options intro-options-meters" role="radiogroup" aria-labelledby="intro-meter-question"></div>
+            </div>
+            <div class="about-dialog-footer intro-footer">
+              <button id="btn-intro-meter-back" class="btn btn-secondary" type="button" data-i18n="back">Back</button>
               <button id="btn-intro-start" class="btn btn-primary" type="button" data-i18n="startPractising">Start practising</button>
             </div>
           </div>
