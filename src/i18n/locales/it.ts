@@ -154,6 +154,8 @@ const it: Messages = {
   landscapeTitle: 'Meglio in orizzontale',
   landscapeBody: 'Ruota il dispositivo per un pentagramma più ampio e più note in vista.',
   landscapeDismissAria: 'Chiudi il suggerimento',
+  inAppTitle: 'Orizzontale nel browser',
+  inAppBody: "Quest'app non ruota. Apri Guidonica nel browser dal menu ⋯.",
   dismiss: 'Chiudi',
 
   keyPlayPause: 'Avvia/Pausa',

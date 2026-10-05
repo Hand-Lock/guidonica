@@ -172,6 +172,8 @@ const en = {
   landscapeTitle: 'Best in landscape',
   landscapeBody: 'Rotate your device for a wider staff and more notes ahead.',
   landscapeDismissAria: 'Dismiss landscape tip',
+  inAppTitle: 'Landscape in your browser',
+  inAppBody: "This app can't rotate. Open Guidonica in your browser from the ⋯ menu.",
   dismiss: 'Dismiss',
 
   // Footer

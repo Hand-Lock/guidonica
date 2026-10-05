@@ -154,6 +154,8 @@ const de: Messages = {
   landscapeTitle: 'Am besten im Querformat',
   landscapeBody: 'Gerät drehen für ein breiteres Notensystem und mehr Noten im Voraus.',
   landscapeDismissAria: 'Hinweis ausblenden',
+  inAppTitle: 'Querformat im Browser',
+  inAppBody: 'Diese App dreht sich nicht. Öffne Guidonica über das ⋯-Menü im Browser.',
   dismiss: 'Ausblenden',
 
   keyPlayPause: 'Start/Pause',

@@ -154,6 +154,8 @@ const es: Messages = {
   landscapeTitle: 'Mejor en horizontal',
   landscapeBody: 'Gira el dispositivo para ver un pentagrama más ancho y más notas por delante.',
   landscapeDismissAria: 'Ocultar el consejo',
+  inAppTitle: 'Horizontal en el navegador',
+  inAppBody: 'Esta app no gira. Abre Guidonica en tu navegador desde el menú ⋯.',
   dismiss: 'Ocultar',
 
   keyPlayPause: 'Iniciar/Pausa',

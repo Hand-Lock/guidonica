@@ -82,6 +82,7 @@ guidonica/
     │   └── changelog/      # it.md, fr.md, de.md, es.md: released notes translated at release time (ADR 0078)
     ├── utils/
     │   ├── radioGroup.ts   # Shared roving-tabindex radiogroup helpers (intro cards, language chips)
+    │   ├── inAppBrowser.ts # Portrait-locked in-app browser detection for the landscape tip (ADR 0083)
     │   ├── serviceWorker.ts # Production-only service worker registration (ADR 0063)
     │   └── wakeLock.ts     # Screen Wake Lock controller
     ├── audio/

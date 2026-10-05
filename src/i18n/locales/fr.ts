@@ -156,6 +156,8 @@ const fr: Messages = {
   landscapeTitle: 'Mieux en paysage',
   landscapeBody: "Tournez l'appareil pour une portée plus large et plus de notes à l'avance.",
   landscapeDismissAria: "Masquer l'astuce",
+  inAppTitle: 'Paysage dans le navigateur',
+  inAppBody: 'Cette app ne pivote pas. Ouvrez Guidonica dans votre navigateur via le menu ⋯.',
   dismiss: 'Masquer',
 
   keyPlayPause: 'Lecture/Pause',

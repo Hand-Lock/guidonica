@@ -20,6 +20,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ### Fixed
 
+- In Instagram, Facebook and Threads, which can't rotate, the landscape tip now explains how to open Guidonica in your browser instead (ADR 0083).
 - The What's new and About buttons no longer overflow the dialog on narrow phones; long labels wrap instead.
 
 ### Internal

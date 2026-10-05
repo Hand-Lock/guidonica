@@ -11,6 +11,7 @@ import {
   dismissOrientationTip,
   isOrientationTipDismissed,
 } from '../src/storage';
+import { isPortraitLockedInAppBrowser } from '../src/utils/inAppBrowser';
 
 describe('Auto zoom follows the measured stage (ADR 0055)', () => {
   const originalGetContext = HTMLCanvasElement.prototype.getContext;
@@ -147,5 +148,43 @@ describe('Portrait landscape tip (ADR 0055)', () => {
     });
     expect(() => dismissOrientationTip()).not.toThrow();
     expect(isOrientationTipDismissed()).toBe(false);
+  });
+});
+
+describe('In-app browser landscape tip (ADR 0083)', () => {
+  const locked = {
+    'Instagram iOS':
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 334.0.4.32.98 (iPhone15,2; iOS 17_5; en_US; en; scale=3.00; 1179x2556; 606459473)',
+    'Instagram Android':
+      'Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP1A.240505.004; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/125.0.6422.53 Mobile Safari/537.36 Instagram 333.0.0.42.91 Android (34/14; 420dpi; 1080x2400; Google/google; Pixel 8; shiba; shiba; en_US; 606458190)',
+    'Facebook iOS':
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/468.0.0.39.104;FBBV/609318592;FBDV/iPhone15,2;FBMD/iPhone;FBSN/iOS;FBSV/17.5;FBSS/3;FBCR/;FBID/phone;FBLC/en_US;FBOP/80]',
+    'Facebook Android':
+      'Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP1A.240505.004; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/125.0.6422.53 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/467.0.0.46.85;]',
+    'Threads iOS':
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Barcelona 334.0.4.32.98 (iPhone15,2; iOS 17_5; en_US; en; scale=3.00; 1179x2556; 606459473)',
+  };
+  const free = {
+    'Safari iOS':
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+    'Chrome Android':
+      'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36',
+    'Chrome desktop':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+  };
+
+  it.each(Object.entries(locked))('detects %s', (_, ua) => {
+    expect(isPortraitLockedInAppBrowser(ua)).toBe(true);
+  });
+
+  it.each(Object.entries(free))('leaves %s alone', (_, ua) => {
+    expect(isPortraitLockedInAppBrowser(ua)).toBe(false);
+  });
+
+  it('swaps the tip keys so language switches keep the in-app text', () => {
+    const mainTs = fs.readFileSync(path.resolve(__dirname, '../src/main.ts'), 'utf-8');
+    expect(mainTs).toMatch(
+      /isPortraitLockedInAppBrowser\(navigator\.userAgent\)[\s\S]{0,400}dataset\.i18n = 'inAppTitle'[\s\S]{0,80}dataset\.i18n = 'inAppBody'[\s\S]{0,40}applyDom\(orientationNotice\)/
+    );
   });
 });

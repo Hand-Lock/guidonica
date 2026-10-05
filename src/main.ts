@@ -47,6 +47,7 @@ import { isMusicFontReady, waitForMusicFonts } from './notation/fonts';
 import { ScreenWakeLockController } from './utils/wakeLock';
 import { bindRovingKeys, setRadioSelection } from './utils/radioGroup';
 import { registerServiceWorker } from './utils/serviceWorker';
+import { isPortraitLockedInAppBrowser } from './utils/inAppBrowser';
 import {
   ENDONYMS,
   Language,
@@ -798,6 +799,16 @@ class GuidonicaApp {
     const btnOrientationDismiss = document.getElementById('btn-orientation-dismiss');
     if (orientationNotice) {
       if (isOrientationTipDismissed()) orientationNotice.hidden = true;
+      // Instagram, Facebook and Threads can't rotate: point to the system browser (ADR 0083)
+      if (isPortraitLockedInAppBrowser(navigator.userAgent)) {
+        const title = orientationNotice.querySelector<HTMLElement>('strong[data-i18n]');
+        const body = orientationNotice.querySelector<HTMLElement>('span[data-i18n]');
+        if (title && body) {
+          title.dataset.i18n = 'inAppTitle';
+          body.dataset.i18n = 'inAppBody';
+          applyDom(orientationNotice);
+        }
+      }
       btnOrientationDismiss?.addEventListener('click', (e) => {
         e.stopPropagation();
         orientationNotice.hidden = true;
