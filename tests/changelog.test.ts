@@ -14,6 +14,9 @@ Intro text with a [link](https://example.com).
 
 ## [Unreleased]
 
+> A headline for the
+> announcement.
+
 ### Added
 
 - A new \`thing\` with **bold** text,
@@ -54,6 +57,14 @@ describe('changelog parser (ADR 0078)', () => {
     expect(releases[0].sections[0].items).toEqual(['A new `thing` with **bold** text, continued on a second line (ADR 0078).']);
   });
 
+  it('reads an optional headline, joining its quote lines (ADR 0081)', () => {
+    const releases = parseChangelog(SAMPLE);
+    expect(releases[0].summary).toBe('A headline for the announcement.');
+    expect(releases[1].summary).toBeUndefined();
+    expect(appNotes(SAMPLE, { unreleased: true })[0]).not.toHaveProperty('summary');
+    expect(() => parseChangelog('## [Unreleased]\n\n### Added\n\n- x\n\n> late quote\n')).toThrow(/unexpected line/);
+  });
+
   it('rejects unknown sections and stray lines', () => {
     expect(() => parseChangelog('## [Unreleased]\n\n### Improved\n\n- x\n')).toThrow(/unknown section/);
     expect(() => parseChangelog('## [Unreleased]\n\nloose text\n')).toThrow(/unexpected line/);
@@ -84,6 +95,8 @@ describe('changelog parser (ADR 0078)', () => {
     expect(releases[0].sections).toEqual([]);
     expect(releases[1].date).toBe('2026-10-05');
     expect(releases[1].sections.map((s) => s.kind)).toEqual(['added', 'internal']);
+    expect(releases[1].summary).toBe('A headline for the announcement.');
+    expect(md).toContain('## [2026.10.0] - 2026-10-05\n\n> A headline for the announcement.\n\n### Added');
     expect(md).toContain('[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.0...HEAD\n');
     expect(md).toContain('[2026.10.0]: https://github.com/Hand-Lock/guidonica/compare/v2026.9.0...v2026.10.0\n');
     expect(md).not.toMatch(/\n{3,}/);
@@ -97,7 +110,7 @@ describe('changelog parser (ADR 0078)', () => {
 
   it('extracts one release for the GitHub Release, Internal included', () => {
     const section = releaseSection(cutRelease(SAMPLE, '2026.10.0', '2026-10-05'), '2026.10.0');
-    expect(section.startsWith('### Added')).toBe(true);
+    expect(section.startsWith('> A headline for the announcement.\n\n### Added')).toBe(true);
     expect(section).toContain('### Internal');
     expect(section).not.toContain('2026.9.0');
     expect(() => releaseSection(SAMPLE, '2030.1.0')).toThrow();

@@ -86,6 +86,7 @@ This directory documents the core architectural decisions, implementation method
 | [0078](0078-release-channels-calver-changelog-whats-new.md) | Release Channels, CalVer Changelog and "What's New" | Accepted | 2026-10-05 |
 | [0079](0079-social-profile-banners.md) | Social Profile Banners | Accepted | 2026-10-05 |
 | [0080](0080-social-profiles-verification.md) | Social Profiles: rel="me" Verification and Bluesky Domain Handle | Accepted | 2026-10-06 |
+| [0081](0081-release-announcements-bluesky-mastodon.md) | Release Announcements on Bluesky and Mastodon | Accepted | 2026-10-06 |
 
 ---
 

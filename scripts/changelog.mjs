@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Guidonica - CHANGELOG.md parser shared by the Vite notes plugin, the release scripts
 // and the tests (ADR 0078). Keep a Changelog 1.1.0 subset: `## [version] - date`
-// headings, `### Kind` sections and `- ` bullets, continuation lines indented.
+// headings, an optional `> ` headline (ADR 0081), `### Kind` sections and `- ` bullets,
+// continuation lines indented.
 // Copyright (C) 2026 A. C. Lo Cascio
 
 /** @typedef {'added' | 'changed' | 'fixed' | 'removed' | 'security' | 'internal'} ChangeKind */
 /** @typedef {{ kind: ChangeKind, items: string[] }} ChangeSection */
-/** @typedef {{ version: string, date: string | null, sections: ChangeSection[] }} ChangelogRelease */
+/** @typedef {{ version: string, date: string | null, summary?: string, sections: ChangeSection[] }} ChangelogRelease */
 
 export const UNRELEASED = 'Unreleased';
 export const REPO_URL = 'https://github.com/Hand-Lock/guidonica';
@@ -20,6 +21,7 @@ const RELEASE_HEADING = /^## \[([^\]]+)\](?: - (\d{4}-\d{2}-\d{2}))?\s*$/;
 const SECTION_HEADING = /^### (.+?)\s*$/;
 const BULLET = /^[-*] (.*)$/;
 const CONTINUATION = /^\s{2,}(\S.*)$/;
+const SUMMARY = /^> ?(.*)$/;
 
 /**
  * @param {string} heading
@@ -34,7 +36,8 @@ function changeKind(heading) {
 
 /**
  * Releases in file order (newest first). Bullets keep their markdown; text before the
- * first release heading and link reference definitions are ignored.
+ * first release heading and link reference definitions are ignored. `> ` lines between a
+ * release heading and its first section form its headline, `summary` (ADR 0081).
  * @param {string} md
  * @returns {ChangelogRelease[]}
  */
@@ -64,6 +67,12 @@ export function parseChangelog(md) {
       section = { kind: changeKind(sub[1]), items: [] };
       release.sections.push(section);
       item = null;
+      continue;
+    }
+    const quote = SUMMARY.exec(line);
+    if (quote && !section) {
+      const text = quote[1].trim();
+      if (text) release.summary = release.summary ? `${release.summary} ${text}` : text;
       continue;
     }
     const bullet = BULLET.exec(line);
@@ -161,7 +170,8 @@ export function cutRelease(md, version, date) {
     for (const text of s.items) body.push(`- ${text}`);
     body.push('');
   }
-  const released = [`## [${UNRELEASED}]`, '', `## [${version}] - ${date}`, '', ...body];
+  const summary = unreleased.summary ? [`> ${unreleased.summary}`, ''] : [];
+  const released = [`## [${UNRELEASED}]`, '', `## [${version}] - ${date}`, '', ...summary, ...body];
 
   const out = [...lines.slice(0, block.start), ...released, ...lines.slice(block.end)];
   const linkAt = out.findIndex((l) => l.startsWith(`[${UNRELEASED}]: `));
@@ -178,8 +188,8 @@ export function cutRelease(md, version, date) {
 }
 
 /**
- * The markdown body of one release (sections and bullets, Internal included), for the
- * GitHub Release. Throws when the version is missing.
+ * The markdown body of one release (headline, sections and bullets, Internal included),
+ * for the GitHub Release. Throws when the version is missing.
  * @param {string} md
  * @param {string} version
  * @returns {string}

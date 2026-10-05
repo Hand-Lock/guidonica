@@ -71,7 +71,8 @@ function main() {
   console.log(`## [${version}] - ${date}\n\n${releaseSection(md, version)}\n`);
   console.log(dryRun
     ? '(dry run: nothing written)'
-    : `Next: translate this section into src/i18n/changelog/{it,fr,de,es}.md (Internal omitted),\n` +
+    : `Next: write a "> " headline under the version heading (English, for the Bluesky and\n` +
+      `Mastodon announcement, ADR 0081), translate this section into src/i18n/changelog/{it,fr,de,es}.md (Internal omitted),\n` +
       `run pnpm typecheck && pnpm test && pnpm build:site, then commit "chore(release): ${version}",\n` +
       `git tag -a v${version} -m "Guidonica ${version}" && git push --atomic origin main v${version}`);
 }

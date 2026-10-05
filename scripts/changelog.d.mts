@@ -7,6 +7,8 @@ export interface ChangelogRelease {
   version: string;
   /** YYYY-MM-DD; null for Unreleased. */
   date: string | null;
+  /** The `> ` headline under the release heading, English only (ADR 0081). */
+  summary?: string;
   sections: ChangeSection[];
 }
 

@@ -45,7 +45,7 @@ guidonica/
 │   ├── FUNDING.yml         # Sponsor button: Ko-fi only until GitHub Sponsors is approved (ADR 0074)
 │   ├── pull_request_template.md # DCO + MIT checkboxes and hygiene checklist (ADR 0067)
 │   └── workflows/
-│       ├── deploy.yml      # Typecheck, test, build:site, Pages deploy; tags create GitHub Releases (ADRs 0018, 0078)
+│       ├── deploy.yml      # Typecheck, test, build:site, Pages deploy; tags create GitHub Releases; releases announced (ADRs 0018, 0078, 0081)
 │       └── dco.yml         # Signed-off-by check on every pull request commit (ADR 0067)
 ├── public/                 # Copied verbatim: favicon.svg/.ico, apple-touch-icon.png, icon-*.png, manifest.webmanifest, og-image.png (ADR 0061), robots.txt, sitemap.xml (ADR 0062), CNAME, .well-known/security.txt (ADR 0068)
 ├── scripts/
@@ -53,6 +53,7 @@ guidonica/
 │   ├── changelog.mjs       # CHANGELOG.md parser, cutRelease, releaseSection (shared by Vite, scripts, tests; ADR 0078)
 │   ├── release.mjs         # pnpm release: cuts Unreleased into the next CalVer version, bumps package.json (ADR 0078)
 │   ├── release-notes.mjs   # GitHub Release body for a tag, run by CI (ADR 0078)
+│   ├── announce.mjs        # Bluesky + Mastodon release thread from CHANGELOG.md, run by CI after deploy (ADR 0081)
 │   ├── build-icons.mjs     # Guidonian Hand mark generator (npm run icons; ADRs 0046–0048)
 │   ├── build-banners.mjs   # Social profile banners from live captures (pnpm banners, dev-only; ADR 0079)
 │   ├── build-music-font.py # Bravura → Guidonica Notation subset (npm run music-font; fontTools, dev-only; ADR 0058)
@@ -167,14 +168,15 @@ guidonica/
 2. **Release Protocol (ADR 0078)**: only when the user explicitly says "release"; never on your own initiative.
    1. Confirm the latest `main` CI run is green: `gh run list --branch main -L 1`.
    2. `pnpm release`: checks a clean tree level with `origin/main`, computes the CalVer version (`YYYY.M.MICRO`), moves Unreleased under it in `CHANGELOG.md`, bumps `package.json` and prints the section. It does not commit.
-   3. Translate the new section's user-facing sections into `src/i18n/changelog/{it,fr,de,es}.md`, at the top, same structure, `Internal` omitted.
-   4. `pnpm typecheck && pnpm test && pnpm build:site`.
-   5. Commit `chore(release): <version>`, then:
+   3. Write the release headline (ADR 0081): one `> ` line right under `## [<version>] - <date>`, in English, for users, naming the one or two biggest changes. It opens the Bluesky and Mastodon announcement and must fit Bluesky's 300-grapheme first post; `pnpm test` checks it. It is not translated.
+   4. Translate the new section's user-facing sections into `src/i18n/changelog/{it,fr,de,es}.md`, at the top, same structure, `Internal` omitted.
+   5. `pnpm typecheck && pnpm test && pnpm build:site`.
+   6. Commit `chore(release): <version>`, then:
       ```bash
       git tag -a v<version> -m "Guidonica <version>"
       ssh-add --apple-load-keychain 2>&1 && git push --atomic origin main v<version>
       ```
-   6. CI redeploys (root = the new tag) and the tag run creates the GitHub Release from the changelog section.
+   7. CI redeploys (root = the new tag) and the tag run creates the GitHub Release from the changelog section. After the deploy, the main run's `announce` job posts the release thread to @guidonica.it on Bluesky and @guidonica@mastodon.social (ADR 0081). A failed `announce` leaves the site and the GitHub Release untouched; re-run it from the Actions UI, it never double-posts.
 3. **Repository Setup**:
    - Keep the repository self-contained and reproducible.
    - `.gitignore` must ignore `node_modules/`, `dist/`, `site/`, `.DS_Store`, and temporary test artifacts.
