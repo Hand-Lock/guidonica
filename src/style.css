@@ -1719,9 +1719,21 @@ dialog.about-dialog::backdrop {
 }
 
 .about-dialog-footer {
+  flex-wrap: wrap;
   justify-content: flex-end;
   padding-right: 22px;
   border-top: 1px solid var(--well-border);
+}
+
+/* Long localized labels wrap instead of spilling past the sheet edge */
+.about-dialog-footer .btn {
+  flex-shrink: 1;
+  height: auto;
+  min-height: var(--hit);
+  padding-block: 6px;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: center;
 }
 
 /* ==========================================================================
@@ -2179,6 +2191,11 @@ dialog.intro-dialog {
   .playback-controls .btn-primary {
     flex: 1 1 auto;
     min-width: 96px;
+  }
+
+  /* A wrapped footer shows full-width rows, Close last under the thumb */
+  .about-dialog-footer:not(.intro-footer) .btn {
+    flex: 1 1 auto;
   }
 
   /* Mark + wordmark + badge measure 183px */
