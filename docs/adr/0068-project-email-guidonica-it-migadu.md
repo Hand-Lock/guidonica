@@ -1,6 +1,6 @@
 # 0068. Project Email on guidonica.it (Migadu), Contact Addresses & security.txt
 
-- **Status**: Accepted (amends [0031](0031-custom-domain-guidonica-it.md) and [0067](0067-contribution-licensing-dco-and-trademark-policy.md)); amended by [0069](0069-security-privacy-audit.md) and [0077](0077-ci-actions-node-24.md)
+- **Status**: Accepted (amends [0031](0031-custom-domain-guidonica-it.md) and [0067](0067-contribution-licensing-dco-and-trademark-policy.md)); amended by [0069](0069-security-privacy-audit.md), [0077](0077-ci-actions-node-24.md) and [0088](0088-pre-release-audit-2026-10-06.md)
 - **Date**: 2026-10-04
 - **Author**: Claude & A. C. Lo Cascio
 

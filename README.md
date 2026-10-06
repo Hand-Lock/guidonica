@@ -483,7 +483,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0057](docs/adr/0057-canvas-bounded-beams-and-tuplet-numbers.md) | Canvas-Bounded Beams & Tuplet Numbers | Accepted |
 | [0058](docs/adr/0058-music-font-audit-and-bravura-subset.md) | Music Font Audit: Keep Bravura, Ship a Renamed Subset | Accepted |
 | [0059](docs/adr/0059-localization-and-national-note-naming.md) | Localization (en · it · fr · de · es) & National Note Naming | Accepted; amended by 0086 |
-| [0060](docs/adr/0060-self-hosted-text-fonts-and-privacy-note.md) | Self-Hosted Text Fonts & a No-Tracking Privacy Note | Accepted |
+| [0060](docs/adr/0060-self-hosted-text-fonts-and-privacy-note.md) | Self-Hosted Text Fonts & a No-Tracking Privacy Note | Accepted; amended by 0088 |
 | [0061](docs/adr/0061-social-preview-card-and-share-metadata.md) | Social Preview Card & Share Metadata | Accepted |
 | [0062](docs/adr/0062-robots-txt-and-sitemap.md) | robots.txt & sitemap.xml | Accepted; amended by 0086 |
 | [0063](docs/adr/0063-offline-service-worker.md) | Offline Service Worker | Accepted; amended by 0078, 0086 |
@@ -491,13 +491,13 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0065](docs/adr/0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066, 0076 |
 | [0066](docs/adr/0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted; amended by 0070 |
 | [0067](docs/adr/0067-contribution-licensing-dco-and-trademark-policy.md) | Contribution Licensing (Inbound MIT + DCO) & Trademark Policy | Accepted; amended by 0068, 0069 |
-| [0068](docs/adr/0068-project-email-guidonica-it-migadu.md) | Project Email on guidonica.it (Migadu), Contact Addresses & security.txt | Accepted; amended by 0069, 0077 |
-| [0069](docs/adr/0069-security-privacy-audit.md) | Security & Privacy Audit: History Rewrite, CI Least Privilege & Repository Hardening | Accepted; amended by 0077 |
+| [0068](docs/adr/0068-project-email-guidonica-it-migadu.md) | Project Email on guidonica.it (Migadu), Contact Addresses & security.txt | Accepted; amended by 0069, 0077, 0088 |
+| [0069](docs/adr/0069-security-privacy-audit.md) | Security & Privacy Audit: History Rewrite, CI Least Privilege & Repository Hardening | Accepted; amended by 0077, 0088 |
 | [0070](docs/adr/0070-note-selection-and-level-progression.md) | Note Selection Toggles & Reworked Level Progression | Accepted |
 | [0071](docs/adr/0071-intro-meter-step.md) | Time Signature Step in the Onboarding Intro | Accepted; amended by 0076 |
 | [0072](docs/adr/0072-three-level-beat-accent-hierarchy.md) | Three-Level Beat Accent Hierarchy in the Traffic Lights and Click | Accepted; amended by 0076 |
 | [0073](docs/adr/0073-level-button-dumbbell-icon.md) | Dumbbell Icon for the Header Level Button | Accepted |
-| [0074](docs/adr/0074-donations-ko-fi-link.md) | Donations: a Plain Ko-fi Link | Accepted |
+| [0074](docs/adr/0074-donations-ko-fi-link.md) | Donations: a Plain Ko-fi Link | Accepted; amended by 0088 |
 | [0075](docs/adr/0075-ai-assistance-disclosure.md) | AI-Assistance Disclosure in the About Dialog | Accepted |
 | [0076](docs/adr/0076-compound-triple-and-quadruple-meters.md) | Compound Triple and Quadruple Meters (9/8, 12/8) | Accepted |
 | [0077](docs/adr/0077-ci-actions-node-24.md) | CI Actions on Node 24 Releases | Accepted |
@@ -511,6 +511,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0085](docs/adr/0085-shareable-exercise-links.md) | Shareable Exercise Links | Accepted |
 | [0086](docs/adr/0086-language-landing-pages.md) | Language Landing Pages | Accepted |
 | [0087](docs/adr/0087-rotating-tips.md) | Rotating Tips | Accepted |
+| [0088](docs/adr/0088-pre-release-audit-2026-10-06.md) | Pre-release Audit 2026-10-06: Second History Rewrite, Privacy Policy | Accepted |
 
 ---
 
@@ -523,7 +524,7 @@ Issues, translations and code are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING
 ## Contact
 
 - **[hello@guidonica.it](mailto:hello@guidonica.it)**: teachers, schools, press and general questions.
-- **[legal@guidonica.it](mailto:legal@guidonica.it)**: trademark permissions, commercial licensing, takedown notices and privacy requests.
+- **[legal@guidonica.it](mailto:legal@guidonica.it)**: trademark permissions, commercial licensing, takedown notices and privacy requests. How Guidonica handles personal data is in [`PRIVACY.md`](PRIVACY.md).
 - **[security@guidonica.it](mailto:security@guidonica.it)**: security vulnerabilities. Report them privately, never in a public issue; see [`SECURITY.md`](SECURITY.md).
 - **Follow**: [Bluesky @guidonica.it](https://bsky.app/profile/guidonica.it), [Mastodon @guidonica@mastodon.social](https://mastodon.social/@guidonica) and [Instagram @guidonica.it](https://www.instagram.com/guidonica.it/).
 - **Support**: Guidonica is free; voluntary tips go through [Ko-fi](https://ko-fi.com/guidonica).

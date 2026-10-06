@@ -1,6 +1,6 @@
 # 0069. Security & Privacy Audit: History Rewrite, CI Least Privilege & Repository Hardening
 
-- **Status**: Accepted (amends [0018](0018-github-actions-pages-continuous-deployment.md), [0067](0067-contribution-licensing-dco-and-trademark-policy.md) and [0068](0068-project-email-guidonica-it-migadu.md)); amended by [0077](0077-ci-actions-node-24.md)
+- **Status**: Accepted (amends [0018](0018-github-actions-pages-continuous-deployment.md), [0067](0067-contribution-licensing-dco-and-trademark-policy.md) and [0068](0068-project-email-guidonica-it-migadu.md)); amended by [0077](0077-ci-actions-node-24.md) and [0088](0088-pre-release-audit-2026-10-06.md)
 - **Date**: 2026-10-04
 - **Author**: Claude & A. C. Lo Cascio
 

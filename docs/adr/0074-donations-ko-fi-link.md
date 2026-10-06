@@ -1,6 +1,6 @@
 # 0074. Donations: a Plain Ko-fi Link
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0088](0088-pre-release-audit-2026-10-06.md)
 - **Date**: 2026-10-05
 - **Author**: Claude & A. C. Lo Cascio
 
@@ -66,7 +66,7 @@ A tip unlocks nothing: no features, no "supporter" badge, no early access. This 
 
 ### 7. Ko-fi account configuration (owner-side)
 
-- Page `ko-fi.com/guidonica`, Stripe connected via `a private per-service address (ADR 0068 §3)`.
+- Page `ko-fi.com/guidonica`, Stripe connected via a private per-service address (ADR 0068 §3).
 - Simple tip mode in EUR with "Tip" wording; suggested amounts €3 / €5 / €10, €3 minimum.
 - Shop, Memberships, Commissions and the supporter leaderboard are off.
 

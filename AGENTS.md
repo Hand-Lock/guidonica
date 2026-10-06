@@ -32,6 +32,7 @@ guidonica/
 ├── CONTRIBUTING.md         # Contributor guide: inbound MIT + DCO sign-off (ADR 0067)
 ├── TRADEMARKS.md           # Guidonica™ name & logo policy, AGPL §7(e) notice (ADR 0067)
 ├── SECURITY.md            # Private vulnerability reporting to security@guidonica.it (ADR 0068)
+├── PRIVACY.md              # Privacy policy, English + Italian, linked from About and footer (ADR 0088)
 ├── README.md               # Public overview, feature tour, 16:9 trailer, ADR table
 ├── LICENSE                 # GNU AGPL-3.0-or-later
 ├── .nvmrc                  # Node 22
@@ -152,6 +153,7 @@ guidonica/
    - Never paste third-party code of unknown or copyleft license.
    - Merge outside contributions only when every commit is DCO signed off under the [`CONTRIBUTING.md`](CONTRIBUTING.md) terms, and keep the `Signed-off-by` trailers (rebase or merge commit; a squash message must carry them all).
    - Use of the name and logo follows [`TRADEMARKS.md`](TRADEMARKS.md). Write Guidonica™, never ®, until a registration is granted.
+   - Never write the private login mailbox or any plus-address (`name+tag@`) of guidonica.it into the repository, its history or a commit message. Publish only `hello@`, `legal@` and `security@`; refer to a service login as "a private per-service address (ADR 0068 §3)". `tests/shellPrivacyAndShare.test.ts` enforces it (ADR 0088).
    - Never commit paid-only features (store extras, Guidonica Studio such as video or PDF export) to this public repository. Anything pushed here is AGPL for everyone; those features live in a private repository.
 
 ---

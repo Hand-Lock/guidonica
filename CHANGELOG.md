@@ -21,6 +21,11 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - Send an exercise as a link: Settings → Practice → Share copies a link with your clef, meter, tempo, note values and notes, and whoever opens it practises with the same settings (ADR 0085).
 - Guidonica has an address in each language: guidonica.it/it/, /fr/, /de/ and /es/ open in Italian, French, German and Spanish, so searches in those languages can find it (ADR 0086).
 - A short tip when you open Guidonica points to features you may have missed, such as level presets, note names and exercise links, and now and then to our social pages and Ko-fi. Turn tips off in Settings → Practice. (ADR 0087)
+- A privacy policy, in English and Italian, linked from the About dialog and the footer (ADR 0088).
+
+### Changed
+
+- The About dialog's privacy line now says your settings stay on your device. Visiting the site still reaches its host, GitHub Pages, as the privacy policy explains (ADR 0088).
 
 ### Fixed
 
@@ -33,6 +38,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - `rel="me"` links to the Mastodon and Bluesky profiles in `index.html`, and the @guidonica.it Bluesky domain handle (ADR 0080).
 - Releases are announced on Bluesky and Mastodon by CI, as a thread opened by a `> ` headline in the changelog (ADR 0081).
 - README, SPEC, AGENTS and contributor docs brought up to date with the current app, and the 16:9 trailer embedded in the README. The AGENTS clock and buffer rules now describe the scheduler's wake-up timer and the beat-based lookahead.
+- Pre-release privacy, security and legal audit: a private address was removed from ADR 0074 and from history with a second history rewrite, `source-map-js` was bumped to 1.2.2 for a dev-only advisory, and tests now reject any non-public guidonica.it address (ADR 0088).
 
 ## [2026.10.0] - 2026-10-05
 

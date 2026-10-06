@@ -58,7 +58,7 @@ describe('index.html ↔ en dictionary parity (ADR 0059)', () => {
 
   it('every data-i18n-html block equals the English dictionary', () => {
     const nodes = [...doc.querySelectorAll<HTMLElement>('[data-i18n-html]')];
-    expect(nodes.length).toBe(4);
+    expect(nodes.length).toBe(5);
     for (const el of nodes) {
       const key = el.dataset.i18nHtml ?? '';
       expect(normalizeHtml(el.innerHTML), key).toBe(normalizeHtml(textKey(key)));

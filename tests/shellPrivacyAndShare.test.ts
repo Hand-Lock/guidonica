@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const root = path.resolve(__dirname, '..');
 const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
@@ -78,5 +79,33 @@ describe('crawler files (ADR 0062)', () => {
     for (const loc of locs) expect(loc.startsWith('https://guidonica.it/'), loc).toBe(true);
     const canonical = /<link rel="canonical" href="([^"]+)"/.exec(indexHtml)?.[1];
     expect(locs).toContain(canonical);
+  });
+});
+
+describe('repository: no private email addresses (ADR 0088)', () => {
+  // Public role aliases (ADR 0068); the login mailbox and its per-service tags stay private.
+  const PUBLIC = new Set(['hello', 'legal', 'security', 'postmaster', 'abuse', 'admin']);
+  const texts = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf-8' })
+    .split('\0')
+    .filter((file) => file && fs.existsSync(path.join(root, file)))
+    .map((file) => ({ file, text: fs.readFileSync(path.join(root, file), 'utf-8') }))
+    .filter(({ text }) => !text.includes('\0'));
+
+  it('reads the tracked text files', () => {
+    expect(texts.length).toBeGreaterThan(100);
+  });
+
+  it('publishes only the public role addresses', () => {
+    for (const { file, text } of texts) {
+      for (const [, local] of text.matchAll(/([A-Za-z0-9._%+-]+)@guidonica\.it\b/g)) {
+        expect(PUBLIC.has(local.toLowerCase()), `${file}: ${local}@`).toBe(true);
+      }
+    }
+  });
+
+  it('contains no plus-addressed guidonica.it address', () => {
+    for (const { file, text } of texts) {
+      expect(text, file).not.toMatch(/\+[A-Za-z0-9._%-]*@guidonica\.it/);
+    }
   });
 });

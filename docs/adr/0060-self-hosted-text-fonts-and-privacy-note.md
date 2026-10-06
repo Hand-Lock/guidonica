@@ -1,6 +1,6 @@
 # 0060. Self-Hosted Text Fonts & a No-Tracking Privacy Note
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0088](0088-pre-release-audit-2026-10-06.md) (privacy line and policy)
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0023](0023-ubuntu-mono-monospace-typography.md) (how Ubuntu Mono is delivered), [0012](0012-web-font-synchronization-and-clef-invalidation.md) (the solfège label face it waits on)
@@ -83,6 +83,11 @@ their licences, since the app now redistributes them.
 
 If any third-party request is ever added, this line must change in the same commit, and that
 endpoint becomes the single documented exception.
+
+> **Amended by [ADR 0088](0088-pre-release-audit-2026-10-06.md):** "nothing leaves your device" was
+> too broad, since every page request reaches the host, GitHub Pages. The row is now `privacyHtml`:
+> "No accounts, no cookies, no tracking: your settings stay on your device." plus a link to
+> [`PRIVACY.md`](../../PRIVACY.md).
 
 ## Consequences
 
