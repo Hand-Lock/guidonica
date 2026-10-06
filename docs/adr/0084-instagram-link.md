@@ -3,6 +3,7 @@
 - **Status**: Accepted
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
+- **Amends**: [0080](0080-social-profiles-verification.md), [0082](0082-visible-social-links.md)
 
 ## Context & Problem Statement
 

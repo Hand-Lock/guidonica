@@ -1,6 +1,6 @@
 # 0066. Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes
 
-- **Status**: Accepted (amends [0065](0065-grammar-driven-rhythm-sampler.md) §6, §8 and §10, [0006](0006-multi-interval-selection-and-clef-pitch-pools.md) item 7 and the fallback of [0044](0044-user-selectable-ledger-lines.md))
+- **Status**: Accepted (amends [0065](0065-grammar-driven-rhythm-sampler.md) §6, §8 and §10, [0006](0006-multi-interval-selection-and-clef-pitch-pools.md) item 7 and the fallback of [0044](0044-user-selectable-ledger-lines.md)); amended by [0070](0070-note-selection-and-level-progression.md) (connected start)
 - **Date**: 2026-10-04
 - **Author**: Claude & A. C. Lo Cascio
 

@@ -1,6 +1,6 @@
 # 0052. Signature Check for the Intro Level Previews
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0070](0070-note-selection-and-level-progression.md), [0071](0071-intro-meter-step.md)
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0050](0050-intro-notation-previews.md), [0051](0051-intro-preview-representation-presets.md)

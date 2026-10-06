@@ -1,6 +1,6 @@
 # 0039. Repository Audit: Ergodicity Restoration, Clock Unification, and Configuration Hygiene
 
-- **Status**: Accepted
+- **Status**: Accepted; superseded in part by [ADR 0040](0040-engraving-grammar-for-ties-and-cross-barline-ties.md) (the tie section)
 - **Date**: 2026-09-25
 - **Author**: Claude & A. C. Lo Cascio
 

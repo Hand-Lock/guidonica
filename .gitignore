@@ -38,3 +38,6 @@ pnpm-debug.log*
 *.crt
 *.p12
 
+
+# Local trailer renders (brag skill output)
+brag-output*/

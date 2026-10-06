@@ -1,6 +1,6 @@
 # 0053. Header Level Button with a Live Difficulty Meter
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0054](0054-responsive-header-fit-audit.md), [0073](0073-level-button-dumbbell-icon.md)
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0049](0049-level-presets-onboarding-intro.md)

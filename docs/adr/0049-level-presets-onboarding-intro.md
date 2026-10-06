@@ -1,6 +1,6 @@
 # 0049. Level Presets & Onboarding Intro ("What's your level?")
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0053](0053-header-level-button.md), [0059](0059-localization-and-national-note-naming.md), [0070](0070-note-selection-and-level-progression.md), [0071](0071-intro-meter-step.md)
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 

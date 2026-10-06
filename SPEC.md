@@ -11,12 +11,12 @@
 
 ### The Suckless Engineering Axioms
 Guidonica rejects modern web bloat in favor of mathematical simplicity, client-side sovereignty, and mechanical sympathy:
-1. **Zero Framework Bloat (Vanilla TypeScript)**: Direct DOM APIs and native canvas contexts; no React/Vue/Svelte virtual DOM overhead (~125 kB gzipped JS, VexFlow included).
-2. **Single Authoritative Hardware Clock (`AudioContext.currentTime`)**: Synchronizes audio synthesis and the visual scroller to eliminate visual-auditory drift mathematically.
+1. **Zero Framework Bloat (Vanilla TypeScript)**: Direct DOM APIs and native canvas contexts; no React/Vue/Svelte virtual DOM overhead (~130 kB gzipped JS, VexFlow included; each non-English language a lazy ~5.7 kB chunk).
+2. **Single Authoritative Hardware Clock (`AudioContext.currentTime`)**: Synchronizes audio synthesis and the visual scroller to eliminate visual-auditory drift mathematically. A short `setInterval` only wakes the audio scheduler to queue clicks ahead; every click time and tape offset is computed from `currentTime`.
 3. **GPU Measure Blitting Pipeline**: Offscreen VexFlow measure caching rendered once; the 60/120 FPS animation loop purely executes `ctx.drawImage()`, keeping CPU usage < 1%.
-4. **Bounded Ring-Buffer Memory Discipline**: Only 4 to 6 measures kept in memory; expired canvases are immediately dereferenced for leak-free infinite sessions.
+4. **Bounded Ring-Buffer Memory Discipline**: Only the measures covering the viewport plus 6 beats of lookahead are kept in memory; expired canvases are immediately dereferenced for leak-free infinite sessions.
 5. **Sample-Free Audio Synthesis**: Metronome clicks synthesized live via Web Audio oscillators; 0 bytes of audio sample files over the wire.
-6. **Pure CSS3 Liquid Glass UI**: 100% vector and CSS3-powered Frutiger Aero / Aqua styling; zero CSS framework runtimes (~7.9 kB gzipped CSS).
+6. **Pure CSS3 Liquid Glass UI**: 100% vector and CSS3-powered Frutiger Aero / Aqua styling; zero CSS framework runtimes (~8.3 kB gzipped CSS).
 7. **Ergodic State-Space Completeness**: Procedural algorithms never artificially censor or prune mathematically and grammatically valid permutations of the user's active settings ($P(\omega) > 0, \forall \omega \in \Omega$). All rhythm partitioning and pitch walks are strictly ergodic.
 
 ---
@@ -43,7 +43,7 @@ The user must have full control over the generation engine prior to and during a
      - **Baritone (C5)** (`baritone-c`): C clef on line 5, range B1 – C5 at the default ±3 ledger lines.
      - **Bass (F4)** (`bass`): F clef on line 4, range G1 – A4 at the default ±3 ledger lines.
    - **Ledger lines** (`ledgerLines: { above, below }`): two selectors next to the clef choose how many ledger lines appear above and below the staff, 0–3 each (default 3/3). $n$ ledger lines on a side reach the space beyond the $n$-th ledger line, so 0 still allows the space just outside the staff. The range hint under the clef shows the resulting bounds (e.g. `E3 – F6`).
-   - Pitches are strictly constrained to the chosen range: the staff plus the selected ledger lines, $11 + 2(	ext{above} + 	ext{below})$ diatonic pitches (23 at the default ±3, 11 at 0/0). The 0–3 cap fits the fixed 220 px measure canvas.
+   - Pitches are strictly constrained to the chosen range: the staff plus the selected ledger lines, $11 + 2(\text{above} + 	ext{below})$ diatonic pitches (23 at the default ±3, 11 at 0/0). The 0–3 cap fits the fixed 220 px measure canvas.
 4. **Subdivisions & Rhythmic Vocabulary**:
    - Granular toggles allowing any combination of:
      - Whole notes (`1`)
@@ -61,15 +61,11 @@ The user must have full control over the generation engine prior to and during a
    - **Tied notes toggle**: Explicit toggle allowing ties with pitch preservation wherever engraving requires one: across beats no single notehead can span (e.g. the middle of a 4/4 bar, the dotted beat in 6/8), across tuplet boundaries, and across the barline (chains allowed). Redundant ties that a single note already expresses (`q~q` on beat 1 = `h`) never appear.
    - **Rest toggle**: Option to enable/disable rests, spelled on the beat grid (a silent bar is one whole rest).
 5. **Melodic Intervals & Pitch Transitions**:
-   - Selectable transition constraints:
-     - *Stepwise only (Seconds)*: Scales, adjacent notes ($\pm 1$ diatonic step).
-     - *Thirds / Triadic skips*: Allows leaps up to diatonic thirds/fourths.
-     - *Octave leaps*: Allows wide jumps and octave displacement.
-     - *Any interval*: Unrestricted random walk within clef range.
-   - Tonality: Natural notes (diatonic C Major / A Minor) as the clean default baseline, with optional chromatic accidental toggles.
+   - Nine multi-select interval chips, any combination of: unison, 2nd, 3rd, 4th, 5th, 6th, 7th, octave and `9+` (every compound interval up to the full range). At least one stays selected (ADR 0006).
+   - Tonality: natural notes only (diatonic C Major / A Minor). There are no accidental toggles yet (see §4, Scale Degrees & Accidentals).
    - **Notes (pitch classes)**: seven toggles C … B, each applying in every octave of the clef and ledger-line range; at least one stays selected (default: all). Chip text follows the Labels setting (letters or syllables; with Labels off, the language's convention). Interval classes that no two selected notes can span are dimmed; if none of the selected moving intervals can occur, every interval that joins two selected notes is used and a hint says so (ADR 0070).
 6. **Count-In / Lead-In**:
-   - 1-measure metronome lead-in with visual beat indicators where the score waits in place at the true first measure (Measure 0) under the playhead, allowing the musician to prepare and internalize tempo before tape scrolling begins on beat 1.
+   - Optional (on by default; Settings → Practice → Assists): a 1-measure metronome lead-in with visual beat indicators where the score waits in place at the true first measure (Measure 0) under the playhead, allowing the musician to prepare and internalize tempo before tape scrolling begins on beat 1.
 
 ---
 
@@ -77,8 +73,8 @@ The user must have full control over the generation engine prior to and during a
 
 ### Layout & Orientation
 - **Stationary Staff Lines**: The five staff lines span horizontally across the display and do not move.
-- **Pinned Clef & Key Signature**: The active clef is permanently displayed at the left margin, establishing reference coordinates without scrolling out of view.
-- **Fixed Vertical Playhead**: A crisp vertical guide line (cursor) is positioned at a fixed horizontal coordinate (e.g., 20%–25% from the left edge of the viewport).
+- **Pinned Clef & Time Signature**: The active clef and time signature are permanently displayed at the left margin (there is no key signature: the app is diatonic in C), establishing reference coordinates without scrolling out of view.
+- **Fixed Vertical Playhead**: A crisp vertical guide line (cursor) is positioned at a fixed horizontal coordinate (22% of the viewport width from the left edge). It can be hidden with the playhead switch or the `P` key for unassisted reading (ADR 0037).
 - **Moving Notation Tape**: Barlines, notes, accidentals, and beams scroll smoothly from right to left toward the playhead.
 
 ### Metric Linearity (Fundamental Spacing Rule)
@@ -94,7 +90,7 @@ Unlike traditional engraved sheet music—where measure widths flex dynamically 
 To maintain a stable 60 FPS / 120 FPS on all hardware without CPU throttling:
 - **Offscreen Measure Caching**: Measures are procedurally generated in chunks ahead of the viewport. Each measure is formatted and rendered once onto an offscreen canvas surface using VexFlow.
 - **Fast Blitting**: The main display canvas does not execute complex VexFlow layout or glyph calculations during animation frames. It only blits visible offscreen measure canvases using `CanvasRenderingContext2D.drawImage()`.
-- **Ring Buffer**: Measures that scroll offscreen past the left margin are discarded. New measures are generated and appended on the right when the buffer drops below 3 future measures.
+- **Ring Buffer**: Measures that scroll offscreen past the left margin are discarded. New measures are generated and appended on the right until the buffer reaches the right edge of the viewport plus 6 beats of lookahead, a distance measured in beats so it holds at every zoom and meter.
 
 ---
 
@@ -115,7 +111,7 @@ Given an arbitrarily long practice session, the empirical distribution of genera
 ### Rhythmic Generator: Grammar-Driven Sampler (ADR 0065)
 Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter beat in simple meters, 4 per eighth in compound meters (a 4/4 bar is 32 units, 3/4 and 6/8 are 24, 2/4 is 16, 9/8 is 36, 12/8 is 48). The placement tables below are the only definition of legality; the sampler derives everything else from them.
 
-1. **Values in play**: every enabled base value plus, with dotted on, its dotted form (`hd`, `qd`, `8d`, `16d`; whole adds `wd`, placeable only in 12/8). With nothing selected, quarters. The alphabet is strict (ADR 0066): a dotted value only completes a beat beside a shorter partner, so `8d` needs 16 or 32, `16d` needs 32, and `qd` in 4/4 and 2/4 needs 8, 16 or 32. Without its partner the value stays in the alphabet but no bar contains it (the dotted toggle's tooltip says so). Values longer than the bar or its legal placements (`w` outside 4/4, `h` in compound meters, `wd` outside 12/8, `hd` in 2/4) are likewise never written. `tests/generator.test.ts` pins this dormant list for all 4 × 128 subdivision sets.
+1. **Values in play**: every enabled base value plus, with dotted on, its dotted form (`hd`, `qd`, `8d`, `16d`; whole adds `wd`, placeable only in 12/8). With nothing selected, quarters. The alphabet is strict (ADR 0066): a dotted value only completes a beat beside a shorter partner, so `8d` needs 16 or 32, `16d` needs 32, and `qd` in 4/4 and 2/4 needs 8, 16 or 32. Without its partner the value stays in the alphabet but no bar contains it (the dotted toggle's tooltip says so). Values longer than the bar or its legal placements (`w` outside 4/4, `h` in compound meters, `wd` outside 12/8, `hd` in 2/4) are likewise never written. `tests/generator.test.ts` pins this dormant list for all 6 × 128 subdivision sets.
 2. **Grammar** (`rhythmGrammar`, memoized per meter/values/tuplet cells, at most 64 entries). At each grid point $u$ the candidate steps are:
    - every value whose notehead the placement table accepts at $u$ (canonical or tolerated) and that fits in the bar;
    - every enabled tuplet cell whose `TUPLET_PLACEMENTS` grid contains $u$ and whose group fits.
@@ -181,9 +177,16 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter beat i
 ### Metronome Synthesis
 - Synthesized clicks using native `OscillatorNode` and exponential `GainNode` envelopes (zero external audio file dependencies).
 - Distinct timbres:
-  - **Beat 1 (Downbeat)**: Higher frequency accent pulse (e.g., 1200 Hz).
-  - **Secondary beat** (4/4 beat 3; 6/8 beat 4; 9/8 beats 4, 7; 12/8 beats 4, 7, 10): Medium accent pulse between the two (ADR 0072, 0076).
-  - **Other Beats**: Lower frequency pulse (e.g., 800 Hz).
+  - **Woodblock** (default): a sine wave sweeping down one octave in 25 ms, with an exponential decay.
+  - **Electronic**: a triangle-wave click with a 35 ms exponential decay.
+- Three accent levels (ADR 0072, 0076):
+
+  | Accent | Beats | Woodblock sweep | Electronic |
+  | :--- | :--- | :--- | :--- |
+  | Downbeat | 1 | 1600 → 800 Hz | 1300 Hz |
+  | Secondary | 4/4 beat 3; 6/8 beat 4; 9/8 beats 4, 7; 12/8 beats 4, 7, 10 | 1350 → 675 Hz | 1050 Hz |
+  | Weak | All others | 1100 → 550 Hz | 800 Hz |
+
 - The beat LEDs follow the same three levels: ruby downbeat, orange secondary beat, turquoise weak beats, each a little smaller than the one before (ADR 0072). In compound meters the LEDs read in threes: the one that starts each dotted-quarter beat is full size, the two eighths after it are small dots (ADR 0076).
 
 ---
@@ -192,31 +195,30 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter beat i
 
 ### Visual Aesthetic
 - Minimalist, distraction-free aesthetic matching the suckless ethos.
-- High-contrast, dark-mode default with clean music notation and a distinct accent color for the playhead and active UI states.
+- Theme Auto (default, follows the operating system), Light or Dark, with clean music notation and a distinct accent color for the playhead and active UI states.
 - Clean typography for status and settings.
 
 ### Control Panel
-- Compact header or collapsible drawer containing:
-  - Play / Pause / Reset button
-  - BPM slider + direct number input
-  - Clef selector
-  - Time signature selector
-  - Subdivisions checklist
-  - Notes (pitch-class) toggles
-  - Intervals selector
+- **Header**: logo (opens About), Level button, Start/Pause, Reset, BPM slider + number input with the Italian tempo marking, beat lights, theme cycle button (wide screens), fullscreen (where supported) and the settings button.
+- **Settings drawer**, in four sections:
+  - **Staff**: clef (8), ledger lines above and below (0–3) with the live range hint, time signature, compound pulse (♩. or ♪).
+  - **Rhythm**: note values (w, h, q, 8, 16, 32), dotted, tuplet matrix (with Clear all), rests, ties.
+  - **Melody**: notes (C … B), intervals (unison … 9+).
+  - **Practice**: language, labels (None / Syllables / Letters), assists (count-in, playhead, tips), click sound, volume, theme, exercise link.
+- **Stage**: the zoom pill (−, %, +; tapping the % returns to auto zoom) and the playhead.
 - Live visual indicator for the active beat / count-in.
 
 ### Onboarding & Level Presets
 - On a first visit, the welcome step also shows the five languages as endonym chips (English · Italiano · Français · Deutsch · Español), preselected from the browser language; picking one re-translates the intro at once. Later visits omit the chips; the language stays changeable in Settings → Practice.
 - On a first visit (no saved settings, no onboarding flag), a three-step intro asks **"What's your level?"** (Beginner · Elementary · Intermediate · Advanced · Virtuoso), then **"Which clef would you like to read?"** (Treble · Bass · Alto · Tenor), then **"Which time signature would you like to read?"** (4/4 · 3/4 · 2/4 · 6/8 · 9/8 · 12/8, each described in metric terms only, e.g. "Compound duple · two dotted-quarter beats of three eighths"; see ADR 0071).
 - The answers load a preset of existing, user-visible settings: tempo, ledger lines, note values, dotted notes, rests, ties, tuplets, intervals, notes, labels and count-in, in the chosen meter. In compound meters, which have no triplets, Intermediate and Advanced use the duplets of the same value instead (ADR 0071). Beginner reads the do-pentatonic (C D E G A) at 60 BPM with 2nds and 3rds; Elementary (70 BPM) adds every note, 4ths, 5ths and octaves; Intermediate (80 BPM) every interval up to the octave and 16ths; Advanced (90 BPM) every leap and 32nds; Virtuoso (120 BPM) everything (ADR 0070). Theme, volume, zoom and sound are left unchanged.
-- "Skip", Esc or a click outside keeps the defaults and never asks again. The header Level button reopens it at any time. Its five-bar meter lights up to the current level, or stays dim with the label "Custom" when the settings match no preset (see ADR 0053).
+- "Skip", Esc or a click outside keeps the defaults and never asks again. The header Level button (a dumbbell) reopens it at any time. Its five-bar meter lights up to the current level, or stays dim with the label "Custom" when the settings match no preset (see ADR 0053).
 - Presets never alter the generator; every preset is an ordinary point of the configuration space Ω (see ADR 0049).
 - Level cards show freshly generated examples from a narrowed, published sub-configuration of each preset (toggles only switched off, Ω_preview ⊆ Ω_preset), so each card shows the figures typical of its level (see ADR 0051).
 - From the second visit on, one short tip per visit appears at the top of the stage, unless the intro, "What's new", a shared link or the landscape tip is showing. Most point to a feature the user's settings and device don't use yet; one in four asks to follow Guidonica or support it on Ko-fi. Start, the close button or the Tips chip in Settings → Practice hides it (see ADR 0087).
 
 ### Localization & National Note Naming
-- The interface is available in English, Italian, French, German and Spanish (see ADR 0059). The default is the first supported browser language, else English; the choice is saved with the settings but is not part of any level preset.
+- The interface is available in English, Italian, French, German and Spanish (see ADR 0059). The language is the saved choice; without one, the landing page's language (/it/, /fr/, /de/, /es/), then the first supported browser language, else English; the choice is saved with the settings but is not part of any level preset.
 - The language also sets the note-naming convention. Note labels are *None*, *Syllables* or *Letters*, spelled nationally:
   - English: Do Re Mi Fa Sol La Ti.
   - Italian and Spanish: … La Si.
@@ -234,11 +236,30 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter beat i
 - guidonica.it serves the latest tagged release; guidonica.it/nightly/ serves the latest commit, marked "Nightly", hidden from search engines, with its own settings, onboarding and offline cache (see ADR 0078). Versions are calendar-based, `YEAR.MONTH.MICRO`.
 - After an update, a returning user sees a "What's new" dialog listing every release since their last visit, newest first, in the interface language. A first-time user never sees it, and a notes file that cannot load (offline) is simply retried on a later visit. About shows the running version, linking to its release (or, on nightly, its commit), and a "What's new" button with the full history.
 
+### Shareable Exercise Links
+- Settings → Practice → Exercise link copies (or, on phones, shares) a link whose `#x=1&…` fragment carries the exercise: clef, ledger lines, time signature, compound pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels and count-in (see ADR 0085).
+- Language, theme, sound, volume, zoom and the playhead stay with each user. Opening a link skips the intro and loads the exercise; every student still reads different music, because the generator is never seeded.
+
+### Language Landing Pages
+- guidonica.it/it/, /fr/, /de/ and /es/ serve the same app with translated titles, descriptions and social cards, linked by `hreflang` and listed in the sitemap (see ADR 0086). Each page opens in its language unless the user already chose one.
+
+### Offline & Installable
+- After the first visit, a hand-written service worker serves the app from its cache, so practice works without a connection; online, every reload still fetches the newest version (see ADR 0063).
+- A web app manifest with standard and maskable icons lets the app be installed to the home screen or desktop.
+
+### Device & Lifecycle
+- **Auto-pause**: playback pauses when the page is hidden (tab switch, minimize, lock screen) and resumes cleanly on Start (see ADR 0035).
+- **Wake lock**: the screen stays on during playback where `navigator.wakeLock` is supported.
+- **Fullscreen**: a header button enters fullscreen where the Fullscreen API exists; it is hidden elsewhere, e.g. on iPhone Safari (see ADR 0033).
+- **Landscape tip**: on a small touch screen in portrait, a dismissible tip suggests rotating the device. In the portrait-locked in-app browsers of Instagram, Facebook and Threads, it suggests opening the page in the browser instead (see ADR 0055, 0083).
+
 ### Keyboard Controls
 - `Space`: Toggle Play / Pause.
-- `R` or `Escape`: Reset session to start.
+- `R` or `Escape`: Reset session to start (`Escape` first closes an open tuplet menu).
+- `P`: Show / hide the playhead.
 - `ArrowUp` / `ArrowDown`: Increment / decrement tempo by 5 BPM.
 - `Shift + ArrowUp` / `Shift + ArrowDown`: Increment / decrement tempo by 1 BPM.
 - `+` / `=`: Zoom in (+10%).
 - `-` / `_`: Zoom out (-10%).
 - `0`: Auto-fit zoom to screen (Auto Zoom).
+- Shortcuts are ignored while a dialog (About, What's new, the level intro) is open.

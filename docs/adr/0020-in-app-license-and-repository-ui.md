@@ -1,7 +1,7 @@
 # ADR 0020: In-App License and Repository Presentation Architecture
 
 ## Status
-Accepted
+Accepted; amended by [ADR 0067](0067-contribution-licensing-dco-and-trademark-policy.md)
 
 ## Date
 2026-09-17

@@ -3,7 +3,7 @@
 Date: 2026-09-16
 
 ## Status
-Accepted
+Accepted; superseded in part by [ADR 0042](0042-single-dpr-offscreen-backing-store.md) (the Retina pipeline)
 
 ## Context
 Following a full repository audit, six critical defects and several pedagogical and sensory omissions were identified:

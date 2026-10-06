@@ -1,6 +1,6 @@
 # 0055. Orientation-Aware Auto Zoom & Portrait Landscape Tip
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0056](0056-notch-safe-notation-stage.md), [0083](0083-in-app-browser-landscape-tip.md), [0087](0087-rotating-tips.md)
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0054](0054-responsive-header-fit-audit.md)

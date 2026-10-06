@@ -20,14 +20,14 @@ Reports in English or Italian are welcome. The same contact is published in [`/.
 
 ## Scope
 
-- The web app at [guidonica.it](https://guidonica.it), and its mirror at [hand-lock.github.io/guidonica](https://hand-lock.github.io/guidonica/).
+- The web app at [guidonica.it](https://guidonica.it), its nightly build at [guidonica.it/nightly/](https://guidonica.it/nightly/), and the language pages [/it/](https://guidonica.it/it/), [/fr/](https://guidonica.it/fr/), [/de/](https://guidonica.it/de/) and [/es/](https://guidonica.it/es/). The old `hand-lock.github.io/guidonica/` address only redirects to guidonica.it.
 - This repository: the source code, the service worker, the build scripts and the GitHub Actions workflows.
 
 Guidonica is a client-only static app. It has no server, accounts, cookies or analytics, and stores its settings only in the browser's `localStorage`. Issues in GitHub Pages itself, or in third-party services, belong to their own vendors.
 
 ## Supported versions
 
-Only the latest deploy of `main` is supported. Every push to `main` is built and published, so fixes ship there and older builds are not patched.
+Two builds are supported: the latest release at guidonica.it and the nightly build of `main` at guidonica.it/nightly/. A fix lands on `main` and ships to nightly first, then reaches guidonica.it in a patch release (ADR 0078). Older releases are not patched.
 
 ## What to expect
 

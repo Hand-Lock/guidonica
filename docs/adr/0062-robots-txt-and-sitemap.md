@@ -1,6 +1,6 @@
 # 0062. robots.txt & sitemap.xml
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0086](0086-language-landing-pages.md)
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 

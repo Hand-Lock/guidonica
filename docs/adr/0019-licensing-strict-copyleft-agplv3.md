@@ -1,7 +1,7 @@
 # ADR 0019: Strict Copyleft Open-Source Licensing (GNU AGPLv3)
 
 ## Status
-Accepted
+Accepted; amended by [ADR 0067](0067-contribution-licensing-dco-and-trademark-policy.md)
 
 ## Date
 2026-09-17

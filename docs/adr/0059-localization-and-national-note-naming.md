@@ -1,6 +1,6 @@
 # 0059. Localization (en · it · fr · de · es) & National Note Naming
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0086](0086-language-landing-pages.md)
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0015](0015-italian-solfege-and-cross-platform-auto-night-mode.md) (label modes), [0044](0044-user-selectable-ledger-lines.md) (range hint text), [0049](0049-level-presets-onboarding-intro.md) (preset names, intro language step)

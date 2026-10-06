@@ -1,7 +1,7 @@
 # 0015: Italian Solfège Syllables and Cross-Platform OS-Aligned Auto Night Mode
 
 ## Status
-Accepted
+Accepted; amended by [ADR 0059](0059-localization-and-national-note-naming.md) (label modes)
 
 ## Date
 2026-09-16

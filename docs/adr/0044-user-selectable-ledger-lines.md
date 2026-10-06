@@ -1,6 +1,6 @@
 # 0044. User-Selectable Ledger Lines (Above / Below, 0–3)
 
-- **Status**: Accepted; amended by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (boundary bias removed) and [ADR 0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) (fallback move removed)
+- **Status**: Accepted; amended by [ADR 0059](0059-localization-and-national-note-naming.md) (range hint text), [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (boundary bias removed) and [ADR 0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) (fallback move removed)
 - **Date**: 2026-10-02
 - **Author**: Claude & A. C. Lo Cascio
 

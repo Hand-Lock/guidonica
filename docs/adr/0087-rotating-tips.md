@@ -3,6 +3,7 @@
 - **Status**: Accepted
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
+- **Amends**: [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md)
 
 ## Context & Problem Statement
 

@@ -1,6 +1,6 @@
 # 0050. Procedural Notation Previews in the Onboarding Intro
 
-- **Status**: Accepted; amended by [0051](0051-intro-preview-representation-presets.md), [0052](0052-intro-preview-signature-check.md)
+- **Status**: Accepted; amended by [0051](0051-intro-preview-representation-presets.md), [0052](0052-intro-preview-signature-check.md), [0071](0071-intro-meter-step.md)
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 

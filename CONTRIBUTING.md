@@ -14,8 +14,10 @@ The full rules are in [`AGENTS.md`](AGENTS.md). In short:
 
 - `pnpm typecheck`, `pnpm test` and `pnpm build` all pass.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `chore:`).
+- Every commit adds its entry to [`CHANGELOG.md`](CHANGELOG.md) under `## [Unreleased]`: user-facing changes in plain sentences under `Added`, `Changed`, `Fixed`, `Removed` or `Security` (they are shown in the app), docs, CI and refactors under `Internal`. Released sections are never edited, and Unreleased stays in English; translations are written at release time.
 - Architectural changes come with a new or amended ADR in [`docs/adr/`](docs/adr/README.md), registered in its index.
 - New or changed UI text is updated in **every** locale; `en.ts` is the reference, and the compiler rejects an incomplete locale.
+- A new language needs more than its locale file: an entry in `src/i18n/landing.ts` for its landing page, the `hreflang` alternates and `og:locale:alternate` in `index.html`, a `public/sitemap.xml` entry, and a translated changelog in `src/i18n/changelog/` (ADRs 0059, 0078, 0086).
 - Generator changes keep the Ergodic Generation Principle: every valid rhythm and interval within the selected settings stays reachable.
 - No new runtime dependencies, frameworks or third-party origins without discussing it in an issue first.
 
@@ -36,7 +38,7 @@ For the purposes of the DCO, "the open source license indicated" for your contri
 
 Only include material you have the right to contribute under MIT:
 
-- Code, fonts, images or data from elsewhere must be under a **permissive** license compatible with MIT (MIT, BSD, ISC, Apache-2.0, SIL OFL for fonts), and marked as such: name the source and license in the pull request, and keep the original notices.
+- Code, fonts, images or data from elsewhere must be under a **permissive** license compatible with MIT (MIT, BSD, ISC, Apache-2.0; SIL OFL or the Ubuntu Font Licence for fonts), and marked as such: name the source and license in the pull request, and keep the original notices.
 - **Not accepted:** GPL, AGPL, LGPL or other copyleft material; non-commercial licenses such as CC BY-NC; anything of unknown origin (snippets from forums or blogs without a clear license).
 - AI-assisted work is fine, as long as you have reviewed it and can honestly make the DCO certification for it.
 

@@ -1,6 +1,6 @@
 # 0006. Multi-Interval Checkbox Selection & Clef-Dependent Pitch Pools (±3 Ledger Lines)
 
-- **Status**: Accepted; amended by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (boundary bias removed) and [ADR 0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) (connected start, item 7)
+- **Status**: Accepted; amended by [ADR 0065](0065-grammar-driven-rhythm-sampler.md) (boundary bias removed), [ADR 0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) (connected start, item 7) and [ADR 0070](0070-note-selection-and-level-progression.md) (pitch-class pool, effective intervals)
 - **Date**: 2026-09-14
 - **Author**: Antigravity Assistant & A. C. Lo Cascio
 

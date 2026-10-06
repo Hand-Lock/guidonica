@@ -38,7 +38,7 @@
 
 ### 2. Typographic Architecture
 
-Guidonica uses two complementary typefaces designed by Huerta Tipográfica, marrying calligraphic craft with crystalline digital legibility:
+Guidonica uses three typefaces, all self-hosted (ADR 0060): two complementary faces by Huerta Tipográfica, marrying calligraphic craft with crystalline digital legibility, and Ubuntu Mono by Dalton Maag for numbers:
 
 #### A. Title & Brand Display: *Alegreya*
 - **Classification**: Contemporary humanist serif with deep calligraphic roots.
@@ -46,7 +46,7 @@ Guidonica uses two complementary typefaces designed by Huerta Tipográfica, marr
 - **Rationale**: Its energetic, human-cut serifs evoke the medieval manuscript inkstrokes of Guido d'Arezzo while providing authoritative presence.
 - **Font Stack**:
   ```css
-  --font-title: 'Alegreya', Georgia, 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+  --font-title: 'Alegreya', Georgia, 'Palatino Linotype', Palatino, serif;
   ```
 - **Styling Rules**:
   - Headings feature subtle glass text emboss:
@@ -63,13 +63,13 @@ Guidonica uses two complementary typefaces designed by Huerta Tipográfica, marr
   --font-body: 'Alegreya Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   ```
 
-#### C. Numeric & Monospace Data
+#### C. Numeric & Monospace Data: *Ubuntu Mono*
 - **Classification**: Monospace humanist font designed by Dalton Maag.
 - **Role**: Tempo display (BPM), number inputs, keyboard shortcuts (`<kbd>`), metric ratio badges, and technical values.
 - **Rationale**: Features distinct numeral shapes and comfortable horizontal rhythm that ensure rapid legibility at both high tempos and small badge dimensions.
 - **Font Stack**:
   ```css
-  --font-mono: 'Ubuntu Mono', 'SF Mono', 'Cascadia Code', Consolas, Menlo, Monaco, monospace;
+  --font-mono: 'Ubuntu Mono', 'SF Mono', 'Cascadia Code', Consolas, Menlo, monospace;
   ```
 
 ---
@@ -179,13 +179,13 @@ Only the loaded faces may be used: Alegreya 700 (plus italic 400/700), Alegreya 
 - The COUNT-IN badge floats absolutely above the capsule, so the capsule's width never changes.
 
 #### F. Settings: four titled sections
-The settings are grouped as **Staff** (clef, ledger lines, meter, compound pulse) · **Rhythm** (note values, tuplets, rests, ties) · **Melody** (intervals) · **Practice** (labels, assists, click, volume, theme).
+The settings are grouped as **Staff** (clef, ledger lines, meter, compound pulse) · **Rhythm** (note values, tuplets, rests, ties) · **Melody** (notes, intervals) · **Practice** (language, labels, assists including tips, click, volume, theme, exercise link).
 - Each group is a `<section class="settings-section">` well card.
 - Each card has an Alegreya italic `<h2 class="section-title">` followed by a hairline rule.
 - New settings must join one of these sections, never float free.
 
 #### G. Glass Sheets
-- These are the tuplets popover, the About modal and the mobile settings sheet.
+- These are the tuplets popover, the About, What's new and level intro dialogs, and the mobile settings sheet.
 - They float in with `pop` (opacity plus translate), on `cubic-bezier(0.16, 1, 0.3, 1)`.
 
 #### H. Responsive Layout Contract
@@ -196,7 +196,7 @@ The settings are grouped as **Staff** (clef, ledger lines, meter, compound pulse
 | ≤ 960px | Two rows: `brand · utils` / `transport · tempo · beats`. The utilities span the cell above tempo, so they never size the beats column. | Absolutely positioned **glass sheet overlaying the canvas** (the canvas never reflows). Its height is the viewport minus the header (`calc(100dvh - 100%)`). It scrolls internally, closes on a canvas tap, and the tuplets popover becomes an in-flow accordion. Footer hidden. |
 | ≤ 600px | Three rows: `brand · utils` / `transport · beats` / `tempo` (full width, long slider track) | One column. The Settings and Reset labels collapse to icons. |
 
-Below 1280px, the Level button collapses to its meter and the header theme toggle hides. The theme stays in Settings → Practice (ADR 0053).
+Below 1280px, the Level button collapses to its dumbbell and the header theme toggle hides. The theme stays in Settings → Practice (ADR 0053).
 
 On phones, the brand and transport collapse by the room their column actually gets (container queries), not by viewport width. Touch targets and 12/8's twelve beat dots move the thresholds. Below 183px the SOLFÈGE badge hides. Below 118px the wordmark is visually hidden but stays readable by assistive tech, so only the hand remains. When the transport has less than 148px, Start drops its label and keeps its play/pause icon (ADR 0054).
 

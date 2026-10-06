@@ -1,6 +1,6 @@
 # 0072. Three-Level Beat Accent Hierarchy in the Traffic Lights and Click
 
-- **Status**: Accepted (amends [0030](0030-stacked-count-in-indicator-and-mobile-traffic-lights.md))
+- **Status**: Accepted (amends [0030](0030-stacked-count-in-indicator-and-mobile-traffic-lights.md)); amended by [0076](0076-compound-triple-and-quadruple-meters.md)
 - **Date**: 2026-10-05
 - **Author**: Claude & A. C. Lo Cascio
 

@@ -3,6 +3,7 @@
 - **Status**: Accepted
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
+- **Amends**: [0059](0059-localization-and-national-note-naming.md), [0062](0062-robots-txt-and-sitemap.md), [0063](0063-offline-service-worker.md)
 
 ## Context & Problem Statement
 

@@ -1,6 +1,6 @@
 # 0051. Representation Presets for the Intro Level Previews
 
-- **Status**: Accepted; amended by [0052](0052-intro-preview-signature-check.md)
+- **Status**: Accepted; amended by [0052](0052-intro-preview-signature-check.md), [0070](0070-note-selection-and-level-progression.md)
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0050](0050-intro-notation-previews.md)

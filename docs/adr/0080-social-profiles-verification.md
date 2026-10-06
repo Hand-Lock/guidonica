@@ -1,6 +1,6 @@
 # 0080. Social Profiles: rel="me" Verification and Bluesky Domain Handle
 
-- **Status**: Accepted; amended by 0082
+- **Status**: Accepted; amended by 0082, 0084
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
 

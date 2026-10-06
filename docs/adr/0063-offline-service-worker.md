@@ -1,6 +1,6 @@
 # 0063. Offline Service Worker
 
-- **Status**: Accepted (amends [0048](0048-brand-mark-rollout-manifest-and-readme-logo.md)); amended by [0078](0078-release-channels-calver-changelog-whats-new.md): cache names are per channel (`guidonica-` / `guidonica-nightly-`), stale-cache cleanup never touches the other channel, and the root worker bypasses `nightly/`
+- **Status**: Accepted (amends [0048](0048-brand-mark-rollout-manifest-and-readme-logo.md)); amended by [0078](0078-release-channels-calver-changelog-whats-new.md): cache names are per channel (`guidonica-` / `guidonica-nightly-`), stale-cache cleanup never touches the other channel, and the root worker bypasses `nightly/`; and by [0086](0086-language-landing-pages.md): the language pages (`*/index.html`) are not precached
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 
