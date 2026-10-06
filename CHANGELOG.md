@@ -43,6 +43,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - ADR 0094 documents the drone tuning: the `referencePitch` setting (`REFERENCE_PITCHES`), `droneFrequency(pc, a4)`, `MetronomeEngine.setReferencePitch` and the additive `a4=` link parameter; `SPEC.md` §5 and §6 and the README describe it.
 - ADR 0094 §5 records the D shortcut: `applyDroneNote` serves the drone select and the key, and the last note lives in memory only.
 - ADR 0095: a zero-latency soft clipper on the output keeps click plus drone below full scale (`src/audio/output.ts`).
+- `AGENTS.md` bundle figures follow the build: ~135 kB of gzipped JS (~41.5 kB app code), ~6.4 kB per extra language.
 
 ## [2026.10.1] - 2026-10-06
 
