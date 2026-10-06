@@ -3,7 +3,7 @@ import { MeasureBuffer } from '../src/scroller/buffer';
 import { MusicGenerator } from '../src/notation/generator';
 import { MeasureRenderer } from '../src/notation/renderer';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
-import { AppSettings, MeasureData, RenderedMeasure } from '../src/notation/types';
+import { AppSettings, MeasureData, RenderedMeasure, getBeatsPerMeasure } from '../src/notation/types';
 import en from '../src/i18n/locales/en';
 
 vi.mock('../src/notation/fonts', () => ({ isMusicFontReady: () => true }));
@@ -42,5 +42,36 @@ describe('MeasureBuffer.rerender', () => {
     // Same MeasureData objects: the music under the playhead is unchanged
     expect(buffer.getMeasures().map((m) => m.data)).toEqual(before);
     buffer.getMeasures().forEach((m, i) => expect(m.data).toBe(before[i]));
+  });
+});
+
+describe('MeasureBuffer.ensureAhead measure limit (ADR 0091)', () => {
+  const makeBuffer = () => {
+    const renderMeasure = vi.fn(
+      (data: MeasureData): RenderedMeasure => ({
+        data,
+        canvas: document.createElement('canvas'),
+        width: data.width,
+        height: 1,
+      })
+    );
+    const buffer = new MeasureBuffer(new MusicGenerator(), { renderMeasure } as unknown as MeasureRenderer);
+    return { buffer, renderMeasure };
+  };
+  const settings: AppSettings = structuredClone(DEFAULT_APP_SETTINGS);
+  const beats = getBeatsPerMeasure(settings.timeSignature);
+
+  it('renders at most maxMeasures per call and reports the shortfall', () => {
+    const { buffer, renderMeasure } = makeBuffer();
+    expect(buffer.ensureAhead(0, 4 * beats, settings, 1)).toBe(true);
+    expect(renderMeasure).toHaveBeenCalledTimes(1);
+    expect(buffer.getEndBeat()).toBe(beats);
+  });
+
+  it('fills the whole lookahead by default', () => {
+    const { buffer, renderMeasure } = makeBuffer();
+    expect(buffer.ensureAhead(0, 4 * beats, settings)).toBe(false);
+    expect(renderMeasure).toHaveBeenCalledTimes(4);
+    expect(buffer.getEndBeat()).toBe(4 * beats);
   });
 });

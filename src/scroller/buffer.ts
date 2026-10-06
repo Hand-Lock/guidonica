@@ -52,18 +52,26 @@ export class MeasureBuffer {
     });
   }
 
+  /** Global beat where the next measure to render would start: the buffer covers up to here. */
+  public getEndBeat(): number {
+    return this.nextMeasureStartBeat;
+  }
+
   /**
-   * Ensures measures are rendered far enough ahead of the viewport playhead.
-   * Includes background-tab catch-up protection to avoid large loops.
+   * Ensures measures are rendered far enough ahead of the viewport playhead, at most
+   * `maxMeasures` of them per call so idle-time callers can spread VexFlow work across
+   * frames (ADR 0091). Includes background-tab catch-up protection to avoid large loops.
+   * Returns true while the buffer still falls short of the target.
    */
   public ensureAhead(
     currentGlobalBeat: number,
     lookaheadBeats: number,
-    settings: AppSettings
-  ): void {
+    settings: AppSettings,
+    maxMeasures: number = Infinity
+  ): boolean {
     // Avoid rendering measures with blank fallback glyphs if music fonts are still decoding
     if (!isMusicFontReady()) {
-      return;
+      return false;
     }
 
     // If the browser tab was throttled in the background and currentGlobalBeat jumped ahead,
@@ -82,7 +90,7 @@ export class MeasureBuffer {
 
     const targetBeat = currentGlobalBeat + lookaheadBeats;
 
-    while (this.nextMeasureStartBeat < targetBeat) {
+    for (let count = 0; count < maxMeasures && this.nextMeasureStartBeat < targetBeat; count++) {
       const measureData = this.generator.generateMeasure(
         this.nextMeasureIndex,
         settings,
@@ -99,6 +107,7 @@ export class MeasureBuffer {
       this.nextMeasureIndex++;
       this.nextMeasureStartBeat += measureData.beatsPerMeasure;
     }
+    return this.nextMeasureStartBeat < targetBeat;
   }
 
   /**

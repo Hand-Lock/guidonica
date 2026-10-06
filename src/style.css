@@ -795,30 +795,53 @@ input[type='range']:focus-visible::-moz-range-thumb {
   gap: 8px;
 }
 
+/* Compositor-only beats (ADR 0091): the LED body is static, and its lit gem is a
+   pre-painted ::after layer carrying the LED's fixed accent colour. A beat only toggles
+   .active, which changes the gem's opacity and scale, so the header is never laid out
+   or repainted on a click. The gem lights at once and fades out over 80 ms. */
 .beat-dot {
   width: 13px;
   height: 13px;
+  position: relative;
   border-radius: 50%;
   background: var(--led-off);
   box-shadow: var(--led-off-shadow);
-  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
 }
 
-.beat-dot.active {
+.beat-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* glows spill over the neighbouring LEDs, as the lit LED always did */
+  border-radius: 50%;
   background: var(--led-on);
   box-shadow: var(--led-on-glow);
-  transform: scale(1.28);
+  opacity: 0;
+  will-change: transform, opacity;
+  transition: opacity 0.08s ease-out, transform 0.08s ease-out;
 }
 
-.beat-dot.active.downbeat {
+.beat-dot.downbeat::after {
   background: var(--led-down);
   box-shadow: var(--led-down-glow);
+}
+
+.beat-dot.secondary::after {
+  background: var(--led-mid);
+  box-shadow: var(--led-mid-glow);
+}
+
+.beat-dot.active::after {
+  opacity: 1;
+  transform: scale(1.28);
+  transition: transform 0.08s ease-out;
+}
+
+.beat-dot.active.downbeat::after {
   transform: scale(1.42);
 }
 
-.beat-dot.active.secondary {
-  background: var(--led-mid);
-  box-shadow: var(--led-mid-glow);
+.beat-dot.active.secondary::after {
   transform: scale(1.35);
 }
 

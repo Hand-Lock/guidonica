@@ -25,11 +25,13 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 ### Fixed
 
 - Scrolling notation is smooth on high-refresh displays and in Firefox, where it could stutter (ADR 0089).
+- Scrolling no longer hitches on each metronome click or when a new bar is drawn, on displays up to 144 Hz. (ADR 0091)
 
 ### Internal
 
 - ADR 0089 documents the frame-locked audio clock; `SPEC.md` §5 and `AGENTS.md` §1 describe it.
 - ADR 0090 documents the half-note beat meters. Meters gain a `beatGroup` (metric beats per felt beat), the `compoundPulse` setting becomes `pulse` (`beat` or `division`; old settings and links still load), and the beat lights group by `beatGroup`.
+- ADR 0091 documents jank-free beat and measure frames: compositor-only beat lights, VexFlow measures rendered in idle callbacks, an idempotent `syncUI`, and cached canvas gradients and dark-mode query; `SPEC.md` §3 and §5 and `AGENTS.md` §1 describe it.
 
 ## [2026.10.1] - 2026-10-06
 

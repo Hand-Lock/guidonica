@@ -55,3 +55,4 @@ lastFrameMs = frameTimeMs
 - The residual jitter is the staircase filtered by a first-order low-pass with a 1.6 Hz cutoff (`1 / 2πτ`): sub-pixel.
 - The rAF timestamp becomes a second input, but only as an interpolator. Position is never accumulated independently of the audio clock. [`AGENTS.md`](../../AGENTS.md) §1 and [`SPEC.md`](../../SPEC.md) §5 state this.
 - If stutter remains on a given machine, the next suspects are `privacy.resistFingerprinting` (100 ms steps, as long as τ, which the filter can only partly hide), the compositor, or synchronous measure rendering inside a frame (stutter once per bar).
+- Follow-up: [ADR 0091](0091-jank-free-beat-and-measure-frames.md) removed the remaining per-click and per-bar main-thread work. The beat LEDs became compositor-only and VexFlow moved to idle time.

@@ -71,14 +71,38 @@ describe('Metronome Traffic Lights & Count-In Indicator', () => {
   });
 
   it('lights the secondary beat as an orange gem between the weak and downbeat scales (ADR 0072)', () => {
-    expect(styleCss).toMatch(
-      /\.beat-dot\.active\.secondary\s*\{[^}]*background:\s*var\(--led-mid\);[^}]*transform:\s*scale\(1\.35\);/
-    );
-    expect(styleCss).toMatch(/\.beat-dot\.active\s*\{[^}]*transform:\s*scale\(1\.28\);/);
-    expect(styleCss).toMatch(/\.beat-dot\.active\.downbeat\s*\{[^}]*transform:\s*scale\(1\.42\);/);
+    expect(styleCss).toMatch(/\.beat-dot\.secondary::after\s*\{[^}]*background:\s*var\(--led-mid\);[^}]*box-shadow:\s*var\(--led-mid-glow\);/);
+    expect(styleCss).toMatch(/\.beat-dot\.downbeat::after\s*\{[^}]*background:\s*var\(--led-down\);[^}]*box-shadow:\s*var\(--led-down-glow\);/);
+    expect(styleCss).toMatch(/\.beat-dot::after\s*\{[^}]*background:\s*var\(--led-on\);[^}]*box-shadow:\s*var\(--led-on-glow\);[^}]*opacity:\s*0;/);
+    expect(styleCss).toMatch(/\.beat-dot\.active\.secondary::after\s*\{[^}]*transform:\s*scale\(1\.35\);/);
+    expect(styleCss).toMatch(/\.beat-dot\.active::after\s*\{[^}]*transform:\s*scale\(1\.28\);/);
+    expect(styleCss).toMatch(/\.beat-dot\.active\.downbeat::after\s*\{[^}]*transform:\s*scale\(1\.42\);/);
     expect(styleCss).toMatch(/--led-mid:\s*radial-gradient/);
     // Light and dark themes both define the orange glow
     expect(styleCss.match(/--led-mid-glow:/g)?.length).toBe(2);
+  });
+
+  it('changes only compositor properties on a beat (ADR 0091)', () => {
+    const rules = [...styleCss.matchAll(/(\.beat-dot[^{,]*)\{([^}]*)\}/g)];
+    expect(rules.length).toBeGreaterThan(0);
+    for (const [, selector, body] of rules) {
+      // Only the gem's opacity and transform ever animate: no box-shadow or background
+      const transition = body.match(/transition:\s*([^;]*);/);
+      if (transition) {
+        for (const part of transition[1].split(',')) expect(part.trim()).toMatch(/^(transform|opacity) /);
+      }
+      // Lit and unlit LEDs differ only in the gem's opacity and scale
+      if (selector.includes('.active')) {
+        expect(selector).toContain('::after');
+        expect(body).not.toMatch(/background|box-shadow/);
+      }
+    }
+    expect(styleCss).toMatch(/\.beat-dot\.active::after\s*\{\s*opacity:\s*1;/);
+    expect(styleCss).toMatch(/\.beat-dot::after\s*\{[^}]*will-change:\s*transform, opacity;/);
+    const mainTs = fs.readFileSync(path.join(rootDir, 'src/main.ts'), 'utf-8');
+    const highlight = mainTs.match(/private highlightBeatDot\([\s\S]*?\n  \}/);
+    expect(highlight).not.toBeNull();
+    expect(highlight![0]).not.toMatch(/querySelector/);
   });
 
   it('groups LEDs by felt beat: full beat LEDs, 5px divisions (ADRs 0076, 0090)', () => {

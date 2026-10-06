@@ -497,14 +497,19 @@ export const CANVAS_PALETTE: Record<ResolvedTheme, CanvasPalette> = {
   },
 };
 
+let darkQuery: MediaQueryList | null = null;
+
 /**
  * Checks whether the host operating system currently prefers dark mode cross-platform.
+ * Read every frame, so the MediaQueryList is created once and only `.matches` is
+ * polled; it stays live as the OS theme changes (ADR 0091).
  */
 export function isSystemDark(): boolean {
   if (typeof window === 'undefined' || !window.matchMedia) {
     return false;
   }
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  darkQuery ??= window.matchMedia('(prefers-color-scheme: dark)');
+  return darkQuery.matches;
 }
 
 /**

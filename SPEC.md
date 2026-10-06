@@ -91,7 +91,7 @@ Unlike traditional engraved sheet music—where measure widths flex dynamically 
 ### Rendering Architecture: The Measure Blitting Pipeline
 To maintain a stable 60 FPS / 120 FPS on all hardware without CPU throttling:
 - **Offscreen Measure Caching**: Measures are procedurally generated in chunks ahead of the viewport. Each measure is formatted and rendered once onto an offscreen canvas surface using VexFlow.
-- **Fast Blitting**: The main display canvas does not execute complex VexFlow layout or glyph calculations during animation frames. It only blits visible offscreen measure canvases using `CanvasRenderingContext2D.drawImage()`.
+- **Fast Blitting**: The main display canvas does not execute complex VexFlow layout or glyph calculations during animation frames. It only blits visible offscreen measure canvases using `CanvasRenderingContext2D.drawImage()`. Measures beyond the right edge are rendered in idle time between frames, one per idle callback; a frame renders one synchronously only when the stage plus one beat would otherwise be uncovered (ADR 0091).
 - **Ring Buffer**: Measures that scroll offscreen past the left margin are discarded. New measures are generated and appended on the right until the buffer reaches the right edge of the viewport plus 6 beats of lookahead, a distance measured in beats so it holds at every zoom and meter.
 
 ---
@@ -180,7 +180,7 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
   $$\text{elapsedSeconds} = \hat{t}_{\text{audible}} - t_{\text{start}}$$
   where $\hat{t}_{\text{audible}}$ is the frame-locked estimate of $\text{AudioContext.currentTime} - \lambda$ (ADR 0089): each rAF frame predicts it from the vsync interval and pulls the prediction toward the audio clock with a 0.1 s time constant, snapping when they disagree by more than 0.25 s.
   $$\text{scrollX} = \text{elapsedSeconds} \times v$$
-- The beat indicator is derived from the same clock inside the single rAF loop (`getBeatInfo()`); there are no `setTimeout` visual clocks.
+- The beat indicator is derived from the same clock inside the single rAF loop (`getBeatInfo()`); there are no `setTimeout` visual clocks. A beat only toggles one LED's `.active` class, whose lit gem is a pre-painted layer, so it changes only `opacity` and `transform` (ADR 0091).
 - Because position is always derived from `AudioContext.currentTime`, visuals cannot drift from the audio, even under CPU load spikes or background tab throttling. The frame-locked estimate hides the clock's coarse update steps (about 10 ms on Windows), so the notation advances evenly on every frame at any refresh rate.
 
 ### Metronome Synthesis

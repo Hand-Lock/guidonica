@@ -25,6 +25,14 @@ import { MeasureBuffer } from './buffer';
 import { MeasureRenderer } from '../notation/renderer';
 import { isMusicFontReady } from '../notation/fonts';
 
+/**
+ * Measures past the right edge are rendered in idle time, between frames, up to this
+ * many beats ahead; a frame only renders synchronously when the buffer would otherwise
+ * fall short of the edge plus one beat (ADR 0091).
+ */
+const IDLE_LOOKAHEAD_BEATS = 6;
+const FRAME_LOOKAHEAD_BEATS = 1;
+
 export class ScrollerView {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -48,6 +56,14 @@ export class ScrollerView {
   private cachedClef: Clef | null = null;
   private cachedTimeSignature: TimeSignature | null = null;
   private cachedClefTheme: string | null = null;
+
+  // Gradients cached per geometry and palette: no per-frame allocations (ADR 0091)
+  private playheadGradient: CanvasGradient | null = null;
+  private fadeGradient: CanvasGradient | null = null;
+  private gradientPalette: CanvasPalette | null = null;
+
+  // Pending idle-time measure render, cancelled by stopLoop/destroy (ADR 0091)
+  private cancelIdleRender: (() => void) | null = null;
 
   private rafId: number | null = null;
   private isLoopRunning: boolean = false;
@@ -99,6 +115,13 @@ export class ScrollerView {
     this.cachedClef = null;
     this.cachedTimeSignature = null;
     this.cachedClefTheme = null;
+    this.invalidateGradients();
+  }
+
+  private invalidateGradients(): void {
+    this.playheadGradient = null;
+    this.fadeGradient = null;
+    this.gradientPalette = null;
   }
 
   public setZoom(zoom: number): void {
@@ -166,6 +189,7 @@ export class ScrollerView {
     this.staveTopY = centerY - 2 * lineSpacing;
     // Measure canvas line 0 is at 80 * zoom from measure canvas top (STAVE_TOP_LINE_Y = 80)
     this.measureDrawY = centerY - Math.round(100 * this.zoom);
+    this.invalidateGradients();
   }
 
   public startLoop(): void {
@@ -207,6 +231,42 @@ export class ScrollerView {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
+    this.cancelIdleRender?.();
+    this.cancelIdleRender = null;
+  }
+
+  /** Beats between the playhead and the right edge of the stage. */
+  private beatsToRightEdge(beatWidth: number): number {
+    return (this.viewportWidth - this.playheadX) / (beatWidth * this.zoom);
+  }
+
+  /**
+   * Renders the measures beyond the right edge one per idle period, so VexFlow layout
+   * and rasterization never land inside an animation frame (ADR 0091). requestIdleCallback
+   * where available, else a zero-delay timeout (Safari): both only schedule work, every
+   * beat position still comes from the audio clock.
+   */
+  private scheduleIdleRender(): void {
+    if (this.cancelIdleRender) return;
+    const run = (): void => {
+      this.cancelIdleRender = null;
+      const settings = this.getSettings();
+      const beatWidth = computeBeatWidth(settings.subdivisions, settings.timeSignature, settings.tuplets);
+      const short = this.buffer.ensureAhead(
+        this.metronome.getVisualBeat(),
+        this.beatsToRightEdge(beatWidth) + IDLE_LOOKAHEAD_BEATS,
+        settings,
+        1
+      );
+      if (short) this.scheduleIdleRender();
+    };
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(run, { timeout: 200 });
+      this.cancelIdleRender = () => cancelIdleCallback(id);
+    } else {
+      const id = setTimeout(run, 0);
+      this.cancelIdleRender = () => clearTimeout(id);
+    }
   }
 
   /**
@@ -244,9 +304,13 @@ export class ScrollerView {
       settings.tuplets
     );
 
-    // 4. Update ring buffer: pre-render upcoming measures and evict offscreen ones
-    const lookaheadBeats = (w - this.playheadX) / (activeBeatWidth * zoom) + 6;
-    this.buffer.ensureAhead(visualBeat, lookaheadBeats, settings);
+    // 4. Update ring buffer: the stage must be covered now, the lookahead beyond it is
+    //    rendered between frames (ADR 0091); then evict offscreen measures
+    const edgeBeats = this.beatsToRightEdge(activeBeatWidth);
+    this.buffer.ensureAhead(visualBeat, edgeBeats + FRAME_LOOKAHEAD_BEATS, settings);
+    if (isMusicFontReady() && this.buffer.getEndBeat() < visualBeat + edgeBeats + IDLE_LOOKAHEAD_BEATS) {
+      this.scheduleIdleRender();
+    }
 
     const minVisibleBeat = visualBeat - this.playheadX / (activeBeatWidth * zoom) - 2;
     this.buffer.evictBefore(minVisibleBeat);
@@ -372,10 +436,14 @@ export class ScrollerView {
     ctx.fillRect(0, 0, maskSolidWidth, height);
 
     // Graceful horizontal fade from solid to transparent so scrolling notes disappear smoothly
-    const fadeGrad = ctx.createLinearGradient(maskSolidWidth, 0, totalMargin, 0);
-    fadeGrad.addColorStop(0, `rgba(${palette.backgroundRgb}, 1)`);
-    fadeGrad.addColorStop(1, `rgba(${palette.backgroundRgb}, 0)`);
-    ctx.fillStyle = fadeGrad;
+    if (this.gradientPalette !== palette) this.invalidateGradients();
+    if (!this.fadeGradient) {
+      this.fadeGradient = ctx.createLinearGradient(maskSolidWidth, 0, totalMargin, 0);
+      this.fadeGradient.addColorStop(0, `rgba(${palette.backgroundRgb}, 1)`);
+      this.fadeGradient.addColorStop(1, `rgba(${palette.backgroundRgb}, 0)`);
+      this.gradientPalette = palette;
+    }
+    ctx.fillStyle = this.fadeGradient;
     ctx.fillRect(maskSolidWidth, 0, fadeWidth, height);
 
     // Re-draw staff lines across the masked & faded margin
@@ -400,14 +468,19 @@ export class ScrollerView {
     const x = Math.round(this.playheadX) + 0.5;
 
     // Subtle background glow behind playhead line
-    const gradient = ctx.createLinearGradient(x, 0, x, height);
-    gradient.addColorStop(0, `rgba(${palette.playheadRgb}, 0)`);
-    gradient.addColorStop(0.3, `rgba(${palette.playheadRgb}, 0.08)`);
-    gradient.addColorStop(0.5, `rgba(${palette.playheadRgb}, 0.18)`);
-    gradient.addColorStop(0.7, `rgba(${palette.playheadRgb}, 0.08)`);
-    gradient.addColorStop(1, `rgba(${palette.playheadRgb}, 0)`);
+    if (this.gradientPalette !== palette) this.invalidateGradients();
+    if (!this.playheadGradient) {
+      const gradient = ctx.createLinearGradient(x, 0, x, height);
+      gradient.addColorStop(0, `rgba(${palette.playheadRgb}, 0)`);
+      gradient.addColorStop(0.3, `rgba(${palette.playheadRgb}, 0.08)`);
+      gradient.addColorStop(0.5, `rgba(${palette.playheadRgb}, 0.18)`);
+      gradient.addColorStop(0.7, `rgba(${palette.playheadRgb}, 0.08)`);
+      gradient.addColorStop(1, `rgba(${palette.playheadRgb}, 0)`);
+      this.playheadGradient = gradient;
+      this.gradientPalette = palette;
+    }
 
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = this.playheadGradient;
     ctx.fillRect(x - 3, 0, 7, height);
 
     // Crisp playhead line spanning staff lines + clearance

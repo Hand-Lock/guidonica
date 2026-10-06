@@ -4,7 +4,6 @@
 
 import {
   AppSettings,
-  BeatAccent,
   Clef,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
@@ -26,6 +25,7 @@ import {
   TupletValue,
   ZOOM_STEP,
   ZoomMode,
+  beatAccent,
   clampTempo,
   computeOptimalZoom,
   getBeatsPerMeasure,
@@ -150,6 +150,11 @@ class GuidonicaApp {
   private tempoTerm: HTMLElement | null;
   private countInBadge: HTMLElement;
   private beatDotsContainer: HTMLElement;
+  private beatDots: HTMLElement[] = [];
+  private litBeatDot: HTMLElement | null = null;
+  // Last state written by syncUI, which runs on every beat but rarely changes anything
+  private syncedPlaybackState: SessionState['playbackState'] | null = null;
+  private syncedCountIn: boolean | null = null;
 
   // Primary Header Utilities
   private btnThemeToggle: HTMLButtonElement;
@@ -2097,10 +2102,13 @@ class GuidonicaApp {
 
   /**
    * One LED per metric beat; grouped meters group them by felt beat, in threes or twos,
-   * beat-start LEDs full size (ADR 0076, 0090).
+   * beat-start LEDs full size (ADR 0076, 0090). Each LED gets its fixed accent colour
+   * here, so a beat only toggles .active (ADR 0091).
    */
   private renderBeatDots(ts: TimeSignature): void {
     this.beatDotsContainer.innerHTML = '';
+    this.beatDots = [];
+    this.litBeatDot = null;
     const { beatGroup } = METER[ts];
     this.beatDotsContainer.classList.toggle('grouped', beatGroup > 1);
     const dotsCount = getBeatsPerMeasure(ts);
@@ -2108,8 +2116,12 @@ class GuidonicaApp {
     for (let i = 1; i <= dotsCount; i++) {
       const dot = document.createElement('div');
       dot.className = (i - 1) % beatGroup !== 0 ? 'beat-dot sub' : 'beat-dot';
+      const accent = beatAccent(ts, i);
+      if (accent === 'primary') dot.classList.add('downbeat');
+      else if (accent === 'secondary') dot.classList.add('secondary');
       dot.dataset.beat = String(i);
       this.beatDotsContainer.appendChild(dot);
+      this.beatDots.push(dot);
     }
   }
 
@@ -2132,29 +2144,25 @@ class GuidonicaApp {
     if (!info.isCountIn && globalState.playbackState === 'counting-in') {
       globalState.setPlaybackState('playing');
     }
-    this.highlightBeatDot(info.beatNumber, info.accent);
+    this.highlightBeatDot(info.beatNumber);
   }
 
-  /** Lights one LED in its accent colour: ruby downbeat, orange middle pulse, Olo weak beat (ADR 0072). */
-  private highlightBeatDot(beatNumber: number, accent: BeatAccent): void {
-    const dots = this.beatDotsContainer.querySelectorAll('.beat-dot');
-    dots.forEach((dot) => dot.classList.remove('active', 'downbeat', 'secondary'));
-
-    const target = this.beatDotsContainer.querySelector(`[data-beat="${beatNumber}"]`);
-    if (target) {
-      target.classList.add('active');
-      if (accent === 'primary') {
-        target.classList.add('downbeat');
-      } else if (accent === 'secondary') {
-        target.classList.add('secondary');
-      }
-    }
+  /**
+   * Lights one LED in its fixed accent colour: ruby downbeat, orange middle pulse, Olo
+   * weak beat (ADR 0072). Two class toggles, no DOM queries (ADR 0091).
+   */
+  private highlightBeatDot(beatNumber: number): void {
+    const target = this.beatDots[beatNumber - 1] ?? null;
+    if (target === this.litBeatDot) return;
+    this.litBeatDot?.classList.remove('active');
+    target?.classList.add('active');
+    this.litBeatDot = target;
   }
 
   private resetBeatDots(): void {
     this.lastBeatIndex = null;
-    const dots = this.beatDotsContainer.querySelectorAll('.beat-dot');
-    dots.forEach((dot) => dot.classList.remove('active', 'downbeat', 'secondary'));
+    this.litBeatDot?.classList.remove('active');
+    this.litBeatDot = null;
   }
 
   /** Sizes the header dumbbell's plates and names the matching preset, or Custom (ADR 0053, 0073). */
@@ -2175,21 +2183,20 @@ class GuidonicaApp {
     this.syncLevelButton(state.settings);
     if (state.playbackState !== 'stopped') this.hideTip();
 
-    if (state.playbackState === 'counting-in' || state.playbackState === 'playing') {
-      this.btnLabel.textContent = t().pause;
-      this.btnPlayPause.classList.add('playing');
-    } else if (state.playbackState === 'paused') {
-      this.btnLabel.textContent = t().resume;
-      this.btnPlayPause.classList.remove('playing');
-    } else {
-      this.btnLabel.textContent = t().start;
-      this.btnPlayPause.classList.remove('playing');
+    // Runs on every beat: write the DOM only on a real change, or each click would
+    // force a layout of the header (ADR 0091). The label is compared as text so a
+    // language switch still updates it.
+    const active = state.playbackState === 'counting-in' || state.playbackState === 'playing';
+    const m = t();
+    const label = active ? m.pause : state.playbackState === 'paused' ? m.resume : m.start;
+    if (label !== this.btnLabel.textContent) this.btnLabel.textContent = label;
+    if (state.playbackState !== this.syncedPlaybackState) {
+      this.syncedPlaybackState = state.playbackState;
+      this.btnPlayPause.classList.toggle('playing', active);
     }
-
-    if (state.isCountIn) {
-      this.countInBadge.classList.remove('hidden');
-    } else {
-      this.countInBadge.classList.add('hidden');
+    if (state.isCountIn !== this.syncedCountIn) {
+      this.syncedCountIn = state.isCountIn;
+      this.countInBadge.classList.toggle('hidden', !state.isCountIn);
     }
   }
 
