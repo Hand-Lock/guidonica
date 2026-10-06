@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
-import { cachePrefix, route, staleCaches } from '../src/sw';
+import { cachePrefix, offlineRedirect, route, staleCaches } from '../src/sw';
 import { buildChannel, nightlyHtml, nightlyManifest, precacheList, swVersion } from '../vite.config';
 
 const ROOT = path.resolve(__dirname, '..');
@@ -32,9 +32,23 @@ describe('service worker routing (ADR 0063)', () => {
   });
 });
 
+describe('offline navigation (ADR 0086)', () => {
+  it('serves the shell itself, with or without a query or fragment', () => {
+    expect(offlineRedirect(SCOPE, SCOPE)).toBeNull();
+    expect(offlineRedirect(`${SCOPE}?utm=x#x=1`, SCOPE)).toBeNull();
+    expect(offlineRedirect('https://guidonica.it/nightly/', 'https://guidonica.it/nightly/')).toBeNull();
+  });
+
+  it('redirects language pages and other paths to the shell', () => {
+    expect(offlineRedirect(`${SCOPE}it/`, SCOPE)).toBe(SCOPE);
+    expect(offlineRedirect(`${SCOPE}index.html`, SCOPE)).toBe(SCOPE);
+    expect(offlineRedirect('https://guidonica.it/nightly/de/', 'https://guidonica.it/nightly/')).toBe('https://guidonica.it/nightly/');
+  });
+});
+
 describe('precache list (ADR 0063)', () => {
   const list = precacheList(
-    ['index.html', 'assets/index-abc.js', 'assets/vexflow-def.js', 'assets/index-123.css'],
+    ['index.html', 'it/index.html', 'de/index.html', 'assets/index-abc.js', 'assets/vexflow-def.js', 'assets/index-123.css'],
     ['favicon.svg', 'icon-192.png', 'manifest.webmanifest', 'og-image.png', 'CNAME', 'robots.txt', 'sitemap.xml', '.DS_Store', '.well-known'],
   );
 
@@ -46,7 +60,7 @@ describe('precache list (ADR 0063)', () => {
   });
 
   it('excludes index.html, crawler, share and hosting files, and dotfiles such as .well-known (ADR 0068)', () => {
-    for (const name of ['index.html', 'og-image.png', 'CNAME', 'robots.txt', 'sitemap.xml', '.DS_Store', '.well-known']) {
+    for (const name of ['index.html', 'it/index.html', 'it/', 'de/index.html', 'og-image.png', 'CNAME', 'robots.txt', 'sitemap.xml', '.DS_Store', '.well-known']) {
       expect(list).not.toContain(name);
     }
   });
@@ -116,6 +130,7 @@ describe('release channels (ADR 0078)', () => {
     expect(html).toContain('<title>Guidonica Nightly</title>');
     expect(html).toContain('<meta name="robots" content="noindex" />');
     expect(html).not.toContain('rel="canonical"');
+    expect(html).not.toContain('hreflang');
     expect(html).toContain("localStorage.getItem('guidonica_nightly_settings_v1')");
     expect(html).not.toContain("'guidonica_settings_v1'");
     expect(html).not.toContain('solfege_scroller_settings');

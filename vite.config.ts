@@ -6,6 +6,13 @@ import { fileURLToPath } from 'node:url';
 import { transformWithEsbuild, type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { UNRELEASED, appNotes } from './scripts/changelog.mjs';
+import { LANDING, landingUrl } from './src/i18n/landing';
+import type { Messages } from './src/i18n/locales/en';
+import de from './src/i18n/locales/de';
+import es from './src/i18n/locales/es';
+import fr from './src/i18n/locales/fr';
+import it from './src/i18n/locales/it';
+import { LANGUAGES, type Language } from './src/notation/types';
 
 export type Channel = 'release' | 'nightly';
 
@@ -19,9 +26,12 @@ export function buildChannel(value: string | undefined = process.env.GUIDONICA_C
 /** public/ files that are not part of the app and so are never precached (ADR 0063). */
 const PUBLIC_NOT_PRECACHED = new Set(['CNAME', 'robots.txt', 'sitemap.xml', 'og-image.png']);
 
-/** Relative URLs the worker precaches: the shell as './' plus every app file. */
+/**
+ * Relative URLs the worker precaches: the shell as './' plus every app file. The language
+ * pages (it/index.html etc.) are left out; offline, they redirect to the shell (ADR 0086).
+ */
 export function precacheList(bundleNames: string[], publicNames: string[]): string[] {
-  const app = bundleNames.filter((name) => name !== 'index.html');
+  const app = bundleNames.filter((name) => !/(^|\/)index\.html$/.test(name));
   const pub = publicNames.filter((name) => !name.startsWith('.') && !PUBLIC_NOT_PRECACHED.has(name));
   return ['./', ...[...app, ...pub].sort()];
 }
@@ -99,11 +109,83 @@ export function nightlyHtml(html: string): string {
     '<title>Guidonica Nightly</title>\n    <meta name="robots" content="noindex" />',
   );
   out = replaceOnce(out, /\n\s*<link rel="canonical"[^>]*>/, '');
+  out = replaceOnce(out, /(\n\s*<link rel="alternate" hreflang="[^"]*"[^>]*>)+/, '');
   return replaceOnce(
     out,
     "localStorage.getItem('guidonica_settings_v1') || localStorage.getItem('solfege_scroller_settings_v2') || localStorage.getItem('solfege_scroller_settings_v1')",
     "localStorage.getItem('guidonica_nightly_settings_v1')",
   );
+}
+
+const escapeHtml = (text: string): string =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/** Sets the content of one <meta> tag, failing the build if it is missing. */
+function setMeta(html: string, attr: 'name' | 'property', key: string, value: string): string {
+  return replaceOnce(html, new RegExp(`(<meta ${attr}="${key}" content=")[^"]*(")`), `$1${escapeHtml(value)}$2`);
+}
+
+/**
+ * The landing page of `lang` (ADR 0086), built from the final index.html: relative URLs one
+ * level up, `<html lang>` and `data-page-lang`, translated title, description, image alt
+ * and About tagline, and its own canonical, og:url and og:locale. The hreflang set stays
+ * the root's, so every page lists the same alternates.
+ */
+export function localePage(html: string, lang: Exclude<Language, 'en'>, nightly: boolean): string {
+  const m = LOCALE_MESSAGES[lang];
+  const meta = LANDING[lang];
+  const url = landingUrl(lang);
+  // Relative to the root page: anything but fragments, absolute paths and schemes
+  let out = html.replace(/(?<=\s)(href|src)="(?!#|\/|[a-z][a-z0-9+.-]*:)(?:\.\/)?([^"]*)"/g, '$1="../$2"');
+  out = replaceOnce(out, '<html lang="en">', `<html lang="${lang}" data-page-lang="${lang}">`);
+  if (!nightly) {
+    out = replaceOnce(out, /<title>[^<]*<\/title>/, `<title>${escapeHtml(m.docTitle)}</title>`);
+    out = replaceOnce(out, '<link rel="canonical" href="https://guidonica.it/" />', `<link rel="canonical" href="${url}" />`);
+  }
+  out = setMeta(out, 'name', 'description', meta.description);
+  out = setMeta(out, 'property', 'og:title', m.docTitle);
+  out = setMeta(out, 'property', 'og:description', meta.description);
+  out = setMeta(out, 'property', 'og:url', url);
+  out = setMeta(out, 'property', 'og:image:alt', meta.imageAlt);
+  out = setMeta(out, 'name', 'twitter:title', m.docTitle);
+  out = setMeta(out, 'name', 'twitter:description', meta.description);
+  out = setMeta(out, 'name', 'twitter:image:alt', meta.imageAlt);
+  const locales = [meta.ogLocale, ...LANGUAGES.filter((l) => l !== lang).map((l) => LANDING[l].ogLocale)];
+  out = replaceOnce(
+    out,
+    /<meta property="og:locale" content="[^"]*" \/>(\s*<meta property="og:locale:alternate" content="[^"]*" \/>)*/,
+    locales
+      .map((locale, i) => `<meta property="og:locale${i ? ':alternate' : ''}" content="${locale}" />`)
+      .join('\n    '),
+  );
+  // Static text in the page's language for crawlers that don't run scripts
+  return replaceOnce(
+    out,
+    /(data-i18n-html="aboutTaglineHtml">)[\s\S]*?(<\/p>)/,
+    `$1\n              ${m.aboutTaglineHtml.replace(/\$/g, '$$$$')}\n            $2`,
+  );
+}
+
+const LOCALE_MESSAGES: Record<Exclude<Language, 'en'>, Messages> = { it, fr, de, es };
+
+/** Emits it/index.html, fr/index.html, … next to the root shell (ADR 0086). */
+export function localePages(): Plugin {
+  const nightly = buildChannel() === 'nightly';
+  return {
+    name: 'guidonica:locale-pages',
+    apply: 'build',
+    enforce: 'post',
+    generateBundle(_, bundle) {
+      const shell = bundle['index.html'];
+      if (!shell || shell.type !== 'asset' || typeof shell.source !== 'string') {
+        throw new Error('locale pages: index.html missing from the bundle');
+      }
+      for (const lang of LANGUAGES) {
+        if (lang === 'en') continue;
+        this.emitFile({ type: 'asset', fileName: `${lang}/index.html`, source: localePage(shell.source, lang, nightly) });
+      }
+    },
+  };
 }
 
 /** The nightly web manifest, installable next to the release app. */
@@ -171,7 +253,7 @@ export function channel(): Plugin {
 
 export default defineConfig({
   base: process.env.BASE_PATH || './',
-  plugins: [channel(), serviceWorker()],
+  plugins: [channel(), localePages(), serviceWorker()],
   build: {
     rollupOptions: {
       output: {

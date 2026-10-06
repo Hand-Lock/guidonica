@@ -11,8 +11,11 @@
 export function registerServiceWorker(): void {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
   const register = (): void => {
-    // Relative URL: the default scope is the app directory on both hosts.
-    navigator.serviceWorker.register('sw.js').catch(() => {
+    // sw.js sits at the app root, one level above this chunk in assets/, on both channels;
+    // the language pages in /it/ etc. register the same worker (ADR 0086). Ignored by Vite,
+    // which would otherwise look for the file at build time.
+    const url = new URL(/* @vite-ignore */ '../sw.js', import.meta.url);
+    navigator.serviceWorker.register(url).catch(() => {
       // Offline support is optional
     });
   };

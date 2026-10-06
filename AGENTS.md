@@ -34,7 +34,7 @@ guidonica/
 ├── SECURITY.md            # Private vulnerability reporting to security@guidonica.it (ADR 0068)
 ├── package.json            # Minimal dependencies (vite, typescript, vexflow; @vexflow-fonts/bravura as font source)
 ├── tsconfig.json           # Strict TypeScript configuration
-├── vite.config.ts          # Minimal Vite configuration + serviceWorker() and channel() build plugins (ADRs 0063, 0078)
+├── vite.config.ts          # Minimal Vite configuration + serviceWorker(), channel() and localePages() build plugins (ADRs 0063, 0078, 0086)
 ├── index.html              # Minimal semantic HTML shell
 ├── .claude/
 │   └── skills/
@@ -79,6 +79,7 @@ guidonica/
     ├── i18n/
     │   ├── index.ts        # Locale runtime: lazy chunks, t(), applyDom, note names & octave formats (ADR 0059)
     │   ├── locales/        # en.ts (reference, defines Messages), it.ts, fr.ts, de.ts, es.ts
+    │   ├── landing.ts      # Build-only head metadata of the /it/ /fr/ /de/ /es/ landing pages (ADR 0086)
     │   └── changelog/      # it.md, fr.md, de.md, es.md: released notes translated at release time (ADR 0078)
     ├── utils/
     │   ├── radioGroup.ts   # Shared roving-tabindex radiogroup helpers (intro cards, language chips)

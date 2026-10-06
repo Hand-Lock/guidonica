@@ -33,10 +33,13 @@ export function isLanguage(value: unknown): value is Language {
 }
 
 /**
- * First browser language whose primary subtag is supported, else English. Mirrors the
+ * The landing page's language (`data-page-lang` on /it/, /fr/, /de/, /es/; ADR 0086), else
+ * the first browser language whose primary subtag is supported, else English. Mirrors the
  * inline head script in index.html, which hides the page until a non-English locale lands.
  */
 export function detectLanguage(): Language {
+  const page = typeof document === 'undefined' ? undefined : document.documentElement.dataset.pageLang;
+  if (isLanguage(page)) return page;
   if (typeof navigator === 'undefined') return 'en';
   const preferred = navigator.languages?.length ? navigator.languages : [navigator.language];
   for (const tag of preferred) {

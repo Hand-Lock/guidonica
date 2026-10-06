@@ -13,6 +13,12 @@
     <title>Guidonica — Sight-Reading &amp; Solfège Practice</title>
     <meta name="description" content="Free sight-reading and solfège practice: endless fresh sheet music scrolls past a playhead in time with a metronome. No sign-up, works on any device." />
     <link rel="canonical" href="https://guidonica.it/" />
+    <link rel="alternate" hreflang="en" href="https://guidonica.it/" />
+    <link rel="alternate" hreflang="it" href="https://guidonica.it/it/" />
+    <link rel="alternate" hreflang="fr" href="https://guidonica.it/fr/" />
+    <link rel="alternate" hreflang="de" href="https://guidonica.it/de/" />
+    <link rel="alternate" hreflang="es" href="https://guidonica.it/es/" />
+    <link rel="alternate" hreflang="x-default" href="https://guidonica.it/" />
     <link rel="me" href="https://mastodon.social/@guidonica" />
     <link rel="me" href="https://bsky.app/profile/guidonica.it" />
     <link rel="me" href="https://www.instagram.com/guidonica.it/" />
@@ -43,6 +49,8 @@
           var theme = 'auto';
           var langs = ['en', 'it', 'fr', 'de', 'es'];
           var lang = null;
+          // Set on the /it/, /fr/, /de/ and /es/ landing pages (ADR 0086)
+          var page = document.documentElement.getAttribute('data-page-lang');
           if (raw) {
             var parsed = JSON.parse(raw);
             if (parsed.theme === 'dark' || parsed.theme === 'light' || parsed.theme === 'auto') {
@@ -51,6 +59,7 @@
             if (langs.indexOf(parsed.language) >= 0) lang = parsed.language;
           }
           // Mirrors detectLanguage() in src/i18n; the page stays hidden until the locale lands
+          if (!lang && langs.indexOf(page) >= 0) lang = page;
           var preferred = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
           for (var i = 0; !lang && i < preferred.length; i++) {
             var primary = String(preferred[i] || '').toLowerCase().split('-')[0];

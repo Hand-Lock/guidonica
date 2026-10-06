@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Guidonica - Offline Service Worker (ADRs 0063, 0078)
+// Guidonica - Offline Service Worker (ADRs 0063, 0078, 0086)
 // Copyright (C) 2026 A. C. Lo Cascio
 
 // Compiled to a classic script `sw.js` by the `serviceWorker()` plugin in vite.config.ts,
@@ -67,6 +67,16 @@ export function route(request: Request, scopeUrl: string, channel: Channel = 're
   return request.mode === 'navigate' ? 'shell' : 'asset';
 }
 
+/**
+ * Where an offline navigation outside the shell goes: the shell itself. Only './' is
+ * precached, and its relative asset URLs would break if served from a language page such
+ * as it/ (ADR 0086). Null when the request is the shell. Pure, so it is unit-tested.
+ */
+export function offlineRedirect(requestUrl: string, scopeUrl: string): string | null {
+  const shell = new URL('./', scopeUrl);
+  return new URL(requestUrl).pathname === shell.pathname ? null : shell.href;
+}
+
 function cacheName(): string {
   return cachePrefix(__SW_CHANNEL__) + __SW_VERSION__;
 }
@@ -89,6 +99,9 @@ async function serveShell(request: Request): Promise<Response> {
   try {
     return await fetch(request, { signal: AbortSignal.timeout(NAVIGATE_TIMEOUT_MS) });
   } catch {
+    // The fragment, such as an exercise link's (ADR 0085), survives the redirect
+    const redirect = offlineRedirect(request.url, self.registration.scope);
+    if (redirect) return Response.redirect(redirect, 302);
     const cache = await caches.open(cacheName());
     const shell = await cache.match(new URL('./', self.registration.scope).href, { ignoreVary: true });
     if (shell) return shell;

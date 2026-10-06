@@ -10,8 +10,8 @@ describe('HTML shell: no third-party requests (ADR 0060)', () => {
   it('loads no stylesheet, script, font or preconnect from another origin', () => {
     const external = [...indexHtml.matchAll(/<(link|script)\b[^>]*\b(?:href|src)="(https?:)?\/\/[^"]+"[^>]*>/g)]
       .map((m) => m[0])
-      // canonical and me (ADR 0080) are identity hints the browser never fetches.
-      .filter((tag) => !/rel="(canonical|me)"/.test(tag));
+      // canonical, alternate (ADR 0086) and me (ADR 0080) are hints the browser never fetches.
+      .filter((tag) => !/rel="(canonical|alternate|me)"/.test(tag));
     expect(external).toEqual([]);
     expect(indexHtml).not.toMatch(/googleapis|gstatic/);
   });
