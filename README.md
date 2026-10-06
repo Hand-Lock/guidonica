@@ -247,7 +247,7 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 
 - **Pulse Grouping**: In compound and half-note meters, the click sounds on every beat (♩. in 6/8, 𝅗𝅥 in 2/2, 𝅗𝅥. in 6/4) or on every division (♪ in 6/8, ♩ otherwise). The beat lights read in threes or twos either way.
 - **Volume & Mute**: Direct volume slider with instant mute toggle.
-- **Drone**: a steady tanpura, shruti box or pad on any of the seven notes to sing against, with its own volume. Over D the melody is Dorian, over A Aeolian; exercise links carry the drone note ([ADR 0092](docs/adr/0092-drone.md)).
+- **Drone**: a steady shruti box or pad on any of the seven notes to sing against, with its own volume. Over D the melody is Dorian, over A Aeolian; exercise links carry the drone note ([ADR 0092](docs/adr/0092-drone.md)).
 
 ### 10. Stationary Wait-In-Place Count-In
 - When **Count-In** is enabled, starting playback initiates a 1-measure preparatory count-in. It can be switched off in Settings → Practice → Assists.

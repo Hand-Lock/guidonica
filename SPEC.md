@@ -201,9 +201,8 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 ### Drone
 - Settings → Practice → Drone holds the tonic of any of the seven notes (or Off, the default) to sing against; over white notes a drone on D gives Dorian, on A Aeolian (ADR 0092).
 - Tonic only, in octave 3, 12-TET with A4 = 440 Hz: $f = 440 \cdot 2^{(m-69)/12}$, $m = 48 + [0, 2, 4, 5, 7, 9, 11]_i$ (C3 ≈ 130.81 Hz … B3 ≈ 246.94 Hz).
-- Three synthesized timbres, equal in loudness, built from `OscillatorNode`, `PeriodicWave`, `BiquadFilterNode` and `GainNode` only:
+- Two synthesized timbres, equal in loudness, built from `OscillatorNode`, `PeriodicWave`, `BiquadFilterNode` and `GainNode` only:
   - **Shruti box** (default): two reeds at the tonic and its octave, 3 cents apart, under a slow bellows swell.
-  - **Tanpura**: the tonic-only pluck cycle (tonic, tonic, tonic, low octave, then a rest), each pluck a bright wave with a resonant jawari band sweeping down the harmonics. Plucks are queued by the metronome scheduler on the audio clock.
   - **Pad**: two detuned sawtooths through a slowly breathing lowpass.
 - It sounds from the count-in, fades over 0.1 s on pause and reset, and crossfades when the note or timbre changes during playback.
 - It has its own volume (Settings → Practice → Drone volume, default 60%) on a bus beside the click's; Mute silences both.

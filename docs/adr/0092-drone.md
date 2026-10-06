@@ -19,7 +19,7 @@ The drone must follow the project's audio rules: no samples, nothing outside nat
 | Setting | Values | Default | Travels in links |
 |---|---|---|---|
 | `droneNote` | `'off'` or `c` … `b` (`DRONE_NOTES`) | `'off'` | yes, `drone=<off\|c…b>` |
-| `droneSound` | `tanpura`, `shruti`, `pad` (`DRONE_SOUNDS`) | `shruti` | no |
+| `droneSound` | `shruti`, `pad` (`DRONE_SOUNDS`) | `shruti` | no |
 | `droneVolume` | 0 … 1 | 0.6 | no |
 
 - **Tonic only**, no fifth: with a fifth, the fourth degree against it would sound "wrong" although it is a note the exercise writes. With the tonic alone, all seven notes are consonant or purposeful dissonances.
@@ -36,7 +36,7 @@ so C3 ≈ 130.81 Hz … B3 ≈ 246.94 Hz, under every voice and clef. Phone spea
 
 ### 3. Voices
 
-`createDroneVoice(ctx: BaseAudioContext, out, sound, pc, at): DroneVoice` with `schedule(until)` and `release(at)`. `BaseAudioContext` lets tests and offline renders use `OfflineAudioContext`.
+`createDroneVoice(ctx: BaseAudioContext, out, sound, pc, at): DroneVoice` with one method, `release(at)`. `BaseAudioContext` lets tests and offline renders use `OfflineAudioContext`.
 
 Every voice ends in one envelope gain: attack `setTargetAtTime(level, at, τ_attack)`, release `setTargetAtTime(0, max(at, t), 0.1)`. Chained targets need no `cancelAndHoldAtTime` (missing in Firefox), and the `max` keeps a release issued before the attack from being overridden by it. Sources stop 1 s (10 τ, about −87 dB) after the release starts; `onended` disconnects every node.
 
@@ -46,17 +46,16 @@ Harmonic waves (`PeriodicWave`, a_n = 1/n^p) are built once per context and cach
 |---|---|---|
 | **Pad** | two `sawtooth` at f, detuned ±7 cents (beating ≈ 1 Hz at C3) → lowpass 1 kHz, Q 0.5; a 0.1 Hz LFO swings the cutoff ±250 Hz | 0.4 s |
 | **Shruti box** | two reeds from one wave (16 harmonics, p = 1.1) at f and 2f + 3 cents (the harmonium's octave coupler and its slow beating), the upper at 0.6 → lowpass 2.2 kHz → bellows gain (1 ± 0.12 at 0.22 Hz) → envelope, so the swell never leaks through a release | 0.25 s |
-| **Tanpura** | the 5‑8‑8‑1 cycle made tonic-only: strings [f, f, f, f/2], gaps [0.9, 0.9, 0.9, 2.4] s. Each pluck: jawari wave oscillator (32 harmonics, p = 0.7) → `peaking` filter (+14 dB, Q 5) sweeping exponentially 12f → 3f over 3 s, like the jawari's grazing contact sweeping a band of harmonics → gain with a 10 ms attack and τ = 1.4 s decay; it stops at t + 8 s | 0.02 s |
 
-`schedule(until)` queues tanpura plucks up to the scheduler horizon; plucks overlap, so the tanpura never falls silent (in a render its quietest 100 ms window is 12.5 dB below its loudest, against 4–6 dB for the sustained timbres). Live plucks are kept in a `Map` to their stop time, so `release` can shorten, never lengthen, them.
+Levels (`LEVEL`) equalize the two to −16 dBFS RMS in a 10 s offline render on C, within 0.2 dB on B as well; both peak near 0.5.
 
-Levels (`LEVEL`) equalize the three to −16 dBFS RMS in a 10 s offline render on C, within 0.2 dB on B as well; the tanpura's onsets peak at 0.83–0.96.
+**Retired: tanpura.** A third timbre plucked the tanpura's 5‑8‑8‑1 cycle (tonic-only: [f, f, f, f/2] with gaps [0.9, 0.9, 0.9, 2.4] s, each pluck a bright `PeriodicWave` through a `peaking` jawari band sweeping 12f → 3f), queued by the metronome scheduler. Its fixed cycle ignores the tempo, so against the click it sounded out of time. Locking plucks to the beat would need a pluck pattern per meter, pulse and half-note beat, plus realignment on tempo changes and resume: too much machinery for one timbre, so it was removed before release. A stored `droneSound: 'tanpura'` from a nightly build falls back to the shruti box.
 
 ### 4. Engine (`src/audio/metronome.ts`)
 
 - `ensureAudioContext()` creates `droneBus → destination`, a sibling of the click's master gain. Its gain is `isMuted ? 0 : droneVolume`, glided with `setTargetAtTime(…, 0.02)` by `setDroneVolume` and `setMuted` so sliders never zip and mute never pops. The click volume stays separate; Mute silences both.
 - `start()` builds the voice at the first click's time, so the drone sounds through the count-in and the singer hears the tonic before the first note. `pause()`, `stop()` and `destroy()` release it at `currentTime` (a 0.1 s fade, while the clicks keep their instant mute). `resume()` builds a fresh voice.
-- `scheduler()`, already woken every 25 ms, also calls `droneVoice.schedule(currentTime + 0.1)`: no new timer.
+- A voice is a fixed graph started once: nothing runs per click or per frame, and the scheduler is untouched.
 - `setDroneNote` and `setDroneSound` return when nothing changed; while playing they crossfade (old release, new attack at `currentTime`). Tempo and meter changes leave the drone alone. An OS interruption pauses playback and so releases the drone.
 
 ### 5. UI
@@ -65,9 +64,9 @@ Settings → Practice gains, after Volume: **Drone** (Off + seven notes, named b
 
 ## Consequences
 
-- **Bundle**: the app chunk grows 1.78 kB gzipped (38.85 → 40.63 kB), each lazy locale about 0.19 kB; CSS is unchanged.
-- **CPU**: sustained timbres are 3 oscillators and 4–5 other nodes; the tanpura keeps about six plucks of three nodes alive. All of it runs on the audio thread; the main thread only queues a pluck every 0.9–2.4 s.
+- **Bundle**: the app chunk grows 1.39 kB gzipped (38.85 → 40.24 kB), each lazy locale about 0.18 kB; CSS is unchanged.
+- **CPU**: each voice is 3 oscillators and 3–5 other nodes on the audio thread; the main thread does nothing while it sounds.
 - **Memory**: nothing is retained after a release; voices disconnect themselves once their sources end.
-- **Clipping**: drone and click sum at the destination; with both volumes at 1 a click coinciding with a tanpura onset can briefly exceed full scale. At the defaults (0.8 and 0.6) the drone peaks near 0.3–0.58.
+- **Clipping**: drone and click sum at the destination; with both volumes at 1 a click over a drone peak can briefly exceed full scale. At the defaults (0.8 and 0.6) the drone peaks near 0.3.
 - **Accidentals**: should the generator ever write sharps and flats, `DRONE_NOTES` can grow with them; the frequency table is the only other place to change.
-- **Tests**: `tests/drone.test.ts` checks the frequencies, each graph's lifecycle, the tanpura cycle and the engine wiring on a recording mock context; `tests/storage.test.ts`, `tests/share.test.ts` and `tests/tips.test.ts` cover the settings, the link and the tip.
+- **Tests**: `tests/drone.test.ts` checks the frequencies, each graph's lifecycle and the engine wiring on a recording mock context; `tests/storage.test.ts`, `tests/share.test.ts` and `tests/tips.test.ts` cover the settings, the link and the tip.

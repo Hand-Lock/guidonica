@@ -175,7 +175,7 @@ export type PitchClass = (typeof PITCH_CLASSES)[number];
 export type PitchClassOptions = Record<PitchClass, boolean>;
 
 /** Drone timbres, synthesized live (ADR 0092). */
-export const DRONE_SOUNDS = ['tanpura', 'shruti', 'pad'] as const;
+export const DRONE_SOUNDS = ['shruti', 'pad'] as const;
 export type DroneSound = (typeof DRONE_SOUNDS)[number];
 
 /** The drone's tonic: one of the white notes the generator writes, or off (ADR 0092). */

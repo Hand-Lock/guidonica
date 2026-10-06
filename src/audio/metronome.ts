@@ -296,7 +296,6 @@ export class MetronomeEngine {
     this.stopDrone(at);
     if (this.droneNote === 'off') return;
     this.droneVoice = createDroneVoice(this.ctx, this.droneBus, this.droneSound, this.droneNote, at);
-    this.droneVoice.schedule(this.ctx.currentTime + this.scheduleAheadSeconds);
   }
 
   private stopDrone(at: number): void {
@@ -419,7 +418,6 @@ export class MetronomeEngine {
   private scheduler(): void {
     if (!this.ctx || !this.isRunning || this.isPaused) return;
 
-    this.droneVoice?.schedule(this.ctx.currentTime + this.scheduleAheadSeconds);
 
     while (this.nextBeatTime < this.ctx.currentTime + this.scheduleAheadSeconds) {
       const beatTime = this.nextBeatTime;

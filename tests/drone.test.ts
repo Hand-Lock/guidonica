@@ -119,7 +119,7 @@ describe('drone voice (ADR 0092)', () => {
     expect(freqs).toEqual([...freqs].sort((x, y) => x - y));
   });
 
-  for (const sound of ['shruti', 'pad'] as const) {
+  for (const sound of DRONE_SOUNDS) {
     it(`builds the ${sound} on the tonic and frees every node after the release`, () => {
       const ctx = new MockContext();
       const out = new MockNode();
@@ -132,9 +132,6 @@ describe('drone voice (ADR 0092)', () => {
       for (const osc of ctx.oscillators) expect(osc.startTime).toBe(2);
       const tones = ctx.oscillators.filter((o) => o.frequency.value > 20).map((o) => o.frequency.value);
       for (const f of tones) expect([1, 2]).toContain(Math.round(f / droneFrequency('c')));
-
-      voice.schedule(10); // Sustained timbres have nothing to queue
-      expect(ctx.oscillators.every((o) => o.startTime === 2)).toBe(true);
 
       voice.release(5);
       expect(env.gain.calls.at(-1)).toEqual(['target', 0, 5, 0.1]);
@@ -159,44 +156,6 @@ describe('drone voice (ADR 0092)', () => {
     const ctx = new MockContext();
     for (let i = 0; i < 3; i++) createDroneVoice(asCtx(ctx), asNode(new MockNode()), 'shruti', 'g', 0);
     expect(ctx.waves).toBe(1);
-  });
-
-  it('plucks the tanpura cycle on the audio clock, never twice', () => {
-    const ctx = new MockContext();
-    const voice = createDroneVoice(asCtx(ctx), asNode(new MockNode()), 'tanpura', 'a', 0);
-    expect(ctx.oscillators).toHaveLength(0);
-    voice.schedule(0.1);
-    voice.schedule(2);
-    voice.schedule(5.2);
-    voice.schedule(5.2);
-    const starts = ctx.oscillators.map((o) => o.startTime ?? NaN);
-    expect(starts.map((t) => +t.toFixed(3))).toEqual([0, 0.9, 1.8, 2.7, 5.1]);
-    expect(ctx.oscillators.map((o) => o.frequency.value)).toEqual([220, 220, 220, 110, 220]);
-    for (const osc of ctx.oscillators) expect(osc.stopTime).toBeCloseTo((osc.startTime ?? 0) + 8, 9);
-
-    // Each pluck's jawari band sweeps down from the 12th to the 3rd harmonic
-    const first = ctx.filters[0];
-    expect(first.type).toBe('peaking');
-    expect(first.frequency.calls).toEqual([['set', 12 * 220, 0], ['exp', 3 * 220, 3]]);
-
-    voice.release(6);
-    expect(ctx.oscillators.map((o) => o.stopTime)).toEqual([7, 7, 7, 7, 7]);
-    voice.schedule(20);
-    expect(ctx.oscillators).toHaveLength(5);
-
-    const env = ctx.gains[0];
-    expect(env.disconnected).toBe(false);
-    endAll(ctx);
-    expect(env.disconnected).toBe(true);
-    for (const node of [...ctx.oscillators, ...ctx.filters]) expect(node.disconnected).toBe(true);
-  });
-
-  it('keeps a pluck that ends before the release tail', () => {
-    const ctx = new MockContext();
-    const voice = createDroneVoice(asCtx(ctx), asNode(new MockNode()), 'tanpura', 'c', 0);
-    voice.schedule(0.1);
-    voice.release(7.5);
-    expect(ctx.oscillators[0].stopTime).toBe(8);
   });
 });
 
