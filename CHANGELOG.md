@@ -14,22 +14,24 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ## [Unreleased]
 
+> Sing against a drone on any note and at Baroque or modern pitch, and read early music in half-note meters, from 2/2 alla breve to 12/4.
+
 ### Added
 
 - Half-note time signatures for early music. A Half-note beat switch in Settings → Staff and in the welcome guide turns 4/4, 3/4, 2/4, 6/8, 9/8 and 12/8 into 4/2, 3/2, 2/2 (alla breve), 6/4, 9/4 and 12/4, with half-note clicks, breves and the breve rest (ADR 0090).
-- A drone to sing against: a steady shruti box or pad on any note, with its own volume, in Settings → Practice. Exercise links carry the drone note (ADR 0092).
+- A drone to sing against: a steady shruti box or pad on any note, with its own volume, in Settings → Practice. Mute silences it too, and it sounds through the count-in so you hear the tonic before the first note. Exercise links carry the drone note (ADR 0092).
 - Common-time and alla breve signs: Settings → Staff can write 4/4 as C and 2/2 as ¢ (ADR 0093).
 - Tune the drone to A = 415, 430, 442 or 466 Hz besides 440, for Baroque, Classical or Renaissance pitch, in Settings → Practice. Exercise links carry it (ADR 0094).
 - Press D to turn the drone on and off.
 
 ### Changed
 
-- The Compound pulse setting is now called Pulse and also works in half-note meters: the click follows the beat or each subdivision.
+- The Compound pulse setting is now called Pulse and also works in half-note meters: the click follows the beat or each subdivision (ADR 0090).
 
 ### Fixed
 
 - Scrolling notation is smooth on high-refresh displays and in Firefox, where it could stutter (ADR 0089).
-- Scrolling no longer hitches on each metronome click or when a new bar is drawn, on displays up to 144 Hz. (ADR 0091)
+- Scrolling no longer hitches on each metronome click or when a new bar is drawn, on displays up to 144 Hz (ADR 0091).
 
 ### Internal
 
