@@ -172,8 +172,10 @@ export class ScrollerView {
     if (this.isLoopRunning) return;
     this.isLoopRunning = true;
 
-    const loop = (): void => {
+    const loop = (now: DOMHighResTimeStamp): void => {
       if (!this.isLoopRunning) return;
+      // Advance the frame-locked audio clock once per vsync, before anything reads it (ADR 0089)
+      this.metronome.tick(now);
       this.renderFrame();
       this.rafId = requestAnimationFrame(loop);
     };

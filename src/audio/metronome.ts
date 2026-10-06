@@ -19,6 +19,15 @@ export interface BeatInfo {
   isCountIn: boolean;
 }
 
+/** Time constant (s) of the pull from the frame-predicted clock toward the audio clock (ADR 0089). */
+const CLOCK_SMOOTHING_SECONDS = 0.1;
+/**
+ * Disagreement (s) above which the frame clock adopts the audio clock at once: above any
+ * plausible clock step (resistFingerprinting clamps time to up to 100 ms), so only real
+ * discontinuities such as a stalled or resumed device snap.
+ */
+const CLOCK_SNAP_SECONDS = 0.25;
+
 export class MetronomeEngine {
   private ctx: AudioContext | null = null;
   private masterGainNode: GainNode | null = null;
@@ -47,6 +56,12 @@ export class MetronomeEngine {
   // Lookahead settings
   private readonly lookaheadMs: number = 25;
   private readonly scheduleAheadSeconds: number = 0.1;
+
+  // Frame-locked audible time (ADR 0089): the audio clock advances in device-callback
+  // steps (~10 ms on Windows), so each rAF frame predicts it from the vsync interval and
+  // pulls the prediction back toward the real clock. null = not ticked since (re)start.
+  private frameClock: number | null = null;
+  private lastFrameMs: number = 0;
 
   private interruptionCallbacks: Set<() => void> = new Set();
 
@@ -156,7 +171,7 @@ export class MetronomeEngine {
       const currentBeat = this.getCurrentGlobalBeat();
       this.tempo = clamped;
       this.updateMeterParams();
-      this.measureZeroStartTime = this.audibleTime() - currentBeat * this.secondsPerBeat;
+      this.measureZeroStartTime = this.clockTime() - currentBeat * this.secondsPerBeat;
 
       // Accurately align to the next unplayed beat boundary to avoid duplicate or clashing clicks
       const nextGlobalBeatIndex = Math.ceil(
@@ -238,6 +253,7 @@ export class MetronomeEngine {
     this.isPaused = false;
     this.hasCountIn = countIn;
     this.countInBeatsTotal = countIn ? this.beatsPerMeasure : 0;
+    this.frameClock = null;
 
     // Ensure session category is playback while running
     this.setAudioSessionCategory('playback');
@@ -283,6 +299,7 @@ export class MetronomeEngine {
       void this.ctx.resume();
     }
     this.isPaused = false;
+    this.frameClock = null;
 
     // Unmute master gain to target volume
     this.updateMasterGain();
@@ -320,6 +337,7 @@ export class MetronomeEngine {
 
     this.scheduledBeatCount = 0;
     this.pausedElapsedSeconds = 0;
+    this.frameClock = null;
   }
 
   private scheduler(): void {
@@ -433,17 +451,47 @@ export class MetronomeEngine {
   }
 
   /**
+   * Advances the frame-locked audible time by one rAF frame (ADR 0089). Called once per
+   * frame with the rAF timestamp, before anything reads the beat position. The prediction
+   * (previous value + vsync interval) only interpolates between the audio clock's coarse
+   * updates: it is pulled toward the raw clock with time constant CLOCK_SMOOTHING_SECONDS
+   * and snaps to it when they disagree by more than CLOCK_SNAP_SECONDS, so it cannot drift.
+   */
+  public tick(frameTimeMs: number): void {
+    if (!this.ctx || !this.isRunning || this.isPaused) return;
+    const raw = this.audibleTime();
+    if (this.frameClock === null) {
+      this.frameClock = raw;
+    } else {
+      const dt = Math.max(0, (frameTimeMs - this.lastFrameMs) / 1000);
+      const predicted = this.frameClock + dt;
+      const err = raw - predicted;
+      this.frameClock =
+        Math.abs(err) > CLOCK_SNAP_SECONDS
+          ? raw
+          : predicted + err * (1 - Math.exp(-dt / CLOCK_SMOOTHING_SECONDS));
+    }
+    this.lastFrameMs = frameTimeMs;
+  }
+
+  /** Audible time as displayed: the frame-locked estimate, or the raw clock before the first tick. */
+  private clockTime(): number {
+    return this.frameClock ?? this.audibleTime();
+  }
+
+  /**
    * Returns elapsed seconds relative to Measure 0.
    * When stopped, returns 0.
    * During count-in, this value is negative (-countInDuration to 0).
    * Compensated for output latency so visuals track what is *heard*, not what
-   * has merely been handed to the audio device.
+   * has merely been handed to the audio device, and read from the frame-locked
+   * clock so every reader sees the position already on screen (ADR 0089).
    */
   public getElapsedPlaybackSeconds(): number {
     if (!this.isRunning) return 0;
     if (this.isPaused) return this.pausedElapsedSeconds;
     if (!this.ctx) return 0;
-    return this.audibleTime() - this.measureZeroStartTime;
+    return this.clockTime() - this.measureZeroStartTime;
   }
 
   /**

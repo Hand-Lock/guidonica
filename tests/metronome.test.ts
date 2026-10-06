@@ -290,6 +290,127 @@ describe('MetronomeEngine', () => {
       });
     });
 
+    describe('frame-locked clock (ADR 0089)', () => {
+      const FRAME_MS = 1000 / 144;
+      const STEP_S = 0.01; // Windows audio callback: the clock moves in 10 ms steps
+
+      /** Drives the engine like a 144 Hz rAF loop over a clock that advances in steps. */
+      const run = (
+        ctx: ReturnType<typeof makeCtx>,
+        frames: number,
+        t0: { ms: number },
+        onFrame?: (smoothed: number, raw: number) => void
+      ): void => {
+        for (let i = 0; i < frames; i++) {
+          t0.ms += FRAME_MS;
+          const trueTime = 10 + t0.ms / 1000;
+          ctx.currentTime = Math.floor(trueTime / STEP_S) * STEP_S;
+          metronome.tick(t0.ms);
+          const smoothed = metronome.getVisualBeat();
+          const raw = ctx.currentTime - 10.05; // 60 BPM: 1 s per beat, measure 0 at 10.05
+          onFrame?.(smoothed, raw);
+        }
+      };
+
+      it('turns the stepped audio clock into a steady per-frame advance', () => {
+        const ctx = makeCtx();
+        withCtx(ctx, () => {
+          metronome = new MetronomeEngine(60, '4/4');
+          metronome.start(false);
+          const t = { ms: 0 };
+          run(ctx, 144, t); // warm-up: 1 s, ten time constants
+
+          const smoothedSteps: number[] = [];
+          const rawSteps: number[] = [];
+          let prev: [number, number] | null = null;
+          run(ctx, 288, t, (smoothed, raw) => {
+            if (prev) {
+              smoothedSteps.push(smoothed - prev[0]);
+              rawSteps.push(raw - prev[1]);
+            }
+            prev = [smoothed, raw];
+          });
+
+          const frame = FRAME_MS / 1000;
+          // The raw clock stands still on some frames and jumps a whole 10 ms step on others
+          expect(rawSteps.some((d) => d === 0)).toBe(true);
+          expect(Math.max(...rawSteps)).toBeCloseTo(STEP_S, 9);
+          // The smoothed clock advances every frame by close to one frame interval
+          for (const d of smoothedSteps) {
+            expect(d).toBeGreaterThan(0.75 * frame);
+            expect(d).toBeLessThan(1.25 * frame);
+          }
+        });
+      });
+
+      it('tracks the audio clock without drifting', () => {
+        const ctx = makeCtx();
+        withCtx(ctx, () => {
+          metronome = new MetronomeEngine(60, '4/4');
+          metronome.start(false);
+          const t = { ms: 0 };
+          let worst = 0;
+          let sumErr = 0;
+          let n = 0;
+          run(ctx, 144 * 60, t, (smoothed, raw) => {
+            if (t.ms < 1000) return;
+            worst = Math.max(worst, Math.abs(smoothed - raw));
+            sumErr += smoothed - raw;
+            n++;
+          });
+          // Never more than one clock step away; on average centred on the staircase
+          expect(worst).toBeLessThan(STEP_S);
+          expect(Math.abs(sumErr / n)).toBeLessThan(0.002);
+        });
+      });
+
+      it('snaps to the audio clock after a jump larger than any clock step', () => {
+        const ctx = makeCtx();
+        withCtx(ctx, () => {
+          metronome = new MetronomeEngine(60, '4/4');
+          metronome.start(false);
+          const t = { ms: 0 };
+          run(ctx, 144, t);
+          ctx.currentTime += 0.5; // device stall recovered
+          t.ms += FRAME_MS;
+          metronome.tick(t.ms);
+          expect(metronome.getVisualBeat()).toBeCloseTo(ctx.currentTime - 10.05, 6);
+        });
+      });
+
+      it('freezes on the displayed beat when paused and resumes from it', () => {
+        const ctx = makeCtx(0.04);
+        withCtx(ctx, () => {
+          metronome = new MetronomeEngine(60, '4/4');
+          metronome.start(false);
+          const t = { ms: 0 };
+          run(ctx, 300, t);
+          const shown = metronome.getCurrentGlobalBeat();
+          metronome.pause();
+          ctx.currentTime += 7;
+          expect(metronome.getCurrentGlobalBeat()).toBe(shown);
+          metronome.resume();
+          expect(metronome.getCurrentGlobalBeat()).toBeCloseTo(shown, 9);
+          t.ms += 7000 + FRAME_MS;
+          metronome.tick(t.ms);
+          expect(metronome.getCurrentGlobalBeat()).toBeCloseTo(shown, 9);
+        });
+      });
+
+      it('keeps the displayed beat continuous across a tempo change', () => {
+        const ctx = makeCtx();
+        withCtx(ctx, () => {
+          metronome = new MetronomeEngine(60, '4/4');
+          metronome.start(false);
+          const t = { ms: 0 };
+          run(ctx, 300, t);
+          const shown = metronome.getCurrentGlobalBeat();
+          metronome.setTempo(120);
+          expect(metronome.getCurrentGlobalBeat()).toBeCloseTo(shown, 9);
+        });
+      });
+    });
+
     it('reports the secondary accent on beat 3 of a 4/4 bar', () => {
       const ctx = makeCtx();
       withCtx(ctx, () => {

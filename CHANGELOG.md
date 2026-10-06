@@ -14,6 +14,14 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ## [Unreleased]
 
+### Fixed
+
+- Scrolling notation is smooth on high-refresh displays and in Firefox, where it could stutter (ADR 0089).
+
+### Internal
+
+- ADR 0089 documents the frame-locked audio clock; `SPEC.md` §5 and `AGENTS.md` §1 describe it.
+
 ## [2026.10.1] - 2026-10-06
 
 > Send an exercise as a link, discover hidden features through short tips, and open Guidonica in your language at guidonica.it/it/, /fr/, /de/ and /es/.

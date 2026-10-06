@@ -169,10 +169,11 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter beat i
 - The audio engine is built directly on the browser's native **Web Audio API**.
 - `AudioContext.currentTime` serves as the authoritative, hardware-synchronized clock for both audio scheduling and visual scroll offsets.
 - Formula for scroll offset at any frame (output latency $\lambda$ = `outputLatency || baseLatency`, so notes cross the playhead when the click is *heard*):
-  $$\text{elapsedSeconds} = \text{AudioContext.currentTime} - \lambda - t_{\text{start}}$$
+  $$\text{elapsedSeconds} = \hat{t}_{\text{audible}} - t_{\text{start}}$$
+  where $\hat{t}_{\text{audible}}$ is the frame-locked estimate of $\text{AudioContext.currentTime} - \lambda$ (ADR 0089): each rAF frame predicts it from the vsync interval and pulls the prediction toward the audio clock with a 0.1 s time constant, snapping when they disagree by more than 0.25 s.
   $$\text{scrollX} = \text{elapsedSeconds} \times v$$
 - The beat indicator is derived from the same clock inside the single rAF loop (`getBeatInfo()`); there are no `setTimeout` visual clocks.
-- Because the animation loop calculates position directly from `AudioContext.currentTime`, visual jitter and audio drift are mathematically eliminated, even under CPU load spikes or background tab throttling.
+- Because position is always derived from `AudioContext.currentTime`, visuals cannot drift from the audio, even under CPU load spikes or background tab throttling. The frame-locked estimate hides the clock's coarse update steps (about 10 ms on Windows), so the notation advances evenly on every frame at any refresh rate.
 
 ### Metronome Synthesis
 - Synthesized clicks using native `OscillatorNode` and exponential `GainNode` envelopes (zero external audio file dependencies).
