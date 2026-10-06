@@ -92,6 +92,7 @@ import {
   versionHref,
   versionLabel,
 } from './whatsNew';
+import { Exercise, decodeExercise, exerciseUrl } from './share';
 import {
   INTRO_CLEFS,
   INTRO_METERS,
@@ -237,9 +238,15 @@ class GuidonicaApp {
   private introPreviewClef: Clef | null = null;
   private introPreviewMeter: TimeSignature | null = null;
 
-  constructor() {
+  constructor(shared: Exercise | null) {
     // 0. First visit? Decide before hydration can persist any settings
-    const showIntro = !isOnboarded() && !hasStoredSettings();
+    const firstVisit = !isOnboarded() && !hasStoredSettings();
+    // A shared exercise link replaces the intro's level choice (ADR 0085)
+    if (shared) {
+      globalState.updateSettings(shared);
+      markOnboarded();
+    }
+    const showIntro = firstVisit && !shared;
 
     // 1. Query all UI DOM elements
     this.btnPlayPause = document.getElementById('btn-play-pause') as HTMLButtonElement;
@@ -377,6 +384,7 @@ class GuidonicaApp {
     // 4. Setup event wiring and subscriptions
     this.bindEvents();
     this.bindAboutModalEvents();
+    this.bindShareEvents();
     this.bindWhatsNewEvents();
     this.updateVersionInfo();
     this.bindIntroModalEvents();
@@ -401,7 +409,7 @@ class GuidonicaApp {
     }
 
     // 9. Returning visitors see the release notes they missed; new ones never do (ADR 0078)
-    const boot = bootAction(showIntro, loadSeenVersion(), APP_VERSION);
+    const boot = bootAction(firstVisit, loadSeenVersion(), APP_VERSION);
     if (boot.kind === 'store') saveSeenVersion(APP_VERSION);
     else if (boot.kind === 'show') void this.openWhatsNew(boot.since);
   }
@@ -572,6 +580,43 @@ class GuidonicaApp {
   private async initFonts(): Promise<void> {
     await waitForMusicFonts();
     this.resetBuffer();
+  }
+
+  /**
+   * Shares the current exercise as a link (ADR 0085): the system share sheet where there is
+   * one, else the clipboard. The confirmation stays until the settings next change.
+   */
+  private bindShareEvents(): void {
+    const button = document.getElementById('btn-share-exercise');
+    const status = document.getElementById('share-status');
+    if (!button || !status) return;
+    let sharedSettings: Readonly<AppSettings> | null = null;
+    globalState.subscribe((state) => {
+      if (sharedSettings && state.settings !== sharedSettings) {
+        sharedSettings = null;
+        status.classList.add('hidden');
+      }
+    });
+    button.addEventListener('click', async () => {
+      const m = t();
+      const url = exerciseUrl(globalState.settings, location.href);
+      if (typeof navigator.share === 'function') {
+        try {
+          await navigator.share({ title: 'Guidonica', text: m.shareText, url });
+          return;
+        } catch (err) {
+          if (err instanceof DOMException && err.name === 'AbortError') return;
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        status.textContent = m.shareCopied;
+        status.classList.remove('hidden');
+        sharedSettings = globalState.settings;
+      } catch {
+        window.prompt(m.shareCopyPrompt, url);
+      }
+    });
   }
 
   private bindEvents(): void {
@@ -2008,11 +2053,22 @@ class GuidonicaApp {
 }
 
 /**
+ * The exercise in the address bar, if any (ADR 0085). The fragment is removed once read,
+ * so a reload or bookmark keeps the changes made after opening the link.
+ */
+function takeSharedExercise(): Exercise | null {
+  const exercise = decodeExercise(location.hash, globalState.settings);
+  if (exercise) history.replaceState(history.state, '', location.pathname + location.search);
+  return exercise;
+}
+
+/**
  * Loads the stored or detected language before the app builds its UI. The head script
  * hides the page for non-English languages; it is shown again even if the chunk fails,
  * in which case the English shell stays (ADR 0059).
  */
 async function bootstrap(): Promise<void> {
+  const shared = takeSharedExercise();
   try {
     await loadLocale(globalState.settings.language);
   } catch {
@@ -2020,10 +2076,14 @@ async function bootstrap(): Promise<void> {
   }
   try {
     applyDom(document);
-    new GuidonicaApp();
+    new GuidonicaApp(shared);
   } finally {
     document.documentElement.removeAttribute('data-i18n-pending');
   }
+  // An exercise link opened in a tab already running the app changes only the fragment
+  window.addEventListener('hashchange', () => {
+    if (decodeExercise(location.hash, globalState.settings)) location.reload();
+  });
   registerServiceWorker();
 }
 

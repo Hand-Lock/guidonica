@@ -158,6 +158,14 @@ const en = {
   themeLight: 'Light',
   themeDark: 'Dark',
 
+  // Exercise link (ADR 0085)
+  shareGroup: 'Share',
+  shareButton: 'Exercise link',
+  shareTitle: 'Send these exercise settings as a link. Language, theme and sound stay with each user.',
+  shareText: 'Practise this sight-reading exercise on Guidonica',
+  shareCopied: 'Link copied. Whoever opens it practises with these settings.',
+  shareCopyPrompt: 'Copy this exercise link:',
+
   // Stage
   canvasAria: 'Streaming sight-reading music notation canvas',
   zoomPillAria: 'Notation zoom controls',

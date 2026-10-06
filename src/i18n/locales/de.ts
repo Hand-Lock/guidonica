@@ -141,6 +141,14 @@ const de: Messages = {
   themeLight: 'Hell',
   themeDark: 'Dunkel',
 
+  // Exercise link (ADR 0085)
+  shareGroup: 'Teilen',
+  shareButton: 'Link zur Übung',
+  shareTitle: 'Diese Übungseinstellungen als Link senden. Sprache, Design und Klang bleiben bei jedem selbst.',
+  shareText: 'Übe dieses Blattlesen auf Guidonica',
+  shareCopied: 'Link kopiert. Wer ihn öffnet, übt mit diesen Einstellungen.',
+  shareCopyPrompt: 'Link zur Übung kopieren:',
+
   canvasAria: 'Laufende Notenschrift zum Blattlesen',
   zoomPillAria: 'Zoom der Notenschrift',
   zoomOut: 'Verkleinern',

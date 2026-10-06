@@ -90,6 +90,7 @@ This directory documents the core architectural decisions, implementation method
 | [0082](0082-visible-social-links.md) | Visible Bluesky and Mastodon Links | Accepted; amended by 0084 | 2026-10-06 |
 | [0083](0083-in-app-browser-landscape-tip.md) | In-App Browser Landscape Tip | Accepted | 2026-10-06 |
 | [0084](0084-instagram-link.md) | Instagram Link | Accepted | 2026-10-06 |
+| [0085](0085-shareable-exercise-links.md) | Shareable Exercise Links | Accepted | 2026-10-06 |
 
 ---
 

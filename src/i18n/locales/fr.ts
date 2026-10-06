@@ -143,6 +143,14 @@ const fr: Messages = {
   themeLight: 'Clair',
   themeDark: 'Sombre',
 
+  // Exercise link (ADR 0085)
+  shareGroup: 'Partager',
+  shareButton: "Lien vers l'exercice",
+  shareTitle: "Envoyer ces réglages d'exercice sous forme de lien. La langue, le thème et le son restent propres à chacun.",
+  shareText: 'Travaille cet exercice de lecture à vue sur Guidonica',
+  shareCopied: "Lien copié. Quiconque l'ouvre s'exerce avec ces réglages.",
+  shareCopyPrompt: "Copiez le lien vers l'exercice :",
+
   canvasAria: 'Notation musicale défilante pour la lecture à vue',
   zoomPillAria: 'Commandes du zoom de la notation',
   zoomOut: 'Zoom arrière',
