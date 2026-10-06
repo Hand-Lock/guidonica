@@ -11,6 +11,7 @@ import {
   MAX_LEDGER_LINES,
   PITCH_CLASSES,
   PitchClassOptions,
+  REFERENCE_PITCHES,
   SolfegeLabelMode,
   SubdivisionOptions,
   TIME_SIGNATURES,
@@ -26,8 +27,9 @@ import {
 } from './notation/types';
 
 /**
- * What a link carries: the settings a level preset sets, plus clef, meter, pulse and the
- * drone note. Language, theme, sounds, volumes, zoom and the playhead stay with each user.
+ * What a link carries: the settings a level preset sets, plus clef, meter, pulse, the
+ * drone note and its tuning. Language, theme, sounds, volumes, zoom and the playhead stay
+ * with each user.
  */
 export type Exercise = Pick<
   AppSettings,
@@ -45,6 +47,7 @@ export type Exercise = Pick<
   | 'pulse'
   | 'countIn'
   | 'droneNote'
+  | 'referencePitch'
 >;
 
 /** Link format version; a fragment without `x=1` is not an exercise and is left alone. */
@@ -135,6 +138,7 @@ export function encodeExercise(settings: Exercise): string {
     pulse: settings.pulse,
     countin: settings.countIn ? '1' : '0',
     drone: settings.droneNote,
+    a4: String(settings.referencePitch),
   });
   return params.toString();
 }
@@ -218,5 +222,7 @@ export function decodeExercise(hash: string, base: Exercise): Exercise | null {
     countIn: pickFlag(params.get('countin')) ?? base.countIn,
     // Links from before ADR 0092 have no drone and keep the recipient's
     droneNote: pick(params.get('drone'), DRONE_NOTES) ?? base.droneNote,
+    // Links from before ADR 0094 have no tuning and keep the recipient's
+    referencePitch: REFERENCE_PITCHES.find((hz) => String(hz) === params.get('a4')) ?? base.referencePitch,
   };
 }

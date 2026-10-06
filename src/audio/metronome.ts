@@ -5,6 +5,7 @@ import {
   DroneSound,
   METER,
   PulseMode,
+  ReferencePitch,
   SoundProfile,
   TimeSignature,
   beatAccent,
@@ -47,6 +48,7 @@ export class MetronomeEngine {
   private droneNote: DroneNote = 'off';
   private droneSound: DroneSound = 'shruti';
   private droneVolume: number = 0.6;
+  private referencePitch: ReferencePitch = 440;
   private droneBus: GainNode | null = null;
   private droneVoice: DroneVoice | null = null;
 
@@ -270,6 +272,17 @@ export class MetronomeEngine {
     return this.droneSound;
   }
 
+  /** Retunes the drone to A4 = `hz` (ADR 0094), with the same crossfade as a note change. */
+  public setReferencePitch(hz: ReferencePitch): void {
+    if (this.referencePitch === hz) return;
+    this.referencePitch = hz;
+    this.restartDrone();
+  }
+
+  public getReferencePitch(): ReferencePitch {
+    return this.referencePitch;
+  }
+
   public setDroneVolume(volume: number): void {
     this.droneVolume = Math.max(0, Math.min(1, volume));
     this.updateDroneBus();
@@ -295,7 +308,14 @@ export class MetronomeEngine {
     if (!this.ctx || !this.droneBus) return;
     this.stopDrone(at);
     if (this.droneNote === 'off') return;
-    this.droneVoice = createDroneVoice(this.ctx, this.droneBus, this.droneSound, this.droneNote, at);
+    this.droneVoice = createDroneVoice(
+      this.ctx,
+      this.droneBus,
+      this.droneSound,
+      this.droneNote,
+      at,
+      this.referencePitch
+    );
   }
 
   private stopDrone(at: number): void {

@@ -194,6 +194,10 @@ export type DroneSound = (typeof DRONE_SOUNDS)[number];
 export type DroneNote = 'off' | PitchClass;
 export const DRONE_NOTES: readonly DroneNote[] = ['off', ...PITCH_CLASSES];
 
+/** The drone's A4 in Hz: Baroque, Classical, modern, orchestral and Renaissance pitch (ADR 0094). */
+export const REFERENCE_PITCHES = [415, 430, 440, 442, 466] as const;
+export type ReferencePitch = (typeof REFERENCE_PITCHES)[number];
+
 /** Ledger lines reachable above / below the staff (0 to MAX_LEDGER_LINES each). */
 export const MAX_LEDGER_LINES = 3; // Bounded by the MEASURE_CANVAS_HEIGHT geometry
 
@@ -590,6 +594,7 @@ export interface AppSettings {
   isMuted: boolean; // Silences click and drone
   droneNote: DroneNote; // Tonic of the drone, or 'off' (ADR 0092)
   droneSound: DroneSound;
+  referencePitch: ReferencePitch; // The drone's A4 in Hz (ADR 0094)
   droneVolume: number; // 0.0 to 1.0, independent of the click volume
   zoom: number; // 0.3 to 1.5 (default 1.0)
   zoomMode: ZoomMode;

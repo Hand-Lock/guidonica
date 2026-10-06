@@ -15,6 +15,8 @@ import {
   MIN_ZOOM,
   PITCH_CLASSES,
   PulseMode,
+  REFERENCE_PITCHES,
+  ReferencePitch,
   ResolvedTheme,
   SolfegeLabelMode,
   SoundProfile,
@@ -193,6 +195,7 @@ class GuidonicaApp {
   private btnVolumeMute: HTMLButtonElement;
   private selectDroneNote: HTMLSelectElement;
   private selectDroneSound: HTMLSelectElement;
+  private selectDroneTuning: HTMLSelectElement;
   private droneVolumeSlider: HTMLInputElement;
 
   // Floating On-Canvas Zoom Pill
@@ -320,6 +323,7 @@ class GuidonicaApp {
     this.btnVolumeMute = document.getElementById('btn-volume-mute') as HTMLButtonElement;
     this.selectDroneNote = document.getElementById('select-drone-note') as HTMLSelectElement;
     this.selectDroneSound = document.getElementById('select-drone-sound') as HTMLSelectElement;
+    this.selectDroneTuning = document.getElementById('select-drone-tuning') as HTMLSelectElement;
     this.droneVolumeSlider = document.getElementById('drone-volume-slider') as HTMLInputElement;
 
     this.canvasZoomPill = document.getElementById('canvas-zoom-pill') as HTMLElement;
@@ -405,6 +409,7 @@ class GuidonicaApp {
     this.metronome.setPulse(initialSettings.pulse);
     this.metronome.setDroneNote(initialSettings.droneNote);
     this.metronome.setDroneSound(initialSettings.droneSound);
+    this.metronome.setReferencePitch(initialSettings.referencePitch);
     this.metronome.setDroneVolume(initialSettings.droneVolume);
 
     this.generator = new MusicGenerator();
@@ -498,6 +503,7 @@ class GuidonicaApp {
     this.updateMuteUI(settings.isMuted);
     this.selectDroneNote.value = settings.droneNote;
     this.selectDroneSound.value = settings.droneSound;
+    this.selectDroneTuning.value = String(settings.referencePitch);
     this.droneVolumeSlider.value = String(settings.droneVolume);
 
     // Intervals
@@ -873,6 +879,15 @@ class GuidonicaApp {
       const sound = (e.target as HTMLSelectElement).value as DroneSound;
       this.metronome.setDroneSound(sound);
       globalState.updateSettings({ droneSound: sound });
+    });
+
+    // Drone tuning (ADR 0094)
+    this.selectDroneTuning.addEventListener('change', (e) => {
+      const value = Number((e.target as HTMLSelectElement).value);
+      const referencePitch = REFERENCE_PITCHES.find((hz) => hz === value);
+      if (referencePitch === undefined) return;
+      this.metronome.setReferencePitch(referencePitch);
+      globalState.updateSettings({ referencePitch });
     });
 
     this.droneVolumeSlider.addEventListener('input', (e) => {
@@ -2081,7 +2096,10 @@ class GuidonicaApp {
     this.updateMelodyAvailability();
   }
 
-  /** Notes chip and drone note names: the Labels table, else the national convention (ADR 0070, 0092). */
+  /**
+   * Notes chip, drone note and drone tuning names: the Labels table, else the national
+   * convention (ADR 0070, 0092, 0094).
+   */
   private updatePitchClassLabels(): void {
     const names = pitchClassNames(globalState.settings.solfegeLabelMode);
     this.noteCheckboxes.forEach((cb, i) => {
@@ -2093,6 +2111,17 @@ class GuidonicaApp {
       const option = this.selectDroneNote.options[i + 1];
       if (option) option.textContent = names[i];
     });
+    const m = t();
+    const era: Partial<Record<ReferencePitch, string>> = {
+      415: m.tuningBaroque,
+      430: m.tuningClassical,
+      466: m.tuningRenaissance,
+    };
+    const a = names[PITCH_CLASSES.indexOf('a')];
+    for (const option of Array.from(this.selectDroneTuning.options)) {
+      const hz = Number(option.value) as ReferencePitch;
+      option.textContent = `${a} = ${hz} Hz` + (era[hz] ? ` (${era[hz]})` : '');
+    }
   }
 
   /**

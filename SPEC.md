@@ -201,7 +201,8 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 
 ### Drone
 - Settings → Practice → Drone holds the tonic of any of the seven notes (or Off, the default) to sing against; over white notes a drone on D gives Dorian, on A Aeolian (ADR 0092).
-- Tonic only, in octave 3, 12-TET with A4 = 440 Hz: $f = 440 \cdot 2^{(m-69)/12}$, $m = 48 + [0, 2, 4, 5, 7, 9, 11]_i$ (C3 ≈ 130.81 Hz … B3 ≈ 246.94 Hz).
+- Tonic only, in octave 3, 12-TET from the reference pitch $a_4$: $f = a_4 \cdot 2^{(m-69)/12}$, $m = 48 + [0, 2, 4, 5, 7, 9, 11]_i$ (at 440 Hz, C3 ≈ 130.81 Hz … B3 ≈ 246.94 Hz).
+- **Drone tuning** (ADR 0094): A4 = 415 Hz (Baroque), 430 Hz (Classical), 440 Hz (default), 442 Hz or 466 Hz (Renaissance). Changing it during playback crossfades like a note change.
 - Two synthesized timbres, equal in loudness, built from `OscillatorNode`, `PeriodicWave`, `BiquadFilterNode` and `GainNode` only:
   - **Shruti box** (default): two reeds at the tonic and its octave, 3 cents apart, under a slow bellows swell.
   - **Pad**: two detuned sawtooths through a slowly breathing lowpass.
@@ -223,7 +224,7 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
   - **Staff**: clef (8), ledger lines above and below (0–3) with the live range hint, time signature with the Half-note beat switch, C and ¢ signs (in 4/4 and 2/2), pulse (beat or division, in compound and half-note meters).
   - **Rhythm**: note values (w, h, q, 8, 16, 32), dotted, tuplet matrix (with Clear all), rests, ties.
   - **Melody**: notes (C … B), intervals (unison … 9+).
-  - **Practice**: language, labels (None / Syllables / Letters), assists (count-in, playhead, tips), click sound, volume, drone (note, sound, volume), theme, exercise link.
+  - **Practice**: language, labels (None / Syllables / Letters), assists (count-in, playhead, tips), click sound, volume, drone (note, sound, tuning, volume), theme, exercise link.
 - **Stage**: the zoom pill (−, %, +; tapping the % returns to auto zoom) and the playhead.
 - Live visual indicator for the active beat / count-in.
 
@@ -256,7 +257,7 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 - After an update, a returning user sees a "What's new" dialog listing every release since their last visit, newest first, in the interface language. A first-time user never sees it, and a notes file that cannot load (offline) is simply retried on a later visit. About shows the running version, linking to its release (or, on nightly, its commit), and a "What's new" button with the full history.
 
 ### Shareable Exercise Links
-- Settings → Practice → Exercise link copies (or, on phones, shares) a link whose `#x=1&…` fragment carries the exercise: clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels, count-in and drone note (see ADR 0085, 0092).
+- Settings → Practice → Exercise link copies (or, on phones, shares) a link whose `#x=1&…` fragment carries the exercise: clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels, count-in, drone note and drone tuning (see ADR 0085, 0092, 0094).
 - Language, theme, sound, volume, zoom and the playhead stay with each user. Opening a link skips the intro and loads the exercise; every student still reads different music, because the generator is never seeded.
 
 ### Language Landing Pages

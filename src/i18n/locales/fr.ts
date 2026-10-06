@@ -156,6 +156,11 @@ const fr: Messages = {
   droneSoundAria: 'Timbre du bourdon',
   droneShruti: 'Shruti box',
   dronePad: 'Nappe',
+  droneTuning: 'Diapason du bourdon',
+  droneTuningAria: 'Hauteur de référence du bourdon (La3)',
+  tuningBaroque: 'Baroque',
+  tuningClassical: 'Classique',
+  tuningRenaissance: 'Renaissance',
   droneVolume: 'Volume du bourdon',
   droneVolumeAria: 'Volume du bourdon',
 
@@ -168,7 +173,7 @@ const fr: Messages = {
   // Exercise link (ADR 0085)
   shareGroup: 'Partager',
   shareButton: "Lien vers l'exercice",
-  shareTitle: "Envoyer ces réglages d'exercice sous forme de lien, avec la note du bourdon. La langue, le thème, les sons et le volume restent propres à chacun.",
+  shareTitle: "Envoyer ces réglages d'exercice sous forme de lien, avec la note et le diapason du bourdon. La langue, le thème, les sons et le volume restent propres à chacun.",
   shareText: 'Travaille cet exercice de lecture à vue sur Guidonica',
   shareCopied: "Lien copié. Quiconque l'ouvre s'exerce avec ces réglages.",
   shareCopyPrompt: "Copiez le lien vers l'exercice :",

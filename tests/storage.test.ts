@@ -349,6 +349,16 @@ describe('rotating tips storage (ADR 0087)', () => {
     expect(loadStoredSettings().droneVolume).toBe(1);
   });
 
+  it('tunes the drone to A = 440 Hz by default and keeps only a listed pitch (ADR 0094)', () => {
+    expect(loadStoredSettings().referencePitch).toBe(440);
+    saveStoredSettings({ ...DEFAULT_APP_SETTINGS, referencePitch: 415 });
+    expect(loadStoredSettings().referencePitch).toBe(415);
+    for (const junk of [441, '415', null, 4150]) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ referencePitch: junk }));
+      expect(loadStoredSettings().referencePitch, String(junk)).toBe(440);
+    }
+  });
+
   it('writes numbers by default and keeps only a boolean C and ¢ choice (ADR 0093)', () => {
     expect(loadStoredSettings().meterSigns).toBe(false);
     saveStoredSettings({ ...DEFAULT_APP_SETTINGS, meterSigns: true });

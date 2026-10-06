@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Exercise, decodeExercise, encodeExercise, exerciseUrl } from '../src/share';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import { LEVEL_PRESETS, buildPresetSettings } from '../src/presets';
-import { AppSettings, CLEFS, DRONE_NOTES, TIME_SIGNATURES } from '../src/notation/types';
+import { AppSettings, CLEFS, DRONE_NOTES, REFERENCE_PITCHES, TIME_SIGNATURES } from '../src/notation/types';
 
 const base = (): AppSettings => structuredClone(DEFAULT_APP_SETTINGS);
 
@@ -10,11 +10,11 @@ const base = (): AppSettings => structuredClone(DEFAULT_APP_SETTINGS);
 function exerciseOf(s: AppSettings): Exercise {
   const {
     tempo, timeSignature, clef, ledgerLines, subdivisions, tuplets, rests, ties,
-    intervals, pitchClasses, solfegeLabelMode, pulse, countIn, droneNote,
+    intervals, pitchClasses, solfegeLabelMode, pulse, countIn, droneNote, referencePitch,
   } = s;
   return {
     tempo, timeSignature, clef, ledgerLines, subdivisions, tuplets, rests, ties,
-    intervals, pitchClasses, solfegeLabelMode, pulse, countIn, droneNote,
+    intervals, pitchClasses, solfegeLabelMode, pulse, countIn, droneNote, referencePitch,
   };
 }
 
@@ -55,6 +55,7 @@ describe('exercise links (ADR 0085)', () => {
       pulse: 'division',
       countIn: false,
       droneNote: 'd',
+      referencePitch: 415,
     };
     settings.tuplets.duplet['1/8'] = true;
     settings.tuplets.quadruplet['1/16'] = true;
@@ -81,6 +82,18 @@ describe('exercise links (ADR 0085)', () => {
     }
     expect(decodeExercise('#x=1&clef=bass', { ...base(), droneNote: 'g' })?.droneNote).toBe('g');
     expect(decodeExercise('#x=1&drone=h', { ...base(), droneNote: 'e' })?.droneNote).toBe('e');
+  });
+
+  it('carries the drone tuning; links without one keep the recipient\'s (ADR 0094)', () => {
+    for (const referencePitch of REFERENCE_PITCHES) {
+      const hash = encodeExercise({ ...base(), referencePitch });
+      expect(hash).toContain(`a4=${referencePitch}`);
+      expect(decodeExercise(hash, { ...base(), referencePitch: 442 })?.referencePitch).toBe(referencePitch);
+    }
+    expect(decodeExercise('#x=1&drone=d', { ...base(), referencePitch: 466 })?.referencePitch).toBe(466);
+    for (const junk of ['441', '415.0', 'x', '']) {
+      expect(decodeExercise(`#x=1&a4=${junk}`, { ...base(), referencePitch: 430 })?.referencePitch, junk).toBe(430);
+    }
   });
 
   it('uses only characters URLs leave unescaped', () => {

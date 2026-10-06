@@ -154,6 +154,11 @@ const es: Messages = {
   droneSoundAria: 'Timbre del bordón',
   droneShruti: 'Caja shruti',
   dronePad: 'Pad',
+  droneTuning: 'Afinación del bordón',
+  droneTuningAria: 'Diapasón del bordón (La3)',
+  tuningBaroque: 'Barroco',
+  tuningClassical: 'Clásico',
+  tuningRenaissance: 'Renacimiento',
   droneVolume: 'Volumen del bordón',
   droneVolumeAria: 'Volumen del bordón',
 
@@ -166,7 +171,7 @@ const es: Messages = {
   // Exercise link (ADR 0085)
   shareGroup: 'Compartir',
   shareButton: 'Enlace al ejercicio',
-  shareTitle: 'Envía estos ajustes del ejercicio como enlace, con la nota del bordón. El idioma, el tema, los sonidos y el volumen son de cada uno.',
+  shareTitle: 'Envía estos ajustes del ejercicio como enlace, con la nota y la afinación del bordón. El idioma, el tema, los sonidos y el volumen son de cada uno.',
   shareText: 'Practica este ejercicio de lectura a primera vista en Guidonica',
   shareCopied: 'Enlace copiado. Quien lo abra practicará con estos ajustes.',
   shareCopyPrompt: 'Copia el enlace al ejercicio:',

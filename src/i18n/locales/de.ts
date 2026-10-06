@@ -154,6 +154,11 @@ const de: Messages = {
   droneSoundAria: 'Klang des Borduns',
   droneShruti: 'Shruti-Box',
   dronePad: 'Pad',
+  droneTuning: 'Bordun-Stimmton',
+  droneTuningAria: 'Stimmton des Borduns (a¹)',
+  tuningBaroque: 'Barock',
+  tuningClassical: 'Klassik',
+  tuningRenaissance: 'Renaissance',
   droneVolume: 'Bordunlautstärke',
   droneVolumeAria: 'Lautstärke des Borduns',
 
@@ -166,7 +171,7 @@ const de: Messages = {
   // Exercise link (ADR 0085)
   shareGroup: 'Teilen',
   shareButton: 'Link zur Übung',
-  shareTitle: 'Diese Übungseinstellungen als Link senden, mit dem Bordunton. Sprache, Design, Klänge und Lautstärke bleiben bei jedem selbst.',
+  shareTitle: 'Diese Übungseinstellungen als Link senden, mit Bordunton und Stimmton. Sprache, Design, Klänge und Lautstärke bleiben bei jedem selbst.',
   shareText: 'Übe dieses Blattlesen auf Guidonica',
   shareCopied: 'Link kopiert. Wer ihn öffnet, übt mit diesen Einstellungen.',
   shareCopyPrompt: 'Link zur Übung kopieren:',

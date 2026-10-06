@@ -171,7 +171,7 @@ The settings drawer has four sections:
 | **Staff** | Clef (8), ledger lines above and below (0–3) with a live range hint, time signature with the Half-note beat switch, C and ¢ signs for 4/4 and 2/2, pulse (beat or division) |
 | **Rhythm** | Note values (quarter, eighth, half, whole, 16th, 32nd), dotted, tuplets, rests, ties |
 | **Melody** | Notes (C … B), intervals (unison … 9+) |
-| **Practice** | Language, labels, assists (count-in, playhead, tips), click sound, volume, theme, exercise link |
+| **Practice** | Language, labels, assists (count-in, playhead, tips), click sound, volume, drone (note, sound, tuning, volume), theme, exercise link |
 
 ### 3. Complete Setticlavio Clef System (8 Clefs)
 Guidonica supports the full historic **Setticlavio** (seven clefs) traditional vocal and instrumental clef system, featuring both historical positions of the baritone clef. The ranges below are the widest, with 3 ledger lines above and below:
@@ -249,6 +249,7 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 - **Pulse Grouping**: In compound and half-note meters, the click sounds on every beat (♩. in 6/8, 𝅗𝅥 in 2/2, 𝅗𝅥. in 6/4) or on every division (♪ in 6/8, ♩ otherwise). The beat lights read in threes or twos either way.
 - **Volume & Mute**: Direct volume slider with instant mute toggle.
 - **Drone**: a steady shruti box or pad on any of the seven notes to sing against, with its own volume. Over D the melody is Dorian, over A Aeolian; exercise links carry the drone note ([ADR 0092](docs/adr/0092-drone.md)).
+- **Drone tuning**: A = 440 Hz by default, or 415 (Baroque), 430 (Classical), 442 and 466 Hz (Renaissance), to rehearse at the pitch of a period ensemble. Links carry it with the drone note ([ADR 0094](docs/adr/0094-drone-tuning.md)).
 
 ### 10. Stationary Wait-In-Place Count-In
 - When **Count-In** is enabled, starting playback initiates a 1-measure preparatory count-in. It can be switched off in Settings → Practice → Assists.
@@ -518,8 +519,9 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0089](docs/adr/0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted |
 | [0090](docs/adr/0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted; amended by 0093 |
 | [0091](docs/adr/0091-jank-free-beat-and-measure-frames.md) | Jank-Free Beat and Measure Frames | Accepted |
-| [0092](docs/adr/0092-drone.md) | Drone: a Steady Tonic to Sight-Sing Against | Accepted |
+| [0092](docs/adr/0092-drone.md) | Drone: a Steady Tonic to Sight-Sing Against | Accepted; amended by 0094 |
 | [0093](docs/adr/0093-common-time-and-alla-breve-signs.md) | Common-Time and Alla Breve Signs | Accepted |
+| [0094](docs/adr/0094-drone-tuning.md) | Drone Tuning: Baroque, Classical and Renaissance Pitch | Accepted |
 
 ---
 

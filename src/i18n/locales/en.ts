@@ -173,6 +173,11 @@ const en = {
   droneSoundAria: 'Drone timbre',
   droneShruti: 'Shruti box',
   dronePad: 'Pad',
+  droneTuning: 'Drone tuning',
+  droneTuningAria: 'Reference pitch of the drone (A4)',
+  tuningBaroque: 'Baroque',
+  tuningClassical: 'Classical',
+  tuningRenaissance: 'Renaissance',
   droneVolume: 'Drone volume',
   droneVolumeAria: 'Drone volume',
 
@@ -185,7 +190,7 @@ const en = {
   // Exercise link (ADR 0085)
   shareGroup: 'Share',
   shareButton: 'Exercise link',
-  shareTitle: 'Send these exercise settings as a link, with the drone note. Language, theme, sounds and volume stay with each user.',
+  shareTitle: 'Send these exercise settings as a link, with the drone note and tuning. Language, theme, sounds and volume stay with each user.',
   shareText: 'Practise this sight-reading exercise on Guidonica',
   shareCopied: 'Link copied. Whoever opens it practises with these settings.',
   shareCopyPrompt: 'Copy this exercise link:',

@@ -15,6 +15,7 @@ import {
   MIN_TEMPO,
   MIN_ZOOM,
   PitchClassOptions,
+  REFERENCE_PITCHES,
   SolfegeLabelMode,
   SoundProfile,
   TIME_SIGNATURES,
@@ -91,6 +92,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   droneNote: 'off',
   droneSound: 'shruti', // Sustained: the steadiest reference to sing against
   droneVolume: 0.6,
+  referencePitch: 440,
   zoom: DEFAULT_ZOOM,
   zoomMode: 'auto',
   showPlayhead: true,
@@ -227,6 +229,7 @@ export function loadStoredSettings(): AppSettings {
       droneNote: pickEnum<DroneNote>(parsed.droneNote, DRONE_NOTES, d.droneNote),
       droneSound: pickEnum<DroneSound>(parsed.droneSound, DRONE_SOUNDS, d.droneSound),
       droneVolume: pickNumber(parsed.droneVolume, 0, 1, d.droneVolume),
+      referencePitch: REFERENCE_PITCHES.find((hz) => hz === parsed.referencePitch) ?? d.referencePitch,
       zoom,
       zoomMode,
       showPlayhead: pickBool(parsed.showPlayhead, d.showPlayhead),

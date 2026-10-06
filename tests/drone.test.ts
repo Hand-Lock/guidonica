@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createDroneVoice, droneFrequency } from '../src/audio/drone';
 import { MetronomeEngine } from '../src/audio/metronome';
-import { DRONE_SOUNDS, PITCH_CLASSES } from '../src/notation/types';
+import { DRONE_SOUNDS, PITCH_CLASSES, REFERENCE_PITCHES } from '../src/notation/types';
 
 type ParamCall = [string, ...number[]];
 
@@ -119,6 +119,18 @@ describe('drone voice (ADR 0092)', () => {
     expect(freqs).toEqual([...freqs].sort((x, y) => x - y));
   });
 
+  it('tunes from any reference pitch (ADR 0094)', () => {
+    expect(droneFrequency('a', 415)).toBe(207.5);
+    expect(droneFrequency('a', 466)).toBe(233);
+    expect(droneFrequency('c', 415)).toBeCloseTo(123.38, 2);
+    for (const a4 of REFERENCE_PITCHES) {
+      for (const pc of PITCH_CLASSES) expect(droneFrequency(pc, a4)).toBeCloseTo((droneFrequency(pc) * a4) / 440, 9);
+    }
+    const ctx = new MockContext();
+    createDroneVoice(asCtx(ctx), asNode(new MockNode()), 'pad', 'a', 0, 430);
+    expect(ctx.oscillators.filter((o) => o.type === 'sawtooth').map((o) => o.frequency.value)).toEqual([215, 215]);
+  });
+
   for (const sound of DRONE_SOUNDS) {
     it(`builds the ${sound} on the tonic and frees every node after the release`, () => {
       const ctx = new MockContext();
@@ -188,6 +200,7 @@ describe('drone in the metronome engine (ADR 0092)', () => {
     expect(m.getDroneNote()).toBe('off');
     expect(m.getDroneSound()).toBe('shruti');
     expect(m.getDroneVolume()).toBe(0.6);
+    expect(m.getReferencePitch()).toBe(440);
     expect(DRONE_SOUNDS).toContain(m.getDroneSound());
   });
 
@@ -238,6 +251,21 @@ describe('drone in the metronome engine (ADR 0092)', () => {
 
     m.setDroneNote('off');
     expect(ctx.oscillators.every((o) => o.startTime === null || o.stopTime !== null)).toBe(true);
+  });
+
+  it('crossfades a tuning change while playing and ignores repeats (ADR 0094)', () => {
+    const m = setup();
+    m.setReferencePitch(415); // Stopped: nothing to retune
+    expect(saws()).toHaveLength(0);
+    m.setDroneNote('a');
+    m.start(false);
+    expect(saws().every((o) => o.frequency.value === 207.5)).toBe(true);
+    ctx.currentTime = 11;
+    m.setReferencePitch(415);
+    expect(saws()).toHaveLength(2);
+    m.setReferencePitch(466);
+    expect(saws().slice(0, 2).every((o) => o.stopTime === 12)).toBe(true);
+    expect(saws().slice(2).every((o) => o.startTime === 11 && o.frequency.value === 233)).toBe(true);
   });
 
   it('drives the drone bus from its volume and the shared mute', () => {

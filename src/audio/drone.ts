@@ -12,10 +12,13 @@ export interface DroneVoice {
 
 const SEMITONES = [0, 2, 4, 5, 7, 9, 11];
 
-/** The tonic in octave 3, 12-TET with A4 = 440 Hz: C3 ≈ 130.81 Hz … B3 ≈ 246.94 Hz. */
-export function droneFrequency(pc: PitchClass): number {
+/**
+ * The tonic in octave 3, 12-TET from `a4` (ADR 0094): at 440 Hz C3 ≈ 130.81 Hz … B3 ≈ 246.94 Hz,
+ * at 415 Hz A3 = 207.5 Hz.
+ */
+export function droneFrequency(pc: PitchClass, a4 = 440): number {
   const midi = 48 + SEMITONES[PITCH_CLASSES.indexOf(pc)];
-  return 440 * Math.pow(2, (midi - 69) / 12);
+  return a4 * Math.pow(2, (midi - 69) / 12);
 }
 
 /** Output level per timbre, equalized to the same RMS in an offline render. */
@@ -73,17 +76,18 @@ function lfo(ctx: BaseAudioContext, rate: number, depth: number, target: AudioPa
 }
 
 /**
- * Builds a drone voice on `pc` that starts at `at` and feeds `out`. Every timbre ends in
- * one envelope gain, so attack and release are click-free `setTargetAtTime` curves.
+ * Builds a drone voice on `pc`, tuned from `a4`, that starts at `at` and feeds `out`. Every
+ * timbre ends in one envelope gain, so attack and release are click-free `setTargetAtTime` curves.
  */
 export function createDroneVoice(
   ctx: BaseAudioContext,
   out: AudioNode,
   sound: DroneSound,
   pc: PitchClass,
-  at: number
+  at: number,
+  a4 = 440
 ): DroneVoice {
-  const f = droneFrequency(pc);
+  const f = droneFrequency(pc, a4);
   const env = ctx.createGain();
   env.gain.setValueAtTime(0, at);
   env.gain.setTargetAtTime(LEVEL[sound], at, ATTACK[sound]);

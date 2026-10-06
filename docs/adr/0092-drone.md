@@ -1,6 +1,6 @@
 # 0092. Drone: a Steady Tonic to Sight-Sing Against
 
-- **Status**: Accepted
+- **Status**: Accepted, amended by [0094](0094-drone-tuning.md) (drone tuning)
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
 
@@ -28,7 +28,7 @@ The drone must follow the project's audio rules: no samples, nothing outside nat
 
 ### 2. Pitch (`src/audio/drone.ts`)
 
-The tonic sits in octave 3, 12-TET with A4 = 440 Hz:
+The tonic sits in octave 3, 12-TET with A4 = 440 Hz (ADR 0094 makes A4 a setting):
 
 $$f = 440 \cdot 2^{(m - 69)/12}, \qquad m = 48 + [0, 2, 4, 5, 7, 9, 11]_i$$
 
