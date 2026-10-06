@@ -84,6 +84,7 @@ describe('MetronomeEngine', () => {
       currentTime: 10.0,
       state: 'running',
       destination: {},
+      createWaveShaper: () => ({ connect: () => {}, curve: null, oversample: 'none' }),
       createGain: () => ({
         connect: () => {},
         disconnect: () => {},
@@ -204,6 +205,7 @@ describe('MetronomeEngine', () => {
       baseLatency: 0,
       state: 'running',
       destination: {},
+      createWaveShaper: () => ({ connect: () => {}, curve: null, oversample: 'none' }),
       createGain: () => ({
         connect: () => {},
         disconnect: () => {},

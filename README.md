@@ -520,9 +520,10 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0089](docs/adr/0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted |
 | [0090](docs/adr/0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted; amended by 0093 |
 | [0091](docs/adr/0091-jank-free-beat-and-measure-frames.md) | Jank-Free Beat and Measure Frames | Accepted |
-| [0092](docs/adr/0092-drone.md) | Drone: a Steady Tonic to Sight-Sing Against | Accepted; amended by 0094 |
+| [0092](docs/adr/0092-drone.md) | Drone: a Steady Tonic to Sight-Sing Against | Accepted; amended by 0094, 0095 |
 | [0093](docs/adr/0093-common-time-and-alla-breve-signs.md) | Common-Time and Alla Breve Signs | Accepted |
 | [0094](docs/adr/0094-drone-tuning.md) | Drone Tuning: Baroque, Classical and Renaissance Pitch | Accepted |
+| [0095](docs/adr/0095-output-soft-clipper.md) | Output Headroom: a Zero-Latency Soft Clipper | Accepted |
 
 ---
 

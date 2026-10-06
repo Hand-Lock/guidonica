@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createDroneVoice, droneFrequency } from '../src/audio/drone';
 import { MetronomeEngine } from '../src/audio/metronome';
+import { softClipCurve } from '../src/audio/output';
 import { DRONE_SOUNDS, PITCH_CLASSES, REFERENCE_PITCHES } from '../src/notation/types';
 
 type ParamCall = [string, ...number[]];
@@ -68,6 +69,11 @@ class MockFilter extends MockNode {
   gain = new MockParam();
 }
 
+class MockShaper extends MockNode {
+  curve: Float32Array | null = null;
+  oversample = '4x';
+}
+
 class MockContext {
   currentTime = 0;
   state = 'running';
@@ -76,7 +82,13 @@ class MockContext {
   oscillators: MockOscillator[] = [];
   gains: MockGain[] = [];
   filters: MockFilter[] = [];
+  shapers: MockShaper[] = [];
   waves = 0;
+  createWaveShaper(): MockShaper {
+    const node = new MockShaper();
+    this.shapers.push(node);
+    return node;
+  }
   createOscillator(): MockOscillator {
     const node = new MockOscillator();
     this.oscillators.push(node);
@@ -272,7 +284,7 @@ describe('drone in the metronome engine (ADR 0092)', () => {
     const m = setup();
     m.setDroneVolume(0.3);
     m.unlock();
-    expect(droneBus().outputs).toEqual([ctx.destination]);
+    expect(droneBus().outputs).toEqual([ctx.gains[2]]);
     expect(droneBus().gain.value).toBe(0.3);
 
     m.setMuted(true);
@@ -282,6 +294,21 @@ describe('drone in the metronome engine (ADR 0092)', () => {
     expect(droneBus().gain.calls.at(-1)).toEqual(['target', 0, 10, 0.02]);
     m.setMuted(false);
     expect(droneBus().gain.calls.at(-1)).toEqual(['target', 1, 10, 0.02]);
+  });
+
+  it('meets the click in one soft clipper before the destination (ADR 0095)', () => {
+    const m = setup();
+    m.unlock();
+    const [master, bus, stage] = ctx.gains;
+    expect(master.outputs).toEqual([stage]);
+    expect(bus.outputs).toEqual([stage]);
+    expect(stage.gain.value).toBe(0.5);
+    expect(ctx.shapers).toHaveLength(1);
+    const [shaper] = ctx.shapers;
+    expect(stage.outputs).toEqual([shaper]);
+    expect(shaper.outputs).toEqual([ctx.destination]);
+    expect(shaper.oversample).toBe('none');
+    expect(shaper.curve).toEqual(softClipCurve());
   });
 
   it('feeds the drone bus, not the click master gain', () => {

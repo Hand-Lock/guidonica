@@ -1,6 +1,6 @@
 # 0092. Drone: a Steady Tonic to Sight-Sing Against
 
-- **Status**: Accepted, amended by [0094](0094-drone-tuning.md) (drone tuning)
+- **Status**: Accepted, amended by [0094](0094-drone-tuning.md) (drone tuning) and [0095](0095-output-soft-clipper.md) (output headroom)
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
 
@@ -67,6 +67,6 @@ Settings → Practice gains, after Volume: **Drone** (Off + seven notes, named b
 - **Bundle**: the app chunk grows 1.39 kB gzipped (38.85 → 40.24 kB), each lazy locale about 0.18 kB; CSS is unchanged.
 - **CPU**: each voice is 3 oscillators and 3–5 other nodes on the audio thread; the main thread does nothing while it sounds.
 - **Memory**: nothing is retained after a release; voices disconnect themselves once their sources end.
-- **Clipping**: drone and click sum at the destination; with both volumes at 1 a click over a drone peak can briefly exceed full scale. At the defaults (0.8 and 0.6) the drone peaks near 0.3.
+- **Clipping**: drone and click sum at the destination; with both volumes at 1 a click over a drone peak can briefly exceed full scale. At the defaults (0.8 and 0.6) the drone peaks near 0.3. ADR 0095 rounds those peaks with a zero-latency soft clipper.
 - **Accidentals**: should the generator ever write sharps and flats, `DRONE_NOTES` can grow with them; the frequency table is the only other place to change.
 - **Tests**: `tests/drone.test.ts` checks the frequencies, each graph's lifecycle and the engine wiring on a recording mock context; `tests/storage.test.ts`, `tests/share.test.ts` and `tests/tips.test.ts` cover the settings, the link and the tip.

@@ -12,6 +12,7 @@ import {
   clampTempo,
 } from '../notation/types';
 import { DroneVoice, createDroneVoice } from './drone';
+import { createOutputStage } from './output';
 
 /** Beat currently being heard, derived from the hardware audio clock (no timers). */
 export interface BeatInfo {
@@ -164,10 +165,12 @@ export class MetronomeEngine {
         this.ctx = new AudioCtxClass();
         this.ctx.onstatechange = this.handleAudioContextStateChange;
         this.masterGainNode = this.ctx.createGain();
-        this.masterGainNode.connect(this.ctx.destination);
         this.droneBus = this.ctx.createGain();
         this.droneBus.gain.value = this.droneBusGain();
-        this.droneBus.connect(this.ctx.destination);
+        // Click plus drone can pass full scale: both meet in one soft clipper (ADR 0095)
+        const output = createOutputStage(this.ctx);
+        this.masterGainNode.connect(output);
+        this.droneBus.connect(output);
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {

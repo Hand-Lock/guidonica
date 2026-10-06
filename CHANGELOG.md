@@ -40,6 +40,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - ADR 0093 documents the C and ¢ signs: `timeSignatureSpec` spells 4/4 and 2/2 for VexFlow when the new `meterSigns` setting is on, display only, left out of links; `SPEC.md` §2 and §6 and the README describe it.
 - ADR 0094 documents the drone tuning: the `referencePitch` setting (`REFERENCE_PITCHES`), `droneFrequency(pc, a4)`, `MetronomeEngine.setReferencePitch` and the additive `a4=` link parameter; `SPEC.md` §5 and §6 and the README describe it.
 - ADR 0094 §5 records the D shortcut: `applyDroneNote` serves the drone select and the key, and the last note lives in memory only.
+- ADR 0095: a zero-latency soft clipper on the output keeps click plus drone below full scale (`src/audio/output.ts`).
 
 ## [2026.10.1] - 2026-10-06
 
