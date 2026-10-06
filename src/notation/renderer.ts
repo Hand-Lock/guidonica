@@ -31,6 +31,7 @@ import {
   TimeSignature,
   isGrouped,
   resolveTheme,
+  timeSignatureSpec,
 } from './types';
 
 const tieHeadOffsets = new Map<string, number>();
@@ -415,9 +416,15 @@ export class MeasureRenderer {
   /**
    * Renders the stationary clef and selected time signature glyphs onto an offscreen
    * canvas to pin at the left margin. A null clef or time signature is left out
-   * (the intro's clef and meter icons draw one glyph alone).
+   * (the intro's clef and meter icons draw one glyph alone). With `meterSigns`, 4/4 and
+   * 2/2 are written C and ¢ (ADR 0093).
    */
-  public renderPinnedClef(clef: Clef | null, timeSignature: TimeSignature | null, theme: ThemeMode): HTMLCanvasElement {
+  public renderPinnedClef(
+    clef: Clef | null,
+    timeSignature: TimeSignature | null,
+    theme: ThemeMode,
+    meterSigns = false
+  ): HTMLCanvasElement {
     const dpr = this.dpr;
     const zoom = this.zoom;
     const width = PINNED_HEADER_WIDTH;
@@ -448,7 +455,7 @@ export class MeasureRenderer {
     ]);
 
     if (clef) stave.addClef(clef);
-    if (timeSignature) stave.addTimeSignature(timeSignature);
+    if (timeSignature) stave.addTimeSignature(timeSignatureSpec(timeSignature, meterSigns));
     stave.setStyle({ strokeStyle: headerColor, fillStyle: headerColor });
     for (const mod of stave.getModifiers()) {
       mod.setStyle({ fillStyle: headerColor, strokeStyle: headerColor });

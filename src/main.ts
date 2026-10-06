@@ -32,6 +32,7 @@ import {
   computeOptimalZoom,
   getBeatsPerMeasure,
   isCompound,
+  hasMeterSign,
   isGrouped,
   isHalfNoteMeter,
   isTupletSupported,
@@ -170,6 +171,8 @@ class GuidonicaApp {
   private selectTimeSig: HTMLSelectElement;
   private toggleHalfNoteBeat: HTMLInputElement;
   private groupPulse: HTMLElement;
+  private groupMeterSigns: HTMLElement;
+  private toggleMeterSigns: HTMLInputElement;
   private selectPulse: HTMLSelectElement;
   private selectClef: HTMLSelectElement;
   private clefRangeHint: HTMLElement;
@@ -296,6 +299,8 @@ class GuidonicaApp {
     this.selectTimeSig = document.getElementById('select-time-signature') as HTMLSelectElement;
     this.toggleHalfNoteBeat = document.getElementById('toggle-half-note-beat') as HTMLInputElement;
     this.groupPulse = document.getElementById('group-pulse') as HTMLElement;
+    this.groupMeterSigns = document.getElementById('group-meter-signs') as HTMLElement;
+    this.toggleMeterSigns = document.getElementById('toggle-meter-signs') as HTMLInputElement;
     this.selectPulse = document.getElementById('select-pulse') as HTMLSelectElement;
     this.selectClef = document.getElementById('select-clef') as HTMLSelectElement;
     this.clefRangeHint = document.getElementById('clef-range-hint') as HTMLElement;
@@ -470,6 +475,7 @@ class GuidonicaApp {
     // Time signature, half-note toggle & pulse
     this.syncMeterControls(settings.timeSignature);
     this.selectPulse.value = settings.pulse;
+    this.toggleMeterSigns.checked = settings.meterSigns;
 
     // Clef, ledger lines & range hint
     this.selectClef.value = settings.clef;
@@ -772,6 +778,12 @@ class GuidonicaApp {
     this.toggleHalfNoteBeat.addEventListener('change', (e) => {
       const half = (e.target as HTMLInputElement).checked;
       this.setTimeSignature(withHalfNoteBeat(globalState.settings.timeSignature, half));
+    });
+
+    // C and ¢ for 4/4 and 2/2: a reading preference, the header only (ADR 0093)
+    this.toggleMeterSigns.addEventListener('change', () => {
+      globalState.updateSettings({ meterSigns: this.toggleMeterSigns.checked });
+      this.renderIfIdle();
     });
 
     // Pulse of grouped meters: every felt beat or every metric beat (ADR 0076, 0090)
@@ -1123,6 +1135,7 @@ class GuidonicaApp {
     }
     this.selectTimeSig.value = ts;
 
+    this.groupMeterSigns.classList.toggle('hidden', !hasMeterSign(ts));
     this.groupPulse.classList.toggle('hidden', !isGrouped(ts));
     const m = t();
     const [beat, division] = !isCompound(ts)

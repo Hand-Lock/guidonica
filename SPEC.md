@@ -31,6 +31,7 @@ The user must have full control over the generation engine prior to and during a
 2. **Time Signature**:
    - Common meters: `2/4`, `3/4`, `4/4` (simple) and `6/8`, `9/8`, `12/8` (compound, beat = ♩.). 9/8 reads like 3/4 and 12/8 like 4/4, one level up (ADR 0076).
    - **Half-note beat** switch (ADR 0090): the same six meters one note value longer, for early music: `4/2`, `3/2`, `2/2` (alla breve, ¢; beat = 𝅗𝅥) and `6/4`, `9/4`, `12/4` (beat = 𝅗𝅥.), the modern transcriptions of the four mensurations. The setting stores the actual meter; the switch only swaps each choice for its counterpart, in Settings and in the intro.
+   - **C and ¢ signs** (ADR 0093): an opt-in setting writes 4/4 as C (common time) and 2/2 as ¢ (alla breve) in the pinned header. It changes the spelling only, never the meter, and is not part of exercise links.
    - **Tempo is always quarter-note BPM**: the same BPM moves notes at the same speed in 4/4, 2/2 and 6/4, and the half-note click of 2/2 sounds at BPM/2.
    - **Pulse**: in compound and half-note meters the click sounds on every felt beat (default: ♩. in 6/8, 𝅗𝅥 in 2/2, 𝅗𝅥. in 6/4) or on every division (♪ in 6/8, ♩ otherwise).
    - The generator ensures each measure strictly satisfies the metric beat count and beaming conventions of the selected meter.
@@ -219,7 +220,7 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 ### Control Panel
 - **Header**: logo (opens About), Level button, Start/Pause, Reset, BPM slider + number input with the Italian tempo marking, beat lights, theme cycle button (wide screens), fullscreen (where supported) and the settings button.
 - **Settings drawer**, in four sections:
-  - **Staff**: clef (8), ledger lines above and below (0–3) with the live range hint, time signature with the Half-note beat switch, pulse (beat or division, in compound and half-note meters).
+  - **Staff**: clef (8), ledger lines above and below (0–3) with the live range hint, time signature with the Half-note beat switch, C and ¢ signs (in 4/4 and 2/2), pulse (beat or division, in compound and half-note meters).
   - **Rhythm**: note values (w, h, q, 8, 16, 32), dotted, tuplet matrix (with Clear all), rests, ties.
   - **Melody**: notes (C … B), intervals (unison … 9+).
   - **Practice**: language, labels (None / Syllables / Letters), assists (count-in, playhead, tips), click sound, volume, drone (note, sound, volume), theme, exercise link.

@@ -349,6 +349,14 @@ describe('rotating tips storage (ADR 0087)', () => {
     expect(loadStoredSettings().droneVolume).toBe(1);
   });
 
+  it('writes numbers by default and keeps only a boolean C and ¢ choice (ADR 0093)', () => {
+    expect(loadStoredSettings().meterSigns).toBe(false);
+    saveStoredSettings({ ...DEFAULT_APP_SETTINGS, meterSigns: true });
+    expect(loadStoredSettings().meterSigns).toBe(true);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ meterSigns: 'yes' }));
+    expect(loadStoredSettings().meterSigns).toBe(false);
+  });
+
   it('stores the tip count and reads junk as zero', () => {
     expect(TIP_COUNT_KEY).toBe('guidonica_tip_count_v1');
     expect(loadTipCount()).toBe(0);

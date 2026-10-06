@@ -64,7 +64,7 @@ describe('exercise links (ADR 0085)', () => {
   it('carries no personal preferences', () => {
     const settings: AppSettings = {
       ...base(), language: 'de', theme: 'dark', volume: 0.1, zoom: 0.5, showTips: false,
-      droneSound: 'pad', droneVolume: 0.2,
+      droneSound: 'pad', droneVolume: 0.2, meterSigns: true,
     };
     const hash = encodeExercise(settings);
     expect(hash).toBe(encodeExercise(base()));

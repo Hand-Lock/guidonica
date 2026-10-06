@@ -56,6 +56,8 @@ const de: Messages = {
   pulseQuarter: 'Viertel (♩)',
   halfNoteBeat: 'Halbe als Schlag',
   halfNoteBeatTitle: 'In Halben zählen, wie in Alter Musik: aus 4/4 wird 4/2, aus 2/4 wird 2/2 (alla breve), aus 6/8 wird 6/4',
+  meterSigns: 'Zeichen C und ¢',
+  meterSignsTitle: '4/4 als C (Viervierteltakt) und 2/2 als ¢ (alla breve) schreiben',
 
   sectionRhythm: 'Rhythmus',
   noteValues: 'Notenwerte',

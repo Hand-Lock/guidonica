@@ -152,7 +152,7 @@ export function renderLevelPreview(
 
   drawStaff(ctx, 0, STRIP_WIDTH, offsetY + STAVE_TOP_LINE_Y * STRIP_SCALE, STRIP_SCALE, palette.staff);
 
-  const header = renderer.renderPinnedClef(settings.clef, settings.timeSignature, settings.theme);
+  const header = renderer.renderPinnedClef(settings.clef, settings.timeSignature, settings.theme, settings.meterSigns);
   ctx.drawImage(header, 0, offsetY, header.width / currentDpr(), header.height / currentDpr());
   releasePreview(header);
 

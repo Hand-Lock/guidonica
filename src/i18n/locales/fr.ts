@@ -58,6 +58,8 @@ const fr: Messages = {
   pulseQuarter: 'Noire (♩)',
   halfNoteBeat: 'Temps à la blanche',
   halfNoteBeatTitle: `Compter à la blanche, comme en musique ancienne${NB}: 4/4 devient 4/2, 2/4 devient 2/2 (alla breve), 6/8 devient 6/4`,
+  meterSigns: 'Signes C et ¢',
+  meterSignsTitle: 'Écrire 4/4 en C et 2/2 en ¢ (alla breve)',
 
   sectionRhythm: 'Rythme',
   noteValues: 'Valeurs',

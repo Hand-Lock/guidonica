@@ -56,6 +56,8 @@ const it: Messages = {
   pulseQuarter: 'Semiminima (♩)',
   halfNoteBeat: 'Movimento di minima',
   halfNoteBeatTitle: 'Conta in minime, come nella musica antica: 4/4 diventa 4/2, 2/4 diventa 2/2 (alla breve), 6/8 diventa 6/4',
+  meterSigns: 'Segni C e ¢',
+  meterSignsTitle: 'Scrivi 4/4 come C (tempo ordinario) e 2/2 come ¢ (alla breve)',
 
   sectionRhythm: 'Ritmo',
   noteValues: 'Valori',

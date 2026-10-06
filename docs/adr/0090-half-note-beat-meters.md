@@ -1,6 +1,6 @@
 # 0090. Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4
 
-- **Status**: Accepted (amends [0054](0054-responsive-header-fit-audit.md), [0065](0065-grammar-driven-rhythm-sampler.md), [0071](0071-intro-meter-step.md), [0072](0072-three-level-beat-accent-hierarchy.md), [0076](0076-compound-triple-and-quadruple-meters.md))
+- **Status**: Accepted, amended by [0093](0093-common-time-and-alla-breve-signs.md) (amends [0054](0054-responsive-header-fit-audit.md), [0065](0065-grammar-driven-rhythm-sampler.md), [0071](0071-intro-meter-step.md), [0072](0072-three-level-beat-accent-hierarchy.md), [0076](0076-compound-triple-and-quadruple-meters.md))
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
 
@@ -72,7 +72,7 @@ ADR 0076 modelled 6/8 as **eighth metric beats grouped in threes**. Half-note me
 
 - `vexDuration('b')` → `'1/2'`, VexFlow's breve. Its notehead (U+E0A0) and rest (U+E4E2) are already in the Guidonica Notation subset (ADR 0058), and `tests/musicFontCoverage.test.ts` now draws both.
 - Beaming: VexFlow's default groups for `x/2` are `['1/2']` and for `x/4` compound `['3/4']`. Grouped quarter-beat meters also pass `secondaryBreaks: '4'`, so sixteenth beams break at the quarter (Gould).
-- 2/2 is drawn with numerals, consistent with 4/4 never being drawn as C. The intro description and the settings tooltip name it *alla breve*, ¢.
+- 2/2 is drawn with numerals, consistent with 4/4 never being drawn as C. The intro description and the settings tooltip name it *alla breve*, ¢. ADR 0093 later added an opt-in C and ¢.
 
 ### 6. Tuplets (`types.ts`)
 
@@ -95,7 +95,7 @@ ADR 0076 modelled 6/8 as **eighth metric beats grouped in threes**. Half-note me
 - ♩ BPM everywhere keeps one tempo scale and one tape speed. Users who think in half-note BPM double the number. The tooltip and the pulse labels make the beat explicit.
 - `beatGroup` replaces the "compound means eighths" assumption. A future 3/8 or 3/1 needs only its row and tables.
 - The breve and dotted breve exist only where a bar can hold them, so no other meter's grammar changed.
-- Deferred: half-note tuplets, a ¢/C glyph option for 2/2 and 4/4, and longer bars (3/1, 2/1) or their maxima.
+- Deferred: half-note tuplets and longer bars (3/1, 2/1) or their maxima. The ¢/C glyph option for 2/2 and 4/4 shipped in ADR 0093.
 
 ## Sources
 

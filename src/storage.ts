@@ -83,6 +83,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   language: 'en', // Replaced by the detected browser language on load
   soundProfile: 'woodblock',
   pulse: 'beat',
+  meterSigns: false,
   countIn: true,
   theme: 'auto',
   volume: 0.8,
@@ -218,6 +219,7 @@ export function loadStoredSettings(): AppSettings {
       // `compoundPulse` and, before it, `pulse68` are the keys before half-note meters shared
       // the setting (ADR 0076, 0090)
       pulse: parsePulse(parsed.pulse ?? parsed.compoundPulse ?? parsed.pulse68) ?? d.pulse,
+      meterSigns: pickBool(parsed.meterSigns, d.meterSigns),
       countIn: pickBool(parsed.countIn, d.countIn),
       theme,
       volume: pickNumber(parsed.volume, 0, 1, d.volume),

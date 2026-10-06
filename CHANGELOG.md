@@ -18,6 +18,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - Half-note time signatures for early music. A Half-note beat switch in Settings → Staff and in the welcome guide turns 4/4, 3/4, 2/4, 6/8, 9/8 and 12/8 into 4/2, 3/2, 2/2 (alla breve), 6/4, 9/4 and 12/4, with half-note clicks, breves and the breve rest (ADR 0090).
 - A drone to sing against: a steady shruti box or pad on any note, with its own volume, in Settings → Practice. Exercise links carry the drone note (ADR 0092).
+- Common-time and alla breve signs: Settings → Staff can write 4/4 as C and 2/2 as ¢ (ADR 0093).
 
 ### Changed
 
@@ -34,6 +35,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - ADR 0090 documents the half-note beat meters. Meters gain a `beatGroup` (metric beats per felt beat), the `compoundPulse` setting becomes `pulse` (`beat` or `division`; old settings and links still load), and the beat lights group by `beatGroup`.
 - ADR 0091 documents jank-free beat and measure frames: compositor-only beat lights, VexFlow measures rendered in idle callbacks, an idempotent `syncUI`, and cached canvas gradients and dark-mode query; `SPEC.md` §3 and §5 and `AGENTS.md` §1 describe it.
 - ADR 0092 documents the drone, including why the tanpura timbre was retired (its pluck cycle ignored the tempo): `src/audio/drone.ts` voices on a drone bus beside the click's master gain, the `droneNote`, `droneSound` and `droneVolume` settings and the additive `drone=` link parameter; `SPEC.md` §5 and §6, `AGENTS.md` §1 and §2 and the README describe it.
+- ADR 0093 documents the C and ¢ signs: `timeSignatureSpec` spells 4/4 and 2/2 for VexFlow when the new `meterSigns` setting is on, display only, left out of links; `SPEC.md` §2 and §6 and the README describe it.
 
 ## [2026.10.1] - 2026-10-06
 

@@ -69,6 +69,8 @@ const en = {
   pulseQuarter: 'Quarter (♩)',
   halfNoteBeat: 'Half-note beat',
   halfNoteBeatTitle: 'Count in half notes, as in early music: 4/4 becomes 4/2, 2/4 becomes 2/2 (alla breve), 6/8 becomes 6/4',
+  meterSigns: 'C and ¢ signs',
+  meterSignsTitle: 'Write 4/4 as C (common time) and 2/2 as ¢ (alla breve)',
 
   // Rhythm
   sectionRhythm: 'Rhythm',

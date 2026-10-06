@@ -97,6 +97,18 @@ export function withHalfNoteBeat(ts: TimeSignature, half: boolean): TimeSignatur
   return ts;
 }
 
+/** The meters a sign can stand for: C for 4/4 (common time), ¢ for 2/2 (alla breve), ADR 0093. */
+const METER_SIGNS: Partial<Record<TimeSignature, string>> = { '4/4': 'C', '2/2': 'C|' };
+
+export function hasMeterSign(ts: TimeSignature): boolean {
+  return ts in METER_SIGNS;
+}
+
+/** VexFlow's time signature spec for `ts`: its sign when `signs` is on, otherwise the numbers. Display only. */
+export function timeSignatureSpec(ts: TimeSignature, signs: boolean): string {
+  return (signs && METER_SIGNS[ts]) || ts;
+}
+
 export type BeatAccent = 'primary' | 'secondary' | 'weak';
 
 /**
@@ -571,6 +583,7 @@ export interface AppSettings {
   language: Language; // UI language and national note naming (ADR 0059)
   soundProfile: SoundProfile;
   pulse: PulseMode;
+  meterSigns: boolean; // Write 4/4 as C and 2/2 as ¢ (ADR 0093)
   countIn: boolean;
   theme: ThemeMode;
   volume: number; // 0.0 to 1.0

@@ -55,6 +55,7 @@ export class ScrollerView {
   private pinnedClefCanvas: HTMLCanvasElement | null = null;
   private cachedClef: Clef | null = null;
   private cachedTimeSignature: TimeSignature | null = null;
+  private cachedMeterSigns = false;
   private cachedClefTheme: string | null = null;
 
   // Gradients cached per geometry and palette: no per-frame allocations (ADR 0091)
@@ -339,7 +340,7 @@ export class ScrollerView {
     }
 
     // 6. Draw pinned clef & time signature at the left margin with clean gradient fade
-    this.drawPinnedClef(ctx, settings.clef, settings.timeSignature, h, resolvedTheme);
+    this.drawPinnedClef(ctx, settings.clef, settings.timeSignature, settings.meterSigns, h, resolvedTheme);
 
     // 7. Draw fixed playhead guide line in high-contrast red accent (when enabled)
     if (settings.showPlayhead !== false) {
@@ -405,6 +406,7 @@ export class ScrollerView {
     ctx: CanvasRenderingContext2D,
     clef: Clef,
     timeSignature: TimeSignature,
+    meterSigns: boolean,
     height: number,
     theme: ResolvedTheme
   ): void {
@@ -416,11 +418,13 @@ export class ScrollerView {
       !this.pinnedClefCanvas ||
       this.cachedClef !== clef ||
       this.cachedTimeSignature !== timeSignature ||
+      this.cachedMeterSigns !== meterSigns ||
       this.cachedClefTheme !== theme
     ) {
-      this.pinnedClefCanvas = this.renderer.renderPinnedClef(clef, timeSignature, theme);
+      this.pinnedClefCanvas = this.renderer.renderPinnedClef(clef, timeSignature, theme, meterSigns);
       this.cachedClef = clef;
       this.cachedTimeSignature = timeSignature;
+      this.cachedMeterSigns = meterSigns;
       this.cachedClefTheme = theme;
     }
 

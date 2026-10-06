@@ -168,7 +168,7 @@ The settings drawer has four sections:
 
 | Section | Contents |
 | :--- | :--- |
-| **Staff** | Clef (8), ledger lines above and below (0–3) with a live range hint, time signature with the Half-note beat switch, pulse (beat or division) |
+| **Staff** | Clef (8), ledger lines above and below (0–3) with a live range hint, time signature with the Half-note beat switch, C and ¢ signs for 4/4 and 2/2, pulse (beat or division) |
 | **Rhythm** | Note values (quarter, eighth, half, whole, 16th, 32nd), dotted, tuplets, rests, ties |
 | **Melody** | Notes (C … B), intervals (unison … 9+) |
 | **Practice** | Language, labels, assists (count-in, playhead, tips), click sound, volume, theme, exercise link |
@@ -192,6 +192,7 @@ Each bar is sampled left to right over a 32nd grid from a grammar derived from t
 - **Simple meters (2/4, 3/4, 4/4)**: 4/4 keeps the middle of the bar visible (`q h q` is the tolerated syncopation); 3/4 is one undivided unit, so `h q` and `q h` both appear; 2/4 has no dotted half.
 - **Compound meters (6/8, 9/8, 12/8)**: the dotted-quarter beat stays visible. Dotted halves (`hd`), paired dotted quarters (`qd qd`), `q 8` and `8 q`, running eighths and sub-eighth figures. 9/8 reads like 3/4 one level up (`hd qd` and `qd hd`); 12/8 like 4/4 (dotted whole `wd`, the tolerated `qd hd qd`). Beams group eighths in threes ([ADR 0076](docs/adr/0076-compound-triple-and-quadruple-meters.md)).
 - **Half-note beat**: one switch turns every meter into its early-music counterpart, the modern transcriptions of the mensurations: 4/4 into 4/2, 3/4 into 3/2, 2/4 into 2/2 (alla breve), 6/8 into 6/4, 9/8 into 9/4, 12/8 into 12/4. Each reads like its counterpart one value longer: `q h q` is cut-time syncopation, a 4/2 bar can be one breve, eighths beam in fours per half note. Tempo stays in quarter-note BPM ([ADR 0090](docs/adr/0090-half-note-beat-meters.md)).
+- **C and ¢**: 4/4 can be written as C (common time) and 2/2 as ¢ (alla breve), the way hymnals, chorales and early-music editions print them. Only the sign changes; the bar, the click and the links stay the same ([ADR 0093](docs/adr/0093-common-time-and-alla-breve-signs.md)).
 - **Dotted Rhythms**: one toggle adds `wd` (12/8 and the half-note meters), `hd`, `qd`, `8d` and `16d`. A dotted value appears only beside a shorter partner that completes its beat.
 - **Ties**: written only where no single well-placed notehead can express the sound: across the middle of a 4/4 bar, across a dotted beat, into or out of tuplets, and **across the barline**, in chains ([ADR 0040](docs/adr/0040-engraving-grammar-for-ties-and-cross-barline-ties.md)). Tied notes keep their pitch.
 - **Rests**: spelled on the beat grid ([ADRs 0065](docs/adr/0065-grammar-driven-rhythm-sampler.md), [0066](docs/adr/0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md)):
@@ -515,9 +516,10 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0087](docs/adr/0087-rotating-tips.md) | Rotating Tips | Accepted |
 | [0088](docs/adr/0088-pre-release-audit-2026-10-06.md) | Pre-release Audit 2026-10-06: Second History Rewrite, Privacy Policy | Accepted |
 | [0089](docs/adr/0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted |
-| [0090](docs/adr/0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted |
+| [0090](docs/adr/0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted; amended by 0093 |
 | [0091](docs/adr/0091-jank-free-beat-and-measure-frames.md) | Jank-Free Beat and Measure Frames | Accepted |
 | [0092](docs/adr/0092-drone.md) | Drone: a Steady Tonic to Sight-Sing Against | Accepted |
+| [0093](docs/adr/0093-common-time-and-alla-breve-signs.md) | Common-Time and Alla Breve Signs | Accepted |
 
 ---
 

@@ -11,6 +11,8 @@ import {
   PLAYHEAD_MIN_CLEARANCE,
   TimeSignature,
   TIME_SIGNATURES,
+  hasMeterSign,
+  timeSignatureSpec,
 } from '../src/notation/types';
 import { MeasureRenderer } from '../src/notation/renderer';
 
@@ -89,6 +91,13 @@ describe('Stationary Clef and Time Signature Left Stave Header', () => {
     }
   });
 
+  it('rasterizes the C and ¢ signs (ADR 0093)', () => {
+    const renderer = new MeasureRenderer();
+    for (const ts of ['4/4', '2/2'] as TimeSignature[]) {
+      expect(renderer.renderPinnedClef('treble', ts, 'dark', true).width).toBe(PINNED_HEADER_WIDTH);
+    }
+  });
+
   it('scales offscreen header canvas dimensions proportionally with zoom and DPR', () => {
     const renderer = new MeasureRenderer();
     renderer.setDpr(2);
@@ -107,5 +116,16 @@ describe('Stationary Clef and Time Signature Left Stave Header', () => {
     const canvas125 = renderer.renderPinnedClef('alto', '6/8', 'light');
     expect(canvas125.width).toBe(Math.floor(PINNED_HEADER_WIDTH * 2 * 1.25));
     expect(canvas125.height).toBe(Math.floor(MEASURE_CANVAS_HEIGHT * 2 * 1.25));
+  });
+});
+
+describe('C and ¢ meter signs (ADR 0093)', () => {
+  it('writes 4/4 as C and 2/2 as ¢ only when the setting is on', () => {
+    for (const ts of TIME_SIGNATURES) {
+      const expected = ts === '4/4' ? 'C' : ts === '2/2' ? 'C|' : ts;
+      expect(timeSignatureSpec(ts, true), ts).toBe(expected);
+      expect(timeSignatureSpec(ts, false), ts).toBe(ts);
+      expect(hasMeterSign(ts), ts).toBe(expected !== ts);
+    }
   });
 });

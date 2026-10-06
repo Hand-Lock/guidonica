@@ -56,6 +56,8 @@ const es: Messages = {
   pulseQuarter: 'Negra (♩)',
   halfNoteBeat: 'Pulso de blanca',
   halfNoteBeatTitle: 'Contar en blancas, como en la música antigua: 4/4 pasa a 4/2, 2/4 a 2/2 (alla breve), 6/8 a 6/4',
+  meterSigns: 'Signos C y ¢',
+  meterSignsTitle: 'Escribir 4/4 como C (compasillo) y 2/2 como ¢ (alla breve)',
 
   sectionRhythm: 'Ritmo',
   noteValues: 'Figuras',

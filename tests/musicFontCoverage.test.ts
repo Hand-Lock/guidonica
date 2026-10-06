@@ -69,6 +69,14 @@ describe('Music font subset covers every glyph the renderer draws', () => {
     expect(missing()).toEqual([]);
   });
 
+  it('pinned headers: the C and ¢ signs (ADR 0093)', () => {
+    const renderer = new MeasureRenderer();
+    renderer.renderPinnedClef('treble', '4/4', 'light', true);
+    renderer.renderPinnedClef('treble', '2/2', 'light', true);
+    expect([...drawn]).toEqual(expect.arrayContaining([0xe08a, 0xe08b]));
+    expect(missing()).toEqual([]);
+  });
+
   for (const ts of TIME_SIGNATURES) {
     it(`${ts} stream: all subdivisions, dotted, rests, ties and tuplets on every clef`, () => {
       const tuplets = structuredClone(DEFAULT_APP_SETTINGS.tuplets);
