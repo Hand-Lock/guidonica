@@ -2,6 +2,26 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.1] - 2026-10-06
+
+### Added
+
+- « À propos » et le bas de page mènent à Guidonica sur Bluesky et Mastodon (ADR 0082).
+- « À propos » et le bas de page mènent aussi à Guidonica sur Instagram, où vous pouvez regarder la bande-annonce (ADR 0084).
+- Envoyez un exercice sous forme de lien : Réglages → Pratique → Lien vers l'exercice copie un lien avec votre clé, votre mesure, votre tempo, vos valeurs de notes et vos notes, et la personne qui l'ouvre travaille avec les mêmes réglages (ADR 0085).
+- Guidonica a une adresse dans chaque langue : guidonica.it/it/, /fr/, /de/ et /es/ s'ouvrent en italien, en français, en allemand et en espagnol, pour que les recherches dans ces langues la trouvent (ADR 0086).
+- À l'ouverture de Guidonica, une courte astuce signale des fonctions que vous avez peut-être manquées, comme les niveaux prédéfinis, les noms des notes et les liens d'exercice, et de temps en temps nos réseaux sociaux et Ko-fi. Désactivez les astuces dans Réglages → Pratique → Astuces. (ADR 0087)
+- Une politique de confidentialité, en anglais et en italien, accessible depuis « À propos » et le bas de page (ADR 0088).
+
+### Changed
+
+- La ligne sur la confidentialité dans « À propos » indique désormais que vos réglages restent sur votre appareil. Visiter le site contacte tout de même son hébergeur, GitHub Pages, comme l'explique la politique de confidentialité (ADR 0088).
+
+### Fixed
+
+- Dans Instagram, Facebook et Threads, qui ne pivotent pas, l'astuce sur le mode paysage explique désormais comment ouvrir Guidonica dans votre navigateur (ADR 0083).
+- Les boutons Nouveautés et À propos ne débordent plus de la fenêtre sur les téléphones étroits : les libellés longs passent à la ligne.
+
 ## [2026.10.0] - 2026-10-05
 
 ### Added

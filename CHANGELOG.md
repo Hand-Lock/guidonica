@@ -14,6 +14,10 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ## [Unreleased]
 
+## [2026.10.1] - 2026-10-06
+
+> Send an exercise as a link, discover hidden features through short tips, and open Guidonica in your language at guidonica.it/it/, /fr/, /de/ and /es/.
+
 ### Added
 
 - The About dialog and footer link to Guidonica on Bluesky and Mastodon (ADR 0082).
@@ -74,6 +78,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - First public release.
 
-[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.0...HEAD
+[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.1...HEAD
+[2026.10.1]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.0...v2026.10.1
 [2026.10.0]: https://github.com/Hand-Lock/guidonica/compare/v1.0.0...v2026.10.0
 [1.0.0]: https://github.com/Hand-Lock/guidonica/releases/tag/v1.0.0

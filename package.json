@@ -1,7 +1,7 @@
 {
   "name": "guidonica",
   "private": true,
-  "version": "2026.10.0",
+  "version": "2026.10.1",
   "description": "Free sight-reading and solfège practice: endless fresh sheet music scrolls past a playhead in time with a metronome",
   "type": "module",
   "scripts": {
