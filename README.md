@@ -247,6 +247,7 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 
 - **Pulse Grouping**: In compound and half-note meters, the click sounds on every beat (♩. in 6/8, 𝅗𝅥 in 2/2, 𝅗𝅥. in 6/4) or on every division (♪ in 6/8, ♩ otherwise). The beat lights read in threes or twos either way.
 - **Volume & Mute**: Direct volume slider with instant mute toggle.
+- **Drone**: a steady tanpura, shruti box or pad on any of the seven notes to sing against, with its own volume. Over D the melody is Dorian, over A Aeolian; exercise links carry the drone note ([ADR 0092](docs/adr/0092-drone.md)).
 
 ### 10. Stationary Wait-In-Place Count-In
 - When **Count-In** is enabled, starting playback initiates a 1-measure preparatory count-in. It can be switched off in Settings → Practice → Assists.
@@ -515,6 +516,8 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0088](docs/adr/0088-pre-release-audit-2026-10-06.md) | Pre-release Audit 2026-10-06: Second History Rewrite, Privacy Policy | Accepted |
 | [0089](docs/adr/0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted |
 | [0090](docs/adr/0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted |
+| [0091](docs/adr/0091-jank-free-beat-and-measure-frames.md) | Jank-Free Beat and Measure Frames | Accepted |
+| [0092](docs/adr/0092-drone.md) | Drone: a Steady Tonic to Sight-Sing Against | Accepted |
 
 ---
 

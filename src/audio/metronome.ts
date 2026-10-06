@@ -1,6 +1,8 @@
 import {
   AudioSessionType,
   BeatAccent,
+  DroneNote,
+  DroneSound,
   METER,
   PulseMode,
   SoundProfile,
@@ -8,6 +10,7 @@ import {
   beatAccent,
   clampTempo,
 } from '../notation/types';
+import { DroneVoice, createDroneVoice } from './drone';
 
 /** Beat currently being heard, derived from the hardware audio clock (no timers). */
 export interface BeatInfo {
@@ -39,6 +42,13 @@ export class MetronomeEngine {
   private isMuted: boolean = false;
   private soundProfile: SoundProfile = 'woodblock';
   private pulse: PulseMode = 'beat';
+
+  // Drone (ADR 0092): its own bus beside the click's, so pauses fade it instead of cutting it
+  private droneNote: DroneNote = 'off';
+  private droneSound: DroneSound = 'shruti';
+  private droneVolume: number = 0.6;
+  private droneBus: GainNode | null = null;
+  private droneVoice: DroneVoice | null = null;
 
   private beatsPerMeasure: number = 4;
   private secondsPerBeat: number = 1.0;
@@ -153,6 +163,9 @@ export class MetronomeEngine {
         this.ctx.onstatechange = this.handleAudioContextStateChange;
         this.masterGainNode = this.ctx.createGain();
         this.masterGainNode.connect(this.ctx.destination);
+        this.droneBus = this.ctx.createGain();
+        this.droneBus.gain.value = this.droneBusGain();
+        this.droneBus.connect(this.ctx.destination);
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
@@ -214,6 +227,7 @@ export class MetronomeEngine {
   public setMuted(muted: boolean): void {
     this.isMuted = muted;
     this.updateMasterGain();
+    this.updateDroneBus();
   }
 
   public getIsMuted(): boolean {
@@ -234,6 +248,64 @@ export class MetronomeEngine {
 
   public getPulse(): PulseMode {
     return this.pulse;
+  }
+
+  public setDroneNote(note: DroneNote): void {
+    if (this.droneNote === note) return;
+    this.droneNote = note;
+    this.restartDrone();
+  }
+
+  public getDroneNote(): DroneNote {
+    return this.droneNote;
+  }
+
+  public setDroneSound(sound: DroneSound): void {
+    if (this.droneSound === sound) return;
+    this.droneSound = sound;
+    this.restartDrone();
+  }
+
+  public getDroneSound(): DroneSound {
+    return this.droneSound;
+  }
+
+  public setDroneVolume(volume: number): void {
+    this.droneVolume = Math.max(0, Math.min(1, volume));
+    this.updateDroneBus();
+  }
+
+  public getDroneVolume(): number {
+    return this.droneVolume;
+  }
+
+  private droneBusGain(): number {
+    return this.isMuted ? 0 : this.droneVolume;
+  }
+
+  /** Glides the drone bus to its level (20 ms), so slider moves and mute never zip or pop. */
+  private updateDroneBus(): void {
+    if (this.droneBus && this.ctx) {
+      this.droneBus.gain.setTargetAtTime(this.droneBusGain(), this.ctx.currentTime, 0.02);
+    }
+  }
+
+  /** Releases any sounding drone and starts the current one at `at`: a crossfade while playing. */
+  private startDrone(at: number): void {
+    if (!this.ctx || !this.droneBus) return;
+    this.stopDrone(at);
+    if (this.droneNote === 'off') return;
+    this.droneVoice = createDroneVoice(this.ctx, this.droneBus, this.droneSound, this.droneNote, at);
+    this.droneVoice.schedule(this.ctx.currentTime + this.scheduleAheadSeconds);
+  }
+
+  private stopDrone(at: number): void {
+    this.droneVoice?.release(at);
+    this.droneVoice = null;
+  }
+
+  private restartDrone(): void {
+    if (this.ctx && this.isRunning && !this.isPaused) this.startDrone(this.ctx.currentTime);
   }
 
   private updateMasterGain(): void {
@@ -266,6 +338,8 @@ export class MetronomeEngine {
     this.pausedElapsedSeconds = 0;
 
     this.measureZeroStartTime = startTime + this.countInBeatsTotal * this.secondsPerBeat;
+    // The drone sounds through the count-in: the singer hears the tonic before the first note
+    this.startDrone(startTime);
 
     this.timerId = window.setInterval(() => {
       this.scheduler();
@@ -284,10 +358,11 @@ export class MetronomeEngine {
       this.timerId = null;
     }
 
-    // Immediately silence any queued audio clicks
+    // Immediately silence any queued audio clicks; the drone fades
     if (this.masterGainNode && this.ctx) {
       this.masterGainNode.gain.cancelScheduledValues(this.ctx.currentTime);
       this.masterGainNode.gain.setValueAtTime(0, this.ctx.currentTime);
+      this.stopDrone(this.ctx.currentTime);
     }
   }
 
@@ -312,6 +387,7 @@ export class MetronomeEngine {
     );
     this.nextBeatTime = this.measureZeroStartTime + nextGlobalBeatIndex * this.secondsPerBeat;
     this.scheduledBeatCount = Math.max(0, nextGlobalBeatIndex + this.countInBeatsTotal);
+    this.startDrone(currentAudioTime);
 
     this.timerId = window.setInterval(() => {
       this.scheduler();
@@ -328,10 +404,11 @@ export class MetronomeEngine {
       this.timerId = null;
     }
 
-    // Silence master gain immediately
+    // Silence master gain immediately; the drone fades
     if (this.masterGainNode && this.ctx) {
       this.masterGainNode.gain.cancelScheduledValues(this.ctx.currentTime);
       this.masterGainNode.gain.setValueAtTime(0, this.ctx.currentTime);
+      this.stopDrone(this.ctx.currentTime);
     }
 
     this.scheduledBeatCount = 0;
@@ -341,6 +418,8 @@ export class MetronomeEngine {
 
   private scheduler(): void {
     if (!this.ctx || !this.isRunning || this.isPaused) return;
+
+    this.droneVoice?.schedule(this.ctx.currentTime + this.scheduleAheadSeconds);
 
     while (this.nextBeatTime < this.ctx.currentTime + this.scheduleAheadSeconds) {
       const beatTime = this.nextBeatTime;

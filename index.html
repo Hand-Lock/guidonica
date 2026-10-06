@@ -561,8 +561,35 @@
               <div class="control-group volume-group">
                 <label for="volume-slider" data-i18n="volume">Volume</label>
                 <div class="volume-inputs">
-                  <button id="btn-volume-mute" class="btn-mute" type="button" aria-pressed="false" aria-label="Mute or unmute metronome" title="Mute/Unmute" data-i18n-aria-label="muteAria" data-i18n-title="muteTitle"><svg class="icon icon-speaker" aria-hidden="true"><use href="#i-speaker"/></svg><svg class="icon icon-muted" aria-hidden="true"><use href="#i-muted"/></svg></button>
+                  <button id="btn-volume-mute" class="btn-mute" type="button" aria-pressed="false" aria-label="Mute or unmute click and drone" title="Mute/Unmute" data-i18n-aria-label="muteAria" data-i18n-title="muteTitle"><svg class="icon icon-speaker" aria-hidden="true"><use href="#i-speaker"/></svg><svg class="icon icon-muted" aria-hidden="true"><use href="#i-muted"/></svg></button>
                   <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.8" aria-label="Metronome volume" data-i18n-aria-label="volumeAria" />
+                </div>
+              </div>
+              <div class="control-group">
+                <label for="select-drone-note" data-i18n="drone">Drone</label>
+                <select id="select-drone-note" aria-label="Drone note to sing against" data-i18n-aria-label="droneAria">
+                  <option value="off" selected data-i18n="droneOff">Off</option>
+                  <option value="c">C</option>
+                  <option value="d">D</option>
+                  <option value="e">E</option>
+                  <option value="f">F</option>
+                  <option value="g">G</option>
+                  <option value="a">A</option>
+                  <option value="b">B</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label for="select-drone-sound" data-i18n="droneSound">Drone sound</label>
+                <select id="select-drone-sound" aria-label="Drone timbre" data-i18n-aria-label="droneSoundAria">
+                  <option value="tanpura" data-i18n="droneTanpura">Tanpura</option>
+                  <option value="shruti" selected data-i18n="droneShruti">Shruti box</option>
+                  <option value="pad" data-i18n="dronePad">Pad</option>
+                </select>
+              </div>
+              <div class="control-group volume-group">
+                <label for="drone-volume-slider" data-i18n="droneVolume">Drone volume</label>
+                <div class="volume-inputs">
+                  <input type="range" id="drone-volume-slider" min="0" max="1" step="0.05" value="0.6" aria-label="Drone volume" data-i18n-aria-label="droneVolumeAria" />
                 </div>
               </div>
               <div class="control-group">
@@ -575,7 +602,7 @@
               </div>
               <div class="control-group share-group">
                 <span class="group-label" data-i18n="shareGroup">Share</span>
-                <button id="btn-share-exercise" class="btn btn-menu" type="button" title="Send these exercise settings as a link. Language, theme and sound stay with each user." data-i18n-title="shareTitle">
+                <button id="btn-share-exercise" class="btn btn-menu" type="button" title="Send these exercise settings as a link, with the drone note. Language, theme, sounds and volume stay with each user." data-i18n-title="shareTitle">
                   <svg class="icon btn-icon" aria-hidden="true"><use href="#i-share"/></svg>
                   <span class="btn-label" data-i18n="shareButton">Exercise link</span>
                 </button>

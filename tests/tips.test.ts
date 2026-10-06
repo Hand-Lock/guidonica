@@ -43,6 +43,7 @@ describe('rotating tips (ADR 0087)', () => {
     ctx.settings.solfegeLabelMode = 'syllables';
     ctx.settings.timeSignature = '4/4';
     ctx.settings.showPlayhead = false;
+    ctx.settings.droneNote = 'd';
     ctx.settings.rests = true;
     ctx.settings.ties = true;
     ctx.settings.pitchClasses.f = false;
@@ -50,7 +51,7 @@ describe('rotating tips (ADR 0087)', () => {
     ctx.keyboard = false;
     ctx.standalone = true;
     const seen = new Set(ids(0, 60, ctx));
-    for (const id of ['labels', 'pulse', 'playhead', 'restsTies', 'notes', 'tuplets', 'keys', 'install'] as TipId[]) {
+    for (const id of ['labels', 'pulse', 'playhead', 'drone', 'restsTies', 'notes', 'tuplets', 'keys', 'install'] as TipId[]) {
       expect(seen.has(id), id).toBe(false);
     }
     for (const id of ['levels', 'halfNote', 'clefs', 'pinch', 'share', 'whatsNew', 'follow', 'support'] as TipId[]) {

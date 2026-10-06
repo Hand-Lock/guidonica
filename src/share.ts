@@ -6,6 +6,7 @@ import {
   AppSettings,
   CLEFS,
   Clef,
+  DRONE_NOTES,
   IntervalOptions,
   MAX_LEDGER_LINES,
   PITCH_CLASSES,
@@ -25,8 +26,8 @@ import {
 } from './notation/types';
 
 /**
- * What a link carries: the settings a level preset sets, plus clef, meter and pulse.
- * Language, theme, sound, volume, zoom and the playhead stay with each user.
+ * What a link carries: the settings a level preset sets, plus clef, meter, pulse and the
+ * drone note. Language, theme, sounds, volumes, zoom and the playhead stay with each user.
  */
 export type Exercise = Pick<
   AppSettings,
@@ -43,6 +44,7 @@ export type Exercise = Pick<
   | 'solfegeLabelMode'
   | 'pulse'
   | 'countIn'
+  | 'droneNote'
 >;
 
 /** Link format version; a fragment without `x=1` is not an exercise and is left alone. */
@@ -132,6 +134,7 @@ export function encodeExercise(settings: Exercise): string {
     labels: settings.solfegeLabelMode,
     pulse: settings.pulse,
     countin: settings.countIn ? '1' : '0',
+    drone: settings.droneNote,
   });
   return params.toString();
 }
@@ -213,5 +216,7 @@ export function decodeExercise(hash: string, base: Exercise): Exercise | null {
     // Links from before ADR 0090 carry the compound-only names, which parsePulse maps
     pulse: parsePulse(params.get('pulse')) ?? base.pulse,
     countIn: pickFlag(params.get('countin')) ?? base.countIn,
+    // Links from before ADR 0092 have no drone and keep the recipient's
+    droneNote: pick(params.get('drone'), DRONE_NOTES) ?? base.droneNote,
   };
 }

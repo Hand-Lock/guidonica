@@ -19,6 +19,7 @@ export type TipId =
   | 'pulse'
   | 'playhead'
   | 'share'
+  | 'drone'
   | 'install'
   | 'whatsNew'
   | 'follow'
@@ -71,6 +72,11 @@ export const FEATURE_TIPS: readonly Tip[] = [
     when: (c) => !anyTuplet(c.settings),
   },
   { id: 'share', action: { kind: 'settings', section: 'practice' } },
+  {
+    id: 'drone',
+    action: { kind: 'settings', section: 'practice' },
+    when: (c) => c.settings.droneNote === 'off',
+  },
   {
     id: 'restsTies',
     action: { kind: 'settings', section: 'rhythm' },

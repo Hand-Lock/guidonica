@@ -174,6 +174,14 @@ export type PitchClass = (typeof PITCH_CLASSES)[number];
 /** Notes the walk may use, in every octave of the clef and ledger-line range (ADR 0070). */
 export type PitchClassOptions = Record<PitchClass, boolean>;
 
+/** Drone timbres, synthesized live (ADR 0092). */
+export const DRONE_SOUNDS = ['tanpura', 'shruti', 'pad'] as const;
+export type DroneSound = (typeof DRONE_SOUNDS)[number];
+
+/** The drone's tonic: one of the white notes the generator writes, or off (ADR 0092). */
+export type DroneNote = 'off' | PitchClass;
+export const DRONE_NOTES: readonly DroneNote[] = ['off', ...PITCH_CLASSES];
+
 /** Ledger lines reachable above / below the staff (0 to MAX_LEDGER_LINES each). */
 export const MAX_LEDGER_LINES = 3; // Bounded by the MEASURE_CANVAS_HEIGHT geometry
 
@@ -566,7 +574,10 @@ export interface AppSettings {
   countIn: boolean;
   theme: ThemeMode;
   volume: number; // 0.0 to 1.0
-  isMuted: boolean;
+  isMuted: boolean; // Silences click and drone
+  droneNote: DroneNote; // Tonic of the drone, or 'off' (ADR 0092)
+  droneSound: DroneSound;
+  droneVolume: number; // 0.0 to 1.0, independent of the click volume
   zoom: number; // 0.3 to 1.5 (default 1.0)
   zoomMode: ZoomMode;
   showPlayhead: boolean; // default true: stationary red playhead cursor line

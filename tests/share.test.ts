@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Exercise, decodeExercise, encodeExercise, exerciseUrl } from '../src/share';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import { LEVEL_PRESETS, buildPresetSettings } from '../src/presets';
-import { AppSettings, CLEFS, TIME_SIGNATURES } from '../src/notation/types';
+import { AppSettings, CLEFS, DRONE_NOTES, TIME_SIGNATURES } from '../src/notation/types';
 
 const base = (): AppSettings => structuredClone(DEFAULT_APP_SETTINGS);
 
@@ -10,11 +10,11 @@ const base = (): AppSettings => structuredClone(DEFAULT_APP_SETTINGS);
 function exerciseOf(s: AppSettings): Exercise {
   const {
     tempo, timeSignature, clef, ledgerLines, subdivisions, tuplets, rests, ties,
-    intervals, pitchClasses, solfegeLabelMode, pulse, countIn,
+    intervals, pitchClasses, solfegeLabelMode, pulse, countIn, droneNote,
   } = s;
   return {
     tempo, timeSignature, clef, ledgerLines, subdivisions, tuplets, rests, ties,
-    intervals, pitchClasses, solfegeLabelMode, pulse, countIn,
+    intervals, pitchClasses, solfegeLabelMode, pulse, countIn, droneNote,
   };
 }
 
@@ -54,6 +54,7 @@ describe('exercise links (ADR 0085)', () => {
       solfegeLabelMode: 'letters',
       pulse: 'division',
       countIn: false,
+      droneNote: 'd',
     };
     settings.tuplets.duplet['1/8'] = true;
     settings.tuplets.quadruplet['1/16'] = true;
@@ -61,12 +62,25 @@ describe('exercise links (ADR 0085)', () => {
   });
 
   it('carries no personal preferences', () => {
-    const settings: AppSettings = { ...base(), language: 'de', theme: 'dark', volume: 0.1, zoom: 0.5, showTips: false };
+    const settings: AppSettings = {
+      ...base(), language: 'de', theme: 'dark', volume: 0.1, zoom: 0.5, showTips: false,
+      droneSound: 'tanpura', droneVolume: 0.2,
+    };
     const hash = encodeExercise(settings);
     expect(hash).toBe(encodeExercise(base()));
     for (const word of ['language', 'theme', 'volume', 'zoom', 'mute', 'playhead', 'sound', 'tip']) {
       expect(hash).not.toContain(word);
     }
+  });
+
+  it('carries the drone note; links without one keep the recipient\'s (ADR 0092)', () => {
+    for (const droneNote of DRONE_NOTES) {
+      const hash = encodeExercise({ ...base(), droneNote });
+      expect(hash).toContain(`drone=${droneNote}`);
+      expect(decodeExercise(hash, { ...base(), droneNote: 'a' })?.droneNote).toBe(droneNote);
+    }
+    expect(decodeExercise('#x=1&clef=bass', { ...base(), droneNote: 'g' })?.droneNote).toBe('g');
+    expect(decodeExercise('#x=1&drone=h', { ...base(), droneNote: 'e' })?.droneNote).toBe('e');
   });
 
   it('uses only characters URLs leave unescaped', () => {

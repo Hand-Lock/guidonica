@@ -339,6 +339,16 @@ describe('rotating tips storage (ADR 0087)', () => {
     expect(loadStoredSettings().showTips).toBe(true);
   });
 
+  it('defaults the drone to off, shruti box, 0.6 and validates each field (ADR 0092)', () => {
+    expect(loadStoredSettings()).toMatchObject({ droneNote: 'off', droneSound: 'shruti', droneVolume: 0.6 });
+    saveStoredSettings({ ...DEFAULT_APP_SETTINGS, droneNote: 'd', droneSound: 'tanpura', droneVolume: 0.25 });
+    expect(loadStoredSettings()).toMatchObject({ droneNote: 'd', droneSound: 'tanpura', droneVolume: 0.25 });
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ droneNote: 'c#', droneSound: 'organ', droneVolume: 'loud' }));
+    expect(loadStoredSettings()).toMatchObject({ droneNote: 'off', droneSound: 'shruti', droneVolume: 0.6 });
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ droneVolume: 3 }));
+    expect(loadStoredSettings().droneVolume).toBe(1);
+  });
+
   it('stores the tip count and reads junk as zero', () => {
     expect(TIP_COUNT_KEY).toBe('guidonica_tip_count_v1');
     expect(loadTipCount()).toBe(0);
