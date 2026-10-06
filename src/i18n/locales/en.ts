@@ -4,10 +4,12 @@
 
 import type { TimeSignature, TupletName, TupletValue } from '../../notation/types';
 import type { IntroClef, LevelId } from '../../presets';
+import type { TipId } from '../../tips';
 
 type LevelText = Record<LevelId, { name: string; description: string }>;
 type IntroClefText = Record<IntroClef, { name: string; description: string }>;
 type IntroMeterText = Record<TimeSignature, string>;
+type TipText = Record<TipId, { title: string; body: string }>;
 
 const LINK = 'target="_blank" rel="noopener noreferrer" class="link-external"';
 
@@ -144,6 +146,8 @@ const en = {
   countIn: 'Count-In',
   playhead: 'Playhead',
   playheadTitle: 'Toggle stationary red playhead visibility (Shortcut: P)',
+  tipsToggle: 'Tips',
+  tipsTitle: 'A short tip about Guidonica each time you open it',
   click: 'Click',
   clickAria: 'Metronome click timbre',
   clickElectronic: 'Electronic',
@@ -183,6 +187,26 @@ const en = {
   inAppTitle: 'Landscape in your browser',
   inAppBody: "This app can't rotate. Open Guidonica in your browser from the ⋯ menu.",
   dismiss: 'Dismiss',
+
+  // Rotating tips (ADR 0087)
+  tipDismissAria: 'Dismiss tip',
+  tips: {
+    levels: { title: 'Level presets', body: 'The level button in the header sets notes, rhythms, intervals and tempo in one click, from Beginner to Virtuoso.' },
+    labels: { title: 'Note names', body: 'Show syllables or letters under the notes in Settings → Practice → Labels.' },
+    keys: { title: 'Keyboard shortcuts', body: 'Space plays and pauses, R resets, P hides the playhead, ↑ and ↓ change the tempo, + and − zoom.' },
+    pinch: { title: 'Pinch to zoom', body: 'Pinch the staff with two fingers to zoom. Tap the percentage to go back to auto zoom.' },
+    clefs: { title: 'Eight clefs', body: 'Settings → Staff has the treble, bass and C clefs and both baritones, with ledger lines above and below.' },
+    notes: { title: 'Fewer notes', body: 'In Settings → Melody → Notes, keep only the notes you are learning. They appear in every octave of the range.' },
+    tuplets: { title: 'Tuplets', body: 'Add triplets, quintuplets and other tuplets in Settings → Rhythm → Tuplets.' },
+    share: { title: 'Exercise links', body: 'Settings → Practice → Exercise link sends these settings to a student or a friend.' },
+    restsTies: { title: 'Rests and ties', body: 'Turn on Rests and Ties in Settings → Rhythm for more realistic rhythms.' },
+    pulse: { title: 'Compound pulse', body: 'In 6/8, 9/8 and 12/8 the click can follow the dotted quarter or every eighth: Settings → Staff → Pulse.' },
+    install: { title: 'Works offline', body: 'After one visit Guidonica works without a connection. Add it to your home screen or install it from the browser menu.' },
+    playhead: { title: 'Read without the playhead', body: 'Turn off Playhead in Settings → Practice → Assists to read without the red line.' },
+    whatsNew: { title: "What's new", body: 'Every release brings something new. The release notes are always in About.' },
+    follow: { title: 'Follow Guidonica', body: 'New releases and practice ideas on Bluesky, Mastodon and Instagram.' },
+    support: { title: 'Support Guidonica', body: 'Guidonica is free, with no ads and no tracking. A tip on Ko-fi funds its development.' },
+  } as TipText,
 
   // Footer
   keyPlayPause: 'Play/Pause',

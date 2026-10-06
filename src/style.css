@@ -1429,10 +1429,9 @@ select:focus-visible {
   }
 }
 
-/* Portrait phone tip (ADR 0055): visibility is pure CSS, so rotating hides it at once.
-   It floats over the stage without resizing it, so it never moves auto zoom. */
-.orientation-notice {
-  display: none;
+/* Stage notices: the portrait phone tip (ADR 0055) and the rotating tips (ADR 0087).
+   They float over the stage without resizing it, so they never move auto zoom. */
+.stage-notice {
   position: absolute;
   top: calc(12px + env(safe-area-inset-top));
   left: 14px;
@@ -1456,19 +1455,57 @@ select:focus-visible {
   animation: notice-in var(--slow) var(--ease);
 }
 
-.orientation-notice > .icon {
+.stage-notice > .icon {
+  flex-shrink: 0;
   color: var(--accent);
 }
 
-.orientation-notice strong {
+.stage-notice strong {
   display: block;
   color: var(--text);
+}
+
+/* Portrait phone tip: visibility is pure CSS, so rotating hides it at once */
+.orientation-notice {
+  display: none;
 }
 
 @media (orientation: portrait) and (pointer: coarse) and (max-width: 600px) {
   .orientation-notice:not([hidden]) {
     display: flex;
   }
+}
+
+/* Rotating tip: JS shows one per visit; the actions wrap under the text when narrow */
+.tip-notice:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: min(640px, calc(100% - 28px));
+}
+
+.tip-body {
+  flex: 1 1 220px;
+  padding-block: 4px;
+}
+
+.tip-actions,
+.tip-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tip-actions {
+  margin-left: auto;
+}
+
+.tip-notice [hidden] {
+  display: none;
+}
+
+.tip-social .icon {
+  width: 15px;
+  height: 15px;
 }
 
 @keyframes notice-in {

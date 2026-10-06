@@ -87,6 +87,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   zoom: DEFAULT_ZOOM,
   zoomMode: 'auto',
   showPlayhead: true,
+  showTips: true,
 };
 
 type Parsed = Record<string, unknown>;
@@ -221,6 +222,7 @@ export function loadStoredSettings(): AppSettings {
       zoom,
       zoomMode,
       showPlayhead: pickBool(parsed.showPlayhead, d.showPlayhead),
+      showTips: pickBool(parsed.showTips, d.showTips),
     };
   } catch {
     return defaults();
@@ -287,6 +289,27 @@ export function isOrientationTipDismissed(): boolean {
 export function dismissOrientationTip(): void {
   try {
     window.localStorage.setItem(ORIENTATION_TIP_KEY, '1');
+  } catch {
+    // Ignore quota or private-browsing errors
+  }
+}
+
+export const TIP_COUNT_KEY = storageKey('tip_count_v1');
+
+/** How many rotating tips have been shown (ADR 0087); 0 when missing or invalid. */
+export function loadTipCount(): number {
+  try {
+    const raw = window.localStorage.getItem(TIP_COUNT_KEY);
+    const count = raw === null ? 0 : Number(raw);
+    return Number.isSafeInteger(count) && count >= 0 ? count : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function saveTipCount(count: number): void {
+  try {
+    window.localStorage.setItem(TIP_COUNT_KEY, String(count));
   } catch {
     // Ignore quota or private-browsing errors
   }

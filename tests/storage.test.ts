@@ -5,10 +5,13 @@ import {
   ORIENTATION_TIP_KEY,
   SEEN_VERSION_KEY,
   STORAGE_KEY,
+  TIP_COUNT_KEY,
   loadSeenVersion,
   loadStoredSettings,
+  loadTipCount,
   saveSeenVersion,
   saveStoredSettings,
+  saveTipCount,
   storageKey,
 } from '../src/storage';
 import { AppSettings, resolveTheme } from '../src/notation/types';
@@ -310,6 +313,33 @@ describe('storage module', () => {
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ pitchClasses: 'cde' }));
     expect(loadStoredSettings().pitchClasses).toEqual(ALL);
+  });
+});
+
+describe('rotating tips storage (ADR 0087)', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it('shows tips by default and keeps only a boolean choice', () => {
+    expect(loadStoredSettings().showTips).toBe(true);
+    saveStoredSettings({ ...DEFAULT_APP_SETTINGS, showTips: false });
+    expect(loadStoredSettings().showTips).toBe(false);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ showTips: 'no' }));
+    expect(loadStoredSettings().showTips).toBe(true);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ showTips: 0 }));
+    expect(loadStoredSettings().showTips).toBe(true);
+  });
+
+  it('stores the tip count and reads junk as zero', () => {
+    expect(TIP_COUNT_KEY).toBe('guidonica_tip_count_v1');
+    expect(loadTipCount()).toBe(0);
+    saveTipCount(7);
+    expect(loadTipCount()).toBe(7);
+    for (const junk of ['-1', '2.5', 'abc', 'Infinity', '1e400', 'NaN']) {
+      window.localStorage.setItem(TIP_COUNT_KEY, junk);
+      expect(loadTipCount(), junk).toBe(0);
+    }
   });
 });
 

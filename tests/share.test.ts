@@ -61,9 +61,10 @@ describe('exercise links (ADR 0085)', () => {
   });
 
   it('carries no personal preferences', () => {
-    const settings: AppSettings = { ...base(), language: 'de', theme: 'dark', volume: 0.1, zoom: 0.5 };
+    const settings: AppSettings = { ...base(), language: 'de', theme: 'dark', volume: 0.1, zoom: 0.5, showTips: false };
     const hash = encodeExercise(settings);
-    for (const word of ['language', 'theme', 'volume', 'zoom', 'mute', 'playhead', 'sound']) {
+    expect(hash).toBe(encodeExercise(base()));
+    for (const word of ['language', 'theme', 'volume', 'zoom', 'mute', 'playhead', 'sound', 'tip']) {
       expect(hash).not.toContain(word);
     }
   });

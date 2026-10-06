@@ -441,6 +441,7 @@ export interface AppSettings {
   zoom: number; // 0.3 to 1.5 (default 1.0)
   zoomMode: ZoomMode;
   showPlayhead: boolean; // default true: stationary red playhead cursor line
+  showTips: boolean; // default true: one rotating tip per visit (ADR 0087)
 }
 
 export const MIN_ZOOM = 0.3;

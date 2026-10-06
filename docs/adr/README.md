@@ -60,7 +60,7 @@ This directory documents the core architectural decisions, implementation method
 | [0052](0052-intro-preview-signature-check.md) | Signature Check for the Intro Level Previews | Accepted; amended by 0070, 0071 | 2026-10-03 |
 | [0053](0053-header-level-button.md) | Header Level Button with a Live Difficulty Meter | Accepted; amended by 0054 | 2026-10-03 |
 | [0054](0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055, 0076 | 2026-10-03 |
-| [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056, 0083 | 2026-10-03 |
+| [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056, 0083, 0087 | 2026-10-03 |
 | [0056](0056-notch-safe-notation-stage.md) | Notch-Safe Notation Stage | Accepted | 2026-10-03 |
 | [0057](0057-canvas-bounded-beams-and-tuplet-numbers.md) | Canvas-Bounded Beams & Tuplet Numbers | Accepted | 2026-10-03 |
 | [0058](0058-music-font-audit-and-bravura-subset.md) | Music Font Audit: Keep Bravura, Ship a Renamed Subset | Accepted | 2026-10-03 |
@@ -92,6 +92,7 @@ This directory documents the core architectural decisions, implementation method
 | [0084](0084-instagram-link.md) | Instagram Link | Accepted | 2026-10-06 |
 | [0085](0085-shareable-exercise-links.md) | Shareable Exercise Links | Accepted | 2026-10-06 |
 | [0086](0086-language-landing-pages.md) | Language Landing Pages | Accepted | 2026-10-06 |
+| [0087](0087-rotating-tips.md) | Rotating Tips | Accepted | 2026-10-06 |
 
 ---
 

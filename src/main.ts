@@ -79,9 +79,12 @@ import {
   isOnboarded,
   isOrientationTipDismissed,
   loadSeenVersion,
+  loadTipCount,
   markOnboarded,
   saveSeenVersion,
+  saveTipCount,
 } from './storage';
+import { Tip, TipContext, pickTip } from './tips';
 import {
   APP_VERSION,
   NOTES_LOADERS,
@@ -110,6 +113,10 @@ interface WebKitDocument extends Document {
   webkitFullscreenEnabled?: boolean;
   webkitFullscreenElement?: Element | null;
   webkitExitFullscreen?: () => Promise<void> | void;
+}
+
+interface StandaloneNavigator extends Navigator {
+  standalone?: boolean; // iOS Safari home-screen apps
 }
 
 interface WebKitElement extends HTMLElement {
@@ -159,6 +166,10 @@ class GuidonicaApp {
   private toggleRests: HTMLInputElement;
   private toggleCountIn: HTMLInputElement;
   private togglePlayhead: HTMLInputElement;
+  private toggleTips: HTMLInputElement;
+  private tipNotice: HTMLElement | null;
+  /** The tip on screen this visit (ADR 0087); null once hidden. */
+  private currentTip: Tip | null = null;
   private selectSolfegeMode: HTMLSelectElement;
   private selectLanguage: HTMLSelectElement | null;
   private selectSoundProfile: HTMLSelectElement;
@@ -275,6 +286,8 @@ class GuidonicaApp {
     this.toggleTies = document.getElementById('toggle-ties') as HTMLInputElement;
     this.toggleCountIn = document.getElementById('toggle-count-in') as HTMLInputElement;
     this.togglePlayhead = document.getElementById('toggle-playhead') as HTMLInputElement;
+    this.toggleTips = document.getElementById('toggle-tips') as HTMLInputElement;
+    this.tipNotice = document.getElementById('tip-notice');
     this.selectSolfegeMode = document.getElementById('select-solfege-mode') as HTMLSelectElement;
     this.selectLanguage = document.getElementById('select-language') as HTMLSelectElement | null;
     this.selectSoundProfile = document.getElementById('select-sound-profile') as HTMLSelectElement;
@@ -386,6 +399,7 @@ class GuidonicaApp {
     this.bindAboutModalEvents();
     this.bindShareEvents();
     this.bindWhatsNewEvents();
+    this.bindTipEvents();
     this.updateVersionInfo();
     this.bindIntroModalEvents();
     this.bindKeyboardShortcuts();
@@ -412,6 +426,9 @@ class GuidonicaApp {
     const boot = bootAction(firstVisit, loadSeenVersion(), APP_VERSION);
     if (boot.kind === 'store') saveSeenVersion(APP_VERSION);
     else if (boot.kind === 'show') void this.openWhatsNew(boot.since);
+
+    // 10. Returning visitors get one rotating tip, never over the intro or What's new (ADR 0087)
+    if (!firstVisit && !shared && boot.kind !== 'show') this.showBootTip();
   }
 
   private hydrateUI(settings: typeof globalState.settings): void {
@@ -441,6 +458,7 @@ class GuidonicaApp {
     this.toggleTies.checked = settings.ties;
     this.toggleCountIn.checked = settings.countIn;
     this.togglePlayhead.checked = settings.showPlayhead !== false;
+    this.toggleTips.checked = settings.showTips;
 
     // Sound & Display overlays
     this.selectSolfegeMode.value = settings.solfegeLabelMode;
@@ -1191,6 +1209,91 @@ class GuidonicaApp {
     });
   }
 
+  /**
+   * Shows the next tip in the rotation, unless tips are off or the portrait landscape
+   * tip is on screen. Only a shown tip advances the stored count (ADR 0087).
+   */
+  private showBootTip(): void {
+    const notice = this.tipNotice;
+    if (!notice || !globalState.settings.showTips) return;
+    const orientation = document.getElementById('orientation-notice');
+    if (orientation && getComputedStyle(orientation).display !== 'none') return;
+    const count = loadTipCount();
+    this.currentTip = pickTip(count, this.tipContext());
+    saveTipCount(count + 1);
+    this.renderTip();
+    notice.hidden = false;
+  }
+
+  private tipContext(): TipContext {
+    const media = (query: string): boolean => window.matchMedia?.(query).matches === true;
+    return {
+      settings: globalState.settings,
+      touch: media('(pointer: coarse)'),
+      keyboard: media('(hover: hover) and (pointer: fine)'),
+      standalone: media('(display-mode: standalone)') || (navigator as StandaloneNavigator).standalone === true,
+    };
+  }
+
+  /** Writes the current tip in the active language and shows its one action. */
+  private renderTip(): void {
+    const tip = this.currentTip;
+    if (!tip) return;
+    const m = t();
+    const title = document.getElementById('tip-title');
+    const text = document.getElementById('tip-text');
+    const action = document.getElementById('btn-tip-action');
+    const kofi = document.getElementById('tip-kofi');
+    const social = document.getElementById('tip-social');
+    if (title) title.textContent = m.tips[tip.id].title;
+    if (text) text.textContent = m.tips[tip.id].body;
+    const kind = tip.action?.kind;
+    const label =
+      kind === 'settings' ? m.settings : kind === 'levels' ? m.levelPresets : kind === 'whatsNew' ? m.whatsNewButton : null;
+    if (action) {
+      action.hidden = label === null;
+      action.textContent = label ?? '';
+    }
+    if (kofi) kofi.hidden = kind !== 'kofi';
+    if (social) social.hidden = kind !== 'social';
+  }
+
+  /** Hides the tip for the rest of the visit. */
+  private hideTip(): void {
+    if (!this.tipNotice || this.tipNotice.hidden) return;
+    this.tipNotice.hidden = true;
+    this.currentTip = null;
+  }
+
+  private bindTipEvents(): void {
+    this.toggleTips.addEventListener('change', () => {
+      globalState.updateSettings({ showTips: this.toggleTips.checked });
+      if (!this.toggleTips.checked) this.hideTip();
+    });
+    document.getElementById('btn-tip-dismiss')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.hideTip();
+    });
+    document.getElementById('btn-tip-action')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = this.currentTip?.action;
+      this.hideTip();
+      if (action?.kind === 'settings') {
+        this.closeTupletsPopover();
+        this.setDrawerOpen(true);
+        document.querySelector(`.section-${action.section}`)?.scrollIntoView({ block: 'nearest' });
+      } else if (action?.kind === 'levels') {
+        this.closeTupletsPopover();
+        this.openIntro(false);
+      } else if (action?.kind === 'whatsNew') {
+        void this.openWhatsNew(null);
+      }
+    });
+    // External links open in a new tab; the tip has done its job
+    document.getElementById('tip-kofi')?.addEventListener('click', () => this.hideTip());
+    document.getElementById('tip-social')?.addEventListener('click', () => this.hideTip());
+  }
+
   private bindWhatsNewEvents(): void {
     const dialog = this.modalWhatsNew;
     if (!dialog) return;
@@ -1470,6 +1573,7 @@ class GuidonicaApp {
     this.updatePitchClassLabels();
     this.translateIntro();
     this.updateVersionInfo();
+    this.renderTip();
     if (settings.solfegeLabelMode !== 'none') {
       this.rerenderBuffer();
       // The Beginner strip shows note labels too
@@ -2000,6 +2104,7 @@ class GuidonicaApp {
 
   private syncUI(state: SessionState): void {
     this.syncLevelButton(state.settings);
+    if (state.playbackState !== 'stopped') this.hideTip();
 
     if (state.playbackState === 'counting-in' || state.playbackState === 'playing') {
       this.btnLabel.textContent = t().pause;

@@ -82,7 +82,7 @@ Every element lives in one simulated lighting environment: the light source is f
 |------|----------|-----------------|----------|
 | 1 | **Gel** | Saturated vertical gradient, `::before` specular gloss cap on the top half, coloured glow | Play/Pause hero, lit LEDs, slider beads, tuplet counter, checked tuplet cells |
 | 2 | **Acrylic** | `linear-gradient(180deg, #fff, #f1f5f9)` (dark: `#1e293b → #162033`), 1px bevel border, 1px top specular. **No half-split gloss.** | Secondary and icon buttons, chips, selects, keycaps |
-| 3 | **Glass** | Translucent fill plus `backdrop-filter: blur(16px) saturate(170–180%)`, 1px top specular, soft drop shadow. **No hard 50% sheen line.** | Header ribbon, overlay settings sheet, tuplets popover, zoom pill, modal, footer |
+| 3 | **Glass** | Translucent fill plus `backdrop-filter: blur(16px) saturate(170–180%)`, 1px top specular, soft drop shadow. **No hard 50% sheen line.** | Header ribbon, overlay settings sheet, tuplets popover, zoom pill, modal, footer, stage notices (landscape tip, rotating tips) |
 | 4 | **Well** | Recessed fill, `inset` shadow, hairline border | Section cards, BPM readout, LED capsule, slider tracks, inputs |
 
 **Tactile depress**: pressed buttons move down by `translateY(1px)` and swap their outer shadow for an inset cavity shadow.

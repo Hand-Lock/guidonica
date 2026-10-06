@@ -20,6 +20,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - The About dialog and footer link to Guidonica on Instagram too, where you can watch the trailer (ADR 0084).
 - Send an exercise as a link: Settings → Practice → Share copies a link with your clef, meter, tempo, note values and notes, and whoever opens it practises with the same settings (ADR 0085).
 - Guidonica has an address in each language: guidonica.it/it/, /fr/, /de/ and /es/ open in Italian, French, German and Spanish, so searches in those languages can find it (ADR 0086).
+- A short tip when you open Guidonica points to features you may have missed, such as level presets, note names and exercise links, and now and then to our social pages and Ko-fi. Turn tips off in Settings → Practice. (ADR 0087)
 
 ### Fixed
 

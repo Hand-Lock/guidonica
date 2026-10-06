@@ -213,6 +213,7 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter beat i
 - "Skip", Esc or a click outside keeps the defaults and never asks again. The header Level button reopens it at any time. Its five-bar meter lights up to the current level, or stays dim with the label "Custom" when the settings match no preset (see ADR 0053).
 - Presets never alter the generator; every preset is an ordinary point of the configuration space Ω (see ADR 0049).
 - Level cards show freshly generated examples from a narrowed, published sub-configuration of each preset (toggles only switched off, Ω_preview ⊆ Ω_preset), so each card shows the figures typical of its level (see ADR 0051).
+- From the second visit on, one short tip per visit appears at the top of the stage, unless the intro, "What's new", a shared link or the landscape tip is showing. Most point to a feature the user's settings and device don't use yet; one in four asks to follow Guidonica or support it on Ko-fi. Start, the close button or the Tips chip in Settings → Practice hides it (see ADR 0087).
 
 ### Localization & National Note Naming
 - The interface is available in English, Italian, French, German and Spanish (see ADR 0059). The default is the first supported browser language, else English; the choice is saved with the settings but is not part of any level preset.

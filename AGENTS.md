@@ -73,6 +73,7 @@ guidonica/
     ├── storage.ts          # Validated localStorage settings, defaults, onboarding flag; per-channel keys (ADR 0078)
     ├── whatsNew.ts         # "What's new": version compare, boot action, notes loaders & dialog rendering (ADR 0078)
     ├── env.d.ts            # Build-time constants (__APP_VERSION__, __APP_CHANNEL__, …) and *.md?notes modules
+    ├── tips.ts             # Rotating tips: feature & community tip tables, pickTip rotation (ADR 0087)
     ├── presets.ts          # Level presets, preview representations & signatures (ADR 0049, 0051, 0052)
     ├── style.css           # Clean light-mode styles and accent colors
     ├── fonts/              # Self-hosted text fonts + OFL/UFL licences (ADR 0060; never hand-edit)

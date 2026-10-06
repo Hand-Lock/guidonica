@@ -47,6 +47,7 @@ const SETTINGS = {
   solfegeLabelMode: 'syllables',
   zoom: 1.3,
   zoomMode: 'manual',
+  showTips: false, // no rotating tip over the staff (ADR 0087)
 };
 
 /**

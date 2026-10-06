@@ -95,6 +95,7 @@ dev-server log is in `$TMPDIR/guidonica-dev.log`.
 | `--size WxH` | `1280x900` | viewport; below 961 px wide the layout is the phone one |
 | `--dpr N` | `2` | device scale factor |
 | `--intro` | off | keeps the onboarding dialog; nothing is seeded in localStorage |
+| `--tips` | off | shows the rotating tip (ADR 0087); without it `showTips: false` is seeded so no tip covers the stage |
 | `--seen VERSION` | `9999.0.0` | last version whose "What's new" notes were seen; pass an older one (e.g. `1.0.0`) against a newer build to open the dialog at boot |
 | `--out DIR` | `$TMPDIR/guidonica-shots` | screenshot directory |
 
@@ -133,14 +134,15 @@ pnpm preview    # serves dist/ after pnpm build, with the service worker active
 
 ```bash
 pnpm typecheck
-pnpm test       # vitest + happy-dom: 33 files, 660 tests pass
+pnpm test       # vitest + happy-dom: 34 files, 669 tests pass
 ```
 
 ## Gotchas
 
 - **The onboarding intro blocks clicks.** On a first visit the `#modal-intro` `<dialog>` opens modally. It only appears when neither `guidonica_onboarded_v1` nor `guidonica_settings_v1` is stored (`src/main.ts`), so the driver seeds the onboarded flag by default. Pass `--intro` to test the intro itself.
 - **"What's new" can open at boot and block clicks** (ADR 0078). The driver seeds both channels' keys (`guidonica_` and `guidonica_nightly_`) with the onboarded flag and a far-future seen version, so it stays closed unless you pass `--seen`.
-- **Language and theme are read from the `guidonica_settings_v1` JSON.** Without that entry, the language is detected from `navigator.languages`. The driver writes only the fields you pass, and every other setting stays at its default.
+- **Language and theme are read from the `guidonica_settings_v1` JSON.** Without `--lang`, the language is detected from `navigator.languages`. The driver writes only the fields you pass plus `showTips`, and every other setting stays at its default.
+- **A rotating tip shows at the top of the stage on every returning visit** (ADR 0087). The driver turns tips off by default; pass `--tips` to see one. Each shown tip advances `guidonica_tip_count_v1`, so a reload within one run (`eval:location.reload()` then `wait:`) shows the next one.
 - **The Settings drawer is already open on wide screens.** At 961 px and wider it opens by default whenever the staff still fits, so `click:#btn-drawer-toggle` at the default 1280x900 *closes* it. Use `--size 390x844` to screenshot it opening.
 - **The count-in delays the first notes.** Playback starts with a 4-beat count-in, so shots taken earlier than about 5 s after Play show a stationary staff.
 - **The `AudioContext` needs a user gesture.** Start playback with `click:` or `press:`, never `eval:`.
