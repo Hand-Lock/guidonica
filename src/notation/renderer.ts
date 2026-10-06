@@ -19,6 +19,7 @@ import {
   DEFAULT_ZOOM,
   MAX_ZOOM,
   MEASURE_CANVAS_HEIGHT,
+  METER,
   MIN_ZOOM,
   MeasureData,
   NOTE_START_OFFSET,
@@ -28,17 +29,19 @@ import {
   STAVE_CANVAS_Y,
   ThemeMode,
   TimeSignature,
+  isGrouped,
   resolveTheme,
 } from './types';
 
 const tieHeadOffsets = new Map<string, number>();
 
 /**
- * Spells a duration with VexFlow's numeric code ('q' -> '4', 'hd' -> '2d'). Beam.generateBeams
+ * Spells a duration with VexFlow's numeric code ('q' -> '4', 'hd' -> '2d', 'b' -> '1/2', the
+ * breve; ADR 0090). Beam.generateBeams
  * splits beam groups at unbeamable notes via `parseInt(getDuration()) < 8`, which is NaN for
  * letter codes, so `16 16 q` would lose its beam (ADR 0064).
  */
-const NUMERIC_DURATION: Record<string, string> = { w: '1', h: '2', q: '4' };
+const NUMERIC_DURATION: Record<string, string> = { b: '1/2', w: '1', h: '2', q: '4' };
 function vexDuration(duration: string): string {
   return (NUMERIC_DURATION[duration[0]] ?? duration[0]) + duration.slice(1);
 }
@@ -264,6 +267,8 @@ export class MeasureRenderer {
       const regularBeams = Beam.generateBeams(run, {
         groups: Beam.getDefaultBeamGroups(data.timeSignature),
         beamRests: false,
+        // Grouped quarter-beat meters break secondary beams at each quarter (Gould; ADR 0090)
+        ...(METER[data.timeSignature].beatValue === 4 && isGrouped(data.timeSignature) ? { secondaryBreaks: '4' } : {}),
       });
       beams.push(...regularBeams);
     }

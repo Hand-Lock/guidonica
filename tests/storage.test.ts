@@ -210,17 +210,25 @@ describe('storage module', () => {
     expect(fallbackLoaded.clef).toBe(DEFAULT_APP_SETTINGS.clef);
   });
 
-  it('migrates the legacy 6/8-only pulse68 key to compoundPulse (ADR 0076)', () => {
+  it('migrates the legacy pulse68 and compoundPulse keys to pulse (ADRs 0076, 0090)', () => {
     window.localStorage.setItem('guidonica_settings_v1', JSON.stringify({ timeSignature: '12/8', pulse68: 'eighth' }));
     const legacy = loadStoredSettings();
     expect(legacy.timeSignature).toBe('12/8');
-    expect(legacy.compoundPulse).toBe('eighth');
+    expect(legacy.pulse).toBe('division');
     expect(Object.keys(legacy)).not.toContain('pulse68');
+    expect(Object.keys(legacy)).not.toContain('compoundPulse');
     window.localStorage.setItem(
       'guidonica_settings_v1',
       JSON.stringify({ timeSignature: '9/8', compoundPulse: 'dotted-quarter', pulse68: 'eighth' })
     );
-    expect(loadStoredSettings().compoundPulse).toBe('dotted-quarter');
+    expect(loadStoredSettings().pulse).toBe('beat');
+    window.localStorage.setItem(
+      'guidonica_settings_v1',
+      JSON.stringify({ timeSignature: '2/2', pulse: 'division', compoundPulse: 'dotted-quarter' })
+    );
+    const current = loadStoredSettings();
+    expect(current.timeSignature).toBe('2/2');
+    expect(current.pulse).toBe('division');
   });
 
   it('falls back per-field on corrupt or out-of-range values', () => {
@@ -230,7 +238,7 @@ describe('storage module', () => {
         timeSignature: '5/4',
         tempo: 'fast',
         volume: 7,
-        compoundPulse: 42,
+        pulse: 42,
         clef: 'banjo',
         subdivisions: { quarter: 'yes', eighth: false },
         intervals: null,
@@ -242,7 +250,7 @@ describe('storage module', () => {
     expect(loaded.timeSignature).toBe(DEFAULT_APP_SETTINGS.timeSignature);
     expect(loaded.tempo).toBe(DEFAULT_APP_SETTINGS.tempo);
     expect(loaded.volume).toBe(1);
-    expect(loaded.compoundPulse).toBe(DEFAULT_APP_SETTINGS.compoundPulse);
+    expect(loaded.pulse).toBe(DEFAULT_APP_SETTINGS.pulse);
     expect(loaded.clef).toBe(DEFAULT_APP_SETTINGS.clef);
     expect(loaded.subdivisions.quarter).toBe(DEFAULT_APP_SETTINGS.subdivisions.quarter);
     expect(loaded.subdivisions.eighth).toBe(false);

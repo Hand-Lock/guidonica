@@ -6,7 +6,6 @@ import {
   AppSettings,
   CLEFS,
   Clef,
-  CompoundPulseMode,
   IntervalOptions,
   MAX_LEDGER_LINES,
   PITCH_CLASSES,
@@ -21,6 +20,7 @@ import {
   TupletOptions,
   TupletValue,
   clampTempo,
+  parsePulse,
   supportedTuplets,
 } from './notation/types';
 
@@ -41,7 +41,7 @@ export type Exercise = Pick<
   | 'intervals'
   | 'pitchClasses'
   | 'solfegeLabelMode'
-  | 'compoundPulse'
+  | 'pulse'
   | 'countIn'
 >;
 
@@ -86,7 +86,6 @@ const TUPLET_NUMBERS: Record<TupletName, number> = {
 const NOTE_VALUES = ['whole', 'half', 'quarter', 'eighth', 'sixteenth', 'thirtySecond'] as const;
 
 const LABEL_MODES: readonly SolfegeLabelMode[] = ['none', 'syllables', 'letters'];
-const COMPOUND_PULSES: readonly CompoundPulseMode[] = ['dotted-quarter', 'eighth'];
 
 /** "3-8": a triplet of eighths. */
 function tupletToken(name: TupletName, value: TupletValue): string {
@@ -131,7 +130,7 @@ export function encodeExercise(settings: Exercise): string {
     int: enabled(settings.intervals, INTERVAL_TOKENS),
     notes: PITCH_CLASSES.filter((pc) => settings.pitchClasses[pc]).join(SEP),
     labels: settings.solfegeLabelMode,
-    pulse: settings.compoundPulse,
+    pulse: settings.pulse,
     countin: settings.countIn ? '1' : '0',
   });
   return params.toString();
@@ -211,7 +210,8 @@ export function decodeExercise(hash: string, base: Exercise): Exercise | null {
     intervals,
     pitchClasses,
     solfegeLabelMode: pick(params.get('labels'), LABEL_MODES) ?? base.solfegeLabelMode,
-    compoundPulse: pick(params.get('pulse'), COMPOUND_PULSES) ?? base.compoundPulse,
+    // Links from before ADR 0090 carry the compound-only names, which parsePulse maps
+    pulse: parsePulse(params.get('pulse')) ?? base.pulse,
     countIn: pickFlag(params.get('countin')) ?? base.countIn,
   };
 }

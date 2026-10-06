@@ -1,6 +1,6 @@
 # 0076. Compound Triple and Quadruple Meters (9/8, 12/8)
 
-- **Status**: Accepted (amends [0054](0054-responsive-header-fit-audit.md), [0065](0065-grammar-driven-rhythm-sampler.md), [0071](0071-intro-meter-step.md), [0072](0072-three-level-beat-accent-hierarchy.md))
+- **Status**: Accepted (amends [0054](0054-responsive-header-fit-audit.md), [0065](0065-grammar-driven-rhythm-sampler.md), [0071](0071-intro-meter-step.md), [0072](0072-three-level-beat-accent-hierarchy.md)); amended by [0090](0090-half-note-beat-meters.md)
 - **Date**: 2026-10-05
 - **Author**: Claude & A. C. Lo Cascio
 

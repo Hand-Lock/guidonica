@@ -68,7 +68,8 @@ describe('Cross-barline tie rendering', () => {
       }
       expect(incoming).toBeGreaterThan(0);
     }
-  });
+    // Twelve meters × 200 rendered bars outlast the default 5 s under a parallel run
+  }, 30000);
 
   it('both halves of a barline tie meet the notes exactly (seamless join)', () => {
     const renderer = new MeasureRenderer();

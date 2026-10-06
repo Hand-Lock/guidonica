@@ -1,13 +1,12 @@
 import {
   AudioSessionType,
   BeatAccent,
-  CompoundPulseMode,
   METER,
+  PulseMode,
   SoundProfile,
   TimeSignature,
   beatAccent,
   clampTempo,
-  isCompound,
 } from '../notation/types';
 
 /** Beat currently being heard, derived from the hardware audio clock (no timers). */
@@ -39,7 +38,7 @@ export class MetronomeEngine {
   private volume: number = 0.8;
   private isMuted: boolean = false;
   private soundProfile: SoundProfile = 'woodblock';
-  private compoundPulse: CompoundPulseMode = 'dotted-quarter';
+  private pulse: PulseMode = 'beat';
 
   private beatsPerMeasure: number = 4;
   private secondsPerBeat: number = 1.0;
@@ -229,12 +228,12 @@ export class MetronomeEngine {
     return this.soundProfile;
   }
 
-  public setCompoundPulse(mode: CompoundPulseMode): void {
-    this.compoundPulse = mode;
+  public setPulse(mode: PulseMode): void {
+    this.pulse = mode;
   }
 
-  public getCompoundPulse(): CompoundPulseMode {
-    return this.compoundPulse;
+  public getPulse(): PulseMode {
+    return this.pulse;
   }
 
   private updateMasterGain(): void {
@@ -352,9 +351,9 @@ export class MetronomeEngine {
         : this.scheduledBeatCount - this.countInBeatsTotal;
       const beatNumber = (beatIndex % this.beatsPerMeasure) + 1;
 
-      // Dotted-quarter pulse: only the eighth that starts each beat clicks (1, 4, 7, 10)
-      const dottedPulse = isCompound(this.timeSignature) && this.compoundPulse === 'dotted-quarter';
-      const shouldClick = !dottedPulse || (beatNumber - 1) % 3 === 0;
+      // Beat pulse: only the metric beat that starts each felt beat clicks (1, 4, 7, 10 in
+      // 12/8; 1, 3, 5, 7 in 4/2), as every beat does in ungrouped meters (ADR 0076, 0090)
+      const shouldClick = this.pulse === 'division' || (beatNumber - 1) % METER[this.timeSignature].beatGroup === 0;
 
       if (shouldClick) {
         this.scheduleClick(beatTime, beatAccent(this.timeSignature, beatNumber));

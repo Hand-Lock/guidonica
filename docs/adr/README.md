@@ -59,7 +59,7 @@ This directory documents the core architectural decisions, implementation method
 | [0051](0051-intro-preview-representation-presets.md) | Representation Presets for the Intro Level Previews | Accepted; amended by 0052, 0070 | 2026-10-03 |
 | [0052](0052-intro-preview-signature-check.md) | Signature Check for the Intro Level Previews | Accepted; amended by 0070, 0071 | 2026-10-03 |
 | [0053](0053-header-level-button.md) | Header Level Button with a Live Difficulty Meter | Accepted; amended by 0054, 0073 | 2026-10-03 |
-| [0054](0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055, 0076 | 2026-10-03 |
+| [0054](0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055, 0076, 0090 | 2026-10-03 |
 | [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056, 0083, 0087 | 2026-10-03 |
 | [0056](0056-notch-safe-notation-stage.md) | Notch-Safe Notation Stage | Accepted | 2026-10-03 |
 | [0057](0057-canvas-bounded-beams-and-tuplet-numbers.md) | Canvas-Bounded Beams & Tuplet Numbers | Accepted | 2026-10-03 |
@@ -70,18 +70,18 @@ This directory documents the core architectural decisions, implementation method
 | [0062](0062-robots-txt-and-sitemap.md) | robots.txt & sitemap.xml | Accepted; amended by 0086 | 2026-10-03 |
 | [0063](0063-offline-service-worker.md) | Offline Service Worker | Accepted; amended by 0078, 0086 | 2026-10-03 |
 | [0064](0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Superseded by 0065 | 2026-10-03 |
-| [0065](0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066, 0076 | 2026-10-04 |
+| [0065](0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066, 0076, 0090 | 2026-10-04 |
 | [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted; amended by 0070 | 2026-10-04 |
 | [0067](0067-contribution-licensing-dco-and-trademark-policy.md) | Contribution Licensing (Inbound MIT + DCO) & Trademark Policy | Accepted; amended by 0068, 0069 | 2026-10-04 |
 | [0068](0068-project-email-guidonica-it-migadu.md) | Project Email on guidonica.it (Migadu), Contact Addresses & security.txt | Accepted; amended by 0069, 0077, 0088 | 2026-10-04 |
 | [0069](0069-security-privacy-audit.md) | Security & Privacy Audit: History Rewrite, CI Least Privilege & Repository Hardening | Accepted; amended by 0077, 0088 | 2026-10-04 |
 | [0070](0070-note-selection-and-level-progression.md) | Note Selection Toggles & Reworked Level Progression | Accepted | 2026-10-05 |
-| [0071](0071-intro-meter-step.md) | Time Signature Step in the Onboarding Intro | Accepted; amended by 0076 | 2026-10-05 |
-| [0072](0072-three-level-beat-accent-hierarchy.md) | Three-Level Beat Accent Hierarchy in the Traffic Lights and Click | Accepted; amended by 0076 | 2026-10-05 |
+| [0071](0071-intro-meter-step.md) | Time Signature Step in the Onboarding Intro | Accepted; amended by 0076, 0090 | 2026-10-05 |
+| [0072](0072-three-level-beat-accent-hierarchy.md) | Three-Level Beat Accent Hierarchy in the Traffic Lights and Click | Accepted; amended by 0076, 0090 | 2026-10-05 |
 | [0073](0073-level-button-dumbbell-icon.md) | Dumbbell Icon for the Header Level Button | Accepted | 2026-10-05 |
 | [0074](0074-donations-ko-fi-link.md) | Donations: a Plain Ko-fi Link | Accepted; amended by 0088 | 2026-10-05 |
 | [0075](0075-ai-assistance-disclosure.md) | AI-Assistance Disclosure in the About Dialog | Accepted | 2026-10-05 |
-| [0076](0076-compound-triple-and-quadruple-meters.md) | Compound Triple and Quadruple Meters (9/8, 12/8) | Accepted | 2026-10-05 |
+| [0076](0076-compound-triple-and-quadruple-meters.md) | Compound Triple and Quadruple Meters (9/8, 12/8) | Accepted; amended by 0090 | 2026-10-05 |
 | [0077](0077-ci-actions-node-24.md) | CI Actions on Node 24 Releases | Accepted | 2026-10-05 |
 | [0078](0078-release-channels-calver-changelog-whats-new.md) | Release Channels, CalVer Changelog and "What's New" | Accepted | 2026-10-05 |
 | [0079](0079-social-profile-banners.md) | Social Profile Banners | Accepted | 2026-10-05 |
@@ -95,6 +95,7 @@ This directory documents the core architectural decisions, implementation method
 | [0087](0087-rotating-tips.md) | Rotating Tips | Accepted | 2026-10-06 |
 | [0088](0088-pre-release-audit-2026-10-06.md) | Pre-release Audit 2026-10-06: Second History Rewrite, Privacy Policy | Accepted | 2026-10-06 |
 | [0089](0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted | 2026-10-06 |
+| [0090](0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted | 2026-10-06 |
 
 ---
 

@@ -10,11 +10,11 @@ const base = (): AppSettings => structuredClone(DEFAULT_APP_SETTINGS);
 function exerciseOf(s: AppSettings): Exercise {
   const {
     tempo, timeSignature, clef, ledgerLines, subdivisions, tuplets, rests, ties,
-    intervals, pitchClasses, solfegeLabelMode, compoundPulse, countIn,
+    intervals, pitchClasses, solfegeLabelMode, pulse, countIn,
   } = s;
   return {
     tempo, timeSignature, clef, ledgerLines, subdivisions, tuplets, rests, ties,
-    intervals, pitchClasses, solfegeLabelMode, compoundPulse, countIn,
+    intervals, pitchClasses, solfegeLabelMode, pulse, countIn,
   };
 }
 
@@ -52,7 +52,7 @@ describe('exercise links (ADR 0085)', () => {
       intervals: { ...base().intervals, unison: true, ninthPlus: true, second: false },
       pitchClasses: { c: true, d: false, e: true, f: false, g: true, a: false, b: false },
       solfegeLabelMode: 'letters',
-      compoundPulse: 'eighth',
+      pulse: 'division',
       countIn: false,
     };
     settings.tuplets.duplet['1/8'] = true;
@@ -92,6 +92,14 @@ describe('exercise links (ADR 0085)', () => {
     const b = { ...base(), clef: 'alto' as const, tempo: 80 };
     const decoded = decodeExercise('#x=1&clef=lute&meter=5-4&bpm=fast&rests=yes&labels=neumes&pulse=half', b);
     expect(decoded).toEqual(exerciseOf(b));
+  });
+
+  it('reads the pulse values of links made before ADR 0090, and the half-note meters', () => {
+    expect(decodeExercise('#x=1&meter=12-8&pulse=eighth', base())?.pulse).toBe('division');
+    expect(decodeExercise('#x=1&meter=6-8&pulse=dotted-quarter', { ...base(), pulse: 'division' })?.pulse).toBe('beat');
+    for (const meter of ['2/2', '3/2', '4/2', '6/4', '9/4', '12/4'] as const) {
+      expect(decodeExercise(`#x=1&meter=${meter.replace('/', '-')}`, base())?.timeSignature).toBe(meter);
+    }
   });
 
   it('clamps tempo and ledger lines', () => {

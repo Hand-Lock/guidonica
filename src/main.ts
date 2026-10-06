@@ -6,13 +6,14 @@ import {
   AppSettings,
   BeatAccent,
   Clef,
-  CompoundPulseMode,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
   IntervalOptions,
   MAX_ZOOM,
+  METER,
   MIN_ZOOM,
   PITCH_CLASSES,
+  PulseMode,
   ResolvedTheme,
   SolfegeLabelMode,
   SoundProfile,
@@ -29,12 +30,15 @@ import {
   computeOptimalZoom,
   getBeatsPerMeasure,
   isCompound,
+  isGrouped,
+  isHalfNoteMeter,
   isTupletSupported,
   resolveTheme,
   stageFitsStaff,
   subscribeSystemTheme,
   tempoMarking,
   tupletShape,
+  withHalfNoteBeat,
 } from './notation/types';
 import { globalState, SessionState } from './state';
 import { MetronomeEngine } from './audio/metronome';
@@ -157,8 +161,9 @@ class GuidonicaApp {
 
   // Drawer Configuration Elements
   private selectTimeSig: HTMLSelectElement;
-  private groupCompoundPulse: HTMLElement;
-  private selectCompoundPulse: HTMLSelectElement;
+  private toggleHalfNoteBeat: HTMLInputElement;
+  private groupPulse: HTMLElement;
+  private selectPulse: HTMLSelectElement;
   private selectClef: HTMLSelectElement;
   private clefRangeHint: HTMLElement;
   private selectLedgerAbove: HTMLSelectElement;
@@ -241,7 +246,10 @@ class GuidonicaApp {
   private introFirstVisit: boolean = false;
   private introLevel: LevelId | null = null;
   private introClef: Clef = 'treble';
+  /** The chosen meter card, one of INTRO_METERS; the toggle may write it with a half-note beat. */
   private introMeter: TimeSignature = '4/4';
+  private introHalfNote: boolean = false;
+  private introHalfNoteToggle: HTMLInputElement | null = null;
   private introLevelPreviews = new Map<LevelId, HTMLCanvasElement>();
   private introClefIcons = new Map<Clef, HTMLCanvasElement>();
   private introMeterIcons = new Map<TimeSignature, HTMLCanvasElement>();
@@ -276,8 +284,9 @@ class GuidonicaApp {
     this.controlsDrawer = document.getElementById('controls-drawer') as HTMLElement;
 
     this.selectTimeSig = document.getElementById('select-time-signature') as HTMLSelectElement;
-    this.groupCompoundPulse = document.getElementById('group-compound-pulse') as HTMLElement;
-    this.selectCompoundPulse = document.getElementById('select-compound-pulse') as HTMLSelectElement;
+    this.toggleHalfNoteBeat = document.getElementById('toggle-half-note-beat') as HTMLInputElement;
+    this.groupPulse = document.getElementById('group-pulse') as HTMLElement;
+    this.selectPulse = document.getElementById('select-pulse') as HTMLSelectElement;
     this.selectClef = document.getElementById('select-clef') as HTMLSelectElement;
     this.clefRangeHint = document.getElementById('clef-range-hint') as HTMLElement;
     this.selectLedgerAbove = document.getElementById('select-ledger-above') as HTMLSelectElement;
@@ -375,7 +384,7 @@ class GuidonicaApp {
     this.metronome.setVolume(initialSettings.volume);
     this.metronome.setMuted(initialSettings.isMuted);
     this.metronome.setSoundProfile(initialSettings.soundProfile);
-    this.metronome.setCompoundPulse(initialSettings.compoundPulse);
+    this.metronome.setPulse(initialSettings.pulse);
 
     this.generator = new MusicGenerator();
     this.renderer = new MeasureRenderer();
@@ -442,10 +451,9 @@ class GuidonicaApp {
     this.tempoNumber.value = String(settings.tempo);
     this.updateTempoTerm(settings.tempo);
 
-    // Time signature & compound pulse
-    this.selectTimeSig.value = settings.timeSignature;
-    this.groupCompoundPulse.classList.toggle('hidden', !isCompound(settings.timeSignature));
-    this.selectCompoundPulse.value = settings.compoundPulse;
+    // Time signature, half-note toggle & pulse
+    this.syncMeterControls(settings.timeSignature);
+    this.selectPulse.value = settings.pulse;
 
     // Clef, ledger lines & range hint
     this.selectClef.value = settings.clef;
@@ -738,28 +746,20 @@ class GuidonicaApp {
       this.setTempo(Number((e.target as HTMLInputElement).value));
     });
 
-    // Time Signature
+    // Time Signature: the select picks the meter, the toggle its half-note counterpart (ADR 0090)
     this.selectTimeSig.addEventListener('change', (e) => {
-      const ts = (e.target as HTMLSelectElement).value as TimeSignature;
-      this.groupCompoundPulse.classList.toggle('hidden', !isCompound(ts));
-      this.metronome.setTimeSignature(ts);
-      this.renderBeatDots(ts);
-      globalState.updateSettings({ timeSignature: ts });
-      this.applyTupletAvailability(ts);
-      if (this.getBaseSubdivCount() === 0 && this.getActiveTupletCount() === 0) {
-        this.subdivQuarter.checked = true;
-        globalState.updateSettings({
-          subdivisions: { ...globalState.settings.subdivisions, quarter: true },
-        });
-      }
-      this.resetSession();
+      this.setTimeSignature((e.target as HTMLSelectElement).value as TimeSignature);
+    });
+    this.toggleHalfNoteBeat.addEventListener('change', (e) => {
+      const half = (e.target as HTMLInputElement).checked;
+      this.setTimeSignature(withHalfNoteBeat(globalState.settings.timeSignature, half));
     });
 
-    // Compound pulse
-    this.selectCompoundPulse.addEventListener('change', (e) => {
-      const pulse = (e.target as HTMLSelectElement).value as CompoundPulseMode;
-      this.metronome.setCompoundPulse(pulse);
-      globalState.updateSettings({ compoundPulse: pulse });
+    // Pulse of grouped meters: every felt beat or every metric beat (ADR 0076, 0090)
+    this.selectPulse.addEventListener('change', (e) => {
+      const pulse = (e.target as HTMLSelectElement).value as PulseMode;
+      this.metronome.setPulse(pulse);
+      globalState.updateSettings({ pulse });
     });
 
     // Clef
@@ -1053,6 +1053,48 @@ class GuidonicaApp {
   /** Counts checked tuplet cells that the current meter can actually generate. */
   private getActiveTupletCount(): number {
     return this.tupletCheckboxes.filter((cb) => cb.checked && !cb.disabled).length;
+  }
+
+  private setTimeSignature(ts: TimeSignature): void {
+    this.syncMeterControls(ts);
+    this.metronome.setTimeSignature(ts);
+    this.renderBeatDots(ts);
+    globalState.updateSettings({ timeSignature: ts });
+    this.applyTupletAvailability(ts);
+    if (this.getBaseSubdivCount() === 0 && this.getActiveTupletCount() === 0) {
+      this.subdivQuarter.checked = true;
+      globalState.updateSettings({
+        subdivisions: { ...globalState.settings.subdivisions, quarter: true },
+      });
+    }
+    this.resetSession();
+  }
+
+  /**
+   * Meter select, half-note toggle and pulse select for `ts`: the select lists the six
+   * meters with the toggle's beat unit, and the pulse options name the felt beat and its
+   * division, a dotted half and a quarter in 6/4 (ADR 0090).
+   */
+  private syncMeterControls(ts: TimeSignature): void {
+    const half = isHalfNoteMeter(ts);
+    this.toggleHalfNoteBeat.checked = half;
+    for (const option of Array.from(this.selectTimeSig.options)) {
+      const meter = withHalfNoteBeat(option.value as TimeSignature, half);
+      option.value = meter;
+      option.textContent = meter;
+    }
+    this.selectTimeSig.value = ts;
+
+    this.groupPulse.classList.toggle('hidden', !isGrouped(ts));
+    const m = t();
+    const [beat, division] = !isCompound(ts)
+      ? [m.pulseHalf, m.pulseQuarter]
+      : half
+        ? [m.pulseDottedHalf, m.pulseQuarter]
+        : [m.pulseDottedQuarter, m.pulseEighth];
+    for (const option of Array.from(this.selectPulse.options)) {
+      option.textContent = option.value === 'beat' ? beat : division;
+    }
   }
 
   /**
@@ -1381,6 +1423,13 @@ class GuidonicaApp {
       },
       (value, canvas) => this.introMeterIcons.set(value as TimeSignature, canvas)
     );
+    // The half-note toggle relabels the meter cards with their counterparts (ADR 0090)
+    this.introHalfNoteToggle = document.getElementById('intro-half-note-beat') as HTMLInputElement | null;
+    this.introHalfNoteToggle?.addEventListener('change', (e) => {
+      this.introHalfNote = (e.target as HTMLInputElement).checked;
+      this.translateIntro();
+      this.renderIntroMeterIcons();
+    });
     this.buildIntroLanguages();
 
     const closeIntro = (): void => {
@@ -1401,7 +1450,7 @@ class GuidonicaApp {
       // Level examples follow the clef and meter picked on the later steps
       if (
         this.introPreviewClef !== null &&
-        (this.introPreviewClef !== this.introClef || this.introPreviewMeter !== this.introMeter)
+        (this.introPreviewClef !== this.introClef || this.introPreviewMeter !== this.introTimeSignature())
       ) {
         this.renderIntroLevelPreviews();
       }
@@ -1410,7 +1459,7 @@ class GuidonicaApp {
     document.getElementById('btn-intro-meter-back')?.addEventListener('click', () => this.showIntroStep('clef'));
     document.getElementById('btn-intro-start')?.addEventListener('click', () => {
       if (this.introLevel) {
-        this.applyLevelPreset(this.introLevel, this.introClef, this.introMeter);
+        this.applyLevelPreset(this.introLevel, this.introClef, this.introTimeSignature());
       }
       closeIntro();
     });
@@ -1529,7 +1578,7 @@ class GuidonicaApp {
       if (clef in m.introClefs) label(btn, m.introClefs[clef]);
     }
     for (const btn of this.introMeterButtons) {
-      const ts = btn.dataset.value as TimeSignature;
+      const ts = withHalfNoteBeat(btn.dataset.value as TimeSignature, this.introHalfNote);
       if (ts in m.introMeters) label(btn, { name: ts, description: m.introMeters[ts] });
     }
     const title = document.getElementById('intro-title-text');
@@ -1568,6 +1617,7 @@ class GuidonicaApp {
     this.updateZoomUI(settings.zoomMode, settings.zoom || DEFAULT_ZOOM);
     this.updateThemeUI(settings.theme, resolveTheme(settings.theme));
     this.syncFullscreenGlyph();
+    this.syncMeterControls(settings.timeSignature);
     this.applyTupletAvailability(settings.timeSignature);
     this.updateClefRangeHint();
     this.updatePitchClassLabels();
@@ -1602,19 +1652,32 @@ class GuidonicaApp {
     for (const [clef, canvas] of this.introClefIcons) {
       renderClefIcon(canvas, clef, theme);
     }
+    this.renderIntroMeterIcons();
+  }
+
+  private renderIntroMeterIcons(): void {
+    const theme = globalState.settings.theme;
     for (const [ts, canvas] of this.introMeterIcons) {
-      renderMeterIcon(canvas, ts, theme);
+      renderMeterIcon(canvas, withHalfNoteBeat(ts, this.introHalfNote), theme);
     }
+  }
+
+  /** The meter the intro would apply: the chosen card, with the toggle's beat unit. */
+  private introTimeSignature(): TimeSignature {
+    return withHalfNoteBeat(this.introMeter, this.introHalfNote);
   }
 
   /** Each strip samples its level's representation (ADR 0051), filtered by its signature (ADR 0052). */
   private renderIntroLevelPreviews(): void {
     for (const [level, canvas] of this.introLevelPreviews) {
-      const settings = { ...globalState.settings, ...buildPreviewSettings(level, this.introClef, this.introMeter) };
+      const settings = {
+        ...globalState.settings,
+        ...buildPreviewSettings(level, this.introClef, this.introTimeSignature()),
+      };
       renderLevelPreview(canvas, settings, (w) => acceptsPreview(level, w));
     }
     this.introPreviewClef = this.introClef;
-    this.introPreviewMeter = this.introMeter;
+    this.introPreviewMeter = this.introTimeSignature();
   }
 
   private releaseIntroPreviews(): void {
@@ -1629,14 +1692,17 @@ class GuidonicaApp {
   private openIntro(firstVisit: boolean): void {
     if (!this.modalIntro || typeof this.modalIntro.showModal !== 'function') return;
     this.introFirstVisit = firstVisit;
-    this.translateIntro();
     const languages = document.getElementById('intro-language-options');
     if (languages) languages.hidden = !firstVisit;
     setRadioSelection(this.introLanguageButtons, getLanguage());
     const settings = globalState.settings;
     this.introLevel = matchLevel(settings);
     this.introClef = (INTRO_CLEFS as readonly Clef[]).includes(settings.clef) ? settings.clef : 'treble';
-    this.introMeter = INTRO_METERS.includes(settings.timeSignature) ? settings.timeSignature : '4/4';
+    this.introHalfNote = isHalfNoteMeter(settings.timeSignature);
+    if (this.introHalfNoteToggle) this.introHalfNoteToggle.checked = this.introHalfNote;
+    const card = withHalfNoteBeat(settings.timeSignature, false);
+    this.introMeter = INTRO_METERS.includes(card) ? card : '4/4';
+    this.translateIntro();
     setRadioSelection(this.introLevelButtons, this.introLevel);
     setRadioSelection(this.introClefButtons, this.introClef);
     setRadioSelection(this.introMeterButtons, this.introMeter);
@@ -2029,16 +2095,19 @@ class GuidonicaApp {
     this.scroller.renderFrame(settings);
   }
 
-  /** One LED per metric beat; compound meters group them in threes, beat-start LEDs full size (ADR 0076). */
+  /**
+   * One LED per metric beat; grouped meters group them by felt beat, in threes or twos,
+   * beat-start LEDs full size (ADR 0076, 0090).
+   */
   private renderBeatDots(ts: TimeSignature): void {
     this.beatDotsContainer.innerHTML = '';
-    const compound = isCompound(ts);
-    this.beatDotsContainer.classList.toggle('compound', compound);
+    const { beatGroup } = METER[ts];
+    this.beatDotsContainer.classList.toggle('grouped', beatGroup > 1);
     const dotsCount = getBeatsPerMeasure(ts);
 
     for (let i = 1; i <= dotsCount; i++) {
       const dot = document.createElement('div');
-      dot.className = compound && (i - 1) % 3 !== 0 ? 'beat-dot sub' : 'beat-dot';
+      dot.className = (i - 1) % beatGroup !== 0 ? 'beat-dot sub' : 'beat-dot';
       dot.dataset.beat = String(i);
       this.beatDotsContainer.appendChild(dot);
     }

@@ -6,8 +6,11 @@ export const TIE_PROBABILITY = 0.25;
 
 const EPS = 1e-9;
 
+// The breve (b) and the dotted whole and breve exist for the longer quarter-beat bars: no
+// placement in 4/4, 3/4, 2/4 ever admits them, so those grammars are unchanged (ADR 0090)
 const SIMPLE_NOTE_VALUES: Record<number, string> = {
-  4: 'w', 3: 'hd', 2: 'h', 1.5: 'qd', 1: 'q', 0.75: '8d', 0.5: '8', 0.375: '16d', 0.25: '16', 0.125: '32',
+  12: 'bd', 8: 'b', 6: 'wd', 4: 'w', 3: 'hd', 2: 'h', 1.5: 'qd', 1: 'q', 0.75: '8d', 0.5: '8', 0.375: '16d',
+  0.25: '16', 0.125: '32',
 };
 
 // The dotted whole is the 12/8 whole-bar note: without it a full-bar sound is a redundant hd~hd (ADR 0076)
@@ -26,6 +29,12 @@ export const NOTE_VALUES: Record<TimeSignature, Record<number, string>> = {
   '6/8': COMPOUND_NOTE_VALUES,
   '9/8': COMPOUND_NOTE_VALUES,
   '12/8': COMPOUND_NOTE_VALUES,
+  '4/2': SIMPLE_NOTE_VALUES,
+  '3/2': SIMPLE_NOTE_VALUES,
+  '2/2': SIMPLE_NOTE_VALUES,
+  '12/4': SIMPLE_NOTE_VALUES,
+  '9/4': SIMPLE_NOTE_VALUES,
+  '6/4': SIMPLE_NOTE_VALUES,
 };
 
 export interface Placement {
@@ -48,6 +57,31 @@ const COMPOUND_BEAT_PLACEMENTS: Record<string, Placement> = {
   '32': { period: 0.25, offsets: [0] },
 };
 
+/** Placements inside one quarter, the same in every quarter-beat meter. */
+const QUARTER_PLACEMENTS: Record<string, Placement> = {
+  '8d': { period: 1, offsets: [0, 0.25] },
+  '8': { period: 1, offsets: [0, 0.25, 0.5] },
+  '16': { period: 0.5, offsets: [0, 0.125, 0.25] },
+  '16d': { period: 0.5, offsets: [0, 0.125] },
+  '32': { period: 0.125, offsets: [0] },
+};
+
+/** Placements inside one half-note beat (4/4's half bars), shared by 2/2, 3/2, 4/2 (ADR 0090). */
+const HALF_BEAT_PLACEMENTS: Record<string, Placement> = {
+  qd: { period: 2, offsets: [0, 0.5] },
+  q: { period: 2, offsets: [0, 0.5, 1] },
+  ...QUARTER_PLACEMENTS,
+};
+
+/** 6/8's beat placements one value up: inside one dotted-half beat of 6/4, 9/4, 12/4 (ADR 0090). */
+const COMPOUND_QUARTER_BEAT_PLACEMENTS: Record<string, Placement> = {
+  hd: { period: 3, offsets: [0] },
+  h: { period: 3, offsets: [0, 1] },
+  qd: { period: 3, offsets: [0, 1] },
+  q: { period: 1, offsets: [0] },
+  ...QUARTER_PLACEMENTS,
+};
+
 /**
  * Notehead placement table: where one notehead of each value may start in each meter.
  * A note must additionally fit inside the bar. Encodes Gould's beaming/tie rules:
@@ -63,6 +97,10 @@ const COMPOUND_BEAT_PLACEMENTS: Record<string, Placement> = {
  *   have no placement and are always spelled tied. 9/8 reads like 3/4 one level up (hd on
  *   beat 1 or 2), 12/8 like 4/4 (wd fills the bar; hd on beat 2 is the tolerated
  *   `qd hd qd`, written whole or tied across the middle) (ADR 0076).
+ * - Half-note meters are 2/4, 3/4 and 4/4 one value up: 2/2 like 2/4 (`q h q` canonical),
+ *   3/2 like 3/4 (w on beat 1 or 2, wd fills the bar), 4/2 like 4/4 (b fills the bar, the
+ *   middle stays visible, `h w h` and `h wd` tolerated). 6/4, 9/4, 12/4 are 6/8, 9/8 and
+ *   12/8 one value up: w and b, like h and w in 6/8, are always tied (ADR 0090).
  */
 export const NOTEHEAD_PLACEMENTS: Record<TimeSignature, Record<string, Placement>> = {
   '4/4': {
@@ -105,6 +143,34 @@ export const NOTEHEAD_PLACEMENTS: Record<TimeSignature, Record<string, Placement
     hd: { period: 6, offsets: [0], tolerated: [3] },
     ...COMPOUND_BEAT_PLACEMENTS,
   },
+  '4/2': {
+    b: { period: 8, offsets: [0] },
+    wd: { period: 8, offsets: [0], tolerated: [2] },
+    w: { period: 4, offsets: [0], tolerated: [2] },
+    hd: { period: 4, offsets: [0, 1] },
+    h: { period: 4, offsets: [0, 1, 2] },
+    ...HALF_BEAT_PLACEMENTS,
+  },
+  '3/2': {
+    wd: { period: 6, offsets: [0] },
+    w: { period: 6, offsets: [0, 2] },
+    hd: { period: 1, offsets: [0] },
+    h: { period: 1, offsets: [0] },
+    ...HALF_BEAT_PLACEMENTS,
+  },
+  '2/2': {
+    w: { period: 4, offsets: [0] },
+    hd: { period: 4, offsets: [0, 1] },
+    h: { period: 4, offsets: [0, 1, 2] },
+    ...HALF_BEAT_PLACEMENTS,
+  },
+  '12/4': {
+    bd: { period: 12, offsets: [0] },
+    wd: { period: 6, offsets: [0], tolerated: [3] },
+    ...COMPOUND_QUARTER_BEAT_PLACEMENTS,
+  },
+  '9/4': { wd: { period: 9, offsets: [0, 3] }, ...COMPOUND_QUARTER_BEAT_PLACEMENTS },
+  '6/4': { wd: { period: 6, offsets: [0] }, ...COMPOUND_QUARTER_BEAT_PLACEMENTS },
 };
 
 export type PlacementKind = 'canonical' | 'tolerated';
@@ -197,13 +263,28 @@ const COMPOUND_METER_RESTS: Record<string, Placement> = {
   '32': { period: 0.25, offsets: [0] },
 };
 
+const HALF_METER_RESTS: Record<string, Placement> = {
+  h: { period: 2, offsets: [0] },
+  ...SIMPLE_METER_RESTS,
+};
+
+const COMPOUND_QUARTER_METER_RESTS: Record<string, Placement> = {
+  hd: { period: 3, offsets: [0] },
+  h: { period: 3, offsets: [0] },
+  q: { period: 1, offsets: [0] },
+  '8': { period: 0.5, offsets: [0] },
+  '16': { period: 0.25, offsets: [0] },
+  '32': { period: 0.125, offsets: [0] },
+};
+
 /**
  * Rest placement table: where one rest of each value may start. Rests never obscure a
  * beat: each sits on a multiple of its own span, the half rest only on either half of a
  * 4/4 bar (the dotted-half rest likewise in 12/8), the compound quarter rest only at a
  * beat start, and no rest is dotted except the compound whole-beat qd and 12/8 half-bar
  * hd. A silence filling the bar is one whole rest in every meter (spellRest), so 3/4,
- * 2/4, 6/8 and 9/8 need no longer value (ADR 0065, 0076).
+ * 2/4, 6/8 and 9/8 need no longer value (ADR 0065, 0076). Half-note meters rest a half
+ * per beat and a whole per 4/2 half bar; 6/4, 9/4, 12/4 are 6/8's table one value up (ADR 0090).
  */
 export const REST_PLACEMENTS: Record<TimeSignature, Record<string, Placement>> = {
   '4/4': { h: { period: 2, offsets: [0] }, ...SIMPLE_METER_RESTS },
@@ -212,10 +293,21 @@ export const REST_PLACEMENTS: Record<TimeSignature, Record<string, Placement>> =
   '6/8': COMPOUND_METER_RESTS,
   '9/8': COMPOUND_METER_RESTS,
   '12/8': { hd: { period: 6, offsets: [0] }, ...COMPOUND_METER_RESTS },
+  '4/2': { w: { period: 4, offsets: [0] }, ...HALF_METER_RESTS },
+  '3/2': HALF_METER_RESTS,
+  '2/2': HALF_METER_RESTS,
+  '12/4': { wd: { period: 6, offsets: [0] }, ...COMPOUND_QUARTER_METER_RESTS },
+  '9/4': COMPOUND_QUARTER_METER_RESTS,
+  '6/4': COMPOUND_QUARTER_METER_RESTS,
 };
 
-/** Glyph of a bar-long rest, whatever the meter: the whole rest. */
-export const BAR_REST = 'w';
+/**
+ * Glyph of a bar-long rest: the whole rest, except the breve rest in 4/2, the one meter
+ * whose bar is exactly a breve (ADR 0090).
+ */
+export function barRest(ts: TimeSignature): string {
+  return ts === '4/2' ? 'b' : 'w';
+}
 
 /** Span in metric beats of the note value `duration` in `ts`, or null if it has none. */
 export function noteSpan(ts: TimeSignature, duration: string): number | null {
@@ -245,7 +337,7 @@ export function isPlaced(offset: number, placement: Pick<Placement, 'period' | '
 
 /**
  * Canonical spelling of the silence [start, end) (metric beats). A silence over the whole
- * bar is one whole rest, whatever the enabled values. Otherwise greedy: at each point the
+ * bar is one bar rest (barRest), whatever the enabled values. Otherwise greedy: at each point the
  * longest legal rest that fits, preferring the enabled `values` so a level without half
  * notes shows no half rest; a value outside them is used only where no enabled rest is
  * legal (8r 8r for a silent syncopated q when only quarters are on).
@@ -258,7 +350,7 @@ export function spellRest(
 ): PartitionItem[] {
   const bar = METER[ts].beatsPerMeasure;
   if (start < EPS && end > bar - EPS) {
-    return [{ duration: BAR_REST, beatDuration: bar, isRest: true }];
+    return [{ duration: barRest(ts), beatDuration: bar, isRest: true }];
   }
   const rests: PartitionItem[] = [];
   let offset = start;

@@ -53,7 +53,7 @@ describe('rotating tips (ADR 0087)', () => {
     for (const id of ['labels', 'pulse', 'playhead', 'restsTies', 'notes', 'tuplets', 'keys', 'install'] as TipId[]) {
       expect(seen.has(id), id).toBe(false);
     }
-    for (const id of ['levels', 'clefs', 'pinch', 'share', 'whatsNew', 'follow', 'support'] as TipId[]) {
+    for (const id of ['levels', 'halfNote', 'clefs', 'pinch', 'share', 'whatsNew', 'follow', 'support'] as TipId[]) {
       expect(seen.has(id), id).toBe(true);
     }
   });

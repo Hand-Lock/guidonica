@@ -108,4 +108,24 @@ describe('Music font subset covers every glyph the renderer draws', () => {
       expect(missing()).toEqual([]);
     });
   }
+
+  it('4/2 breve notehead and breve bar rest (ADR 0090)', () => {
+    const renderer = new MeasureRenderer();
+    const generator = new MusicGenerator();
+    const settings: AppSettings = {
+      ...structuredClone(DEFAULT_APP_SETTINGS),
+      timeSignature: '4/2',
+      subdivisions: { ...DEFAULT_APP_SETTINGS.subdivisions, whole: true, half: false, quarter: false, eighth: false, dotted: false },
+      rests: true,
+      ties: false,
+    };
+    const BREVE = 0xe0a0;
+    const BREVE_REST = 0xe4e2;
+    for (let m = 0; m < 400 && !(drawn.has(BREVE) && drawn.has(BREVE_REST)); m++) {
+      renderer.renderMeasure(generator.generateMeasure(m, settings, m * 8), 'light', en.noteNames.syllables);
+    }
+    expect(drawn.has(BREVE)).toBe(true);
+    expect(drawn.has(BREVE_REST)).toBe(true);
+    expect(missing()).toEqual([]);
+  });
 });

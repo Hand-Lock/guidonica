@@ -81,12 +81,12 @@ describe('Metronome Traffic Lights & Count-In Indicator', () => {
     expect(styleCss.match(/--led-mid-glow:/g)?.length).toBe(2);
   });
 
-  it('groups compound-meter LEDs in threes: full beat LEDs, 5px eighths (ADR 0076)', () => {
+  it('groups LEDs by felt beat: full beat LEDs, 5px divisions (ADRs 0076, 0090)', () => {
     const mainTs = fs.readFileSync(path.join(rootDir, 'src/main.ts'), 'utf-8');
-    expect(mainTs).toContain("this.beatDotsContainer.classList.toggle('compound', compound);");
-    expect(mainTs).toContain("dot.className = compound && (i - 1) % 3 !== 0 ? 'beat-dot sub' : 'beat-dot';");
-    expect(styleCss).toMatch(/\.beat-dots\.compound\s*\{\s*gap:\s*2px;/);
-    expect(styleCss).toMatch(/\.beat-dots\.compound \.beat-dot:not\(\.sub\):not\(:first-child\)\s*\{\s*margin-left:\s*4px;/);
+    expect(mainTs).toContain("this.beatDotsContainer.classList.toggle('grouped', beatGroup > 1);");
+    expect(mainTs).toContain("dot.className = (i - 1) % beatGroup !== 0 ? 'beat-dot sub' : 'beat-dot';");
+    expect(styleCss).toMatch(/\.beat-dots\.grouped\s*\{\s*gap:\s*2px;/);
+    expect(styleCss).toMatch(/\.beat-dots\.grouped \.beat-dot:not\(\.sub\):not\(:first-child\)\s*\{\s*margin-left:\s*4px;/);
     expect(styleCss).toMatch(/\.beat-dot\.sub\s*\{\s*width:\s*5px;\s*height:\s*5px;/);
     // The beat LED itself keeps the simple-meter size
     expect(styleCss).toMatch(/\.beat-dot\s*\{\s*width:\s*13px;\s*height:\s*13px;/);

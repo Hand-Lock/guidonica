@@ -219,20 +219,26 @@
               </div>
               <div class="control-group">
                 <label for="select-time-signature" data-i18n="meter">Meter</label>
-                <select id="select-time-signature" aria-label="Select musical time signature" data-i18n-aria-label="meterAria">
-                  <option value="4/4" selected>4/4</option>
-                  <option value="3/4">3/4</option>
-                  <option value="2/4">2/4</option>
-                  <option value="6/8">6/8</option>
-                  <option value="9/8">9/8</option>
-                  <option value="12/8">12/8</option>
-                </select>
+                <div class="ledger-select-row">
+                  <select id="select-time-signature" aria-label="Select musical time signature" data-i18n-aria-label="meterAria">
+                    <option value="4/4" selected>4/4</option>
+                    <option value="3/4">3/4</option>
+                    <option value="2/4">2/4</option>
+                    <option value="6/8">6/8</option>
+                    <option value="9/8">9/8</option>
+                    <option value="12/8">12/8</option>
+                  </select>
+                  <label class="checkbox-item" title="Count in half notes, as in early music: 4/4 becomes 4/2, 2/4 becomes 2/2 (alla breve), 6/8 becomes 6/4" data-i18n-title="halfNoteBeatTitle">
+                    <input type="checkbox" id="toggle-half-note-beat" />
+                    <span data-i18n="halfNoteBeat">Half-note beat <svg class="music-icon icon-half" aria-hidden="true"><use href="#g-half"/></svg></span>
+                  </label>
+                </div>
               </div>
-              <div id="group-compound-pulse" class="control-group hidden">
-                <label for="select-compound-pulse" data-i18n="compoundPulse">Pulse</label>
-                <select id="select-compound-pulse" aria-label="Compound meter pulse grouping" data-i18n-aria-label="compoundPulseAria">
-                  <option value="dotted-quarter" selected data-i18n="compoundPulseDotted">Dotted quarter (♩.)</option>
-                  <option value="eighth" data-i18n="compoundPulseEighth">Eighth (♪)</option>
+              <div id="group-pulse" class="control-group hidden">
+                <label for="select-pulse" data-i18n="pulse">Pulse</label>
+                <select id="select-pulse" aria-label="Pulse grouping of the click" data-i18n-aria-label="pulseAria">
+                  <option value="beat" selected>Dotted quarter (♩.)</option>
+                  <option value="division">Eighth (♪)</option>
                 </select>
               </div>
             </section>
@@ -254,7 +260,7 @@
                   <input type="checkbox" id="subdiv-half" checked />
                   <span data-i18n="valueHalf">Half <svg class="music-icon icon-half" aria-hidden="true"><use href="#g-half"/></svg></span>
                 </label>
-                <label class="checkbox-item">
+                <label class="checkbox-item" title="Whole notes, and the breve in 4/2" data-i18n-title="wholeTitle">
                   <input type="checkbox" id="subdiv-whole" checked />
                   <span data-i18n="valueWhole">Whole <svg class="music-icon icon-whole" aria-hidden="true"><use href="#g-whole"/></svg></span>
                 </label>
@@ -266,7 +272,7 @@
                   <input type="checkbox" id="subdiv-thirty-second" />
                   <span data-i18n="valueThirtySecond">32nd <svg class="music-icon icon-thirty-second" aria-hidden="true"><use href="#g-thirty-second"/></svg></span>
                 </label>
-                <label class="checkbox-item" title="Dotted Notes (wd in 12/8, hd, qd, 8d, 16d). 8d needs 16ths or 32nds, 16d needs 32nds" data-i18n-title="dottedTitle">
+                <label class="checkbox-item" title="Dotted Notes (wd in 12/8, 3/2, 4/2, 6/4, 9/4 and 12/4, bd in 12/4, hd, qd, 8d, 16d). 8d needs 16ths or 32nds, 16d needs 32nds" data-i18n-title="dottedTitle">
                   <input type="checkbox" id="subdiv-dotted" checked />
                   <span data-i18n="dotted">Dotted <svg class="music-icon icon-dotted" aria-hidden="true"><use href="#g-dotted"/></svg></span>
                 </label>
@@ -780,6 +786,12 @@
             <div class="about-dialog-body">
               <h3 id="intro-meter-question" class="intro-question" data-i18n="introMeterQuestion">Which time signature would you like to read?</h3>
               <div id="intro-meter-options" class="intro-options intro-options-meters" role="radiogroup" aria-labelledby="intro-meter-question"></div>
+              <div class="checkbox-grid intro-half-note">
+                <label class="checkbox-item" title="Count in half notes, as in early music: 4/4 becomes 4/2, 2/4 becomes 2/2 (alla breve), 6/8 becomes 6/4" data-i18n-title="halfNoteBeatTitle">
+                  <input type="checkbox" id="intro-half-note-beat" />
+                  <span data-i18n="halfNoteBeat">Half-note beat <svg class="music-icon icon-half" aria-hidden="true"><use href="#g-half"/></svg></span>
+                </label>
+              </div>
             </div>
             <div class="about-dialog-footer intro-footer">
               <button id="btn-intro-meter-back" class="btn btn-secondary" type="button" data-i18n="back">Back</button>

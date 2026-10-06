@@ -120,7 +120,7 @@ function tupletGroups(m: MeasureData): MeasureData['notes'][] {
 function tupletValueOf(ts: TimeSignature, group: MeasureData['notes']): TupletValue | undefined {
   const span = group.reduce((sum, n) => sum + n.beatDuration, 0);
   const valueBeats = span / (group[0].tupletNotesOccupied ?? 1);
-  const quarter = isCompound(ts) ? 2 : 1;
+  const quarter = METER[ts].beatValue === 8 ? 2 : 1;
   return TUPLET_VALUES.find((v) => Math.abs(valueBeats - quarter / { '1/4': 1, '1/8': 2, '1/16': 4 }[v]) < 1e-9);
 }
 
@@ -787,7 +787,7 @@ describe('MusicGenerator 32nd notes', () => {
   it('reaches 32, 16d, 32 16 32 and 8d 32 32 (P > 0)', () => {
     for (const ts of ['4/4', '6/8', '9/8', '12/8'] as TimeSignature[]) {
       // Beat span of one eighth note in this meter
-      const unit = isCompound(ts) ? 1 : 0.5;
+      const unit = METER[ts].beatValue === 8 ? 1 : 0.5;
       const seen = { thirtySecond: false, dottedSixteenth: false, middleSixteenth: false, dottedEighth32: false };
       for (const m of generate(ts, SUBDIV_32, N)) {
         m.notes.forEach((n, i) => {
@@ -1047,12 +1047,15 @@ describe('Rhythm grammar (ADR 0065)', () => {
     const values = (ts: TimeSignature, subdiv: Partial<SubdivisionOptions>): string[] =>
       [...rhythmGrammar(ts, { ...NONE, ...subdiv }).values].sort();
     // Not needed: the enabled values fill the bar and all occur
-    expect(values('4/4', { whole: true })).toEqual(['w']);
+    // The breve rides on the Whole chip but only 4/2 places it (ADR 0090)
+    expect(values('4/4', { whole: true })).toEqual(['b', 'w']);
+    expect(values('4/2', { whole: true })).toEqual(['b', 'w']);
     expect(values('4/4', { half: true })).toEqual(['h']);
     expect(values('2/4', { eighth: true })).toEqual(['8']);
     expect(values('4/4', { quarter: true })).toEqual(['q']);
     // Needed to fill the bar
-    expect(values('3/4', { whole: true })).toEqual(['q', 'w']);
+    expect(values('3/4', { whole: true })).toEqual(['b', 'q', 'w']);
+    expect(values('3/2', { whole: true })).toEqual(['b', 'q', 'w']);
     expect(values('6/8', { quarter: true })).toEqual(['8', 'q']);
     // Needed to reach an enabled value: hd in 4/4
     expect(values('4/4', { half: true, dotted: true })).toEqual(['h', 'hd', 'q']);
@@ -1077,6 +1080,26 @@ describe('Rhythm grammar (ADR 0065)', () => {
     }
   });
 
+  it('reaches the 2/4, 3/4, 4/4 and compound figures one value up in half-note meters (ADR 0090)', () => {
+    const LONG: SubdivisionOptions = { ...NONE, whole: true, half: true, quarter: true, dotted: true };
+    const expected: Partial<Record<TimeSignature, string[]>> = {
+      '2/2': ['w', 'h h', 'q h q', 'hd q', 'q hd'],
+      '3/2': ['wd', 'w h', 'h w', 'h h h'],
+      '4/2': ['b', 'w w', 'h w h', 'wd h', 'h h h h'],
+      '6/4': ['wd', 'hd hd', 'h q hd', 'q h hd'],
+      '9/4': ['wd hd', 'hd wd', 'hd hd hd'],
+      '12/4': ['bd', 'wd wd', 'hd wd hd', 'hd hd hd hd'],
+    };
+    for (const [ts, bars] of Object.entries(expected) as [TimeSignature, string[]][]) {
+      const seen = new Set(
+        generateMany({ ...DEFAULT_APP_SETTINGS, timeSignature: ts, subdivisions: LONG, ties: false, rests: false }, 1500).map(
+          (m) => m.notes.map((n) => n.duration).join(' ')
+        )
+      );
+      for (const bar of bars) expect(seen.has(bar), `${ts} ${bar}`).toBe(true);
+    }
+  });
+
   it('reaches hd in 4/4 with only half and dotted enabled', () => {
     const measures = generateMany(
       { ...DEFAULT_APP_SETTINGS, subdivisions: { ...NONE, half: true, dotted: true } },
@@ -1091,11 +1114,13 @@ describe('Rhythm grammar (ADR 0065)', () => {
       const shorter = sub.eighth || sub.sixteenth || sub.thirtySecond;
       return enabledValues(sub).filter(
         (v) =>
-          (v === 'w' && ts !== '4/4') ||
-          (v === 'h' && isCompound(ts)) ||
-          (v === 'wd' && ts !== '12/8') ||
+          (v === 'b' && ts !== '4/2') ||
+          (v === 'bd' && ts !== '12/4') ||
+          (v === 'w' && !['4/4', '4/2', '3/2', '2/2'].includes(ts)) ||
+          (v === 'h' && METER[ts].beatValue === 8) ||
+          (v === 'wd' && !['12/8', '4/2', '3/2', '12/4', '9/4', '6/4'].includes(ts)) ||
           (v === 'hd' && ts === '2/4') ||
-          (v === 'qd' && (ts === '4/4' || ts === '2/4') && !shorter) ||
+          (v === 'qd' && METER[ts].beatValue === 4 && ts !== '3/4' && !shorter) ||
           (v === '8d' && !(sub.sixteenth || sub.thirtySecond)) ||
           (v === '16d' && !sub.thirtySecond)
       );

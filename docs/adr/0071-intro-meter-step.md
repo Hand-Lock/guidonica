@@ -1,6 +1,6 @@
 # 0071. Time Signature Step in the Onboarding Intro
 
-- **Status**: Accepted (amends [0049](0049-level-presets-onboarding-intro.md), [0050](0050-intro-notation-previews.md) and [0052](0052-intro-preview-signature-check.md)); amended by [0076](0076-compound-triple-and-quadruple-meters.md)
+- **Status**: Accepted (amends [0049](0049-level-presets-onboarding-intro.md), [0050](0050-intro-notation-previews.md) and [0052](0052-intro-preview-signature-check.md)); amended by [0076](0076-compound-triple-and-quadruple-meters.md), [0090](0090-half-note-beat-meters.md)
 - **Date**: 2026-10-05
 - **Author**: Claude & A. C. Lo Cascio
 

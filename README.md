@@ -121,7 +121,7 @@ flowchart TD
 
     subgraph GenerationPipeline["Procedural Generation Pipeline"]
         PARAM["Session Parameters\n(Clef, Ledger Lines, Meter, Values, Dotted, Ties, Tuplets, Rests, Intervals, Notes)"]
-        ERGMET["Grammar-Driven Rhythm Sampler\n(32nd Grid: 2/4, 3/4, 4/4, 6/8, 9/8, 12/8)"]
+        ERGMET["Grammar-Driven Rhythm Sampler\n(32nd Grid: 2/4, 3/4, 4/4, 6/8, 9/8, 12/8,\n2/2, 3/2, 4/2, 6/4, 9/4, 12/4)"]
         MARKOV["Pitch Random Walk\n(Clef Range + 0–3 Ledgers, Selected Notes, Irreducible Digraph)"]
         PARAM --> ERGMET
         PARAM --> MARKOV
@@ -148,7 +148,7 @@ flowchart TD
 ## Comprehensive Feature Tour
 
 ### 1. Level Presets & Onboarding
-- **Three-step intro**: on a first visit, Guidonica asks **"What's your level?"**, then **"Which clef would you like to read?"** (Treble, Bass, Alto, Tenor), then **"Which time signature would you like to read?"** (4/4, 3/4, 2/4, 6/8, 9/8, 12/8). The welcome step also offers the five languages ([ADRs 0049](docs/adr/0049-level-presets-onboarding-intro.md), [0071](docs/adr/0071-intro-meter-step.md)).
+- **Three-step intro**: on a first visit, Guidonica asks **"What's your level?"**, then **"Which clef would you like to read?"** (Treble, Bass, Alto, Tenor), then **"Which time signature would you like to read?"** (4/4, 3/4, 2/4, 6/8, 9/8, 12/8, or with the Half-note beat chip 4/2, 3/2, 2/2, 6/4, 9/4, 12/4). The welcome step also offers the five languages ([ADRs 0049](docs/adr/0049-level-presets-onboarding-intro.md), [0071](docs/adr/0071-intro-meter-step.md)).
 - **Five levels**, each an ordinary set of visible settings ([ADR 0070](docs/adr/0070-note-selection-and-level-progression.md)):
 
   | Level | Tempo | What it adds |
@@ -168,7 +168,7 @@ The settings drawer has four sections:
 
 | Section | Contents |
 | :--- | :--- |
-| **Staff** | Clef (8), ledger lines above and below (0–3) with a live range hint, time signature, compound pulse (♩. or ♪) |
+| **Staff** | Clef (8), ledger lines above and below (0–3) with a live range hint, time signature with the Half-note beat switch, pulse (beat or division) |
 | **Rhythm** | Note values (quarter, eighth, half, whole, 16th, 32nd), dotted, tuplets, rests, ties |
 | **Melody** | Notes (C … B), intervals (unison … 9+) |
 | **Practice** | Language, labels, assists (count-in, playhead, tips), click sound, volume, theme, exercise link |
@@ -191,12 +191,13 @@ Each bar is sampled left to right over a 32nd grid from a grammar derived from t
 - **Note values**: whole (`w`, only in 4/4), half (`h`), quarter (`q`), eighth (`8`), sixteenth (`16`) and thirty-second (`32`) ([ADR 0043](docs/adr/0043-thirty-second-notes.md)).
 - **Simple meters (2/4, 3/4, 4/4)**: 4/4 keeps the middle of the bar visible (`q h q` is the tolerated syncopation); 3/4 is one undivided unit, so `h q` and `q h` both appear; 2/4 has no dotted half.
 - **Compound meters (6/8, 9/8, 12/8)**: the dotted-quarter beat stays visible. Dotted halves (`hd`), paired dotted quarters (`qd qd`), `q 8` and `8 q`, running eighths and sub-eighth figures. 9/8 reads like 3/4 one level up (`hd qd` and `qd hd`); 12/8 like 4/4 (dotted whole `wd`, the tolerated `qd hd qd`). Beams group eighths in threes ([ADR 0076](docs/adr/0076-compound-triple-and-quadruple-meters.md)).
-- **Dotted Rhythms**: one toggle adds `wd` (12/8 only), `hd`, `qd`, `8d` and `16d`. A dotted value appears only beside a shorter partner that completes its beat.
+- **Half-note beat**: one switch turns every meter into its early-music counterpart, the modern transcriptions of the mensurations: 4/4 into 4/2, 3/4 into 3/2, 2/4 into 2/2 (alla breve), 6/8 into 6/4, 9/8 into 9/4, 12/8 into 12/4. Each reads like its counterpart one value longer: `q h q` is cut-time syncopation, a 4/2 bar can be one breve, eighths beam in fours per half note. Tempo stays in quarter-note BPM ([ADR 0090](docs/adr/0090-half-note-beat-meters.md)).
+- **Dotted Rhythms**: one toggle adds `wd` (12/8 and the half-note meters), `hd`, `qd`, `8d` and `16d`. A dotted value appears only beside a shorter partner that completes its beat.
 - **Ties**: written only where no single well-placed notehead can express the sound: across the middle of a 4/4 bar, across a dotted beat, into or out of tuplets, and **across the barline**, in chains ([ADR 0040](docs/adr/0040-engraving-grammar-for-ties-and-cross-barline-ties.md)). Tied notes keep their pitch.
 - **Rests**: spelled on the beat grid ([ADRs 0065](docs/adr/0065-grammar-driven-rhythm-sampler.md), [0066](docs/adr/0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md)):
-  - a silent bar is always one whole rest, in every meter;
-  - 4/4 has a half rest on either half of the bar;
-  - compound meters have a dotted-quarter rest on each beat, and 12/8 a dotted-half rest on either half;
+  - a silent bar is one whole rest, except the breve rest in 4/2;
+  - 4/4 has a half rest on either half of the bar; 2/2 and 3/2 a half rest per beat, 4/2 a whole rest per half bar;
+  - compound meters have a dotted-quarter rest on each beat, and 12/8 a dotted-half rest on either half (6/4, 9/4, 12/4 one value up);
   - quarter, eighth, 16th and 32nd rests sit on multiples of their own length.
 
   Rests can run on across tuplets and barlines.
@@ -205,7 +206,7 @@ Each bar is sampled left to right over a 32nd grid from a grammar derived from t
 A dedicated tuplet menu crosses ratio and base value:
 - **Tuplet Ratios**: Duplets (2:3), Triplets (3:2), Quadruplets (4:3), Quintuplets (5:4), Sextuplets (6:4), and Septuplets (7:4).
 - **Base Note Values**: Quarter notes (`1/4`), Eighth notes (`1/8`), and Sixteenth notes (`1/16`).
-- **Meter-aware cells**: only the cells that make metric sense in the current time signature are enabled; the rest are greyed out. For example, quintuplets to septuplets of quarters span a 4/4 bar, and 3/4 adds duplets of quarters (2:3) and quadruplets of eighths written 4:6 across the bar. Compound meters use duplets and quadruplets instead of triplets. **Clear all** empties the matrix.
+- **Meter-aware cells**: only the cells that make metric sense in the current time signature are enabled; the rest are greyed out. For example, quintuplets to septuplets of quarters span a 4/4 bar, and 3/4 adds duplets of quarters (2:3) and quadruplets of eighths written 4:6 across the bar. Compound meters use duplets and quadruplets instead of beat-level triplets. Half-note meters take 4/4's cells on each half-note beat. **Clear all** empties the matrix.
 - **Mixed members**: a group may merge members of different values, such as `3[q 8]` or `5[q 8 8 8]` ([ADR 0066](docs/adr/0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md)).
 - **Engraving Polish**: one beam per run of beamable members with a bracket unless one beam spans the group, unified stem directions, and metric width compensation.
 
@@ -241,10 +242,10 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
   | Accent | Beats | Woodblock sweep | Electronic | Beat light |
   | :--- | :--- | :--- | :--- | :--- |
   | Downbeat | 1 | 1600 → 800 Hz | 1300 Hz | Ruby |
-  | Secondary | 4/4 beat 3; 6/8 beat 4; 9/8 beats 4, 7; 12/8 beats 4, 7, 10 | 1350 → 675 Hz | 1050 Hz | Orange |
+  | Secondary | 4/4 beat 3; 6/8 beat 4; 9/8 beats 4, 7; 12/8 beats 4, 7, 10; every half-note or dotted beat after the first in 2/2 … 12/4 | 1350 → 675 Hz | 1050 Hz | Orange |
   | Weak | All others | 1100 → 550 Hz | 800 Hz | Olo turquoise |
 
-- **Compound Pulse Grouping**: In 6/8, 9/8 and 12/8, the click sounds on every dotted-quarter beat (♩.) or on every eighth (♪). The beat lights read in threes either way.
+- **Pulse Grouping**: In compound and half-note meters, the click sounds on every beat (♩. in 6/8, 𝅗𝅥 in 2/2, 𝅗𝅥. in 6/4) or on every division (♪ in 6/8, ♩ otherwise). The beat lights read in threes or twos either way.
 - **Volume & Mute**: Direct volume slider with instant mute toggle.
 
 ### 10. Stationary Wait-In-Place Count-In
@@ -272,7 +273,7 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 
 ### 15. Shareable Exercise Links
 - **Settings → Practice → Exercise link** copies (or shares, on phones) a link to the current exercise ([ADR 0085](docs/adr/0085-shareable-exercise-links.md)).
-- The link's `#x=1&…` fragment carries clef, ledger lines, time signature, compound pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels and count-in. Language, theme, sound, volume, zoom and the playhead stay with each user.
+- The link's `#x=1&…` fragment carries clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels and count-in. Language, theme, sound, volume, zoom and the playhead stay with each user.
 - Opening a link skips the intro and loads the exercise. Each student still reads **different** music under the same rules, because the generator is never seeded.
 
 ### 16. Tips & What's New
@@ -477,7 +478,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0051](docs/adr/0051-intro-preview-representation-presets.md) | Representation Presets for the Intro Level Previews | Accepted; amended by 0052, 0070 |
 | [0052](docs/adr/0052-intro-preview-signature-check.md) | Signature Check for the Intro Level Previews | Accepted; amended by 0070, 0071 |
 | [0053](docs/adr/0053-header-level-button.md) | Header Level Button with a Live Difficulty Meter | Accepted; amended by 0054, 0073 |
-| [0054](docs/adr/0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055, 0076 |
+| [0054](docs/adr/0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055, 0076, 0090 |
 | [0055](docs/adr/0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056, 0083, 0087 |
 | [0056](docs/adr/0056-notch-safe-notation-stage.md) | Notch-Safe Notation Stage | Accepted |
 | [0057](docs/adr/0057-canvas-bounded-beams-and-tuplet-numbers.md) | Canvas-Bounded Beams & Tuplet Numbers | Accepted |
@@ -488,18 +489,18 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0062](docs/adr/0062-robots-txt-and-sitemap.md) | robots.txt & sitemap.xml | Accepted; amended by 0086 |
 | [0063](docs/adr/0063-offline-service-worker.md) | Offline Service Worker | Accepted; amended by 0078, 0086 |
 | [0064](docs/adr/0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Superseded by 0065 |
-| [0065](docs/adr/0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066, 0076 |
+| [0065](docs/adr/0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066, 0076, 0090 |
 | [0066](docs/adr/0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted; amended by 0070 |
 | [0067](docs/adr/0067-contribution-licensing-dco-and-trademark-policy.md) | Contribution Licensing (Inbound MIT + DCO) & Trademark Policy | Accepted; amended by 0068, 0069 |
 | [0068](docs/adr/0068-project-email-guidonica-it-migadu.md) | Project Email on guidonica.it (Migadu), Contact Addresses & security.txt | Accepted; amended by 0069, 0077, 0088 |
 | [0069](docs/adr/0069-security-privacy-audit.md) | Security & Privacy Audit: History Rewrite, CI Least Privilege & Repository Hardening | Accepted; amended by 0077, 0088 |
 | [0070](docs/adr/0070-note-selection-and-level-progression.md) | Note Selection Toggles & Reworked Level Progression | Accepted |
-| [0071](docs/adr/0071-intro-meter-step.md) | Time Signature Step in the Onboarding Intro | Accepted; amended by 0076 |
-| [0072](docs/adr/0072-three-level-beat-accent-hierarchy.md) | Three-Level Beat Accent Hierarchy in the Traffic Lights and Click | Accepted; amended by 0076 |
+| [0071](docs/adr/0071-intro-meter-step.md) | Time Signature Step in the Onboarding Intro | Accepted; amended by 0076, 0090 |
+| [0072](docs/adr/0072-three-level-beat-accent-hierarchy.md) | Three-Level Beat Accent Hierarchy in the Traffic Lights and Click | Accepted; amended by 0076, 0090 |
 | [0073](docs/adr/0073-level-button-dumbbell-icon.md) | Dumbbell Icon for the Header Level Button | Accepted |
 | [0074](docs/adr/0074-donations-ko-fi-link.md) | Donations: a Plain Ko-fi Link | Accepted; amended by 0088 |
 | [0075](docs/adr/0075-ai-assistance-disclosure.md) | AI-Assistance Disclosure in the About Dialog | Accepted |
-| [0076](docs/adr/0076-compound-triple-and-quadruple-meters.md) | Compound Triple and Quadruple Meters (9/8, 12/8) | Accepted |
+| [0076](docs/adr/0076-compound-triple-and-quadruple-meters.md) | Compound Triple and Quadruple Meters (9/8, 12/8) | Accepted; amended by 0090 |
 | [0077](docs/adr/0077-ci-actions-node-24.md) | CI Actions on Node 24 Releases | Accepted |
 | [0078](docs/adr/0078-release-channels-calver-changelog-whats-new.md) | Release Channels, CalVer Changelog and "What's New" | Accepted |
 | [0079](docs/adr/0079-social-profile-banners.md) | Social Profile Banners | Accepted |
@@ -513,6 +514,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0087](docs/adr/0087-rotating-tips.md) | Rotating Tips | Accepted |
 | [0088](docs/adr/0088-pre-release-audit-2026-10-06.md) | Pre-release Audit 2026-10-06: Second History Rewrite, Privacy Policy | Accepted |
 | [0089](docs/adr/0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted |
+| [0090](docs/adr/0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted |
 
 ---
 

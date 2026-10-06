@@ -4,12 +4,14 @@ import {
   AppSettings,
   MeasureData,
   NoteData,
+  METER,
+  TIME_SIGNATURES,
   TUPLET_NAMES,
   TUPLET_SUPPORT,
   TUPLET_VALUES,
   TupletCell,
   computeBeatWidth,
-  isCompound,
+  isHalfNoteMeter,
 } from '../src/notation/types';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import {
@@ -78,10 +80,17 @@ function diatonicStep(key: string): number {
   return Number(octave) * 7 + LETTERS.indexOf(letter);
 }
 
+describe('intro meters (ADR 0090)', () => {
+  it('offers the six base meters; the Half-note beat chip reaches the other six', () => {
+    expect(INTRO_METERS).toEqual(['4/4', '3/4', '2/4', '6/8', '9/8', '12/8']);
+    expect(TIME_SIGNATURES.filter(isHalfNoteMeter)).toEqual(['4/2', '3/2', '2/2', '12/4', '9/4', '6/4']);
+  });
+});
+
 describe('intro preview representations (ADR 0051)', () => {
   for (const preset of LEVEL_PRESETS) {
     for (const clef of INTRO_CLEFS) {
-      for (const meter of INTRO_METERS) {
+      for (const meter of TIME_SIGNATURES) {
         it(`${preset.id} / ${clef} / ${meter}: preview Ω ⊆ preset Ω with the same spacing`, () => {
           const previewPatch = buildPreviewSettings(preset.id, clef, meter);
           const presetPatch = buildPresetSettings(preset.id, clef, meter);
@@ -266,8 +275,8 @@ describe('intro preview signature check (ADR 0052)', () => {
     virtuoso: [1.8, 3, 4.8],
   };
   for (const preset of LEVEL_PRESETS) {
-    for (const meter of INTRO_METERS) {
-      for (const length of (isCompound(meter) ? LENGTHS_COMPOUND : LENGTHS)[preset.id]) {
+    for (const meter of TIME_SIGNATURES) {
+      for (const length of (METER[meter].beatValue === 8 ? LENGTHS_COMPOUND : LENGTHS)[preset.id]) {
         it(`${preset.id} / ${meter}: ≥ 25% of ${length}-beat windows pass`, () => {
           const settings = full(buildPreviewSettings(preset.id, 'treble', meter));
           let accepted = 0;
@@ -286,7 +295,7 @@ describe('header level meter index (ADR 0053)', () => {
   it('ranks each preset 1–5 under every intro clef and meter', () => {
     LEVEL_PRESETS.forEach((preset, i) => {
       for (const clef of INTRO_CLEFS) {
-        for (const meter of INTRO_METERS) {
+        for (const meter of TIME_SIGNATURES) {
           expect(levelIndex(full(buildPresetSettings(preset.id, clef, meter)))).toBe(i + 1);
         }
       }
@@ -365,7 +374,7 @@ describe('intro meter step (ADR 0071)', () => {
   it('sets the meter and keeps only the tuplets it supports', () => {
     for (const preset of LEVEL_PRESETS) {
       for (const clef of INTRO_CLEFS) {
-        for (const meter of INTRO_METERS) {
+        for (const meter of TIME_SIGNATURES) {
           const patch = buildPresetSettings(preset.id, clef, meter);
           expect(patch.timeSignature).toBe(meter);
           expect(patch.clef).toBe(clef);
@@ -393,7 +402,7 @@ describe('intro meter step (ADR 0071)', () => {
 
   it('recognises each preset in each meter, and only in its own meter version', () => {
     for (const preset of LEVEL_PRESETS) {
-      for (const meter of INTRO_METERS) {
+      for (const meter of TIME_SIGNATURES) {
         expect(matchLevel(full(buildPresetSettings(preset.id, 'bass', meter))), `${preset.id} ${meter}`).toBe(preset.id);
       }
     }

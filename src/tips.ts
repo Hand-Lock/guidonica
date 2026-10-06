@@ -2,7 +2,7 @@
 // Guidonica - Rotating tips (ADR 0087)
 // Copyright (C) 2026 A. C. Lo Cascio
 
-import { AppSettings, TUPLET_NAMES, TUPLET_VALUES, isCompound } from './notation/types';
+import { AppSettings, TUPLET_NAMES, TUPLET_VALUES, isGrouped, isHalfNoteMeter } from './notation/types';
 
 export type SettingsSection = 'staff' | 'rhythm' | 'melody' | 'practice';
 
@@ -15,6 +15,7 @@ export type TipId =
   | 'notes'
   | 'tuplets'
   | 'restsTies'
+  | 'halfNote'
   | 'pulse'
   | 'playhead'
   | 'share'
@@ -76,9 +77,14 @@ export const FEATURE_TIPS: readonly Tip[] = [
     when: (c) => !c.settings.rests || !c.settings.ties,
   },
   {
+    id: 'halfNote',
+    action: { kind: 'settings', section: 'staff' },
+    when: (c) => !isHalfNoteMeter(c.settings.timeSignature),
+  },
+  {
     id: 'pulse',
     action: { kind: 'settings', section: 'staff' },
-    when: (c) => isCompound(c.settings.timeSignature),
+    when: (c) => isGrouped(c.settings.timeSignature),
   },
   { id: 'install', when: (c) => !c.standalone },
   {

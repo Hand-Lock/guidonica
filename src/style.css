@@ -822,15 +822,15 @@ input[type='range']:focus-visible::-moz-range-thumb {
   transform: scale(1.35);
 }
 
-/* Compound meters: one LED per eighth, read in threes. The LED that starts each
-   dotted-quarter beat keeps its size; the two eighths after it are 5px and sit 2px
-   apart, with 6px between groups. 12/8 is then 4×13 + 8×5 + 8×2 + 3×6 = 126px, the
-   widest cluster, which the ribbon budgets for (ADR 0054, 0076). */
-.beat-dots.compound {
+/* Grouped meters: one LED per metric beat, read in threes (6/8, 6/4) or twos (2/2).
+   The LED that starts each felt beat keeps its size; the others are 5px and sit 2px
+   apart, with 6px between groups. 12/8 and 12/4 are then 4×13 + 8×5 + 8×2 + 3×6 =
+   126px, the widest cluster, which the ribbon budgets for (ADR 0054, 0076, 0090). */
+.beat-dots.grouped {
   gap: 2px;
 }
 
-.beat-dots.compound .beat-dot:not(.sub):not(:first-child) {
+.beat-dots.grouped .beat-dot:not(.sub):not(:first-child) {
   margin-left: 4px;
 }
 
@@ -1908,6 +1908,10 @@ dialog.intro-dialog {
   flex-direction: row;
   align-items: center;
   gap: 10px;
+}
+
+.intro-half-note {
+  margin-top: 12px;
 }
 
 .intro-option-icon {

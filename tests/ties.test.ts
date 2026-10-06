@@ -3,6 +3,7 @@ import { MusicGenerator, PartitionItem } from '../src/notation/generator';
 import {
   REST_PLACEMENTS,
   TUPLET_NOTEHEAD_UNITS,
+  barRest,
   consolidateRests,
   isLegalInnerTie,
   isPlaced,
@@ -24,7 +25,7 @@ const N = 2000;
 const METERS: readonly TimeSignature[] = TIME_SIGNATURES;
 
 const SIMPLE_BEATS: Record<string, number> = {
-  w: 4, hd: 3, h: 2, qd: 1.5, q: 1, '8d': 0.75, '8': 0.5, '16d': 0.375, '16': 0.25, '32': 0.125,
+  bd: 12, b: 8, wd: 6, w: 4, hd: 3, h: 2, qd: 1.5, q: 1, '8d': 0.75, '8': 0.5, '16d': 0.375, '16': 0.25, '32': 0.125,
 };
 const COMPOUND_BEATS: Record<string, number> = {
   wd: 12, w: 8, hd: 6, h: 4, qd: 3, q: 2, '8d': 1.5, '8': 1, '16d': 0.75, '16': 0.5, '32': 0.25,
@@ -32,7 +33,7 @@ const COMPOUND_BEATS: Record<string, number> = {
 
 /** Builds partition items from a spec like 'q q r8 t8 t8 t8' (r = rest, t = triplet group). */
 function items(ts: TimeSignature, spec: string): { items: PartitionItem[]; offsets: number[] } {
-  const table = isCompound(ts) ? COMPOUND_BEATS : SIMPLE_BEATS;
+  const table = METER[ts].beatValue === 8 ? COMPOUND_BEATS : SIMPLE_BEATS;
   const result: PartitionItem[] = [];
   const offsets: number[] = [];
   let offset = 0;
@@ -223,7 +224,7 @@ describe('generated tie grammar', () => {
         }
       }
     }
-  });
+  }, 30000);
 
   it('every internal tie is necessary (legal, minimal, pitch-preserving)', () => {
     for (const ts of METERS) {
@@ -388,11 +389,11 @@ describe('rest spelling (spellRest, consolidateRests)', () => {
     expect(offset).toBeCloseTo(end, 9);
   }
 
-  it('spells a full silent bar as one whole rest in every meter, even with quarters only', () => {
+  it('spells a full silent bar as one bar rest in every meter, even with quarters only', () => {
     for (const ts of METERS) {
       const bar = METER[ts].beatsPerMeasure;
       for (const values of [new Set(['q']), new Set(['8']), new Set(['w', 'h', 'q', '8'])]) {
-        expect(spellRest(ts, 0, bar, values)).toEqual([{ duration: 'w', beatDuration: bar, isRest: true }]);
+        expect(spellRest(ts, 0, bar, values)).toEqual([{ duration: barRest(ts), beatDuration: bar, isRest: true }]);
       }
     }
   });
@@ -401,7 +402,7 @@ describe('rest spelling (spellRest, consolidateRests)', () => {
     const values = new Set(['h', 'q', '8', '16', '32', 'qd']);
     for (const ts of METERS) {
       const bar = METER[ts].beatsPerMeasure;
-      const grid = isCompound(ts) ? 0.25 : 0.125;
+      const grid = METER[ts].beatValue === 8 ? 0.25 : 0.125;
       const points = Math.round(bar / grid);
       for (let a = 0; a < points; a++) {
         for (let b = a + 1; b <= points; b++) {
@@ -425,7 +426,7 @@ describe('rest spelling (spellRest, consolidateRests)', () => {
     expect(durations(spellRest('4/4', 1, 3, new Set(['h', 'q'])))).toBe('q q');
   });
 
-  it('dots no rest but the compound whole-beat qd and the 12/8 half-bar hd', () => {
+  it('dots no rest but the compound whole-beat qd or hd and the 12/8 and 12/4 half-bar hd or wd', () => {
     const expected: Record<TimeSignature, string[]> = {
       '4/4': [],
       '3/4': [],
@@ -433,6 +434,12 @@ describe('rest spelling (spellRest, consolidateRests)', () => {
       '6/8': ['qd'],
       '9/8': ['qd'],
       '12/8': ['hd', 'qd'],
+      '4/2': [],
+      '3/2': [],
+      '2/2': [],
+      '12/4': ['wd', 'hd'],
+      '9/4': ['hd'],
+      '6/4': ['hd'],
     };
     for (const ts of METERS) {
       const dotted = Object.keys(REST_PLACEMENTS[ts]).filter((d) => d.endsWith('d'));
@@ -450,6 +457,30 @@ describe('rest spelling (spellRest, consolidateRests)', () => {
     expect(durations(spellRest('12/8', 0, 6, new Set(['qd', '8'])))).toBe('qd qd');
     expect(durations(spellRest('9/8', 0, 6, values))).toBe('qd qd');
     expect(durations(spellRest('9/8', 3, 9, values))).toBe('qd qd');
+  });
+
+  it('rests one half-note beat at a time, with a breve bar rest only in 4/2 (ADR 0090)', () => {
+    const values = new Set(['b', 'w', 'wd', 'hd', 'h', 'qd', 'q', '8']);
+    const rest = (ts: TimeSignature, from: number, to: number) => durations(spellRest(ts, from, to, values));
+    for (const ts of TIME_SIGNATURES) expect(barRest(ts), ts).toBe(ts === '4/2' ? 'b' : 'w');
+    expect(rest('4/2', 0, 8)).toBe('b');
+    expect(rest('4/2', 0, 4)).toBe('w');
+    expect(rest('4/2', 4, 8)).toBe('w');
+    expect(rest('4/2', 2, 6)).toBe('h h'); // never across the middle
+    expect(rest('2/2', 0, 4)).toBe('w');
+    expect(rest('2/2', 0, 2)).toBe('h');
+    expect(rest('2/2', 1, 3)).toBe('q q');
+    expect(rest('3/2', 0, 4)).toBe('h h');
+    expect(rest('3/2', 2, 6)).toBe('h h');
+    expect(rest('3/2', 0, 6)).toBe('w');
+    expect(rest('6/4', 0, 3)).toBe('hd');
+    expect(rest('6/4', 1, 3)).toBe('q q');
+    expect(rest('6/4', 0, 6)).toBe('w');
+    expect(rest('9/4', 0, 6)).toBe('hd hd');
+    expect(rest('12/4', 0, 6)).toBe('wd');
+    expect(rest('12/4', 6, 12)).toBe('wd');
+    expect(rest('12/4', 3, 9)).toBe('hd hd');
+    expect(rest('12/4', 0, 12)).toBe('w');
   });
 
   it('re-spells runs of adjacent rests and leaves notes and tuplet rests alone', () => {
@@ -483,7 +514,7 @@ describe('rest spelling (spellRest, consolidateRests)', () => {
       for (const m of generateMany(richSettings(ts, ALL_SUBDIV_32), 500)) {
         for (const n of m.notes) {
           if (!n.isRest || n.isTuplet) continue;
-          if (n.duration === 'w' && n.beatDuration === m.beatsPerMeasure) {
+          if (n.duration === barRest(ts) && n.beatDuration === m.beatsPerMeasure) {
             expect(n.beatOffset).toBe(0);
             continue;
           }

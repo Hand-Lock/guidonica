@@ -2,7 +2,6 @@ import {
   AppSettings,
   CLEFS,
   Clef,
-  CompoundPulseMode,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
   LedgerLineOptions,
@@ -21,6 +20,7 @@ import {
   TupletOptions,
   ZoomMode,
   clampTempo,
+  parsePulse,
 } from './notation/types';
 import { SUPPORTED_LANGUAGES, detectLanguage } from './i18n';
 
@@ -28,7 +28,6 @@ const SOLFEGE_LABEL_MODES: readonly SolfegeLabelMode[] = ['none', 'syllables', '
 // Label modes before ADR 0059: both syllable spellings became the language-driven 'syllables'
 const LEGACY_SYLLABLE_MODES: readonly string[] = ['solfege', 'italian'];
 const SOUND_PROFILES: readonly SoundProfile[] = ['woodblock', 'triangle'];
-const COMPOUND_PULSE_MODES: readonly CompoundPulseMode[] = ['dotted-quarter', 'eighth'];
 const THEME_MODES: readonly ThemeMode[] = ['auto', 'light', 'dark'];
 const ZOOM_MODES: readonly ZoomMode[] = ['auto', 'manual'];
 
@@ -79,7 +78,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   solfegeLabelMode: 'none',
   language: 'en', // Replaced by the detected browser language on load
   soundProfile: 'woodblock',
-  compoundPulse: 'dotted-quarter',
+  pulse: 'beat',
   countIn: true,
   theme: 'auto',
   volume: 0.8,
@@ -209,12 +208,9 @@ export function loadStoredSettings(): AppSettings {
         : pickEnum<SolfegeLabelMode>(parsed.solfegeLabelMode, SOLFEGE_LABEL_MODES, d.solfegeLabelMode),
       language: pickEnum(parsed.language, SUPPORTED_LANGUAGES, detectLanguage()),
       soundProfile,
-      // `pulse68` is the key before 9/8 and 12/8 shared the setting (ADR 0076)
-      compoundPulse: pickEnum<CompoundPulseMode>(
-        parsed.compoundPulse ?? parsed.pulse68,
-        COMPOUND_PULSE_MODES,
-        d.compoundPulse
-      ),
+      // `compoundPulse` and, before it, `pulse68` are the keys before half-note meters shared
+      // the setting (ADR 0076, 0090)
+      pulse: parsePulse(parsed.pulse ?? parsed.compoundPulse ?? parsed.pulse68) ?? d.pulse,
       countIn: pickBool(parsed.countIn, d.countIn),
       theme,
       volume: pickNumber(parsed.volume, 0, 1, d.volume),

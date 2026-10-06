@@ -16,6 +16,7 @@ import {
   TupletValue,
   TIME_SIGNATURES,
   isCompound,
+  isHalfNoteMeter,
   isTupletSupported,
   supportedTuplets,
 } from './notation/types';
@@ -101,12 +102,16 @@ export type IntroClef = 'treble' | 'bass' | 'alto' | 'tenor';
 /** Clefs offered by the intro; the remaining C/F clefs stay available in Settings. */
 export const INTRO_CLEFS: readonly IntroClef[] = ['treble', 'bass', 'alto', 'tenor'];
 
-/** Meters offered by the intro: all of them (ADR 0071). */
-export const INTRO_METERS: readonly TimeSignature[] = TIME_SIGNATURES;
+/**
+ * Meter cards of the intro: the six quarter- and eighth-note meters (ADR 0071). Their
+ * half-note toggle turns each card into its counterpart, 4/4 into 4/2 (ADR 0090).
+ */
+export const INTRO_METERS: readonly TimeSignature[] = TIME_SIGNATURES.filter((ts) => !isHalfNoteMeter(ts));
 
 /**
- * Compound meters have no ¼ or ⅛ triplets: a level's triplet cell becomes the duplet of
- * the same value, the compound meter's two-in-the-time-of-three (ADR 0071, 0076).
+ * Compound meters lack the beat-level triplets (¼ and ⅛ in 6/8, ¼ in 6/4): a level's
+ * unsupported triplet cell becomes the duplet of the same value, the compound meter's
+ * two-in-the-time-of-three (ADR 0071, 0076, 0090).
  */
 const COMPOUND_COUNTERPART: Partial<Record<TupletCell, TupletCell>> = {
   'triplet:1/4': 'duplet:1/4',

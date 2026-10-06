@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { MetronomeEngine } from '../src/audio/metronome';
-import { BeatAccent, METER, TimeSignature, beatAccent } from '../src/notation/types';
+import { BeatAccent, METER, PulseMode, TimeSignature, beatAccent } from '../src/notation/types';
 
 describe('MetronomeEngine', () => {
   let metronome: MetronomeEngine;
@@ -18,7 +18,7 @@ describe('MetronomeEngine', () => {
     expect(metronome.getVolume()).toBe(0.8);
     expect(metronome.getIsMuted()).toBe(false);
     expect(metronome.getSoundProfile()).toBe('woodblock');
-    expect(metronome.getCompoundPulse()).toBe('dotted-quarter');
+    expect(metronome.getPulse()).toBe('beat');
   });
 
   it('clamps tempo to legal range (30-240 BPM)', () => {
@@ -53,7 +53,7 @@ describe('MetronomeEngine', () => {
     expect(metronome.getIsMuted()).toBe(false);
   });
 
-  it('switches sound profile and compound pulse mode cleanly', () => {
+  it('switches sound profile and pulse mode cleanly', () => {
     metronome = new MetronomeEngine(60, '6/8');
     expect(metronome.getSoundProfile()).toBe('woodblock');
 
@@ -63,8 +63,8 @@ describe('MetronomeEngine', () => {
     metronome.setSoundProfile('woodblock');
     expect(metronome.getSoundProfile()).toBe('woodblock');
 
-    metronome.setCompoundPulse('eighth');
-    expect(metronome.getCompoundPulse()).toBe('eighth');
+    metronome.setPulse('division');
+    expect(metronome.getPulse()).toBe('division');
   });
 
   it('returns 0 for both global and visual beats when stopped', () => {
@@ -441,27 +441,35 @@ describe('MetronomeEngine', () => {
       });
     });
 
-    it('clicks only the dotted-quarter beats of 9/8 and 12/8 unless the pulse is the eighth (ADR 0076)', () => {
-      const clicks = (ts: TimeSignature, pulse: 'dotted-quarter' | 'eighth'): number[] => {
+    it('clicks only the felt beats of grouped meters unless the pulse is the division (ADRs 0076, 0090)', () => {
+      const clicks = (ts: TimeSignature, pulse: PulseMode): number[] => {
         const starts: number[] = [];
         const ctx = makeCtx(0, starts);
         withCtx(ctx, () => {
           metronome = new MetronomeEngine(60, ts);
-          metronome.setCompoundPulse(pulse);
+          metronome.setPulse(pulse);
           metronome.start(false);
           const tick = (metronome as unknown as { scheduler(): void }).scheduler.bind(metronome);
-          // At 60 quarter BPM an eighth lasts 0.5 s: tick once per eighth through one bar
+          // At 60 quarter BPM an eighth lasts 0.5 s and a quarter 1 s: tick once per metric beat
+          const step = METER[ts].beatValue === 8 ? 0.5 : 1;
           for (let i = 1; i < METER[ts].beatsPerMeasure; i++) {
-            ctx.currentTime = 10 + i * 0.5;
+            ctx.currentTime = 10 + i * step;
             tick();
           }
           metronome.stop();
         });
         return starts;
       };
-      expect(clicks('9/8', 'dotted-quarter')).toEqual([1600, 1350, 1350]);
-      expect(clicks('12/8', 'dotted-quarter')).toEqual([1600, 1350, 1350, 1350]);
-      expect(clicks('12/8', 'eighth')).toEqual([1600, 1100, 1100, 1350, 1100, 1100, 1350, 1100, 1100, 1350, 1100, 1100]);
+      expect(clicks('9/8', 'beat')).toEqual([1600, 1350, 1350]);
+      expect(clicks('12/8', 'beat')).toEqual([1600, 1350, 1350, 1350]);
+      expect(clicks('12/8', 'division')).toEqual([1600, 1100, 1100, 1350, 1100, 1100, 1350, 1100, 1100, 1350, 1100, 1100]);
+      expect(clicks('2/2', 'beat')).toEqual([1600, 1350]);
+      expect(clicks('2/2', 'division')).toEqual([1600, 1100, 1350, 1100]);
+      expect(clicks('3/2', 'beat')).toEqual([1600, 1350, 1350]);
+      expect(clicks('4/2', 'beat')).toEqual([1600, 1350, 1350, 1350]);
+      expect(clicks('6/4', 'beat')).toEqual([1600, 1350]);
+      expect(clicks('9/4', 'division')).toEqual([1600, 1100, 1100, 1350, 1100, 1100, 1350, 1100, 1100]);
+      expect(clicks('4/4', 'beat')).toEqual([1600, 1100, 1350, 1100]);
     });
   });
 
@@ -476,6 +484,15 @@ describe('MetronomeEngine', () => {
         'primary', 'weak', 'weak', 'secondary', 'weak', 'weak',
         'secondary', 'weak', 'weak', 'secondary', 'weak', 'weak',
       ],
+      '4/2': ['primary', 'weak', 'secondary', 'weak', 'secondary', 'weak', 'secondary', 'weak'],
+      '3/2': ['primary', 'weak', 'secondary', 'weak', 'secondary', 'weak'],
+      '2/2': ['primary', 'weak', 'secondary', 'weak'],
+      '12/4': [
+        'primary', 'weak', 'weak', 'secondary', 'weak', 'weak',
+        'secondary', 'weak', 'weak', 'secondary', 'weak', 'weak',
+      ],
+      '9/4': ['primary', 'weak', 'weak', 'secondary', 'weak', 'weak', 'secondary', 'weak', 'weak'],
+      '6/4': ['primary', 'weak', 'weak', 'secondary', 'weak', 'weak'],
     };
     for (const [ts, accents] of Object.entries(expected) as [TimeSignature, BeatAccent[]][]) {
       expect(accents.map((_, i) => beatAccent(ts, i + 1))).toEqual(accents);
