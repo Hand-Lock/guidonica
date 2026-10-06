@@ -62,3 +62,4 @@ browser never fetches a `rel="me"` URL, so the ADR 0060 no-third-party-requests 
   content, as with Instagram.
   *Amended by [0082](0082-visible-social-links.md)*: the About dialog, the footer and the README
   now link to Bluesky and Mastodon. Instagram is still deferred.
+  *Amended by [0084](0084-instagram-link.md)*: Instagram is linked too.

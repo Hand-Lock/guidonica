@@ -165,6 +165,7 @@ const it: Messages = {
   githubTitle: 'Codice sorgente su GitHub (AGPL-3.0-or-later)',
   blueskyTitle: 'Guidonica su Bluesky (@guidonica.it)',
   mastodonTitle: 'Guidonica su Mastodon (@guidonica@mastodon.social)',
+  instagramTitle: 'Guidonica su Instagram (@guidonica.it)',
 
   aboutTitle: 'Informazioni su Guidonica',
   closeDialog: 'Chiudi',

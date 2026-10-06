@@ -184,6 +184,7 @@ const en = {
   githubTitle: 'View Source Code on GitHub (AGPL-3.0-or-later)',
   blueskyTitle: 'Guidonica on Bluesky (@guidonica.it)',
   mastodonTitle: 'Guidonica on Mastodon (@guidonica@mastodon.social)',
+  instagramTitle: 'Guidonica on Instagram (@guidonica.it)',
 
   // About
   aboutTitle: 'About Guidonica',

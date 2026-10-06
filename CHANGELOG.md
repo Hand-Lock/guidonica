@@ -17,6 +17,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 ### Added
 
 - The About dialog and footer link to Guidonica on Bluesky and Mastodon (ADR 0082).
+- The About dialog and footer link to Guidonica on Instagram too, where you can watch the trailer (ADR 0084).
 
 ### Fixed
 

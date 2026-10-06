@@ -165,6 +165,7 @@ const de: Messages = {
   githubTitle: 'Quellcode auf GitHub (AGPL-3.0-or-later)',
   blueskyTitle: 'Guidonica auf Bluesky (@guidonica.it)',
   mastodonTitle: 'Guidonica auf Mastodon (@guidonica@mastodon.social)',
+  instagramTitle: 'Guidonica auf Instagram (@guidonica.it)',
 
   aboutTitle: 'Über Guidonica',
   closeDialog: 'Dialog schließen',

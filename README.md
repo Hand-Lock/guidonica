@@ -437,7 +437,7 @@ Issues, translations and code are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING
 - **[hello@guidonica.it](mailto:hello@guidonica.it)**: teachers, schools, press and general questions.
 - **[legal@guidonica.it](mailto:legal@guidonica.it)**: trademark permissions, commercial licensing, takedown notices and privacy requests.
 - **[security@guidonica.it](mailto:security@guidonica.it)**: security vulnerabilities. Report them privately, never in a public issue; see [`SECURITY.md`](SECURITY.md).
-- **Follow**: [Bluesky @guidonica.it](https://bsky.app/profile/guidonica.it) and [Mastodon @guidonica@mastodon.social](https://mastodon.social/@guidonica).
+- **Follow**: [Bluesky @guidonica.it](https://bsky.app/profile/guidonica.it), [Mastodon @guidonica@mastodon.social](https://mastodon.social/@guidonica) and [Instagram @guidonica.it](https://www.instagram.com/guidonica.it/).
 - **Support**: Guidonica is free; voluntary tips go through [Ko-fi](https://ko-fi.com/guidonica).
 
 Bugs and feature requests go to [GitHub issues](https://github.com/Hand-Lock/guidonica/issues).
