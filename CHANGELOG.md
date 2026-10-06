@@ -20,6 +20,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - A drone to sing against: a steady shruti box or pad on any note, with its own volume, in Settings → Practice. Exercise links carry the drone note (ADR 0092).
 - Common-time and alla breve signs: Settings → Staff can write 4/4 as C and 2/2 as ¢ (ADR 0093).
 - Tune the drone to A = 415, 430, 442 or 466 Hz besides 440, for Baroque, Classical or Renaissance pitch, in Settings → Practice. Exercise links carry it (ADR 0094).
+- Press D to turn the drone on and off.
 
 ### Changed
 
@@ -38,6 +39,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - ADR 0092 documents the drone, including why the tanpura timbre was retired (its pluck cycle ignored the tempo): `src/audio/drone.ts` voices on a drone bus beside the click's master gain, the `droneNote`, `droneSound` and `droneVolume` settings and the additive `drone=` link parameter; `SPEC.md` §5 and §6, `AGENTS.md` §1 and §2 and the README describe it.
 - ADR 0093 documents the C and ¢ signs: `timeSignatureSpec` spells 4/4 and 2/2 for VexFlow when the new `meterSigns` setting is on, display only, left out of links; `SPEC.md` §2 and §6 and the README describe it.
 - ADR 0094 documents the drone tuning: the `referencePitch` setting (`REFERENCE_PITCHES`), `droneFrequency(pc, a4)`, `MetronomeEngine.setReferencePitch` and the additive `a4=` link parameter; `SPEC.md` §5 and §6 and the README describe it.
+- ADR 0094 §5 records the D shortcut: `applyDroneNote` serves the drone select and the key, and the last note lives in memory only.
 
 ## [2026.10.1] - 2026-10-06
 

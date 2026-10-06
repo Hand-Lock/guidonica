@@ -198,7 +198,7 @@ const it: Messages = {
   tips: {
     levels: { title: 'Livelli predefiniti', body: "Il pulsante del livello nell'intestazione imposta con un clic note, ritmi, intervalli e tempo, da Principiante a Virtuoso." },
     labels: { title: 'Nomi delle note', body: 'Mostra sillabe o lettere sotto le note in Impostazioni → Esercizio → Nomi delle note.' },
-    keys: { title: 'Scorciatoie da tastiera', body: 'Spazio avvia e mette in pausa, R azzera, P nasconde la testina, ↑ e ↓ cambiano il tempo, + e − regolano lo zoom.' },
+    keys: { title: 'Scorciatoie da tastiera', body: 'Spazio avvia e mette in pausa, R azzera, P nasconde la testina, ↑ e ↓ cambiano il tempo, + e − regolano lo zoom, D accende e spegne il bordone.' },
     pinch: { title: 'Zoom con due dita', body: 'Allarga o stringi il pentagramma con due dita. Tocca la percentuale per tornare allo zoom automatico.' },
     clefs: { title: 'Otto chiavi', body: 'In Impostazioni → Pentagramma ci sono le chiavi di violino, di basso, di do e i due baritoni, con tagli addizionali sopra e sotto.' },
     notes: { title: 'Meno note', body: "In Impostazioni → Melodia → Note tieni solo le note che stai imparando. Compaiono in ogni ottava dell'estensione." },
@@ -218,6 +218,7 @@ const it: Messages = {
   keyPlayPause: 'Avvia/Pausa',
   keyZoom: 'Zoom',
   keyAutoZoom: 'Zoom automatico',
+  keyDrone: 'Bordone',
   licenseInfo: 'Licenza e info',
   githubTitle: 'Codice sorgente su GitHub (AGPL-3.0-or-later)',
   privacyLink: 'Privacy',

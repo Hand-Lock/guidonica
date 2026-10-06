@@ -200,7 +200,7 @@ const fr: Messages = {
   tips: {
     levels: { title: 'Niveaux prédéfinis', body: "Le bouton de niveau dans l'en-tête règle d'un clic les notes, les rythmes, les intervalles et le tempo, de Débutant à Virtuose." },
     labels: { title: 'Noms des notes', body: 'Affichez les syllabes ou les lettres sous les notes dans Réglages → Pratique → Noms des notes.' },
-    keys: { title: 'Raccourcis clavier', body: 'Espace lance et met en pause, R réinitialise, P masque la tête de lecture, ↑ et ↓ changent le tempo, + et − règlent le zoom.' },
+    keys: { title: 'Raccourcis clavier', body: 'Espace lance et met en pause, R réinitialise, P masque la tête de lecture, ↑ et ↓ changent le tempo, + et − règlent le zoom, D allume et éteint le bourdon.' },
     pinch: { title: 'Zoom à deux doigts', body: 'Pincez la portée avec deux doigts pour zoomer. Touchez le pourcentage pour revenir au zoom automatique.' },
     clefs: { title: 'Huit clés', body: "Réglages → Portée propose les clés de sol, de fa, d'ut et les deux barytons, avec des lignes supplémentaires au-dessus et au-dessous." },
     notes: { title: 'Moins de notes', body: "Dans Réglages → Mélodie → Notes, gardez seulement les notes que vous apprenez. Elles apparaissent dans chaque octave de l'ambitus." },
@@ -220,6 +220,7 @@ const fr: Messages = {
   keyPlayPause: 'Lecture/Pause',
   keyZoom: 'Zoom',
   keyAutoZoom: 'Zoom auto',
+  keyDrone: 'Bourdon',
   licenseInfo: 'Licence et infos',
   githubTitle: 'Code source sur GitHub (AGPL-3.0-or-later)',
   privacyLink: 'Confidentialité',

@@ -321,6 +321,7 @@ Constructed strictly following the [Aero-Guidonica Design Manifesto](docs/DESIGN
 | <kbd>+</kbd> or <kbd>=</kbd> | **Zoom In** | Increase notation scale by 10% |
 | <kbd>-</kbd> or <kbd>_</kbd> | **Zoom Out** | Decrease notation scale by 10% |
 | <kbd>0</kbd> | **Auto Zoom** | Recalculate and reset to optimal device-adaptive forereading zoom |
+| <kbd>D</kbd> | **Drone** | Turn the drone off, or back on to the last note used ([ADR 0094](docs/adr/0094-drone-tuning.md)) |
 
 Shortcuts pause while a dialog (About, What's new, the level intro) is open. While the tuplet menu is open, <kbd>Esc</kbd> closes it first instead of resetting.
 

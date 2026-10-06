@@ -7,6 +7,7 @@ import {
   Clef,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
+  DRONE_NOTES,
   DroneNote,
   DroneSound,
   IntervalOptions,
@@ -14,6 +15,7 @@ import {
   METER,
   MIN_ZOOM,
   PITCH_CLASSES,
+  PitchClass,
   PulseMode,
   REFERENCE_PITCHES,
   ReferencePitch,
@@ -194,6 +196,8 @@ class GuidonicaApp {
   private volumeSlider: HTMLInputElement;
   private btnVolumeMute: HTMLButtonElement;
   private selectDroneNote: HTMLSelectElement;
+  /** The note D turns the drone back on to: in memory only, never stored (ADR 0094). */
+  private lastDroneNote: PitchClass = 'c';
   private selectDroneSound: HTMLSelectElement;
   private selectDroneTuning: HTMLSelectElement;
   private droneVolumeSlider: HTMLInputElement;
@@ -408,6 +412,7 @@ class GuidonicaApp {
     this.metronome.setSoundProfile(initialSettings.soundProfile);
     this.metronome.setPulse(initialSettings.pulse);
     this.metronome.setDroneNote(initialSettings.droneNote);
+    if (initialSettings.droneNote !== 'off') this.lastDroneNote = initialSettings.droneNote;
     this.metronome.setDroneSound(initialSettings.droneSound);
     this.metronome.setReferencePitch(initialSettings.referencePitch);
     this.metronome.setDroneVolume(initialSettings.droneVolume);
@@ -870,9 +875,8 @@ class GuidonicaApp {
 
     // Drone (ADR 0092)
     this.selectDroneNote.addEventListener('change', (e) => {
-      const note = (e.target as HTMLSelectElement).value as DroneNote;
-      this.metronome.setDroneNote(note);
-      globalState.updateSettings({ droneNote: note });
+      const note = (e.target as HTMLSelectElement).value;
+      this.applyDroneNote(DRONE_NOTES.find((n) => n === note) ?? 'off');
     });
 
     this.selectDroneSound.addEventListener('change', (e) => {
@@ -1806,6 +1810,14 @@ class GuidonicaApp {
     this.resetSession(); // Stops playback and regenerates the buffer
   }
 
+  /** Sets the drone note from the select or the D key and remembers the last note played (ADR 0094). */
+  private applyDroneNote(note: DroneNote): void {
+    if (note !== 'off') this.lastDroneNote = note;
+    this.selectDroneNote.value = note;
+    this.metronome.setDroneNote(note);
+    globalState.updateSettings({ droneNote: note });
+  }
+
   private bindKeyboardShortcuts(): void {
     window.addEventListener('keydown', (e) => {
       // Leave browser/OS chords (Cmd+R reload, Ctrl +/- zoom, Alt menus) untouched
@@ -1896,6 +1908,9 @@ class GuidonicaApp {
       } else if (e.key === '0') {
         e.preventDefault();
         this.syncAutoZoom();
+      } else if (e.code === 'KeyD' && !e.repeat) {
+        e.preventDefault();
+        this.applyDroneNote(globalState.settings.droneNote === 'off' ? this.lastDroneNote : 'off');
       }
     });
   }

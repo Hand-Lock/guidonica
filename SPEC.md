@@ -282,4 +282,5 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 - `+` / `=`: Zoom in (+10%).
 - `-` / `_`: Zoom out (-10%).
 - `0`: Auto-fit zoom to screen (Auto Zoom).
+- `D`: Turn the drone off, or back on to the last note used since the page loaded (C if none; ADR 0094).
 - Shortcuts are ignored while a dialog (About, What's new, the level intro) is open.

@@ -198,7 +198,7 @@ const de: Messages = {
   tips: {
     levels: { title: 'Niveau-Vorgaben', body: 'Die Niveau-Schaltfläche in der Kopfzeile stellt Töne, Rhythmen, Intervalle und Tempo mit einem Klick ein, von Anfänger bis Virtuose.' },
     labels: { title: 'Notennamen', body: 'Zeige Silben oder Buchstaben unter den Noten: Einstellungen → Übung → Notennamen.' },
-    keys: { title: 'Tastenkürzel', body: 'Leertaste startet und pausiert, R setzt zurück, P blendet die Abspielposition aus, ↑ und ↓ ändern das Tempo, + und − zoomen.' },
+    keys: { title: 'Tastenkürzel', body: 'Leertaste startet und pausiert, R setzt zurück, P blendet die Abspielposition aus, ↑ und ↓ ändern das Tempo, + und − zoomen, D schaltet den Bordun ein und aus.' },
     pinch: { title: 'Zoomen mit zwei Fingern', body: 'Ziehe das Notensystem mit zwei Fingern auf oder zu. Tippe auf die Prozentzahl, um zum Auto-Zoom zurückzukehren.' },
     clefs: { title: 'Acht Schlüssel', body: 'Unter Einstellungen → Notensystem gibt es Violin-, Bass- und C-Schlüssel und beide Baritonschlüssel, dazu Hilfslinien oben und unten.' },
     notes: { title: 'Weniger Töne', body: 'Behalte unter Einstellungen → Melodie → Töne nur die Töne, die du gerade lernst. Sie erscheinen in jeder Oktave des Tonumfangs.' },
@@ -218,6 +218,7 @@ const de: Messages = {
   keyPlayPause: 'Start/Pause',
   keyZoom: 'Zoom',
   keyAutoZoom: 'Auto-Zoom',
+  keyDrone: 'Bordun',
   licenseInfo: 'Lizenz & Info',
   githubTitle: 'Quellcode auf GitHub (AGPL-3.0-or-later)',
   privacyLink: 'Datenschutz',

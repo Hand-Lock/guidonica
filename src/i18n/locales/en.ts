@@ -218,7 +218,7 @@ const en = {
   tips: {
     levels: { title: 'Level presets', body: 'The level button in the header sets notes, rhythms, intervals and tempo in one click, from Beginner to Virtuoso.' },
     labels: { title: 'Note names', body: 'Show syllables or letters under the notes in Settings → Practice → Labels.' },
-    keys: { title: 'Keyboard shortcuts', body: 'Space plays and pauses, R resets, P hides the playhead, ↑ and ↓ change the tempo, + and − zoom.' },
+    keys: { title: 'Keyboard shortcuts', body: 'Space plays and pauses, R resets, P hides the playhead, ↑ and ↓ change the tempo, + and − zoom, D turns the drone on and off.' },
     pinch: { title: 'Pinch to zoom', body: 'Pinch the staff with two fingers to zoom. Tap the percentage to go back to auto zoom.' },
     clefs: { title: 'Eight clefs', body: 'Settings → Staff has the treble, bass and C clefs and both baritones, with ledger lines above and below.' },
     notes: { title: 'Fewer notes', body: 'In Settings → Melody → Notes, keep only the notes you are learning. They appear in every octave of the range.' },
@@ -239,6 +239,7 @@ const en = {
   keyPlayPause: 'Play/Pause',
   keyZoom: 'Zoom',
   keyAutoZoom: 'Auto Zoom',
+  keyDrone: 'Drone',
   licenseInfo: 'License & Info',
   githubTitle: 'View Source Code on GitHub (AGPL-3.0-or-later)',
   privacyLink: 'Privacy',

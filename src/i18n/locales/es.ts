@@ -198,7 +198,7 @@ const es: Messages = {
   tips: {
     levels: { title: 'Niveles predefinidos', body: 'El botón de nivel de la cabecera ajusta con un clic las notas, los ritmos, los intervalos y el tempo, de Principiante a Virtuoso.' },
     labels: { title: 'Nombres de notas', body: 'Muestra sílabas o letras bajo las notas en Ajustes → Práctica → Nombres de notas.' },
-    keys: { title: 'Atajos de teclado', body: 'Espacio inicia y pausa, R reinicia, P oculta el cabezal, ↑ y ↓ cambian el tempo, + y − ajustan el zoom.' },
+    keys: { title: 'Atajos de teclado', body: 'Espacio inicia y pausa, R reinicia, P oculta el cabezal, ↑ y ↓ cambian el tempo, + y − ajustan el zoom, D enciende y apaga el bordón.' },
     pinch: { title: 'Zoom con dos dedos', body: 'Pellizca el pentagrama con dos dedos para hacer zoom. Toca el porcentaje para volver al zoom automático.' },
     clefs: { title: 'Ocho claves', body: 'En Ajustes → Pentagrama están las claves de sol, de fa y de do y las dos de barítono, con líneas adicionales arriba y abajo.' },
     notes: { title: 'Menos notas', body: 'En Ajustes → Melodía → Notas, deja solo las notas que estás aprendiendo. Aparecen en todas las octavas del registro.' },
@@ -218,6 +218,7 @@ const es: Messages = {
   keyPlayPause: 'Iniciar/Pausa',
   keyZoom: 'Zoom',
   keyAutoZoom: 'Zoom automático',
+  keyDrone: 'Bordón',
   licenseInfo: 'Licencia e info',
   githubTitle: 'Código fuente en GitHub (AGPL-3.0-or-later)',
   privacyLink: 'Privacidad',
