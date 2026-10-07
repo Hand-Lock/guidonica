@@ -1,6 +1,6 @@
 # 0082. Visible Bluesky and Mastodon Links
 
-- **Status**: Accepted; amended by 0084
+- **Status**: Accepted; amended by 0084, [0097](0097-stage-first-shell.md)
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
 

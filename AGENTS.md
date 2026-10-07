@@ -5,14 +5,14 @@
 
 ### Suckless Engineering Philosophy
 The core software architecture is strictly governed by an uncompromising "suckless", ultra-lightweight, and zero-bloat engineering philosophy:
-- **Zero Framework Bloat**: No React, Vue, Svelte, or Angular. Written in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and Web Audio API directly. Zero virtual DOM reconciliation, zero runtime reactivity overhead, zero state management dependencies. Shipped JS is ~134 kB gzipped: ~41 kB of app code (including the English dictionary) plus ~93 kB of VexFlow's font-free `vexflow/core`; each other language is one lazy ~6.4 kB chunk (ADR 0059). The music font is a separate 19.6 kB Bravura subset (ADR 0058); never import the full `'vexflow'` entry, which inlines ~600 kB of fonts.
+- **Zero Framework Bloat**: No React, Vue, Svelte, or Angular. Written in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and Web Audio API directly. Zero virtual DOM reconciliation, zero runtime reactivity overhead, zero state management dependencies. Shipped JS is ~135 kB gzipped: ~41.7 kB of app code (including the English dictionary) plus ~93 kB of VexFlow's font-free `vexflow/core`; each other language is one lazy ~6.6 kB chunk (ADR 0059). The music font is a separate 19.6 kB Bravura subset (ADR 0058); never import the full `'vexflow'` entry, which inlines ~600 kB of fonts.
 - **Single Source of Truth Hardware Clock**: Visual motion and synthesized metronome audio clicks are mathematically linked to the hardware audio clock (`AudioContext.currentTime`). Never measure time with `setInterval`, `setTimeout`, `Date.now()` or visual time accumulators. The metronome's single 25 ms `setInterval` is allowed because it only wakes the scheduler to queue clicks 100 ms ahead; every click time and tape offset is computed from `currentTime`, so timer jitter never reaches what is heard or seen. Likewise the rAF timestamp only interpolates between the audio clock's coarse updates and is continuously pulled back to it (ADR 0089); position is never accumulated independently. Visual-auditory drift is mathematically impossible; noteheads cross the playhead at the exact physical microsecond the speaker clicks.
 - **Hardware-Accelerated Measure Blitting**: VexFlow layout and font glyph rasterization execute **once** onto an offscreen canvas per measure. The 60/120 FPS animation loop (`requestAnimationFrame`) exclusively executes GPU-accelerated bit-block transfers (`ctx.drawImage()`). Zero per-frame layout, zero font parsing, sub-millisecond per-frame CPU time (< 1% CPU utilization). VexFlow rasterizes new measures in idle time between frames (`requestIdleCallback`, one measure per callback); a frame renders synchronously only if the stage itself would otherwise be uncovered. Beat UI changes only compositor properties (`opacity`, `transform`), so a click never triggers layout or paint (ADR 0091).
 - **Bounded Ring-Buffer & Zero-Leak Memory Discipline**: The buffer holds only the measures covering the viewport plus 6 beats of lookahead (a few measures, more when zoomed out), never an unbounded history. Measures scrolling past the left edge are immediately evicted and their offscreen canvases dereferenced. An infinite 3-hour practice session maintains the exact same memory footprint (~30–45 MB process memory) as a 5-second test.
 - **Synthesized Audio (0-Byte Sample Downloads)**: Metronome clicks and woodblock timbres are synthesized live on the audio hardware using native Web Audio `OscillatorNode` (sine/triangle) and exponential `GainNode` envelopes. The drone (shruti box, pad) is built the same way from a cached `PeriodicWave`, `BiquadFilterNode`s, LFOs and `setTargetAtTime` envelopes (ADR 0092). Both meet in one `WaveShaperNode` soft clipper without oversampling, which adds no latency, so click plus drone never passes full scale (ADR 0095). Zero audio files (MP3/WAV/OGG) downloaded over the network.
 - **Pure Mathematical Generation**: Rhythms are sampled over a 32nd grid from a grammar derived from the notehead, rest and tuplet placement tables (ADR 0065). Pitches are generated via a symmetric discrete Markov random walk. Zero heavy music theory AI or rule engines.
 - **The Ergodic Generation Principle (State-Space Completeness)**: The music generator is strictly ergodic (the "infinite monkey theorem" heuristic). For any user-selected parameter configuration $\Omega = (\text{Clef}, \text{TimeSig}, \text{Subdivisions}, \text{Dotted}, \text{Ties}, \text{Intervals}, \text{Notes}, \text{Accidentals})$, *every mathematically and grammatically valid permutation within $\Omega$ must possess a strictly non-zero generation probability ($P(\omega) > 0, \forall \omega \in \Omega$)*. No valid rhythmic figure (such as `q 8` or `8 q` in 6/8, or `q h` and `h q` in 3/4) or interval leap may be artificially suppressed, hijacked, or hardcoded out of existence. Generation rules must remain transparent, organized, and complete.
-- **Pure CSS3 Liquid Glass & Zero CSS Frameworks**: The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed via pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled shadows). Zero Tailwind runtime, zero CSS-in-JS libraries, zero sprite textures. Total CSS is ~8.3 kB gzipped. Text fonts (Alegreya, Alegreya Sans, Ubuntu Mono) are self-hosted Latin woff2 files in `src/fonts/` (ADR 0060); never load fonts, scripts or styles from a third-party origin.
+- **Pure CSS3 Liquid Glass & Zero CSS Frameworks**: The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed via pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled shadows). Zero Tailwind runtime, zero CSS-in-JS libraries, zero sprite textures. Total CSS is ~9.5 kB gzipped. Text fonts (Alegreya, Alegreya Sans, Ubuntu Mono) are self-hosted Latin woff2 files in `src/fonts/` (ADR 0060); never load fonts, scripts or styles from a third-party origin.
 - **Offline Without Dependencies**: A hand-written service worker (`src/sw.ts`, ~2.3 kB) precaches the build so the app works offline after one visit (ADR 0063). No Workbox, no PWA plugin; never add `skipWaiting()` or runtime caching of navigations.
 - **Strict Typing, Zero Silent Errors**: TypeScript with `strict: true`. Avoid `any`. Catch duration arithmetic mismatches, null pointers, and VexFlow type incompatibilities at compile time. Instant build in < 800ms.
 
@@ -32,7 +32,7 @@ guidonica/
 ├── CONTRIBUTING.md         # Contributor guide: inbound MIT + DCO sign-off (ADR 0067)
 ├── TRADEMARKS.md           # Guidonica™ name & logo policy, AGPL §7(e) notice (ADR 0067)
 ├── SECURITY.md            # Private vulnerability reporting to security@guidonica.it (ADR 0068)
-├── PRIVACY.md              # Privacy policy, English + Italian, linked from About and footer (ADR 0088)
+├── PRIVACY.md              # Privacy policy, English + Italian, linked from About and the ⋯ menu (ADR 0088)
 ├── README.md               # Public overview, feature tour, 16:9 trailer, ADR table
 ├── LICENSE                 # GNU AGPL-3.0-or-later
 ├── .nvmrc                  # Node 22
@@ -77,13 +77,14 @@ guidonica/
 │       ├── README.md       # ADR index and registration log
 │       └── 0001-*.md       # Specific architectural & subsystem records
 └── src/
-    ├── main.ts             # Application bootstrapper, UI event wiring & locale bootstrap
+    ├── main.ts             # Application bootstrapper, UI event wiring (bar, dock, inspector, ⋯ menu) & locale bootstrap
     ├── sw.ts               # Offline service worker, compiled to dist/sw.js by vite.config.ts (ADR 0063)
     ├── state.ts            # Typed session state and parameter interfaces
     ├── storage.ts          # Validated localStorage settings, defaults, onboarding flag; per-channel keys (ADR 0078)
     ├── whatsNew.ts         # "What's new": version compare, boot action, notes loaders & dialog rendering (ADR 0078)
     ├── env.d.ts            # Build-time constants (__APP_VERSION__, __APP_CHANNEL__, …) and *.md?notes modules
     ├── share.ts            # Shareable exercise links: #x=1 fragment encode/decode (ADR 0085)
+    ├── summary.ts          # Top-bar exercise summary chips: clef, meter, drone (ADR 0097)
     ├── tips.ts             # Rotating tips: feature & community tip tables, pickTip rotation (ADR 0087)
     ├── presets.ts          # Level presets, preview representations & signatures (ADR 0049, 0051, 0052)
     ├── style.css           # All styles: light and dark themes, Olo accent, Liquid Glass materials
@@ -95,6 +96,7 @@ guidonica/
     │   └── changelog/      # it.md, fr.md, de.md, es.md: released notes translated at release time (ADR 0078)
     ├── utils/
     │   ├── radioGroup.ts   # Shared roving-tabindex radiogroup helpers (intro cards, language chips)
+    │   ├── tabs.ts         # Roving-tabindex tablist for the settings inspector (ADR 0097)
     │   ├── inAppBrowser.ts # Portrait-locked in-app browser detection for the landscape tip (ADR 0083)
     │   ├── serviceWorker.ts # Production-only service worker registration (ADR 0063)
     │   └── wakeLock.ts     # Screen Wake Lock controller

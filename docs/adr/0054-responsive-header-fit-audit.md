@@ -1,6 +1,6 @@
 # 0054. Responsive Header Fit Audit
 
-- **Status**: Accepted; amended by [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md), [0076](0076-compound-triple-and-quadruple-meters.md), [0090](0090-half-note-beat-meters.md)
+- **Status**: Accepted; amended by [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md), [0076](0076-compound-triple-and-quadruple-meters.md), [0090](0090-half-note-beat-meters.md), [0097](0097-stage-first-shell.md)
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0045](0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md), [0053](0053-header-level-button.md)

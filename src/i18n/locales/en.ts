@@ -243,7 +243,7 @@ const en = {
     support: { title: 'Support Guidonica', body: 'Guidonica is free, with no ads and no tracking. A tip on Ko-fi funds its development.' },
   } as TipText,
 
-  // Footer
+  // Keyboard shortcuts dialog and ⋯ menu links
   keyPlayPause: 'Play/Pause',
   keyZoom: 'Zoom',
   keyAutoZoom: 'Auto Zoom',

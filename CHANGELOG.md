@@ -33,6 +33,10 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - The footer. Its links and shortcuts moved to the ⋯ menu (ADR 0097).
 
+### Internal
+
+- ADR 0097 documents the stage-first shell: one `#app` grid switched by media queries (wide, compact, short landscape, phone), the docked or overlaid inspector with five ARIA tabs (`src/utils/tabs.ts`), the summary chips (`src/summary.ts`), the ⋯ menu disclosure, the Escape order, focus mode and the `dock` container thresholds. It amends ADRs 0045, 0053, 0054 and 0082; `DESIGN_MANIFESTO.md` §3 and §5F–I, `SPEC.md`, the README and `AGENTS.md` follow (~135 kB of gzipped JS, ~41.7 kB app code, ~9.5 kB CSS).
+
 ## [2026.10.2] - 2026-10-07
 
 > Sing against a drone on any note and at Baroque or modern pitch, and read early music in half-note meters, from 2/2 alla breve to 12/4.

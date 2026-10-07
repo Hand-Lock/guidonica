@@ -68,7 +68,7 @@ The user must have full control over the generation engine prior to and during a
    - Tonality: natural notes only (diatonic C Major / A Minor). There are no accidental toggles yet (see §4, Scale Degrees & Accidentals).
    - **Notes (pitch classes)**: seven toggles C … B, each applying in every octave of the clef and ledger-line range; at least one stays selected (default: all). Chip text follows the Labels setting (letters or syllables; with Labels off, the language's convention). Interval classes that no two selected notes can span are dimmed; if none of the selected moving intervals can occur, every interval that joins two selected notes is used and a hint says so (ADR 0070).
 6. **Count-In / Lead-In**:
-   - Optional (on by default; Settings → Practice → Assists): a 1-measure metronome lead-in with visual beat indicators where the score waits in place at the true first measure (Measure 0) under the playhead, allowing the musician to prepare and internalize tempo before tape scrolling begins on beat 1.
+   - Optional (on by default; Settings → Sound): a 1-measure metronome lead-in with visual beat indicators where the score waits in place at the true first measure (Measure 0) under the playhead, allowing the musician to prepare and internalize tempo before tape scrolling begins on beat 1.
 
 ---
 
@@ -200,14 +200,14 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 - The beat LEDs follow the same three levels: ruby downbeat, orange secondary beat, turquoise weak beats, each a little smaller than the one before (ADR 0072). In compound meters the LEDs read in threes: the one that starts each dotted beat is full size, the two divisions after it are small dots (ADR 0076). Half-note meters read in twos, one LED per quarter (ADR 0090).
 
 ### Drone
-- Settings → Practice → Drone holds the tonic of any of the seven notes (or Off, the default) to sing against; over white notes a drone on D gives Dorian, on A Aeolian (ADR 0092).
+- Settings → Sound → Drone holds the tonic of any of the seven notes (or Off, the default) to sing against; over white notes a drone on D gives Dorian, on A Aeolian (ADR 0092).
 - Tonic only, in octave 3, 12-TET from the reference pitch $a_4$: $f = a_4 \cdot 2^{(m-69)/12}$, $m = 48 + [0, 2, 4, 5, 7, 9, 11]_i$ (at 440 Hz, C3 ≈ 130.81 Hz … B3 ≈ 246.94 Hz).
 - **Drone tuning** (ADR 0094): A4 = 415 Hz (Baroque), 430 Hz (Classical), 440 Hz (default), 442 Hz or 466 Hz (Renaissance). Changing it during playback crossfades like a note change.
 - Two synthesized timbres, equal in loudness, built from `OscillatorNode`, `PeriodicWave`, `BiquadFilterNode` and `GainNode` only:
   - **Shruti box** (default): two reeds at the tonic and its octave, 3 cents apart, under a slow bellows swell.
   - **Pad**: two detuned sawtooths through a slowly breathing lowpass.
 - It sounds from the count-in, fades over 0.1 s on pause and reset, and crossfades when the note or timbre changes during playback.
-- It has its own volume (Settings → Practice → Drone volume, default 60%) on a bus beside the click's; Mute silences both.
+- It has its own volume (Settings → Sound → Drone volume, default 60%) on a bus beside the click's; Mute silences both.
 
 ---
 
@@ -229,13 +229,13 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 - Live visual indicator for the active beat / count-in.
 
 ### Onboarding & Level Presets
-- On a first visit, the welcome step also shows the five languages as endonym chips (English · Italiano · Français · Deutsch · Español), preselected from the browser language; picking one re-translates the intro at once. Later visits omit the chips; the language stays changeable in Settings → Practice.
+- On a first visit, the welcome step also shows the five languages as endonym chips (English · Italiano · Français · Deutsch · Español), preselected from the browser language; picking one re-translates the intro at once. Later visits omit the chips; the language stays changeable in Settings → Display.
 - On a first visit (no saved settings, no onboarding flag), a three-step intro asks **"What's your level?"** (Beginner · Elementary · Intermediate · Advanced · Virtuoso), then **"Which clef would you like to read?"** (Treble · Bass · Alto · Tenor), then **"Which time signature would you like to read?"** (4/4 · 3/4 · 2/4 · 6/8 · 9/8 · 12/8, each described in metric terms only, e.g. "Compound duple · two dotted-quarter beats of three eighths"; see ADR 0071). A Half-note beat chip under the cards turns them into 4/2 · 3/2 · 2/2 · 6/4 · 9/4 · 12/4 (ADR 0090).
 - The answers load a preset of existing, user-visible settings: tempo, ledger lines, note values, dotted notes, rests, ties, tuplets, intervals, notes, labels and count-in, in the chosen meter. In compound meters, which lack the beat-level triplets, Intermediate and Advanced use the duplets of the same value instead (ADR 0071, 0090). Beginner reads the do-pentatonic (C D E G A) at 60 BPM with 2nds and 3rds; Elementary (70 BPM) adds every note, 4ths, 5ths and octaves; Intermediate (80 BPM) every interval up to the octave and 16ths; Advanced (90 BPM) every leap and 32nds; Virtuoso (120 BPM) everything (ADR 0070). Theme, volume, zoom and sound are left unchanged.
 - "Skip", Esc or a click outside keeps the defaults and never asks again. The header Level button (a dumbbell) reopens it at any time. Its five-bar meter lights up to the current level, or stays dim with the label "Custom" when the settings match no preset (see ADR 0053).
 - Presets never alter the generator; every preset is an ordinary point of the configuration space Ω (see ADR 0049).
 - Level cards show freshly generated examples from a narrowed, published sub-configuration of each preset (toggles only switched off, Ω_preview ⊆ Ω_preset), so each card shows the figures typical of its level (see ADR 0051).
-- From the second visit on, one short tip per visit appears at the top of the stage, unless the intro, "What's new", a shared link or the landscape tip is showing. Most point to a feature the user's settings and device don't use yet; one in four asks to follow Guidonica or support it on Ko-fi. Start, the close button or the Tips chip in Settings → Practice hides it (see ADR 0087).
+- From the second visit on, one short tip per visit appears at the top of the stage, unless the intro, "What's new", a shared link or the landscape tip is showing. Most point to a feature the user's settings and device don't use yet; one in four asks to follow Guidonica or support it on Ko-fi. Start, the close button or the Tips chip in Settings → Display hides it (see ADR 0087).
 
 ### Localization & National Note Naming
 - The interface is available in English, Italian, French, German and Spanish (see ADR 0059). The language is the saved choice; without one, the landing page's language (/it/, /fr/, /de/, /es/), then the first supported browser language, else English; the choice is saved with the settings but is not part of any level preset.
@@ -257,7 +257,7 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 - After an update, a returning user sees a "What's new" dialog listing every release since their last visit, newest first, in the interface language. A first-time user never sees it, and a notes file that cannot load (offline) is simply retried on a later visit. About shows the running version, linking to its release (or, on nightly, its commit), and a "What's new" button with the full history.
 
 ### Shareable Exercise Links
-- Settings → Practice → Exercise link copies (or, on phones, shares) a link whose `#x=1&…` fragment carries the exercise: clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels, count-in, drone note and drone tuning (see ADR 0085, 0092, 0094).
+- ⋯ menu → Exercise link copies (or, on phones, shares) a link whose `#x=1&…` fragment carries the exercise: clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels, count-in, drone note and drone tuning (see ADR 0085, 0092, 0094).
 - Language, theme, sound, volume, zoom and the playhead stay with each user. Opening a link skips the intro and loads the exercise; every student still reads different music, because the generator is never seeded.
 
 ### Language Landing Pages

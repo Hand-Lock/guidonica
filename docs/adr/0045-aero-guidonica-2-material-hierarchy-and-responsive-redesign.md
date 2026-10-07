@@ -1,6 +1,6 @@
 # 0045. Aero-Guidonica 2: Material Hierarchy & Responsive Redesign
 
-- **Status**: Accepted; amended by [0054](0054-responsive-header-fit-audit.md)
+- **Status**: Accepted; amended by [0054](0054-responsive-header-fit-audit.md), [0097](0097-stage-first-shell.md)
 - **Date**: 2026-10-02
 - **Author**: Claude & A. C. Lo Cascio
 

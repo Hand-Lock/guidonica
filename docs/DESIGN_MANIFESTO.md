@@ -81,13 +81,13 @@ Every element lives in one simulated lighting environment: the light source is f
 | Tier | Material | Physical recipe | Used for |
 |------|----------|-----------------|----------|
 | 1 | **Gel** | Saturated vertical gradient, `::before` specular gloss cap on the top half, coloured glow | Play/Pause hero, lit LEDs, slider beads, tuplet counter, checked tuplet cells |
-| 2 | **Acrylic** | `linear-gradient(180deg, #fff, #f1f5f9)` (dark: `#1e293b → #162033`), 1px bevel border, 1px top specular. **No half-split gloss.** | Secondary and icon buttons, chips, selects, keycaps |
-| 3 | **Glass** | Translucent fill plus `backdrop-filter: blur(16px) saturate(170–180%)`, 1px top specular, soft drop shadow. **No hard 50% sheen line.** | Header ribbon, overlay settings sheet, tuplets popover, zoom pill, modal, footer, stage notices (landscape tip, rotating tips) |
-| 4 | **Well** | Recessed fill, `inset` shadow, hairline border | Section cards, BPM readout, LED capsule, slider tracks, inputs |
+| 2 | **Acrylic** | `linear-gradient(180deg, #fff, #f1f5f9)` (dark: `#1e293b → #162033`), 1px bevel border, 1px top specular. **No half-split gloss.** | Secondary and icon buttons, chips, selects, keycaps, inspector tabs, summary chips |
+| 3 | **Glass** | Translucent fill plus `backdrop-filter: blur(16px) saturate(170–180%)`, 1px top specular, soft drop shadow. **No hard 50% sheen line.** | Top bar, transport dock, settings inspector and its sheets, ⋯ menu, zoom pill, modals, share toast, stage notices (landscape tip, rotating tips) |
+| 4 | **Well** | Recessed fill, `inset` shadow, hairline border | BPM readout, LED capsule, slider tracks, inputs, tuplets disclosure |
 
 **Tactile depress**: pressed buttons move down by `translateY(1px)` and swap their outer shadow for an inset cavity shadow.
 
-**Backdrop roots**: the header glass is painted on `.control-panel::before` (`z-index: -1`) rather than on the header itself. A `backdrop-filter`, `filter`, `opacity < 1`, `mask` or `will-change` on `.control-panel` would make it a backdrop root, and the overlay settings sheet nested inside it could then no longer blur the canvas beneath.
+**Backdrop roots**: the bar's and dock's glass is painted on `.app-bar::before` and `.transport-dock::before` (`z-index: -1`) rather than on the elements themselves. A `backdrop-filter`, `filter`, `mask` or `will-change` on `.app-bar` would make it a backdrop root, and the ⋯ menu nested inside it could then no longer blur the stage beneath. The one exception is focus mode's `opacity: 0.4` while playing, where the difference is invisible (ADR 0097).
 
 ---
 
@@ -178,34 +178,55 @@ Only the loaded faces may be used: Alegreya 700 (plus italic 400/700), Alegreya 
 - The active downbeat is a ruby gem, scaled to 1.42.
 - The COUNT-IN badge floats absolutely above the capsule, so the capsule's width never changes.
 
-#### F. Settings: four titled sections
-The settings are grouped as **Staff** (clef, ledger lines, meter, compound pulse) · **Rhythm** (note values, tuplets, rests, ties) · **Melody** (notes, intervals) · **Practice** (language, labels, assists including tips, click, volume, theme, exercise link).
-- Each group is a `<section class="settings-section">` well card.
-- Each card has an Alegreya italic `<h2 class="section-title">` followed by a hairline rule.
-- New settings must join one of these sections, never float free.
+#### F. Settings inspector: five tabs
+The settings are grouped in an ARIA tablist (ADR 0097):
+
+| Tab | Controls |
+|-----|----------|
+| **Staff** | clef, ledger lines, meter, half-note beat, C and ¢ signs, pulse |
+| **Rhythm** | note values, dotted, tuplets, rests, ties |
+| **Melody** | notes, intervals |
+| **Sound** | click with count-in, volume, drone note, sound, tuning and volume |
+| **Display** | language, note names, assists (playhead, tips), theme |
+
+- Each tab is an acrylic button, 44px tall, with a 16-unit stroked icon over a short label. Labels wrap with `hyphens: auto` and are never ellipsized.
+- The selected tab takes the checked-chip look: Olo tint, accent border, accent text. It is the tablist's only tab stop, and the arrow, Home and End keys move the selection (`src/utils/tabs.ts`).
+- Panels are `section.settings-section[role=tabpanel]`, shown and hidden with the `hidden` attribute. They have no titles and no well cards, because the tab names the group and the glass inspector is the container.
+- Tuplets is an in-flow disclosure (a well) inside the Rhythm panel at every size.
+- Meta actions (exercise link, About, What's new, keyboard shortcuts, theme cycle, links) live in the **⋯ menu**, not in the inspector.
+- New settings must join one of these tabs, never float free.
 
 #### G. Glass Sheets
-- These are the tuplets popover, the About, What's new and level intro dialogs, and the mobile settings sheet.
-- They float in with `pop` (opacity plus translate), on `cubic-bezier(0.16, 1, 0.3, 1)`.
+- These are the settings inspector and its sheets, the ⋯ menu, the share toast and the About, What's new, Keyboard shortcuts and level intro dialogs.
+- They float in with `pop`, `notice-in`, `inspector-in` or `sheet-up` (opacity plus translate), on `cubic-bezier(0.16, 1, 0.3, 1)`.
+- The share toast fades itself out with a CSS animation (`toast-out`, after 4s). It is hidden on `animationend`, never by a timer.
+- At 600px and below, the dialogs are **bottom sheets**: full width, top corners rounded, sliding up, with the footer padded for the home indicator.
 
 #### H. Responsive Layout Contract
-| Width | Header grid | Settings |
-|-------|-------------|----------|
-| > 1150px | One row: `brand · transport · tempo · beats · utils` | In-flow card grid (4 columns, 2 columns between 961 and 1279px), collapsible. Open by default only when the staff still gets 220px × zoom (ADR 0054). |
-| 961–1150px | The same row, compacted: 12px column gap, 6px LED well padding, tempo shrinks to a 160px minimum, Reset and Settings collapse to icons | As above |
-| ≤ 960px | Two rows: `brand · utils` / `transport · tempo · beats`. The utilities span the cell above tempo, so they never size the beats column. | Absolutely positioned **glass sheet overlaying the canvas** (the canvas never reflows). Its height is the viewport minus the header (`calc(100dvh - 100%)`). It scrolls internally, closes on a canvas tap, and the tuplets popover becomes an in-flow accordion. Footer hidden. |
-| ≤ 600px | Three rows: `brand · utils` / `transport · beats` / `tempo` (full width, long slider track) | One column. The Settings and Reset labels collapse to icons. |
+The stage comes first (ADR 0097). `#app` is one CSS grid whose template the media queries switch, so JS never reads layout to place the chrome.
 
-Below 1280px, the Level button collapses to its dumbbell and the header theme toggle hides. The theme stays in Settings → Practice (ADR 0053).
+| Mode | Query | Grid areas | Settings |
+|------|-------|------------|----------|
+| Wide | `(min-width: 1024px) and (min-height: 501px)` | `bar insp` / `stage insp` / `dock insp` | A docked right column, `min(380px, 32vw)`, 0 when closed. Open by default from 1280px. One canvas resize per toggle; only the panel content animates. |
+| Compact | otherwise | `bar` / `stage` / `dock` | A glass sheet in the stage's grid cell, so the canvas never reflows: from the bottom in portrait (`min(100%, 680px)`), from the right in landscape (`min(360px, 55vw)`). It scrolls internally and closes on a staff tap or Esc. |
+| Short landscape | `(max-height: 500px)` | `stage stage` / `dock bar` | As compact, from the right. The bar and dock share one bottom row; the ⋯ menu opens upwards. |
+| Phone | `(max-width: 600px)` | as compact | The dock is two rows: `transport · beats · mute` above, the full-width `tempo` slider below. |
 
-On phones, the brand and transport collapse by the room their column actually gets (container queries), not by viewport width. Touch targets and 12/8's twelve beat dots move the thresholds. Below 183px the SOLFÈGE badge hides. Below 118px the wordmark is visually hidden but stays readable by assistive tech, so only the hand remains. When the transport has less than 148px, Start drops its label and keeps its play/pause icon (ADR 0054).
+Everything else collapses by the room it actually gets (container queries), not by viewport width. Touch targets and 12/8's beat dots move the thresholds:
 
-On desktop, the tuplets popover is capped to the room below it and scrolls internally.
+- **`bar`**: the SOLFÈGE badge shows from 960px; the summary chips hide at 719px and below; Level and Settings keep only their icons at 559px and below.
+- **`brand`** (phone): below 183px the badge hides; below 118px the wordmark is visually hidden but stays readable by assistive tech, so only the hand remains.
+- **`transport`** (phone): below 148px, Start drops its label and keeps its play/pause icon (ADR 0054).
+- **`dock`** (short landscape): at 610px and below the tempo term hides, at 550px the slider, at 484px Start's label, at 412px the BPM unit.
 
-The canvas wrapper is observed with a `ResizeObserver`, so any layout change (drawer collapse, rotation) resizes the backing store.
+**Focus mode**: while playing, the bar and zoom pill fade to 0.4 opacity. Hover (on hover-capable devices) or focus within brings them back. The dock stays fully lit.
+
+Layering: bar 30 (its menu opens over a sheet), inspector 25, dock 20. Safe-area padding belongs to the bar (top), the dock (bottom) and the sheets.
+
+The canvas wrapper is observed with a `ResizeObserver`, so any layout change (inspector toggle, rotation) resizes the backing store.
 
 #### I. Mechanical Keycaps (`<kbd>`)
-Acrylic keys with a 2px bottom border, used in the footer shortcut list.
+Acrylic keys with a 2px bottom border, used in the Keyboard shortcuts dialog (⋯ menu or <kbd>?</kbd>).
 
 ---
 
@@ -225,7 +246,7 @@ When introducing any future UI element, every developer and AI agent **MUST** ve
 7. **Viewport safety**:
    - `#app` uses `100dvh` (with a `100vh` fallback).
    - The page declares `viewport-fit=cover`.
-   - Header, footer, sheet and zoom pill pad with `env(safe-area-inset-*)`.
+   - The bar, dock, sheets and zoom pill pad with `env(safe-area-inset-*)`.
 8. **Reduced motion**: `@media (prefers-reduced-motion: reduce)` disables every animation and transition.
 9. **Accessibility**: every control has a visible `:focus-visible` ring. Icon-only buttons carry `aria-label`. Toggle buttons expose `aria-pressed` or `aria-expanded`.
 

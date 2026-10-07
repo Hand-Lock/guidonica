@@ -79,7 +79,7 @@ Guidonica is constructed upon an uncompromising **suckless, ultra-lightweight, a
    - Written exclusively in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and the Web Audio API directly.
    - Zero React, Vue, Svelte, or Angular. Zero Virtual DOM reconciliation overhead.
    - Zero external state management libraries (no Redux, MobX, Zustand, or Pinia).
-   - Entire shipped JavaScript is **~130 kB gzipped**: ~37 kB of application code (including the English dictionary) plus ~93 kB of VexFlow's font-free `vexflow/core` build. Each other language is one lazy **~5.7 kB** chunk ([ADR 0059](docs/adr/0059-localization-and-national-note-naming.md)). The music font is a separate **19.6 kB** Bravura subset ([ADR 0058](docs/adr/0058-music-font-audit-and-bravura-subset.md)) instead of the ~600 kB of base64 fonts the full VexFlow entry inlines.
+   - Entire shipped JavaScript is **~135 kB gzipped**: ~42 kB of application code (including the English dictionary) plus ~93 kB of VexFlow's font-free `vexflow/core` build. Each other language is one lazy **~6.6 kB** chunk ([ADR 0059](docs/adr/0059-localization-and-national-note-naming.md)). The music font is a separate **19.6 kB** Bravura subset ([ADR 0058](docs/adr/0058-music-font-audit-and-bravura-subset.md)) instead of the ~600 kB of base64 fonts the full VexFlow entry inlines.
 2. **Single Authoritative Hardware Clock (`AudioContext.currentTime`)**:
    - Visual scroller movement and synthesized audio pulse scheduling are mathematically locked to the hardware audio clock (`AudioContext.currentTime`).
    - Every click time and every tape offset is computed from `currentTime`. A 25 ms `setInterval` only wakes the audio scheduler to queue clicks 100 ms ahead; it never measures time. There are no visual timers or delta-time accumulators.
@@ -101,7 +101,7 @@ Guidonica is constructed upon an uncompromising **suckless, ultra-lightweight, a
 7. **Pure CSS3 Liquid Glass UI (Zero CSS Frameworks)**:
    - The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed with 100% pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled glass borders, tactile inset/drop shadows).
    - Zero Tailwind runtime, zero CSS-in-JS runtimes, zero heavy sprite textures.
-   - Entire stylesheet is only **~8.3 kB gzipped** (`40 kB` minified). The text fonts (Alegreya, Alegreya Sans, Ubuntu Mono) are self-hosted Latin subsets, so the page makes no third-party requests ([ADR 0060](docs/adr/0060-self-hosted-text-fonts-and-privacy-note.md)).
+   - Entire stylesheet is only **~9.5 kB gzipped** (`46 kB` minified). The text fonts (Alegreya, Alegreya Sans, Ubuntu Mono) are self-hosted Latin subsets, so the page makes no third-party requests ([ADR 0060](docs/adr/0060-self-hosted-text-fonts-and-privacy-note.md)).
 8. **Native Device & Lifecycle Resilience**:
    - Integrates modern Web APIs including Screen Wake Lock (`navigator.wakeLock`), Page Visibility lifecycle auto-pause, dynamic iOS `AVAudioSession` category switching (`playback` mode to bypass physical silent switches), Fullscreen API, and a hand-written offline service worker.
 
@@ -160,18 +160,19 @@ flowchart TD
   | Virtuoso | 120 BPM | Everything |
 
 - **Notation previews**: each level card shows freshly generated example bars of what that level reads ([ADRs 0050–0052](docs/adr/0050-intro-notation-previews.md)).
-- **Level button**: the dumbbell button in the header reopens the presets at any time. Its five-bar meter lights up to the current level, or reads "Custom" when the settings match no preset ([ADRs 0053](docs/adr/0053-header-level-button.md), [0073](docs/adr/0073-level-button-dumbbell-icon.md)).
+- **Level button**: the dumbbell button in the top bar reopens the presets at any time. Its five-bar meter lights up to the current level, or reads "Custom" when the settings match no preset ([ADRs 0053](docs/adr/0053-header-level-button.md), [0073](docs/adr/0073-level-button-dumbbell-icon.md)).
 - Presets never change the generator: each is one point of the configuration space $\Omega$.
 
 ### 2. Settings at a Glance
-The settings drawer has four sections:
+The staff fills the screen. Start, tempo, the beat lights and mute sit in a dock at the bottom, within thumb reach on phones. A slim top bar holds the level, chips for the clef, meter and drone (each opens its tab), fullscreen, Settings and a ⋯ menu with the exercise link, About, What's new, keyboard shortcuts, the theme and the project links. Settings open as a side panel on wide screens and as a sheet over the staff elsewhere, in five tabs ([ADR 0097](docs/adr/0097-stage-first-shell.md)):
 
 | Section | Contents |
 | :--- | :--- |
 | **Staff** | Clef (8), ledger lines above and below (0–3) with a live range hint, time signature with the Half-note beat switch, C and ¢ signs for 4/4 and 2/2, pulse (beat or division) |
 | **Rhythm** | Note values (quarter, eighth, half, whole, 16th, 32nd), dotted, tuplets, rests, ties |
 | **Melody** | Notes (C … B), intervals (unison … 9+) |
-| **Practice** | Language, labels, assists (count-in, playhead, tips), click sound, volume, drone (note, sound, tuning, volume), theme, exercise link |
+| **Sound** | Click sound with count-in, volume, drone (note, sound, tuning, volume) |
+| **Display** | Language, note names, assists (playhead, tips), theme |
 
 ### 3. Complete Setticlavio Clef System (8 Clefs)
 Guidonica supports the full historic **Setticlavio** (seven clefs) traditional vocal and instrumental clef system, featuring both historical positions of the baritone clef. The ranges below are the widest, with 3 ledger lines above and below:
@@ -252,7 +253,7 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 - **Drone tuning**: A = 440 Hz by default, or 415 (Baroque), 430 (Classical), 442 and 466 Hz (Renaissance), to rehearse at the pitch of a period ensemble. Links carry it with the drone note ([ADR 0094](docs/adr/0094-drone-tuning.md)).
 
 ### 10. Stationary Wait-In-Place Count-In
-- When **Count-In** is enabled, starting playback initiates a 1-measure preparatory count-in. It can be switched off in Settings → Practice → Assists.
+- When **Count-In** is enabled, starting playback initiates a 1-measure preparatory count-in. It can be switched off in Settings → Sound.
 - **Wait-In-Place Mechanics**: The notation tape does not move during count-in; Measure 0 rests stationary directly under the playhead, giving the musician time to read the initial notes and internalize the tempo before tape motion begins on Beat 1.
 - **Visual Feedback**: A stacked `COUNT-IN` badge and dynamic animated beat dots flash in real time with each metronome strike.
 
@@ -275,12 +276,12 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 - **Language landing pages** at [guidonica.it/it/](https://guidonica.it/it/), [/fr/](https://guidonica.it/fr/), [/de/](https://guidonica.it/de/) and [/es/](https://guidonica.it/es/) carry translated titles, descriptions and social cards, so search engines and link previews show each language ([ADR 0086](docs/adr/0086-language-landing-pages.md)).
 
 ### 15. Shareable Exercise Links
-- **Settings → Practice → Exercise link** copies (or shares, on phones) a link to the current exercise ([ADR 0085](docs/adr/0085-shareable-exercise-links.md)).
+- **⋯ menu → Exercise link** copies (or shares, on phones) a link to the current exercise ([ADR 0085](docs/adr/0085-shareable-exercise-links.md)).
 - The link's `#x=1&…` fragment carries clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels and count-in. Language, theme, sound, volume, zoom and the playhead stay with each user.
 - Opening a link skips the intro and loads the exercise. Each student still reads **different** music under the same rules, because the generator is never seeded.
 
 ### 16. Tips & What's New
-- **Rotating tips**: from the second visit on, one short tip per visit points to a feature the user's settings and device don't use yet (levels, labels, keyboard, pinch zoom, clefs, notes, tuplets, exercise links, installing, What's new…). One in four suggests following Guidonica or supporting it on Ko-fi. Start or the close button hides it, and the **Tips** chip in Settings → Practice → Assists turns them off ([ADR 0087](docs/adr/0087-rotating-tips.md)).
+- **Rotating tips**: from the second visit on, one short tip per visit points to a feature the user's settings and device don't use yet (levels, labels, keyboard, pinch zoom, clefs, notes, tuplets, exercise links, installing, What's new…). One in four suggests following Guidonica or supporting it on Ko-fi. Start or the close button hides it, and the **Tips** chip in Settings → Display → Assists turns them off ([ADR 0087](docs/adr/0087-rotating-tips.md)).
 - **What's new**: after an update, a returning user sees what changed since their last visit, in their language. About shows the running version and the full history ([ADR 0078](docs/adr/0078-release-channels-calver-changelog-whats-new.md)).
 
 ### 17. Native Device & Lifecycle Resilience
@@ -304,7 +305,7 @@ Constructed strictly following the [Aero-Guidonica Design Manifesto](docs/DESIGN
   - **Ubuntu Mono**: Engineered monospace numerals for steady, non-jumping BPM and metric readouts.
 - **Guidonian Hand Brand Mark**: The logo, favicon, iOS touch icon, Android/Chrome install icons (web app manifest, including a maskable variant) and the flat header glyph (`currentColor` hand, `--accent` thread) are all generated from one deterministic, zero-dependency vector model by `scripts/build-icons.mjs` ([ADRs 0046–0048](docs/adr/0048-brand-mark-rollout-manifest-and-readme-logo.md)).
 - **Handcrafted Vector Music Icons**: Custom inlined SVG glyphs for quarter, eighth, half, whole, sixteenth, thirty-second, dotted, rest, tie, and playhead icons.
-- **Theme**: **Auto** (follows the operating system's `prefers-color-scheme`), **Light** or **Dark**, in Settings → Practice. On wide screens a header button cycles through the three.
+- **Theme**: **Auto** (follows the operating system's `prefers-color-scheme`), **Light** or **Dark**, in Settings → Display. The Theme item of the ⋯ menu cycles through the three.
 
 ---
 
@@ -323,8 +324,9 @@ Constructed strictly following the [Aero-Guidonica Design Manifesto](docs/DESIGN
 | <kbd>-</kbd> or <kbd>_</kbd> | **Zoom Out** | Decrease notation scale by 10% |
 | <kbd>0</kbd> | **Auto Zoom** | Recalculate and reset to optimal device-adaptive forereading zoom |
 | <kbd>D</kbd> | **Drone** | Turn the drone off, or back on to the last note used ([ADR 0094](docs/adr/0094-drone-tuning.md)) |
+| <kbd>?</kbd> | **Keyboard shortcuts** | List every shortcut, also under the ⋯ menu ([ADR 0097](docs/adr/0097-stage-first-shell.md)) |
 
-Shortcuts pause while a dialog (About, What's new, the level intro) is open. While the tuplet menu is open, <kbd>Esc</kbd> closes it first instead of resetting.
+Shortcuts pause while a dialog (About, What's new, Keyboard shortcuts, the level intro) is open. <kbd>Esc</kbd> first closes whatever is open, in order the ⋯ menu, the tuplets list and the settings sheet, and resets only when nothing is.
 
 ---
 
@@ -474,7 +476,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0042](docs/adr/0042-single-dpr-offscreen-backing-store.md) | Single-dpr Offscreen Backing Store (drop VexFlow `resize()`) | Accepted |
 | [0043](docs/adr/0043-thirty-second-notes.md) | Thirty-Second Notes & Dotted Sixteenths | Accepted; amended by 0064; rhythm sampler superseded by 0065 |
 | [0044](docs/adr/0044-user-selectable-ledger-lines.md) | User-Selectable Ledger Lines (Above / Below, 0–3) | Accepted; amended by 0059, 0065, 0066 |
-| [0045](docs/adr/0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md) | Aero-Guidonica 2: Material Hierarchy & Responsive Redesign | Accepted; amended by 0054 |
+| [0045](docs/adr/0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md) | Aero-Guidonica 2: Material Hierarchy & Responsive Redesign | Accepted; amended by 0054, 0097 |
 | [0046](docs/adr/0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Superseded in part by 0047 |
 | [0047](docs/adr/0047-guidonian-hand-v2.md) | Guidonian Hand v2: Anatomical Proportions, Volume Shading & 3D Thread | Accepted |
 | [0048](docs/adr/0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted; amended by 0063 |
@@ -482,8 +484,8 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0050](docs/adr/0050-intro-notation-previews.md) | Procedural Notation Previews in the Onboarding Intro | Accepted; amended by 0051, 0052, 0071 |
 | [0051](docs/adr/0051-intro-preview-representation-presets.md) | Representation Presets for the Intro Level Previews | Accepted; amended by 0052, 0070 |
 | [0052](docs/adr/0052-intro-preview-signature-check.md) | Signature Check for the Intro Level Previews | Accepted; amended by 0070, 0071 |
-| [0053](docs/adr/0053-header-level-button.md) | Header Level Button with a Live Difficulty Meter | Accepted; amended by 0054, 0073 |
-| [0054](docs/adr/0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055, 0076, 0090 |
+| [0053](docs/adr/0053-header-level-button.md) | Header Level Button with a Live Difficulty Meter | Accepted; amended by 0054, 0073, 0097 |
+| [0054](docs/adr/0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055, 0076, 0090, 0097 |
 | [0055](docs/adr/0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056, 0083, 0087 |
 | [0056](docs/adr/0056-notch-safe-notation-stage.md) | Notch-Safe Notation Stage | Accepted |
 | [0057](docs/adr/0057-canvas-bounded-beams-and-tuplet-numbers.md) | Canvas-Bounded Beams & Tuplet Numbers | Accepted |
@@ -511,7 +513,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0079](docs/adr/0079-social-profile-banners.md) | Social Profile Banners | Accepted |
 | [0080](docs/adr/0080-social-profiles-verification.md) | Social Profiles: rel="me" Verification and Bluesky Domain Handle | Accepted; amended by 0082, 0084 |
 | [0081](docs/adr/0081-release-announcements-bluesky-mastodon.md) | Release Announcements on Bluesky and Mastodon | Accepted |
-| [0082](docs/adr/0082-visible-social-links.md) | Visible Bluesky and Mastodon Links | Accepted; amended by 0084 |
+| [0082](docs/adr/0082-visible-social-links.md) | Visible Bluesky and Mastodon Links | Accepted; amended by 0084, 0097 |
 | [0083](docs/adr/0083-in-app-browser-landscape-tip.md) | In-App Browser Landscape Tip | Accepted |
 | [0084](docs/adr/0084-instagram-link.md) | Instagram Link | Accepted |
 | [0085](docs/adr/0085-shareable-exercise-links.md) | Shareable Exercise Links | Accepted |
@@ -526,6 +528,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0094](docs/adr/0094-drone-tuning.md) | Drone Tuning: Baroque, Classical and Renaissance Pitch | Accepted |
 | [0095](docs/adr/0095-output-soft-clipper.md) | Output Headroom: a Zero-Latency Soft Clipper | Accepted |
 | [0096](docs/adr/0096-cross-engine-support-gecko-webkit.md) | Cross-Engine Support: Gecko and WebKit, Chromium Untouched | Accepted |
+| [0097](docs/adr/0097-stage-first-shell.md) | Stage-First Shell: Top Bar, Transport Dock, Tabbed Inspector and ⋯ Menu | Accepted |
 
 ---
 

@@ -65,6 +65,18 @@ describe('Stage-first shell (ADR 0097)', () => {
     expect(short).toMatch(/\.app-menu \{\s*top: auto;\s*bottom: calc\(100% \+ 8px\);/);
   });
 
+  it('sheds the merged row by dock width, budgeted for touch and the 12/8 LEDs', () => {
+    const short = mediaBlock('(max-height: 500px)');
+    expect(short).toMatch(/\.transport-dock \{\s*container: dock \/ inline-size;/);
+    const steps = [...short.matchAll(/@container dock \(max-width: (\d+)px\) \{\s*([^{]+)\{/g)].map((m) => [Number(m[1]), m[2].trim()]);
+    expect(steps).toEqual([
+      [610, '.transport-dock .tempo-head'],
+      [550, ".transport-dock .tempo-inputs input[type='range']"],
+      [484, '.playback-controls .btn-primary'],
+      [412, '.tempo-unit'],
+    ]);
+  });
+
   it('wraps the phone dock to a thumb row and a full-width tempo row', () => {
     const phone = mediaBlock('(max-width: 600px)');
     expect(phone).toMatch(/'transport beats mute'\s*'tempo tempo tempo'/);
