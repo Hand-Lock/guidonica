@@ -18,11 +18,13 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - A ⋯ menu in the top bar gathers the exercise link, About, What's new, keyboard shortcuts, the theme, GitHub, Privacy, the socials and Support (ADR 0097).
 - Press ? or choose Keyboard shortcuts in the ⋯ menu to see every shortcut (ADR 0097).
+- Chips in the top bar show the clef, the meter and the drone note; tap one to change it (ADR 0097).
 
 ### Changed
 
 - A new layout gives the music the whole screen: a slim bar on top, and Start, tempo, beats and mute in a dock at the bottom, within reach of your thumb. Settings open as a side panel on wide screens and as a sheet over the staff on smaller ones; Esc or a tap on the staff closes the sheet (ADR 0097).
 - On phones held sideways, the bar and the dock share a single row at the bottom, so the staff gets most of the height (ADR 0097).
+- Settings are grouped in five tabs: Staff, Rhythm, Melody, Sound and Display. Click, volume, count-in and the drone are under Sound; language, note names, playhead, tips and theme under Display (ADR 0097).
 
 ### Removed
 

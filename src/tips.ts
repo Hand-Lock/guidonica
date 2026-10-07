@@ -4,7 +4,8 @@
 
 import { AppSettings, TUPLET_NAMES, TUPLET_VALUES, isGrouped, isHalfNoteMeter } from './notation/types';
 
-export type SettingsSection = 'staff' | 'rhythm' | 'melody' | 'practice';
+/** The settings inspector's tabs (ADR 0097). */
+export type SettingsSection = 'staff' | 'rhythm' | 'melody' | 'sound' | 'display';
 
 export type TipId =
   | 'levels'
@@ -27,6 +28,7 @@ export type TipId =
 
 export type TipAction =
   | { kind: 'settings'; section: SettingsSection }
+  | { kind: 'share' }
   | { kind: 'levels' }
   | { kind: 'whatsNew' }
   | { kind: 'kofi' }
@@ -55,7 +57,7 @@ export const FEATURE_TIPS: readonly Tip[] = [
   { id: 'levels', action: { kind: 'levels' } },
   {
     id: 'labels',
-    action: { kind: 'settings', section: 'practice' },
+    action: { kind: 'settings', section: 'display' },
     when: (c) => c.settings.solfegeLabelMode === 'none',
   },
   { id: 'keys', when: (c) => c.keyboard },
@@ -71,10 +73,10 @@ export const FEATURE_TIPS: readonly Tip[] = [
     action: { kind: 'settings', section: 'rhythm' },
     when: (c) => !anyTuplet(c.settings),
   },
-  { id: 'share', action: { kind: 'settings', section: 'practice' } },
+  { id: 'share', action: { kind: 'share' } },
   {
     id: 'drone',
-    action: { kind: 'settings', section: 'practice' },
+    action: { kind: 'settings', section: 'sound' },
     when: (c) => c.settings.droneNote === 'off',
   },
   {
@@ -95,7 +97,7 @@ export const FEATURE_TIPS: readonly Tip[] = [
   { id: 'install', when: (c) => !c.standalone },
   {
     id: 'playhead',
-    action: { kind: 'settings', section: 'practice' },
+    action: { kind: 'settings', section: 'display' },
     when: (c) => c.settings.showPlayhead,
   },
   { id: 'whatsNew', action: { kind: 'whatsNew' } },

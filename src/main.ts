@@ -94,7 +94,9 @@ import {
   saveSeenVersion,
   saveTipCount,
 } from './storage';
-import { Tip, TipContext, pickTip } from './tips';
+import { SettingsSection, Tip, TipContext, pickTip } from './tips';
+import { exerciseSummary } from './summary';
+import { bindTabs } from './utils/tabs';
 import {
   APP_VERSION,
   NOTES_LOADERS,
@@ -175,6 +177,8 @@ class GuidonicaApp {
   private appMenu: HTMLElement | null;
   private btnLevelToggle: HTMLButtonElement | null;
   private levelSyncedSettings: Readonly<AppSettings> | null = null;
+  private summarySyncedSettings: Readonly<AppSettings> | null = null;
+  private selectInspectorTab: (id: string) => boolean = () => false;
   private controlsDrawer: HTMLElement;
 
   // Drawer Configuration Elements
@@ -780,6 +784,12 @@ class GuidonicaApp {
       this.setDrawerOpen(false);
       this.btnDrawerToggle.focus();
     });
+    const tabList = document.querySelector<HTMLElement>('.inspector-tabs');
+    if (tabList) this.selectInspectorTab = bindTabs(tabList, () => this.closeTupletsPopover());
+    document.getElementById('exercise-summary')?.addEventListener('click', (e) => {
+      const chip = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-tab]') : null;
+      if (chip?.dataset.tab) this.openInspector(chip.dataset.tab as SettingsSection);
+    });
 
     // Tempo controls
     this.tempoSlider.addEventListener('input', (e) => {
@@ -1351,7 +1361,15 @@ class GuidonicaApp {
     if (text) text.textContent = m.tips[tip.id].body;
     const kind = tip.action?.kind;
     const label =
-      kind === 'settings' ? m.settings : kind === 'levels' ? m.levelPresets : kind === 'whatsNew' ? m.whatsNewButton : null;
+      kind === 'settings'
+        ? m.settings
+        : kind === 'share'
+          ? m.shareButton
+          : kind === 'levels'
+            ? m.levelPresets
+            : kind === 'whatsNew'
+              ? m.whatsNewButton
+              : null;
     if (action) {
       action.hidden = label === null;
       action.textContent = label ?? '';
@@ -1381,9 +1399,9 @@ class GuidonicaApp {
       const action = this.currentTip?.action;
       this.hideTip();
       if (action?.kind === 'settings') {
-        this.closeTupletsPopover();
-        this.setDrawerOpen(true);
-        document.querySelector(`.section-${action.section}`)?.scrollIntoView({ block: 'nearest' });
+        this.openInspector(action.section);
+      } else if (action?.kind === 'share') {
+        document.getElementById('btn-share-exercise')?.click();
       } else if (action?.kind === 'levels') {
         this.closeTupletsPopover();
         this.openIntro(false);
@@ -1674,6 +1692,7 @@ class GuidonicaApp {
     setRadioSelection(this.introLanguageButtons, getLanguage());
     this.syncUI(globalState.getState());
     this.syncLevelButton(settings, true);
+    this.renderExerciseSummary(settings, true);
     this.updateZoomUI(settings.zoomMode, settings.zoom || DEFAULT_ZOOM);
     this.updateThemeUI(settings.theme, resolveTheme(settings.theme));
     this.syncFullscreenGlyph();
@@ -2004,6 +2023,14 @@ class GuidonicaApp {
     this.btnDrawerToggle.setAttribute('aria-expanded', String(isOpen));
   }
 
+  /** Opens the inspector on `tab` (summary chips, tips), with the panel scrolled to its top. */
+  private openInspector(tab: SettingsSection): void {
+    this.closeTupletsPopover();
+    this.selectInspectorTab(tab);
+    this.setDrawerOpen(true);
+    document.querySelector('.inspector-body')?.scrollTo?.(0, 0);
+  }
+
   private setMenuOpen(isOpen: boolean): void {
     if (!this.appMenu || !this.btnMenuToggle) return;
     this.appMenu.hidden = !isOpen;
@@ -2331,8 +2358,27 @@ class GuidonicaApp {
     if (label) label.textContent = name;
   }
 
+  /** Clef, meter and drone chips in the bar, each opening its inspector tab (ADR 0097). */
+  private renderExerciseSummary(settings: Readonly<AppSettings>, force: boolean = false): void {
+    const summary = document.getElementById('exercise-summary');
+    if (!summary || (settings === this.summarySyncedSettings && !force)) return;
+    this.summarySyncedSettings = settings;
+    const m = t();
+    const chips = exerciseSummary(settings, m).map(({ text, tab }) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'summary-chip';
+      chip.dataset.tab = tab;
+      chip.textContent = text;
+      chip.title = m.settings;
+      return chip;
+    });
+    summary.replaceChildren(...chips);
+  }
+
   private syncUI(state: SessionState): void {
     this.syncLevelButton(state.settings);
+    this.renderExerciseSummary(state.settings);
     if (state.playbackState !== 'stopped') this.hideTip();
 
     // Runs on every beat: write the DOM only on a real change, or each click would

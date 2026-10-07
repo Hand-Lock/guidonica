@@ -194,9 +194,15 @@
             <h2 id="inspector-title" data-i18n="settings">Settings</h2>
             <button id="btn-drawer-close" class="btn-close" type="button" aria-label="Close settings" title="Close settings" data-i18n-aria-label="closeSettings" data-i18n-title="closeSettings"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
           </div>
+          <div class="inspector-tabs" role="tablist" aria-label="Settings sections" data-i18n-aria-label="inspectorTabsAria">
+            <button id="tab-staff" class="inspector-tab" type="button" role="tab" aria-selected="true" aria-controls="panel-staff" tabindex="0" data-tab="staff"><svg class="icon" aria-hidden="true"><use href="#i-staff"/></svg><span data-i18n="sectionStaff">Staff</span></button>
+            <button id="tab-rhythm" class="inspector-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-rhythm" tabindex="-1" data-tab="rhythm"><svg class="icon" aria-hidden="true"><use href="#i-rhythm"/></svg><span data-i18n="sectionRhythm">Rhythm</span></button>
+            <button id="tab-melody" class="inspector-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-melody" tabindex="-1" data-tab="melody"><svg class="icon" aria-hidden="true"><use href="#i-melody"/></svg><span data-i18n="sectionMelody">Melody</span></button>
+            <button id="tab-sound" class="inspector-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-sound" tabindex="-1" data-tab="sound"><svg class="icon" aria-hidden="true"><use href="#i-speaker"/></svg><span data-i18n="sectionSound">Sound</span></button>
+            <button id="tab-display" class="inspector-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-display" tabindex="-1" data-tab="display"><svg class="icon" aria-hidden="true"><use href="#i-display"/></svg><span data-i18n="sectionDisplay">Display</span></button>
+          </div>
           <div class="drawer-inner inspector-body">
-            <section class="settings-section section-staff" aria-labelledby="section-staff-title">
-              <h2 id="section-staff-title" class="section-title" data-i18n="sectionStaff">Staff</h2>
+            <section id="panel-staff" class="settings-section section-staff" role="tabpanel" aria-labelledby="tab-staff">
               <div class="control-group clef-group">
                 <label for="select-clef" data-i18n="clef">Clef</label>
                 <select id="select-clef" aria-label="Select musical clef" data-i18n-aria-label="clefAria">
@@ -262,8 +268,7 @@
               </div>
             </section>
 
-            <section class="settings-section section-rhythm" aria-labelledby="section-rhythm-title">
-              <h2 id="section-rhythm-title" class="section-title" data-i18n="sectionRhythm">Rhythm</h2>
+            <section id="panel-rhythm" class="settings-section section-rhythm" role="tabpanel" aria-labelledby="tab-rhythm" hidden>
               <fieldset class="control-group subdivisions-group">
                 <legend data-i18n="noteValues">Note values</legend>
                 <div class="checkbox-grid">
@@ -454,8 +459,7 @@
               </div>
             </section>
 
-            <section class="settings-section section-melody" aria-labelledby="section-melody-title">
-              <h2 id="section-melody-title" class="section-title" data-i18n="sectionMelody">Melody</h2>
+            <section id="panel-melody" class="settings-section section-melody" role="tabpanel" aria-labelledby="tab-melody" hidden>
               <fieldset class="control-group notes-group">
                 <legend data-i18n="pitchClasses">Notes</legend>
                 <div class="checkbox-grid notes-grid">
@@ -533,49 +537,19 @@
               </fieldset>
             </section>
 
-            <section class="settings-section section-practice" aria-labelledby="section-practice-title">
-              <h2 id="section-practice-title" class="section-title" data-i18n="sectionPractice">Practice</h2>
+            <section id="panel-sound" class="settings-section section-sound" role="tabpanel" aria-labelledby="tab-sound" hidden>
               <div class="control-group">
-                <label for="select-language" data-i18n="language">Language</label>
-                <select id="select-language" aria-label="Language" data-i18n-aria-label="language">
-                  <option value="en" lang="en" selected>English</option>
-                  <option value="it" lang="it">Italiano</option>
-                  <option value="fr" lang="fr">Français</option>
-                  <option value="de" lang="de">Deutsch</option>
-                  <option value="es" lang="es">Español</option>
-                </select>
-              </div>
-              <div class="control-group">
-                <label for="select-solfege-mode" data-i18n="labels">Labels</label>
-                <select id="select-solfege-mode" aria-label="Note labels / Solfège overlay" data-i18n-aria-label="labelsAria">
-                  <option value="none" selected data-i18n="labelsNone">None</option>
-                  <option value="syllables" data-i18n="labelsSyllables">Syllables (Do Re Mi)</option>
-                  <option value="letters" data-i18n="labelsLetters">Letters (C D E)</option>
-                </select>
-              </div>
-              <div class="control-group">
-                <span class="group-label" data-i18n="assists">Assists</span>
-                <div class="checkbox-grid">
+                <label for="select-sound-profile" data-i18n="click">Click</label>
+                <div class="ledger-select-row">
+                  <select id="select-sound-profile" aria-label="Metronome click timbre" data-i18n-aria-label="clickAria">
+                    <option value="triangle" data-i18n="clickElectronic">Electronic</option>
+                    <option value="woodblock" selected data-i18n="clickWoodblock">Woodblock</option>
+                  </select>
                   <label class="checkbox-item">
                     <input type="checkbox" id="toggle-count-in" checked />
                     <span data-i18n="countIn">Count-In</span>
                   </label>
-                  <label class="checkbox-item" title="Toggle stationary red playhead visibility (Shortcut: P)" data-i18n-title="playheadTitle">
-                    <input type="checkbox" id="toggle-playhead" checked />
-                    <span data-i18n="playhead">Playhead <svg class="music-icon icon-playhead" aria-hidden="true"><use href="#g-playhead"/></svg></span>
-                  </label>
-                  <label class="checkbox-item" title="A short tip about Guidonica each time you open it" data-i18n-title="tipsTitle">
-                    <input type="checkbox" id="toggle-tips" checked />
-                    <span data-i18n="tipsToggle">Tips</span>
-                  </label>
                 </div>
-              </div>
-              <div class="control-group">
-                <label for="select-sound-profile" data-i18n="click">Click</label>
-                <select id="select-sound-profile" aria-label="Metronome click timbre" data-i18n-aria-label="clickAria">
-                  <option value="triangle" data-i18n="clickElectronic">Electronic</option>
-                  <option value="woodblock" selected data-i18n="clickWoodblock">Woodblock</option>
-                </select>
               </div>
               <div class="control-group volume-group">
                 <label for="volume-slider" data-i18n="volume">Volume</label>
@@ -617,6 +591,40 @@
                 <label for="drone-volume-slider" data-i18n="droneVolume">Drone volume</label>
                 <div class="volume-inputs">
                   <input type="range" id="drone-volume-slider" min="0" max="1" step="0.05" value="0.6" aria-label="Drone volume" data-i18n-aria-label="droneVolumeAria" />
+                </div>
+              </div>
+            </section>
+
+            <section id="panel-display" class="settings-section section-display" role="tabpanel" aria-labelledby="tab-display" hidden>
+              <div class="control-group">
+                <label for="select-language" data-i18n="language">Language</label>
+                <select id="select-language" aria-label="Language" data-i18n-aria-label="language">
+                  <option value="en" lang="en" selected>English</option>
+                  <option value="it" lang="it">Italiano</option>
+                  <option value="fr" lang="fr">Français</option>
+                  <option value="de" lang="de">Deutsch</option>
+                  <option value="es" lang="es">Español</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label for="select-solfege-mode" data-i18n="labels">Labels</label>
+                <select id="select-solfege-mode" aria-label="Note labels / Solfège overlay" data-i18n-aria-label="labelsAria">
+                  <option value="none" selected data-i18n="labelsNone">None</option>
+                  <option value="syllables" data-i18n="labelsSyllables">Syllables (Do Re Mi)</option>
+                  <option value="letters" data-i18n="labelsLetters">Letters (C D E)</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <span class="group-label" data-i18n="assists">Assists</span>
+                <div class="checkbox-grid">
+                  <label class="checkbox-item" title="Toggle stationary red playhead visibility (Shortcut: P)" data-i18n-title="playheadTitle">
+                    <input type="checkbox" id="toggle-playhead" checked />
+                    <span data-i18n="playhead">Playhead <svg class="music-icon icon-playhead" aria-hidden="true"><use href="#g-playhead"/></svg></span>
+                  </label>
+                  <label class="checkbox-item" title="A short tip about Guidonica each time you open it" data-i18n-title="tipsTitle">
+                    <input type="checkbox" id="toggle-tips" checked />
+                    <span data-i18n="tipsToggle">Tips</span>
+                  </label>
                 </div>
               </div>
               <div class="control-group">

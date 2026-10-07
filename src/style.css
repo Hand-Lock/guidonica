@@ -403,6 +403,33 @@ input {
   display: none;
 }
 
+.summary-chip {
+  height: var(--chip);
+  padding: 0 11px;
+  border: 1px solid var(--acrylic-border);
+  border-radius: var(--r-pill);
+  background: var(--acrylic-bg);
+  box-shadow: var(--acrylic-shadow);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--fast) ease;
+}
+
+.summary-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--acrylic-shadow), var(--focus-ring);
+}
+
+@media (hover: hover) {
+  .summary-chip:hover {
+    border-color: var(--accent);
+  }
+}
+
 /* The tagline badge and the summary need the room of a wide bar */
 .brand-badge {
   display: none;
@@ -1012,37 +1039,85 @@ input[type='range']:focus-visible::-moz-range-thumb {
   overscroll-behavior: contain;
 }
 
+/* Five tabs regroup the settings; the glass sheet is the only container, so the
+   panels draw no well cards (ADR 0097) */
+.inspector-tabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--well-border);
+}
+
+.inspector-tab {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 5px 4px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+  cursor: pointer;
+  transition: background-color var(--fast) ease, border-color var(--fast) ease, color var(--fast) ease;
+}
+
+.inspector-tab span {
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  text-align: center;
+}
+
+.inspector-tab .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.inspector-tab[aria-selected='true'] {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.inspector-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (hover: hover) {
+  .inspector-tab:hover {
+    border-color: var(--acrylic-border);
+    color: var(--text);
+  }
+
+  .inspector-tab[aria-selected='true']:hover {
+    border-color: var(--accent);
+    color: var(--accent-strong);
+  }
+}
+
 .settings-section {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 10px 12px;
+  gap: 14px 16px;
   min-width: 0;
-  padding: 9px 12px 12px;
-  border-radius: var(--r-lg);
-  background: var(--card-bg);
-  border: 1px solid var(--well-border);
-  box-shadow: var(--well-shadow);
 }
 
-.section-title {
-  flex-basis: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-title);
-  font-style: italic;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.2;
-  text-shadow: var(--emboss);
-}
-
-.section-title::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, var(--well-border), transparent);
+.settings-section[hidden] {
+  display: none;
 }
 
 .control-group {
@@ -1214,9 +1289,9 @@ select:focus-visible {
   color: var(--text-muted);
 }
 
-/* Volume */
+/* Volume: a full row each, so the drone controls start on their own line */
 .volume-group {
-  flex: 1 1 180px;
+  flex: 1 1 100%;
 }
 
 .volume-inputs {
