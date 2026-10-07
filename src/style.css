@@ -293,9 +293,16 @@ input {
   display: none !important;
 }
 
+/* Shell grid (ADR 0097): bar, stage and dock; the layout modes below only change
+   the template, so JS never reads layout to place the chrome. */
 #app {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'bar'
+    'stage'
+    'dock';
   width: 100%;
   height: 100vh;
   height: 100dvh;
@@ -331,23 +338,44 @@ input {
 .icon-playhead { width: 0.82em; height: 1.05em; color: var(--playhead-color); }
 
 /* ==========================================================================
-   Glass Ribbon Header
+   Shell: top bar & bottom transport dock (ADR 0097)
    ========================================================================== */
 
-.control-panel {
+.app-bar,
+.transport-dock {
   position: relative;
-  z-index: 20;
-  padding: max(10px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 10px
-    max(16px, env(safe-area-inset-left));
-  border-bottom: 1px solid var(--glass-edge);
-  box-shadow: var(--glass-shadow);
+  display: flex;
+  align-items: center;
+  gap: 8px 16px;
+  min-width: 0;
   user-select: none;
   -webkit-user-select: none;
 }
 
-/* Glass lives on a pseudo-layer so the header is not a backdrop root: the
-   overlay sheet below can then blur the canvas it covers. */
-.control-panel::before {
+/* Above the overlay sheet, so the ⋯ menu opens over it */
+.app-bar {
+  grid-area: bar;
+  z-index: 30;
+  container: bar / inline-size;
+  padding: max(8px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 8px
+    max(16px, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+}
+
+.transport-dock {
+  grid-area: dock;
+  z-index: 20;
+  justify-content: center;
+  padding: 8px max(16px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+  border-top: 1px solid var(--glass-edge);
+}
+
+/* Glass lives on a pseudo-layer so the bar and dock are not backdrop roots: the
+   overlay sheet can then blur the canvas it covers. */
+.app-bar::before,
+.transport-dock::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -358,19 +386,77 @@ input {
   -webkit-backdrop-filter: var(--glass-blur);
 }
 
-.primary-bar {
-  display: grid;
-  grid-template-columns: auto auto minmax(220px, 380px) auto 1fr;
-  grid-template-areas: 'brand transport tempo beats utils';
-  align-items: center;
-  gap: 10px 20px;
+.utility-actions {
+  flex: 1;
+  min-width: 0;
 }
 
-.brand { grid-area: brand; }
-.playback-controls { grid-area: transport; }
-.tempo-group { grid-area: tempo; }
-.beat-indicator-container { grid-area: beats; justify-self: start; }
-.utility-actions { grid-area: utils; justify-self: end; }
+.exercise-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.exercise-summary:empty {
+  display: none;
+}
+
+/* The tagline badge and the summary need the room of a wide bar */
+.brand-badge {
+  display: none;
+}
+
+@container bar (min-width: 960px) {
+  .brand-badge {
+    display: inline-block;
+  }
+}
+
+@container bar (max-width: 719px) {
+  .exercise-summary {
+    display: none;
+  }
+}
+
+@container bar (max-width: 559px) {
+  .btn-level-toggle,
+  .btn-drawer-toggle {
+    width: var(--hit);
+    padding: 0;
+  }
+
+  .btn-level-toggle .btn-label,
+  .btn-drawer-toggle .btn-label {
+    display: none;
+  }
+}
+
+.transport-dock .tempo-group {
+  flex: 0 1 440px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.transport-dock .tempo-head {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 64px;
+}
+
+.transport-dock .tempo-inputs {
+  flex: 1;
+  min-width: 0;
+}
+
+.transport-dock .btn-mute {
+  width: var(--hit);
+  height: var(--hit);
+  min-width: var(--hit);
+}
 
 .brand {
   display: inline-flex;
@@ -415,6 +501,10 @@ input {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.utility-actions {
+  justify-content: flex-end;
 }
 
 .btn,
@@ -863,14 +953,63 @@ input[type='range']:focus-visible::-moz-range-thumb {
 }
 
 /* ==========================================================================
-   Settings drawer: sectioned cards
+   Settings inspector (ADR 0097): a glass column on wide screens, a sheet over
+   the stage on small ones. The panel content animates; the canvas resizes once.
    ========================================================================== */
 
+.inspector {
+  position: relative;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.controls-drawer:not(.open) {
+  visibility: hidden;
+}
+
+.inspector-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--glass-solid);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-spec);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  overflow: hidden;
+}
+
+.inspector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 8px 8px 8px 16px;
+  border-bottom: 1px solid var(--well-border);
+}
+
+.inspector-header h2 {
+  font-family: var(--font-title);
+  font-style: italic;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow: var(--emboss);
+}
+
 .drawer-inner {
-  display: grid;
-  grid-template-columns: minmax(220px, 0.9fr) minmax(300px, 1.35fr) minmax(250px, 1fr) minmax(250px, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: var(--gap);
-  padding-top: 10px;
+  min-height: 0;
+  padding: 12px 14px max(14px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .settings-section {
@@ -1166,21 +1305,15 @@ select:focus-visible {
   text-align: center;
 }
 
+/* An in-flow disclosure inside the scrolling inspector (ADR 0097) */
 .tuplets-popover {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 40;
-  width: max-content;
-  max-width: calc(100vw - 32px);
+  width: 100%;
+  min-width: 0;
+  margin-top: 8px;
   border-radius: var(--r-lg);
-  background: var(--glass-solid);
-  border: 1px solid var(--glass-edge);
-  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-spec);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  background: var(--card-bg);
+  border: 1px solid var(--well-border);
+  box-shadow: var(--well-shadow);
   animation: pop var(--slow) var(--ease);
 }
 
@@ -1368,8 +1501,8 @@ select:focus-visible {
    ========================================================================== */
 
 .canvas-wrapper {
+  grid-area: stage;
   position: relative;
-  flex: 1;
   min-height: 0;
   overflow: hidden;
   /* Notch-safe stage (ADR 0056): paper stays full-bleed, notation sits inside the insets */
@@ -1536,26 +1669,150 @@ select:focus-visible {
   to { opacity: 1; transform: none; }
 }
 
-/* ==========================================================================
-   Footer taskbar & keycaps
-   ========================================================================== */
-
-.shortcuts-hint {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 4px 18px;
-  padding: 6px max(16px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom))
-    max(16px, env(safe-area-inset-left));
+/* Share feedback: a glass toast at the top of the stage (ADR 0097) */
+.share-toast {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  right: 14px;
+  z-index: 3;
+  width: fit-content;
+  max-width: min(480px, calc(100% - 28px));
+  margin-inline: auto;
+  padding: 8px 14px;
+  border-radius: var(--r-lg);
   background: var(--glass-bg);
-  border-top: 1px solid var(--glass-edge);
-  box-shadow: inset 0 1px 0 var(--glass-spec);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-spec);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: center;
+  animation: notice-in var(--slow) var(--ease);
+}
+
+/* ==========================================================================
+   ⋯ menu (ADR 0097): a disclosure, closed by outside pointerdown and Escape
+   ========================================================================== */
+
+.app-menu-wrapper {
+  position: relative;
+}
+
+.btn-icon-only[aria-expanded='true'] {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.app-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: max-content;
+  min-width: 240px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 88px);
+  max-height: calc(100dvh - 88px);
+  padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--r-lg);
+  background: var(--glass-solid);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-spec);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  animation: pop var(--slow) var(--ease);
+}
+
+.app-menu[hidden] {
+  display: none;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--hit);
+  padding: 0 12px 0 10px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--fast) ease, color var(--fast) ease;
+}
+
+.menu-item .icon {
+  color: var(--accent);
+}
+
+.menu-item:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (hover: hover) {
+  .menu-item:hover {
+    background: var(--accent-tint);
+    color: var(--accent-strong);
+  }
+}
+
+#btn-theme-toggle .theme-icons {
+  display: inline-flex;
+}
+
+.menu-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 10px 12px 4px;
+  border-top: 1px solid var(--well-border);
+  font-size: 13px;
   color: var(--text-muted);
 }
+
+.menu-links a {
+  color: var(--accent-strong);
+  font-weight: 700;
+  text-underline-offset: 2px;
+}
+
+.menu-social {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 4px;
+}
+
+.menu-social .social-link .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.menu-donate {
+  height: var(--chip);
+  margin-left: auto;
+  padding: 0 12px;
+}
+
+.menu-donate .icon {
+  color: var(--danger);
+}
+
+/* ==========================================================================
+   Keycaps & the keyboard shortcuts dialog (ADR 0097)
+   ========================================================================== */
 
 kbd {
   display: inline-block;
@@ -1572,22 +1829,25 @@ kbd {
   text-align: center;
 }
 
-.footer-source {
-  display: inline-flex;
+.shortcuts-dialog {
+  max-width: 420px;
+}
+
+.shortcuts-list {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 10px 18px;
   align-items: center;
-  gap: 8px;
 }
 
-.footer-source a {
-  color: var(--accent-strong);
-  font-weight: 700;
-  text-underline-offset: 2px;
+.shortcut-row {
+  display: contents;
 }
 
-/* Icon-only Bluesky and Mastodon links (ADR 0082) */
-.footer-source .social-link .icon {
-  width: 15px;
-  height: 15px;
+.shortcuts-list dt {
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .btn-link {
@@ -2091,170 +2351,206 @@ dialog.intro-dialog {
 }
 
 /* ==========================================================================
-   Responsive contract
-   Desktop (>960): one-row ribbon, in-flow card drawer (open by default while
-                   the staff keeps 220px × zoom); 961–1150 compacts the ribbon
-   Tablet  (≤960): two-row ribbon, drawer becomes an overlay glass sheet
-   Phone   (≤600): brand+utils / transport+LEDs / full-width tempo, brand and
-                   transport collapse by container width (ADR 0054)
+   Responsive contract (ADR 0097). Media queries only change the #app template
+   and the inspector's placement; JS reads no layout.
+   Wide    (≥1024 × ≥501): bar / stage / dock, the inspector docks as a right
+                           column (open by default from 1280px)
+   Compact (otherwise):    the inspector is a sheet over the stage, from the
+                           bottom in portrait and from the right in landscape
+   Short   (≤500 high):    bar and dock share one bottom row
+   Phone   (≤600 wide):    the dock wraps to two rows; brand and transport
+                           collapse by container width (ADR 0054)
    ========================================================================== */
 
-@media (min-width: 961px) {
-  .controls-drawer:not(.open) {
-    display: none;
+@media (min-width: 1024px) and (min-height: 501px) {
+  /* One layout and one canvas resize per toggle: only the panel's content animates */
+  #app {
+    grid-template-columns: minmax(0, 1fr) 0;
+    grid-template-areas:
+      'bar insp'
+      'stage insp'
+      'dock insp';
+  }
+
+  #app.inspector-open {
+    grid-template-columns: minmax(0, 1fr) min(380px, 32vw);
+  }
+
+  .inspector {
+    grid-area: insp;
+    overflow: hidden;
+  }
+
+  .inspector-panel {
+    border-width: 0 0 0 1px;
+  }
+
+  .inspector-header {
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+
+  .drawer-inner {
+    padding-right: max(14px, env(safe-area-inset-right));
+  }
+
+  .controls-drawer.open .inspector-panel {
+    animation: inspector-in var(--slow) var(--ease);
   }
 }
 
-/* 961–1150px: the one-row ribbon needs up to 1143px (touch + 12/8), so tighten the
-   gaps and the LED well, let tempo give way down to 160px and collapse Reset and
-   Settings to icons. Worst case at 961px (touch, 12/8, Italian) still leaves tempo
-   163px (ADR 0054, 0076). */
-@media (min-width: 961px) and (max-width: 1150px) {
-  .primary-bar {
-    column-gap: 12px;
-    grid-template-columns: auto auto minmax(160px, 380px) auto 1fr;
+@keyframes inspector-in {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* The sheet shares the stage's grid area, so opening it never reflows the canvas.
+   Its transparent margin passes taps through to the stage, which closes it. */
+@media (max-width: 1023px), (max-height: 500px) {
+  .inspector {
+    grid-area: stage;
+    align-self: end;
+    justify-self: center;
+    width: min(100%, 680px);
+    max-height: 100%;
+    padding: 28px max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity var(--slow) var(--ease), transform var(--slow) var(--ease), visibility 0s linear var(--slow);
   }
 
-  .beat-indicator-container {
-    padding: 0 6px;
+  .controls-drawer.open {
+    opacity: 1;
+    transform: none;
+    transition: opacity var(--slow) var(--ease), transform var(--slow) var(--ease);
   }
 
+  .inspector-panel {
+    pointer-events: auto;
+    border-bottom: none;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+  }
+
+  .drawer-inner {
+    padding-bottom: 14px;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 1023px), (orientation: landscape) and (max-height: 500px) {
+  .inspector {
+    align-self: stretch;
+    justify-self: end;
+    width: min(360px, 55vw);
+    padding: 8px max(8px, env(safe-area-inset-right)) 8px 0;
+    transform: translateX(24px);
+  }
+
+  .inspector-panel {
+    border-bottom: 1px solid var(--glass-edge);
+    border-radius: var(--r-lg);
+  }
+}
+
+/* Phone landscape: one bottom row, transport on the left and the bar's buttons on the right */
+@media (max-height: 500px) {
+  #app {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'stage stage'
+      'dock bar';
+  }
+
+  /* An auto column must size from content, so the bar stops being a size container */
+  .app-bar {
+    container-type: normal;
+    padding: 8px max(12px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) 4px;
+    border-top: 1px solid var(--glass-edge);
+    border-bottom: none;
+    box-shadow: none;
+  }
+
+  .transport-dock {
+    justify-content: flex-start;
+    gap: 8px 10px;
+    padding-right: 6px;
+  }
+
+  .brand h1 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .brand-badge,
+  .exercise-summary {
+    display: none;
+  }
+
+  .utility-actions {
+    gap: 6px;
+  }
+
+  .btn-level-toggle,
   .btn-drawer-toggle,
   #btn-reset {
     width: var(--hit);
     padding: 0;
   }
 
+  .btn-level-toggle .btn-label,
   .btn-drawer-toggle .btn-label,
-  #btn-reset .btn-label {
-    display: none;
-  }
-}
-
-/* 1151–1439px in the longer languages (ADR 0059): "Zurücksetzen", "Impostazioni" and
-   the labelled Level button need up to 63px more than English (touch + 12/8 at 1280px),
-   so the ribbon takes the 961–1150 gaps and tempo floor while keeping every label. */
-@media (min-width: 1151px) and (max-width: 1439px) {
-  .primary-bar:not(:lang(en)) {
-    column-gap: 12px;
-    grid-template-columns: auto auto minmax(160px, 380px) auto 1fr;
-  }
-}
-
-@media (min-width: 961px) and (max-width: 1279px) {
-  .drawer-inner {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-/* Below 1280px the labelled Level button no longer fits beside the transport (ADR 0053):
-   it collapses to its meter and replaces the theme toggle, which stays in Settings → Practice */
-@media (max-width: 1279px) {
-  .btn-level-toggle {
-    width: var(--hit);
-    padding: 0;
-  }
-
-  .btn-level-toggle .btn-label {
+  #btn-reset .btn-label,
+  .transport-dock .tempo-head label {
     display: none;
   }
 
-  #btn-theme-toggle {
-    display: none;
-  }
-}
-
-@media (max-width: 960px) {
-  .primary-bar {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    /* Utilities span the empty cell so they never size the beats column (ADR 0054) */
-    grid-template-areas:
-      'brand utils utils'
-      'transport tempo beats';
-    gap: 10px 14px;
-  }
-
-  .beat-indicator-container {
-    justify-self: end;
-  }
-
-  .controls-drawer {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    /* top: 100% of the header, so % here is the header's own height (ADR 0054) */
-    max-height: calc(100vh - 100%);
-    max-height: calc(100dvh - 100%);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: 0 max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom))
-      max(12px, env(safe-area-inset-left));
-    background: var(--glass-solid);
-    border-bottom: 1px solid var(--glass-edge);
-    box-shadow: var(--glass-shadow);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-8px);
-    transition: opacity var(--slow) var(--ease), transform var(--slow) var(--ease), visibility 0s linear var(--slow);
-  }
-
-  .controls-drawer.open {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-    transition: opacity var(--slow) var(--ease), transform var(--slow) var(--ease);
-  }
-
-  .drawer-inner {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  }
-
-  /* Tuplet matrix becomes an in-flow accordion inside the scrolling sheet */
-  .tuplets-popover {
-    position: static;
-    width: 100%;
+  .transport-dock .tempo-head {
     min-width: 0;
-    max-width: none;
-    margin-top: 8px;
-    background: var(--card-bg);
-    border-color: var(--well-border);
-    box-shadow: var(--well-shadow);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 
-  .shortcuts-hint {
-    display: none;
+  .tempo-inputs input[type='range'] {
+    min-width: 56px;
+  }
+
+  /* The bar sits at the bottom, so the menu opens upwards */
+  .app-menu {
+    top: auto;
+    bottom: calc(100% + 8px);
   }
 }
 
 @media (max-width: 600px) {
-  .primary-bar {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      'brand utils'
-      'transport beats'
-      'tempo tempo';
-    gap: 10px;
+  .app-bar {
+    gap: 8px;
+    padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
   }
 
-  .brand h1 {
-    font-size: 20px;
-  }
-
-  /* Brand and transport collapse by the room their minmax(0, 1fr) column gives
+  /* Brand and transport collapse by the room their minmax(0, 1fr) track gives
      them, not by viewport width: 44px touch targets and 12/8's wider LED cluster
-     move the thresholds (ADR 0054). Containment is safe only here; on the desktop
-     auto columns it would collapse them to zero. */
+     move the thresholds (ADR 0054). */
   .brand {
     container: brand / inline-size;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .playback-controls {
     container: transport / inline-size;
+  }
+
+  .utility-actions {
+    flex: none;
+    gap: 6px;
+  }
+
+  .brand h1 {
+    font-size: 20px;
   }
 
   .brand-mark {
@@ -2262,17 +2558,27 @@ dialog.intro-dialog {
     height: 22px;
   }
 
-  .utility-actions {
-    gap: 6px;
+  /* Thumb row: transport, LEDs and mute; the tempo slider runs full width below */
+  .transport-dock {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'transport beats mute'
+      'tempo tempo tempo';
+    gap: 10px;
+    padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
   }
 
-  .btn-drawer-toggle,
+  .transport-dock .playback-controls { grid-area: transport; }
+  .transport-dock .tempo-group { grid-area: tempo; }
+  .transport-dock .beat-indicator-container { grid-area: beats; }
+  .transport-dock .btn-mute { grid-area: mute; }
+
   #btn-reset {
     width: var(--hit);
     padding: 0;
   }
 
-  .btn-drawer-toggle .btn-label,
   #btn-reset .btn-label {
     display: none;
   }
@@ -2316,27 +2622,6 @@ dialog.intro-dialog {
     .playback-controls .btn-primary .btn-label {
       display: none;
     }
-  }
-
-  .tempo-group {
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .tempo-head {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    min-width: 64px;
-  }
-
-  .tempo-inputs {
-    flex: 1;
-  }
-
-  .drawer-inner {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 

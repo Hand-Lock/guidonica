@@ -114,76 +114,87 @@
       <symbol id="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
       <symbol id="i-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.25L8 9.75l3.5-3.5"/></symbol>
       <symbol id="i-tuplet" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 3.6v8.6M8.6 3.6v8.6M12.6 3.6v8.6"/><path d="M4.6 3.6h8" stroke-width="2.2" stroke-linecap="butt"/><ellipse cx="3.3" cy="12.3" rx="1.75" ry="1.25" fill="currentColor" stroke="none"/><ellipse cx="7.3" cy="12.3" rx="1.75" ry="1.25" fill="currentColor" stroke="none"/><ellipse cx="11.3" cy="12.3" rx="1.75" ry="1.25" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-more" viewBox="0 0 16 16"><circle cx="3.25" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="12.75" cy="8" r="1.4" fill="currentColor"/></symbol>
+      <symbol id="i-keyboard" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="1.25" y="3.5" width="13.5" height="9" rx="1.6"/><path d="M4.25 6.6h.01M6.75 6.6h.01M9.25 6.6h.01M11.75 6.6h.01M5 9.6h6"/></symbol>
+      <symbol id="i-staff" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"><path d="M1.25 3.5h13.5M1.25 6h13.5M1.25 8.5h13.5M1.25 11h13.5M1.25 13.5h13.5"/><ellipse cx="9" cy="9.75" rx="2.2" ry="1.55" transform="rotate(-20 9 9.75)" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-rhythm" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5.6 3.4v8.4M13.1 2.4v8.4"/><path d="M5.6 3.4l7.5-1" stroke-width="2.4" stroke-linecap="butt"/><ellipse cx="4" cy="12.1" rx="1.9" ry="1.4" fill="currentColor" stroke="none"/><ellipse cx="11.5" cy="11.1" rx="1.9" ry="1.4" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-melody" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12.5L6.25 8.75L9.75 10.25L13.5 3.75"/><circle cx="2.5" cy="12.5" r="1.6" fill="currentColor" stroke="none"/><circle cx="6.25" cy="8.75" r="1.6" fill="currentColor" stroke="none"/><circle cx="9.75" cy="10.25" r="1.6" fill="currentColor" stroke="none"/><circle cx="13.5" cy="3.75" r="1.6" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-display" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.25" width="13" height="9" rx="1.5"/><path d="M5.5 14.25h5M8 11.25v3"/></symbol>
     </svg>
-    <div id="app">
-      <header class="control-panel">
-        <div class="primary-bar">
-          <div class="brand">
-            <svg class="brand-mark" aria-hidden="true"><use href="#g-hand"/></svg>
-            <h1>Guidonica</h1>
-            <span class="brand-badge" title="Sight-Reading &amp; Solfège Engine" data-i18n="brandBadge" data-i18n-title="brandTagline">SOLFÈGE</span>
-          </div>
-
-          <div class="playback-controls">
-            <button id="btn-play-pause" class="btn btn-primary" type="button" aria-label="Play or pause" data-i18n-aria-label="playPauseAria">
-              <span class="btn-icon"><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg></span>
-              <span class="btn-label">Start</span>
-            </button>
-            <button id="btn-reset" class="btn btn-secondary" type="button" aria-label="Reset session" title="Reset (R / Esc)" data-i18n-aria-label="resetAria" data-i18n-title="resetTitle">
-              <svg class="icon" aria-hidden="true"><use href="#i-reset"/></svg>
-              <span class="btn-label" data-i18n="reset">Reset</span>
-            </button>
-          </div>
-
-          <div class="control-group tempo-group">
-            <div class="tempo-head">
-              <label for="tempo-number" data-i18n="tempo">Tempo</label>
-              <span id="tempo-term" class="tempo-term" aria-live="polite">Larghetto</span>
-            </div>
-            <div class="tempo-inputs">
-              <div class="tempo-readout">
-                <input type="number" id="tempo-number" min="30" max="240" value="60" step="1" inputmode="numeric" aria-label="Tempo numeric input in BPM" data-i18n-aria-label="tempoNumberAria" />
-                <span class="tempo-unit" aria-hidden="true">BPM</span>
-              </div>
-              <input type="range" id="tempo-slider" min="30" max="240" value="60" step="1" aria-label="Tempo slider in BPM" data-i18n-aria-label="tempoSliderAria" />
-            </div>
-          </div>
-
-          <div class="beat-indicator-container">
-            <div id="count-in-badge" class="badge-count-in hidden" data-i18n="countInBadge">COUNT-IN</div>
-            <div id="beat-dots" class="beat-dots">
-              <!-- Dynamically populated beat dots -->
-            </div>
-          </div>
-
-          <div class="utility-actions">
-            <button id="btn-about-toggle" class="btn-icon-only" type="button" aria-label="About &amp; License" title="About &amp; License" data-i18n-aria-label="aboutToggle" data-i18n-title="aboutToggle">
-              <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
-            </button>
-            <button id="btn-theme-toggle" class="btn-icon-only" type="button" data-mode="auto" aria-label="Theme: Auto (OS). Click to cycle theme." title="Theme: Auto (OS)">
-              <svg class="icon theme-auto" aria-hidden="true"><use href="#i-auto"/></svg><svg class="icon theme-light" aria-hidden="true"><use href="#i-sun"/></svg><svg class="icon theme-dark" aria-hidden="true"><use href="#i-moon"/></svg>
-            </button>
-            <button id="btn-fullscreen-toggle" class="btn-icon-only" type="button" aria-label="Toggle full screen" title="Toggle full screen">
-              <svg class="fullscreen-icon" viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" aria-hidden="true">
-                <path id="fullscreen-icon-path" d="M2.5 5.5V2.5h3 M13.5 5.5V2.5h-3 M2.5 10.5v3h3 M13.5 10.5v3h-3" />
-              </svg>
-            </button>
-            <button id="btn-level-toggle" class="btn btn-secondary btn-level-toggle" type="button" data-level="0" aria-haspopup="dialog" aria-controls="modal-intro" aria-label="Level: Custom. Choose a level preset" title="Level presets" data-i18n-title="levelPresets">
-              <svg class="icon level-weight" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M.75 8h14.5" /><rect x="1.5" y="6" width="1.5" height="4" rx=".6" fill="currentColor" stroke="none" /><rect x="13" y="6" width="1.5" height="4" rx=".6" fill="currentColor" stroke="none" />
-                <rect class="lv-plate" x="3.5" y="2" width="3" height="12" rx="1" fill="currentColor" stroke="none" /><rect class="lv-plate" x="9.5" y="2" width="3" height="12" rx="1" fill="currentColor" stroke="none" />
-              </svg>
-              <span class="btn-label">Custom</span>
-            </button>
-            <button id="btn-drawer-toggle" class="btn btn-secondary btn-drawer-toggle" type="button" aria-expanded="false" aria-controls="controls-drawer" aria-label="Toggle settings menu" title="Settings" data-i18n-aria-label="settingsAria" data-i18n-title="settings">
-              <svg class="icon" aria-hidden="true"><use href="#i-gear"/></svg>
-              <span class="btn-label" data-i18n="settings">Settings</span>
-            </button>
-          </div>
+    <div id="app" data-playback="stopped">
+      <header class="app-bar">
+        <div class="brand">
+          <svg class="brand-mark" aria-hidden="true"><use href="#g-hand"/></svg>
+          <h1>Guidonica</h1>
+          <span class="brand-badge" title="Sight-Reading &amp; Solfège Engine" data-i18n="brandBadge" data-i18n-title="brandTagline">SOLFÈGE</span>
         </div>
 
-        <div id="controls-drawer" class="controls-drawer">
-          <div class="drawer-inner">
+        <div class="utility-actions">
+          <button id="btn-level-toggle" class="btn btn-secondary btn-level-toggle" type="button" data-level="0" aria-haspopup="dialog" aria-controls="modal-intro" aria-label="Level: Custom. Choose a level preset" title="Level presets" data-i18n-title="levelPresets">
+            <svg class="icon level-weight" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M.75 8h14.5" /><rect x="1.5" y="6" width="1.5" height="4" rx=".6" fill="currentColor" stroke="none" /><rect x="13" y="6" width="1.5" height="4" rx=".6" fill="currentColor" stroke="none" />
+              <rect class="lv-plate" x="3.5" y="2" width="3" height="12" rx="1" fill="currentColor" stroke="none" /><rect class="lv-plate" x="9.5" y="2" width="3" height="12" rx="1" fill="currentColor" stroke="none" />
+            </svg>
+            <span class="btn-label">Custom</span>
+          </button>
+          <div id="exercise-summary" class="exercise-summary" role="group" aria-label="Exercise summary" data-i18n-aria-label="exerciseSummaryAria"></div>
+          <button id="btn-fullscreen-toggle" class="btn-icon-only" type="button" aria-label="Toggle full screen" title="Toggle full screen">
+            <svg class="fullscreen-icon" viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" aria-hidden="true">
+              <path id="fullscreen-icon-path" d="M2.5 5.5V2.5h3 M13.5 5.5V2.5h-3 M2.5 10.5v3h3 M13.5 10.5v3h-3" />
+            </svg>
+          </button>
+          <button id="btn-drawer-toggle" class="btn btn-secondary btn-drawer-toggle" type="button" aria-expanded="false" aria-controls="controls-drawer" aria-label="Toggle settings menu" title="Settings" data-i18n-aria-label="settingsAria" data-i18n-title="settings">
+            <svg class="icon" aria-hidden="true"><use href="#i-gear"/></svg>
+            <span class="btn-label" data-i18n="settings">Settings</span>
+          </button>
+          <div class="app-menu-wrapper">
+            <button id="btn-menu-toggle" class="btn-icon-only" type="button" aria-expanded="false" aria-controls="app-menu" aria-label="More: share, about, shortcuts, theme and links" title="More" data-i18n-aria-label="moreMenuAria" data-i18n-title="moreMenu">
+              <svg class="icon" aria-hidden="true"><use href="#i-more"/></svg>
+            </button>
+            <div id="app-menu" class="app-menu" hidden>
+              <button id="btn-share-exercise" class="menu-item" type="button" title="Send these exercise settings as a link, with the drone note and tuning. Language, theme, sounds and volume stay with each user." data-i18n-title="shareTitle">
+                <svg class="icon" aria-hidden="true"><use href="#i-share"/></svg>
+                <span data-i18n="shareButton">Exercise link</span>
+              </button>
+              <button id="btn-about-toggle" class="menu-item" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
+                <span data-i18n="aboutToggle">About &amp; License</span>
+              </button>
+              <button id="btn-menu-whats-new" class="menu-item" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg>
+                <span data-i18n="whatsNewButton">What's new</span>
+              </button>
+              <button id="btn-shortcuts" class="menu-item" type="button" aria-haspopup="dialog" aria-controls="modal-shortcuts">
+                <svg class="icon" aria-hidden="true"><use href="#i-keyboard"/></svg>
+                <span data-i18n="shortcutsMenu">Keyboard shortcuts</span>
+              </button>
+              <button id="btn-theme-toggle" class="menu-item" type="button" data-mode="auto" aria-label="Theme: Auto (OS). Click to cycle theme." title="Theme: Auto (OS)">
+                <span class="theme-icons"><svg class="icon theme-auto" aria-hidden="true"><use href="#i-auto"/></svg><svg class="icon theme-light" aria-hidden="true"><use href="#i-sun"/></svg><svg class="icon theme-dark" aria-hidden="true"><use href="#i-moon"/></svg></span>
+                <span id="theme-menu-label">Theme: Auto (OS)</span>
+              </button>
+              <div class="menu-links">
+                <a href="https://github.com/Hand-Lock/guidonica" target="_blank" rel="noopener noreferrer" title="View Source Code on GitHub (AGPL-3.0-or-later)" data-i18n-title="githubTitle">GitHub</a>
+                <span aria-hidden="true">·</span>
+                <a href="https://github.com/Hand-Lock/guidonica/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer" data-i18n="privacyLink">Privacy</a>
+              </div>
+              <div class="menu-social">
+                <a class="social-link btn-pill-action" href="https://bsky.app/profile/guidonica.it" target="_blank" rel="noopener noreferrer" title="Guidonica on Bluesky (@guidonica.it)" aria-label="Guidonica on Bluesky (@guidonica.it)" data-i18n-title="blueskyTitle" data-i18n-aria-label="blueskyTitle"><svg class="icon" aria-hidden="true"><use href="#i-bluesky"/></svg></a>
+                <a class="social-link btn-pill-action" href="https://mastodon.social/@guidonica" target="_blank" rel="noopener noreferrer" title="Guidonica on Mastodon (@guidonica@mastodon.social)" aria-label="Guidonica on Mastodon (@guidonica@mastodon.social)" data-i18n-title="mastodonTitle" data-i18n-aria-label="mastodonTitle"><svg class="icon" aria-hidden="true"><use href="#i-mastodon"/></svg></a>
+                <a class="social-link btn-pill-action" href="https://www.instagram.com/guidonica.it/" target="_blank" rel="noopener noreferrer" title="Guidonica on Instagram (@guidonica.it)" aria-label="Guidonica on Instagram (@guidonica.it)" data-i18n-title="instagramTitle" data-i18n-aria-label="instagramTitle"><svg class="icon" aria-hidden="true"><use href="#i-instagram"/></svg></a>
+                <a class="btn btn-secondary menu-donate" href="https://ko-fi.com/guidonica" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#i-heart"/></svg><span class="btn-label" data-i18n="donate">Support</span></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <aside id="controls-drawer" class="inspector controls-drawer" aria-labelledby="inspector-title">
+        <div class="inspector-panel">
+          <div class="inspector-header">
+            <h2 id="inspector-title" data-i18n="settings">Settings</h2>
+            <button id="btn-drawer-close" class="btn-close" type="button" aria-label="Close settings" title="Close settings" data-i18n-aria-label="closeSettings" data-i18n-title="closeSettings"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+          </div>
+          <div class="drawer-inner inspector-body">
             <section class="settings-section section-staff" aria-labelledby="section-staff-title">
               <h2 id="section-staff-title" class="section-title" data-i18n="sectionStaff">Staff</h2>
               <div class="control-group clef-group">
@@ -569,7 +580,6 @@
               <div class="control-group volume-group">
                 <label for="volume-slider" data-i18n="volume">Volume</label>
                 <div class="volume-inputs">
-                  <button id="btn-volume-mute" class="btn-mute" type="button" aria-pressed="false" aria-label="Mute or unmute click and drone" title="Mute/Unmute" data-i18n-aria-label="muteAria" data-i18n-title="muteTitle"><svg class="icon icon-speaker" aria-hidden="true"><use href="#i-speaker"/></svg><svg class="icon icon-muted" aria-hidden="true"><use href="#i-muted"/></svg></button>
                   <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.8" aria-label="Metronome volume" data-i18n-aria-label="volumeAria" />
                 </div>
               </div>
@@ -617,18 +627,10 @@
                   <option value="dark" data-i18n="themeDark">Dark</option>
                 </select>
               </div>
-              <div class="control-group share-group">
-                <span class="group-label" data-i18n="shareGroup">Share</span>
-                <button id="btn-share-exercise" class="btn btn-menu" type="button" title="Send these exercise settings as a link, with the drone note and tuning. Language, theme, sounds and volume stay with each user." data-i18n-title="shareTitle">
-                  <svg class="icon btn-icon" aria-hidden="true"><use href="#i-share"/></svg>
-                  <span class="btn-label" data-i18n="shareButton">Exercise link</span>
-                </button>
-                <p id="share-status" class="melody-hint hidden" role="status"></p>
-              </div>
             </section>
           </div>
         </div>
-      </header>
+      </aside>
 
       <main class="canvas-wrapper">
         <canvas id="scroller-canvas" role="img" aria-label="Streaming sight-reading music notation canvas" data-i18n-aria-label="canvasAria"></canvas>
@@ -656,32 +658,43 @@
             <button id="btn-tip-dismiss" class="btn-pill-action" type="button" aria-label="Dismiss tip" title="Dismiss" data-i18n-aria-label="tipDismissAria" data-i18n-title="dismiss"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
           </span>
         </aside>
+        <p id="share-status" class="share-toast hidden" role="status"></p>
       </main>
 
-      <footer class="shortcuts-hint">
-        <span data-i18n="keyPlayPause"><kbd>Space</kbd> Play/Pause</span>
-        <span data-i18n="reset"><kbd>R</kbd> / <kbd>Esc</kbd> Reset</span>
-        <span data-i18n="playhead"><kbd>P</kbd> Playhead</span>
-        <span><kbd>↑</kbd>/<kbd>↓</kbd> ±5 BPM</span>
-        <span><kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> ±1 BPM</span>
-        <span data-i18n="keyZoom"><kbd>+</kbd>/<kbd>-</kbd> Zoom</span>
-        <span data-i18n="keyAutoZoom"><kbd>0</kbd> Auto Zoom</span>
-        <span data-i18n="keyDrone"><kbd>D</kbd> Drone</span>
-        <span class="footer-source">
-          <button id="btn-footer-about" class="btn-link" type="button" data-i18n="licenseInfo">License &amp; Info</button>
-          <span aria-hidden="true">·</span>
-          <a href="https://github.com/Hand-Lock/guidonica" target="_blank" rel="noopener noreferrer" title="View Source Code on GitHub (AGPL-3.0-or-later)" data-i18n-title="githubTitle">GitHub</a>
-          <span aria-hidden="true">·</span>
-          <a href="https://github.com/Hand-Lock/guidonica/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer" data-i18n="privacyLink">Privacy</a>
-          <span aria-hidden="true">·</span>
-          <a class="social-link" href="https://bsky.app/profile/guidonica.it" target="_blank" rel="noopener noreferrer" title="Guidonica on Bluesky (@guidonica.it)" aria-label="Guidonica on Bluesky (@guidonica.it)" data-i18n-title="blueskyTitle" data-i18n-aria-label="blueskyTitle"><svg class="icon" aria-hidden="true"><use href="#i-bluesky"/></svg></a>
-          <span aria-hidden="true">·</span>
-          <a class="social-link" href="https://mastodon.social/@guidonica" target="_blank" rel="noopener noreferrer" title="Guidonica on Mastodon (@guidonica@mastodon.social)" aria-label="Guidonica on Mastodon (@guidonica@mastodon.social)" data-i18n-title="mastodonTitle" data-i18n-aria-label="mastodonTitle"><svg class="icon" aria-hidden="true"><use href="#i-mastodon"/></svg></a>
-          <span aria-hidden="true">·</span>
-          <a class="social-link" href="https://www.instagram.com/guidonica.it/" target="_blank" rel="noopener noreferrer" title="Guidonica on Instagram (@guidonica.it)" aria-label="Guidonica on Instagram (@guidonica.it)" data-i18n-title="instagramTitle" data-i18n-aria-label="instagramTitle"><svg class="icon" aria-hidden="true"><use href="#i-instagram"/></svg></a>
-          <span aria-hidden="true">·</span>
-          <a class="donate" href="https://ko-fi.com/guidonica" target="_blank" rel="noopener noreferrer" data-i18n="donate">Support</a>
-        </span>
+      <footer class="transport-dock">
+        <div class="playback-controls">
+          <button id="btn-reset" class="btn btn-secondary" type="button" aria-label="Reset session" title="Reset (R / Esc)" data-i18n-aria-label="resetAria" data-i18n-title="resetTitle">
+            <svg class="icon" aria-hidden="true"><use href="#i-reset"/></svg>
+            <span class="btn-label" data-i18n="reset">Reset</span>
+          </button>
+          <button id="btn-play-pause" class="btn btn-primary" type="button" aria-label="Play or pause" data-i18n-aria-label="playPauseAria">
+            <span class="btn-icon"><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg></span>
+            <span class="btn-label">Start</span>
+          </button>
+        </div>
+
+        <div class="control-group tempo-group">
+          <div class="tempo-head">
+            <label for="tempo-number" data-i18n="tempo">Tempo</label>
+            <span id="tempo-term" class="tempo-term" aria-live="polite">Larghetto</span>
+          </div>
+          <div class="tempo-inputs">
+            <div class="tempo-readout">
+              <input type="number" id="tempo-number" min="30" max="240" value="60" step="1" inputmode="numeric" aria-label="Tempo numeric input in BPM" data-i18n-aria-label="tempoNumberAria" />
+              <span class="tempo-unit" aria-hidden="true">BPM</span>
+            </div>
+            <input type="range" id="tempo-slider" min="30" max="240" value="60" step="1" aria-label="Tempo slider in BPM" data-i18n-aria-label="tempoSliderAria" />
+          </div>
+        </div>
+
+        <div class="beat-indicator-container">
+          <div id="count-in-badge" class="badge-count-in hidden" data-i18n="countInBadge">COUNT-IN</div>
+          <div id="beat-dots" class="beat-dots">
+            <!-- Dynamically populated beat dots -->
+          </div>
+        </div>
+
+        <button id="btn-volume-mute" class="btn-mute" type="button" aria-pressed="false" aria-label="Mute or unmute click and drone" title="Mute/Unmute" data-i18n-aria-label="muteAria" data-i18n-title="muteTitle"><svg class="icon icon-speaker" aria-hidden="true"><use href="#i-speaker"/></svg><svg class="icon icon-muted" aria-hidden="true"><use href="#i-muted"/></svg></button>
       </footer>
 
       <!-- In-App About & License Modal Dialog -->
@@ -842,6 +855,32 @@
               <button id="btn-intro-meter-back" class="btn btn-secondary" type="button" data-i18n="back">Back</button>
               <button id="btn-intro-start" class="btn btn-primary" type="button" data-i18n="startPractising">Start practising</button>
             </div>
+          </div>
+        </div>
+      </dialog>
+
+      <!-- Keyboard shortcuts (ADR 0097): opened from the ⋯ menu and by ? -->
+      <dialog id="modal-shortcuts" class="about-dialog shortcuts-dialog" aria-labelledby="shortcuts-title">
+        <div class="about-dialog-content">
+          <div class="about-dialog-header">
+            <h2 id="shortcuts-title" data-i18n="shortcutsTitle">Keyboard shortcuts</h2>
+            <button id="btn-shortcuts-close" class="btn-close" type="button" aria-label="Close dialog" data-i18n-aria-label="closeDialog"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+          </div>
+          <div class="about-dialog-body">
+            <dl class="shortcuts-list">
+              <div class="shortcut-row"><dt><kbd>Space</kbd></dt><dd data-i18n="keyPlayPause">Play/Pause</dd></div>
+              <div class="shortcut-row"><dt><kbd>R</kbd> / <kbd>Esc</kbd></dt><dd data-i18n="reset">Reset</dd></div>
+              <div class="shortcut-row"><dt><kbd>P</kbd></dt><dd data-i18n="playhead">Playhead</dd></div>
+              <div class="shortcut-row"><dt><kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>±5 BPM</dd></div>
+              <div class="shortcut-row"><dt><kbd>Shift</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>±1 BPM</dd></div>
+              <div class="shortcut-row"><dt><kbd>+</kbd> / <kbd>-</kbd></dt><dd data-i18n="keyZoom">Zoom</dd></div>
+              <div class="shortcut-row"><dt><kbd>0</kbd></dt><dd data-i18n="keyAutoZoom">Auto Zoom</dd></div>
+              <div class="shortcut-row"><dt><kbd>D</kbd></dt><dd data-i18n="keyDrone">Drone</dd></div>
+              <div class="shortcut-row"><dt><kbd>?</kbd></dt><dd data-i18n="keyHelp">Keyboard shortcuts</dd></div>
+            </dl>
+          </div>
+          <div class="about-dialog-footer">
+            <button id="btn-shortcuts-dismiss" class="btn btn-primary" type="button" data-i18n="close">Close</button>
           </div>
         </div>
       </dialog>

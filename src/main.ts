@@ -41,7 +41,6 @@ import {
   isHalfNoteMeter,
   isTupletSupported,
   resolveTheme,
-  stageFitsStaff,
   subscribeSystemTheme,
   tempoMarking,
   tupletShape,
@@ -137,6 +136,11 @@ interface WebKitElement extends HTMLElement {
 export const FULLSCREEN_ENTER_PATH = 'M2.5 5.5V2.5h3 M13.5 5.5V2.5h-3 M2.5 10.5v3h3 M13.5 10.5v3h-3';
 export const FULLSCREEN_EXIT_PATH = 'M5.5 2.5v3h-3 M10.5 2.5v3h3 M5.5 13.5v-3h-3 M10.5 13.5v-3h3';
 
+/** The inspector docks as a grid column here, and is a sheet over the stage elsewhere (ADR 0097) */
+export const DOCKED_INSPECTOR_QUERY = '(min-width: 1024px) and (min-height: 501px)';
+/** Docked and roomy enough to open by default */
+export const OPEN_INSPECTOR_QUERY = '(min-width: 1280px) and (min-height: 501px)';
+
 class GuidonicaApp {
   private metronome: MetronomeEngine;
   private generator: MusicGenerator;
@@ -167,8 +171,8 @@ class GuidonicaApp {
   private btnThemeToggle: HTMLButtonElement;
   private btnFullscreenToggle: HTMLButtonElement;
   private btnDrawerToggle: HTMLButtonElement;
-  /** Invalidates a drawer fit check still waiting for the fonts (ADR 0096) */
-  private drawerFitCheck = 0;
+  private btnMenuToggle: HTMLButtonElement | null;
+  private appMenu: HTMLElement | null;
   private btnLevelToggle: HTMLButtonElement | null;
   private levelSyncedSettings: Readonly<AppSettings> | null = null;
   private controlsDrawer: HTMLElement;
@@ -249,7 +253,7 @@ class GuidonicaApp {
   private btnAboutToggle: HTMLButtonElement | null;
   private btnAboutClose: HTMLButtonElement | null;
   private btnAboutDismiss: HTMLButtonElement | null;
-  private btnFooterAbout: HTMLButtonElement | null;
+  private modalShortcuts: HTMLDialogElement | null;
 
   // What's new (ADR 0078)
   private modalWhatsNew: HTMLDialogElement | null;
@@ -304,6 +308,8 @@ class GuidonicaApp {
     this.btnDrawerToggle = document.getElementById('btn-drawer-toggle') as HTMLButtonElement;
     this.btnLevelToggle = document.getElementById('btn-level-toggle') as HTMLButtonElement | null;
     this.controlsDrawer = document.getElementById('controls-drawer') as HTMLElement;
+    this.btnMenuToggle = document.getElementById('btn-menu-toggle') as HTMLButtonElement | null;
+    this.appMenu = document.getElementById('app-menu');
 
     this.selectTimeSig = document.getElementById('select-time-signature') as HTMLSelectElement;
     this.toggleHalfNoteBeat = document.getElementById('toggle-half-note-beat') as HTMLInputElement;
@@ -394,7 +400,7 @@ class GuidonicaApp {
     this.btnAboutToggle = document.getElementById('btn-about-toggle') as HTMLButtonElement | null;
     this.btnAboutClose = document.getElementById('btn-about-close') as HTMLButtonElement | null;
     this.btnAboutDismiss = document.getElementById('btn-about-dismiss') as HTMLButtonElement | null;
-    this.btnFooterAbout = document.getElementById('btn-footer-about') as HTMLButtonElement | null;
+    this.modalShortcuts = document.getElementById('modal-shortcuts') as HTMLDialogElement | null;
     this.modalWhatsNew = document.getElementById('modal-whats-new') as HTMLDialogElement | null;
     this.whatsNewBody = document.getElementById('whats-new-body');
 
@@ -439,6 +445,7 @@ class GuidonicaApp {
     // 4. Setup event wiring and subscriptions
     this.bindEvents();
     this.bindAboutModalEvents();
+    this.bindAppMenu();
     this.bindShareEvents();
     this.bindWhatsNewEvents();
     this.bindTipEvents();
@@ -616,6 +623,8 @@ class GuidonicaApp {
     const next: Record<ThemeMode, string> = { auto: m.themeDark, dark: m.themeLight, light: m.themeAuto };
     this.btnThemeToggle.title = m.themeButtonTitle(names[theme], next[theme]);
     this.btnThemeToggle.setAttribute('aria-label', m.themeButtonAria(names[theme]));
+    const label = document.getElementById('theme-menu-label');
+    if (label) label.textContent = m.themeMenu(names[theme]);
     if (this.selectTheme) {
       this.selectTheme.value = theme;
     }
@@ -757,14 +766,19 @@ class GuidonicaApp {
       document.addEventListener('webkitfullscreenchange', syncFullscreenGlyph);
     }
 
-    // Settings drawer: an in-flow card row on wide screens (open by default while the
-    // staff still fits), an overlay sheet on narrow ones (closed by default, dismissed
-    // by tapping the staff)
-    const wideLayout = window.matchMedia?.('(min-width: 961px)');
-    this.openDrawerByDefault(wideLayout?.matches === true);
-    wideLayout?.addEventListener?.('change', (e) => this.openDrawerByDefault(e.matches));
+    // Settings inspector (ADR 0097): a docked column on wide screens, open by default
+    // from 1280px; a sheet over the stage elsewhere, closed by default and dismissed by
+    // tapping the staff. Both are media queries, so no layout is read.
+    const dockedLayout = window.matchMedia?.(DOCKED_INSPECTOR_QUERY);
+    const roomyLayout = window.matchMedia?.(OPEN_INSPECTOR_QUERY);
+    this.setDrawerOpen(roomyLayout?.matches === true);
+    roomyLayout?.addEventListener?.('change', (e) => this.setDrawerOpen(e.matches));
     this.btnDrawerToggle.addEventListener('click', () => {
       this.setDrawerOpen(!this.controlsDrawer.classList.contains('open'));
+    });
+    document.getElementById('btn-drawer-close')?.addEventListener('click', () => {
+      this.setDrawerOpen(false);
+      this.btnDrawerToggle.focus();
     });
 
     // Tempo controls
@@ -955,7 +969,7 @@ class GuidonicaApp {
     if (canvas) {
       this.bindCanvasPinchZoom(canvas);
       canvas.addEventListener('pointerdown', () => {
-        if (wideLayout?.matches !== true && this.controlsDrawer.classList.contains('open')) {
+        if (dockedLayout?.matches !== true && this.controlsDrawer.classList.contains('open')) {
           this.setDrawerOpen(false);
         }
       });
@@ -1072,20 +1086,6 @@ class GuidonicaApp {
       this.clearAllTuplets();
     });
 
-    this.tupletsPopover.addEventListener('click', (e) => {
-      e.stopPropagation();
-    });
-
-    document.addEventListener('click', (e) => {
-      if (
-        !this.tupletsPopover.classList.contains('hidden') &&
-        !this.tupletsPopover.contains(e.target as Node) &&
-        !this.btnTupletsToggle.contains(e.target as Node)
-      ) {
-        this.closeTupletsPopover();
-      }
-    });
-
     for (const cb of this.tupletCheckboxes) {
       cb.addEventListener('change', () => {
         this.handleTupletChange();
@@ -1104,13 +1104,6 @@ class GuidonicaApp {
 
   private openTupletsPopover(): void {
     this.tupletsPopover.classList.remove('hidden');
-    // The desktop overlay is capped to the room below it; the ≤960 accordion scrolls with the sheet
-    if (getComputedStyle(this.tupletsPopover).position === 'absolute') {
-      const room = window.innerHeight - this.tupletsPopover.getBoundingClientRect().top - 12;
-      this.tupletsPopover.style.maxHeight = `${Math.max(160, Math.floor(room))}px`;
-    } else {
-      this.tupletsPopover.style.maxHeight = '';
-    }
     this.btnTupletsToggle.classList.add('open');
     this.btnTupletsToggle.setAttribute('aria-expanded', 'true');
   }
@@ -1296,11 +1289,6 @@ class GuidonicaApp {
     };
 
     this.btnAboutToggle?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openModal();
-    });
-
-    this.btnFooterAbout?.addEventListener('click', (e) => {
       e.stopPropagation();
       openModal();
     });
@@ -1827,15 +1815,38 @@ class GuidonicaApp {
         return;
       }
 
-      // If a modal (About, What's new, level intro) is open, ignore global app shortcuts
-      if (this.modalAbout?.open || this.modalIntro?.open || this.modalWhatsNew?.open) {
+      // If a modal (About, What's new, level intro, shortcuts) is open, ignore global app shortcuts
+      if (this.modalAbout?.open || this.modalIntro?.open || this.modalWhatsNew?.open || this.modalShortcuts?.open) {
         return;
       }
 
-      // If popover is open, Escape should dismiss it first
-      if (e.code === 'Escape' && !this.tupletsPopover.classList.contains('hidden')) {
+      // Escape closes the innermost open layer first: menu, tuplets, overlay sheet, then resets
+      if (e.code === 'Escape') {
+        if (this.appMenu && !this.appMenu.hidden) {
+          e.preventDefault();
+          this.setMenuOpen(false);
+          this.btnMenuToggle?.focus();
+          return;
+        }
+        if (!this.tupletsPopover.classList.contains('hidden')) {
+          e.preventDefault();
+          this.closeTupletsPopover();
+          return;
+        }
+        if (
+          this.controlsDrawer.classList.contains('open') &&
+          window.matchMedia?.(DOCKED_INSPECTOR_QUERY).matches !== true
+        ) {
+          e.preventDefault();
+          this.setDrawerOpen(false);
+          this.btnDrawerToggle.focus();
+          return;
+        }
+      }
+
+      if (e.key === '?' && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLSelectElement)) {
         e.preventDefault();
-        this.closeTupletsPopover();
+        this.openShortcuts();
         return;
       }
 
@@ -1983,32 +1994,67 @@ class GuidonicaApp {
     this.btnVolumeMute.setAttribute('aria-pressed', String(isMuted));
   }
 
+  /**
+   * Opens or closes the inspector. On wide screens #app.inspector-open widens its grid
+   * column, one layout and one canvas resize through the ResizeObserver (ADR 0097).
+   */
   private setDrawerOpen(isOpen: boolean): void {
     this.controlsDrawer.classList.toggle('open', isOpen);
+    document.getElementById('app')?.classList.toggle('inspector-open', isOpen);
     this.btnDrawerToggle.setAttribute('aria-expanded', String(isOpen));
   }
 
+  private setMenuOpen(isOpen: boolean): void {
+    if (!this.appMenu || !this.btnMenuToggle) return;
+    this.appMenu.hidden = !isOpen;
+    this.btnMenuToggle.setAttribute('aria-expanded', String(isOpen));
+  }
+
   /**
-   * Opens the in-flow desktop drawer, then closes it again when it would leave the
-   * stage shorter than the measure canvas at the current zoom (ADR 0054). Reads
-   * layout once, at init and on breakpoint changes only. While the text fonts are
-   * still loading, fallback metrics wrap the drawer an extra row, so the check waits
-   * for document.fonts.ready rather than depending on font timing (ADR 0096).
+   * The ⋯ menu (ADR 0097): a disclosure, since the Popover API is newer than the support
+   * baseline (ADR 0096). Outside pointerdown and choosing an item close it; Escape is
+   * handled with the other layers in bindKeyboardShortcuts.
    */
-  private openDrawerByDefault(wide: boolean): void {
-    this.setDrawerOpen(wide);
-    const check = ++this.drawerFitCheck;
-    if (!wide) return;
-    const closeUnlessStaffFits = (): void => {
-      if (check !== this.drawerFitCheck || !this.controlsDrawer.classList.contains('open')) return;
-      const stage = document.querySelector<HTMLElement>('.canvas-wrapper');
-      if (stage && !stageFitsStaff(stage.clientHeight, this.scroller.getZoom())) {
-        this.setDrawerOpen(false);
-      }
+  private bindAppMenu(): void {
+    const menu = this.appMenu;
+    const toggle = this.btnMenuToggle;
+    if (!menu || !toggle) return;
+    toggle.addEventListener('click', () => this.setMenuOpen(menu.hidden));
+    document.addEventListener('pointerdown', (e) => {
+      if (menu.hidden || !(e.target instanceof Node)) return;
+      if (!menu.contains(e.target) && !toggle.contains(e.target)) this.setMenuOpen(false);
+    });
+    // The theme item cycles in place, so the menu stays open to show the new mode
+    // Capture phase: some items stop propagation before opening their dialog
+    menu.addEventListener(
+      'click',
+      (e) => {
+        const item = e.target instanceof Element ? e.target.closest('a, button') : null;
+        if (item && item !== this.btnThemeToggle) this.setMenuOpen(false);
+      },
+      true
+    );
+    document.getElementById('btn-menu-whats-new')?.addEventListener('click', () => {
+      void this.openWhatsNew(null);
+    });
+    document.getElementById('btn-shortcuts')?.addEventListener('click', () => this.openShortcuts());
+    const dialog = this.modalShortcuts;
+    if (!dialog) return;
+    const close = (): void => {
+      if (dialog.open) dialog.close();
     };
-    const fonts = document.fonts as FontFaceSet | undefined;
-    if (fonts?.status === 'loading') void fonts.ready.then(closeUnlessStaffFits);
-    else closeUnlessStaffFits();
+    document.getElementById('btn-shortcuts-close')?.addEventListener('click', close);
+    document.getElementById('btn-shortcuts-dismiss')?.addEventListener('click', close);
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) close();
+    });
+  }
+
+  private openShortcuts(): void {
+    const dialog = this.modalShortcuts;
+    if (!dialog || dialog.open || typeof dialog.showModal !== 'function') return;
+    this.setMenuOpen(false);
+    dialog.showModal();
   }
 
   /** Repaints a single frame when the rAF loop is not running (paused/stopped). */
@@ -2299,6 +2345,8 @@ class GuidonicaApp {
     if (state.playbackState !== this.syncedPlaybackState) {
       this.syncedPlaybackState = state.playbackState;
       this.btnPlayPause.classList.toggle('playing', active);
+      // Focus mode (ADR 0097): CSS fades the bar while the music runs
+      document.getElementById('app')?.setAttribute('data-playback', active ? 'playing' : 'stopped');
     }
     if (state.isCountIn !== this.syncedCountIn) {
       this.syncedCountIn = state.isCountIn;
