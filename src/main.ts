@@ -661,7 +661,8 @@ class GuidonicaApp {
 
   /**
    * Shares the current exercise as a link (ADR 0085): the system share sheet where there is
-   * one, else the clipboard. The confirmation stays until the settings next change.
+   * one, else the clipboard. The confirmation fades after a few seconds, or goes when the
+   * settings next change.
    */
   private bindShareEvents(): void {
     const button = document.getElementById('btn-share-exercise');
@@ -673,6 +674,10 @@ class GuidonicaApp {
         sharedSettings = null;
         status.classList.add('hidden');
       }
+    });
+    // The toast fades out by CSS after a few seconds; hiding it lets the next share replay it
+    status.addEventListener('animationend', (e) => {
+      if (e.animationName === 'toast-out') status.classList.add('hidden');
     });
     button.addEventListener('click', async () => {
       const m = t();

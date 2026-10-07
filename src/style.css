@@ -1764,7 +1764,31 @@ select:focus-visible {
   font-size: 13px;
   line-height: 1.35;
   text-align: center;
-  animation: notice-in var(--slow) var(--ease);
+  animation: notice-in var(--slow) var(--ease), toast-out var(--slow) var(--ease) 4s forwards;
+}
+
+/* main.ts hides the toast when toast-out ends, so the next share replays both */
+@keyframes toast-out {
+  to { opacity: 0; transform: translateY(-6px); }
+}
+
+/* Focus mode: while the music runs the bar and zoom pill step back; pointing at
+   them or focusing inside brings them back. The dock stays fully lit. */
+.app-bar,
+.canvas-zoom-pill {
+  transition: opacity var(--slow) var(--ease);
+}
+
+#app[data-playback='playing'] .app-bar:not(:focus-within),
+#app[data-playback='playing'] .canvas-zoom-pill:not(:focus-within) {
+  opacity: 0.4;
+}
+
+@media (hover: hover) {
+  #app[data-playback='playing'] .app-bar:hover,
+  #app[data-playback='playing'] .canvas-zoom-pill:hover {
+    opacity: 1;
+  }
 }
 
 /* ==========================================================================
@@ -1904,7 +1928,7 @@ kbd {
   text-align: center;
 }
 
-.shortcuts-dialog {
+dialog.shortcuts-dialog {
   max-width: 420px;
 }
 
@@ -2474,6 +2498,11 @@ dialog.intro-dialog {
   }
 }
 
+@keyframes sheet-up {
+  from { transform: translateY(32px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
 @keyframes inspector-in {
   from { opacity: 0; transform: translateX(16px); }
   to { opacity: 1; transform: none; }
@@ -2547,9 +2576,43 @@ dialog.intro-dialog {
   }
 
   .transport-dock {
+    container: dock / inline-size;
     justify-content: flex-start;
     gap: 8px 10px;
     padding-right: 6px;
+  }
+
+  /* Budgeted for touch targets and the widest LED cluster (12/8, 152px): the row
+     holds 418px besides the tempo group, which measures 193px with its term and
+     56px slider. Past that the term goes, then the slider (the readout and the
+     arrow keys still set the tempo), then Start keeps only its icon, then the
+     readout drops its BPM unit. */
+  @container dock (max-width: 610px) {
+    .transport-dock .tempo-head {
+      display: none;
+    }
+  }
+
+  @container dock (max-width: 550px) {
+    .transport-dock .tempo-inputs input[type='range'] {
+      display: none;
+    }
+  }
+
+  @container dock (max-width: 484px) {
+    .playback-controls .btn-primary {
+      min-width: var(--hit);
+    }
+
+    .playback-controls .btn-primary .btn-label {
+      display: none;
+    }
+  }
+
+  @container dock (max-width: 412px) {
+    .tempo-unit {
+      display: none;
+    }
   }
 
   .brand h1 {
@@ -2661,6 +2724,21 @@ dialog.intro-dialog {
   .playback-controls .btn-primary {
     flex: 1 1 auto;
     min-width: 96px;
+  }
+
+  /* Dialogs rise from the bottom edge as sheets, under the thumb */
+  dialog.about-dialog {
+    width: 100%;
+    max-width: none;
+    max-height: calc(100dvh - 24px);
+    margin: auto 0 0;
+    border-bottom: none;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    animation: sheet-up var(--slow) var(--ease);
+  }
+
+  .about-dialog-footer {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
 
   /* A wrapped footer shows full-width rows, Close last under the thumb */

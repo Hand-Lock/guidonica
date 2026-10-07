@@ -24,6 +24,9 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - A new layout gives the music the whole screen: a slim bar on top, and Start, tempo, beats and mute in a dock at the bottom, within reach of your thumb. Settings open as a side panel on wide screens and as a sheet over the staff on smaller ones; Esc or a tap on the staff closes the sheet (ADR 0097).
 - On phones held sideways, the bar and the dock share a single row at the bottom, so the staff gets most of the height (ADR 0097).
+- While the music plays, the top bar and the zoom buttons fade back so the staff stands out; point at them or tab to them to bring them back (ADR 0097).
+- The "Link copied" confirmation now appears above the staff and fades after a few seconds (ADR 0097).
+- On phones, About, What's new and Keyboard shortcuts open as sheets from the bottom of the screen (ADR 0097).
 - Settings are grouped in five tabs: Staff, Rhythm, Melody, Sound and Display. Click, volume, count-in and the drone are under Sound; language, note names, playhead, tips and theme under Display (ADR 0097).
 
 ### Removed
