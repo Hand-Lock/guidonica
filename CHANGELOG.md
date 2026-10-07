@@ -14,6 +14,8 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ## [Unreleased]
 
+## [2026.10.2] - 2026-10-07
+
 > Sing against a drone on any note and at Baroque or modern pitch, and read early music in half-note meters, from 2/2 alla breve to 12/4.
 
 ### Added
@@ -115,7 +117,8 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - First public release.
 
-[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.1...HEAD
+[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.2...HEAD
+[2026.10.2]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.1...v2026.10.2
 [2026.10.1]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.0...v2026.10.1
 [2026.10.0]: https://github.com/Hand-Lock/guidonica/compare/v1.0.0...v2026.10.0
 [1.0.0]: https://github.com/Hand-Lock/guidonica/releases/tag/v1.0.0

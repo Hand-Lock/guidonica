@@ -2,6 +2,28 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.2] - 2026-10-07
+
+### Added
+
+- Tempi in minime per la musica antica. L'interruttore Movimento di minima in Impostazioni → Pentagramma e nei passaggi di benvenuto trasforma 4/4, 3/4, 2/4, 6/8, 9/8 e 12/8 in 4/2, 3/2, 2/2 (alla breve), 6/4, 9/4 e 12/4, con il clic sulla minima, le brevi e la pausa di breve (ADR 0090).
+- Un bordone su cui cantare: una shruti box o un pad tenuti su qualsiasi nota, con un volume proprio, in Impostazioni → Esercizio. Anche il muto lo silenzia, e suona già durante il preconteggio, così senti la tonica prima della prima nota. I link agli esercizi includono la nota del bordone (ADR 0092).
+- Segni del tempo ordinario e dell'alla breve: Impostazioni → Pentagramma può scrivere 4/4 come C e 2/2 come ¢ (ADR 0093).
+- Accorda il bordone con il La a 415, 430, 442 o 466 Hz oltre che a 440, per il diapason barocco, classico o rinascimentale, in Impostazioni → Esercizio. I link agli esercizi lo includono (ADR 0094).
+- Premi D per accendere e spegnere il bordone.
+
+### Changed
+
+- L'impostazione Pulsazione ora vale anche nei tempi in minime: il clic segue il movimento o ogni suddivisione (ADR 0090).
+
+### Fixed
+
+- La notazione scorre fluida sugli schermi ad alta frequenza di aggiornamento e in Firefox, dove poteva scattare (ADR 0089).
+- Lo scorrimento non si inceppa più a ogni clic del metronomo né quando viene disegnata una nuova battuta, sugli schermi fino a 144 Hz (ADR 0091).
+- Guidonica si apre con le impostazioni predefinite invece di non avviarsi quando Firefox o Safari bloccano i dati dei siti (ADR 0096).
+- Su uno schermo largo, le Impostazioni ora si aprono accanto al pentagramma alla prima visita, per quanto veloci si carichino i font (ADR 0096).
+- Lo scorrimento è fluido in Firefox con la protezione dal fingerprinting attiva, e in Tor e Mullvad Browser (ADR 0096).
+
 ## [2026.10.1] - 2026-10-06
 
 ### Added

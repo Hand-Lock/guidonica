@@ -2,6 +2,28 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.2] - 2026-10-07
+
+### Added
+
+- Des mesures à la blanche pour la musique ancienne. L'interrupteur Temps à la blanche, dans Réglages → Portée et dans l'accueil, change 4/4, 3/4, 2/4, 6/8, 9/8 et 12/8 en 4/2, 3/2, 2/2 (alla breve), 6/4, 9/4 et 12/4, avec un clic à la blanche, des carrées et le bâton de pause (ADR 0090).
+- Un bourdon sur lequel chanter : une shruti box ou une nappe tenue sur n'importe quelle note, avec son propre volume, dans Réglages → Pratique. La coupure du son le fait taire aussi, et il sonne dès le décompte pour que vous entendiez la tonique avant la première note. Les liens d'exercice transmettent la note du bourdon (ADR 0092).
+- Les signes C et ¢ : Réglages → Portée peut écrire 4/4 sous la forme C et 2/2 sous la forme ¢ (ADR 0093).
+- Accordez le bourdon avec le la à 415, 430, 442 ou 466 Hz en plus de 440, pour un diapason baroque, classique ou Renaissance, dans Réglages → Pratique. Les liens d'exercice le transmettent (ADR 0094).
+- Appuyez sur D pour activer ou couper le bourdon.
+
+### Changed
+
+- Le réglage Pulsation fonctionne désormais aussi dans les mesures à la blanche : le clic suit le temps ou chaque subdivision (ADR 0090).
+
+### Fixed
+
+- La partition défile de façon fluide sur les écrans à haute fréquence de rafraîchissement et dans Firefox, où elle pouvait saccader (ADR 0089).
+- Le défilement n'accroche plus à chaque clic du métronome ni à l'affichage d'une nouvelle mesure, sur les écrans jusqu'à 144 Hz (ADR 0091).
+- Guidonica s'ouvre avec ses réglages par défaut au lieu de ne pas démarrer quand Firefox ou Safari bloque les données des sites (ADR 0096).
+- Sur un écran large, les Réglages s'ouvrent désormais à côté de la portée dès la première visite, quelle que soit la vitesse de chargement des polices (ADR 0096).
+- Le défilement est fluide dans Firefox avec la protection contre le fingerprinting activée, ainsi que dans Tor et Mullvad Browser (ADR 0096).
+
 ## [2026.10.1] - 2026-10-06
 
 ### Added

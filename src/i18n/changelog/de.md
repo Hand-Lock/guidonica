@@ -2,6 +2,28 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.2] - 2026-10-07
+
+### Added
+
+- Taktarten mit Halben als Schlag für Alte Musik. Der Schalter Halbe als Schlag unter Einstellungen → Notensystem und in der Begrüßung macht aus 4/4, 3/4, 2/4, 6/8, 9/8 und 12/8 die Taktarten 4/2, 3/2, 2/2 (alla breve), 6/4, 9/4 und 12/4, mit Klick auf jeder Halben, Breven und der Brevis-Pause (ADR 0090).
+- Ein Bordun zum Dagegensingen: eine gehaltene Shruti-Box oder ein Pad auf jedem beliebigen Ton, mit eigener Lautstärke, unter Einstellungen → Übung. Stummschalten bringt auch ihn zum Schweigen, und er klingt schon im Einzähler, sodass Sie den Grundton vor der ersten Note hören. Links zu Übungen enthalten den Bordunton (ADR 0092).
+- Zeichen für den Vierviertel- und den Alla-breve-Takt: Einstellungen → Notensystem kann 4/4 als C und 2/2 als ¢ schreiben (ADR 0093).
+- Stimmen Sie den Bordun neben 440 auch auf a = 415, 430, 442 oder 466 Hz, für barocke, klassische oder Renaissance-Stimmung, unter Einstellungen → Übung. Links zu Übungen enthalten die Stimmung (ADR 0094).
+- Mit D schalten Sie den Bordun ein und aus.
+
+### Changed
+
+- Die Einstellung Puls wirkt jetzt auch in Taktarten mit Halben als Schlag: Der Klick folgt dem Schlag oder jeder Unterteilung (ADR 0090).
+
+### Fixed
+
+- Die Noten laufen auf Bildschirmen mit hoher Bildwiederholrate und in Firefox flüssig, wo sie ruckeln konnten (ADR 0089).
+- Das Scrollen stockt nicht mehr bei jedem Metronomklick oder wenn ein neuer Takt gezeichnet wird, auf Bildschirmen bis 144 Hz (ADR 0091).
+- Guidonica startet mit den Standardeinstellungen, statt gar nicht zu starten, wenn Firefox oder Safari Website-Daten blockiert (ADR 0096).
+- Auf breiten Bildschirmen öffnen sich die Einstellungen beim ersten Besuch jetzt neben dem Notensystem, egal wie schnell die Schriften laden (ADR 0096).
+- Das Scrollen ist flüssig in Firefox mit aktivem Fingerprinting-Schutz sowie in Tor und Mullvad Browser (ADR 0096).
+
 ## [2026.10.1] - 2026-10-06
 
 ### Added
