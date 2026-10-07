@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Guidonica - headless run/screenshot driver for agents (dev-only, not shipped)
 //
-//   node .claude/skills/run-guidonica/driver.mjs --setup
-//   node .claude/skills/run-guidonica/driver.mjs [options] <step> <step> ...
+//   node .claude/skills/run-guidonica/driver.mjs --setup [chromium|firefox|webkit ...]
+//   node .claude/skills/run-guidonica/driver.mjs [--browser ENGINE] [options] <step> <step> ...
 //
 // playwright-core lives in node_modules/.cache/run-guidonica/ (gitignored) so the
 // project's package.json keeps its minimal dependency list. See SKILL.md.
@@ -12,14 +12,14 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { PW_CLI, PW_DIR, PW_ENTRY, browserCache, findChromium } from './chromium.mjs';
+import { ENGINES, PW_CLI, PW_DIR, PW_ENTRY, browserCache, findBrowser } from './chromium.mjs';
 
 const LANGS = ['en', 'it', 'fr', 'de', 'es'];
 const THEMES = ['light', 'dark', 'auto'];
 const STEP_KINDS = ['click', 'press', 'wait', 'scroll', 'text', 'eval', 'shot'];
 
-const USAGE = `usage: driver.mjs --setup
-       driver.mjs [--url URL] [--lang ${LANGS.join('|')}] [--theme ${THEMES.join('|')}]
+const USAGE = `usage: driver.mjs --setup [${ENGINES.join('|')} ...]
+       driver.mjs [--browser ${ENGINES.join('|')}] [--url URL] [--lang ${LANGS.join('|')}] [--theme ${THEMES.join('|')}]
                   [--size WxH] [--dpr N] [--intro] [--tips] [--seen VERSION] [--out DIR] <step>...
 steps: click:<sel> press:<Key> wait:<ms> scroll:<sel> text:<sel> eval:<js> shot:<name>`;
 
@@ -28,30 +28,38 @@ function fail(message) {
   process.exit(1);
 }
 
-function setup() {
+/** Installs playwright-core and the given engines (Chromium by default). */
+function setup(engines) {
+  for (const engine of engines) if (!ENGINES.includes(engine)) fail(`--setup engines are ${ENGINES.join(', ')}`);
   if (!existsSync(PW_ENTRY)) {
     mkdirSync(PW_DIR, { recursive: true });
     writeFileSync(join(PW_DIR, 'package.json'), '{ "private": true }\n');
     console.log(`installing playwright-core into ${PW_DIR}`);
     execFileSync('npm', ['install', '--prefix', PW_DIR, '--no-audit', '--no-fund', 'playwright-core'], { stdio: 'inherit' });
   }
-  let exe = findChromium();
-  if (!exe) {
-    console.log('no cached Chromium found, running playwright-core install chromium');
-    execFileSync(process.execPath, [PW_CLI, 'install', 'chromium'], { stdio: 'inherit' });
-    exe = findChromium();
+  // One install for every engine: playwright-core deletes cached builds that no
+  // registered Playwright uses, so installing engines one by one can drop a stale one.
+  const missing = engines.filter((engine) => !findBrowser(engine));
+  if (missing.length) {
+    console.log(`running playwright-core install ${missing.join(' ')}`);
+    execFileSync(process.execPath, [PW_CLI, 'install', ...missing], { stdio: 'inherit' });
   }
-  if (!exe) fail(`still no Chromium under ${browserCache()}`);
-  console.log(`playwright-core: ${PW_ENTRY}\nchromium: ${exe}\nready`);
+  console.log(`playwright-core: ${PW_ENTRY}`);
+  for (const engine of engines) {
+    const exe = findBrowser(engine) ?? fail(`still no ${engine} under ${browserCache()}`);
+    console.log(`${engine}: ${exe}`);
+  }
+  console.log('ready');
 }
 
 function parseArgs(argv) {
-  const opts = { url: 'http://localhost:3000', lang: null, theme: null, width: 1280, height: 900, dpr: 2, intro: false, tips: false, seen: null, out: join(tmpdir(), 'guidonica-shots') };
+  const opts = { browser: 'chromium', url: 'http://localhost:3000', lang: null, theme: null, width: 1280, height: 900, dpr: 2, intro: false, tips: false, seen: null, out: join(tmpdir(), 'guidonica-shots') };
   const steps = [];
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     const value = () => (i + 1 < argv.length ? argv[++i] : fail(`${arg} needs a value`));
-    if (arg === '--url') opts.url = value();
+    if (arg === '--browser') opts.browser = value();
+    else if (arg === '--url') opts.url = value();
     else if (arg === '--lang') opts.lang = value();
     else if (arg === '--theme') opts.theme = value();
     else if (arg === '--size') {
@@ -71,6 +79,7 @@ function parseArgs(argv) {
       steps.push({ kind, arg: arg.slice(colon + 1) });
     }
   }
+  if (!ENGINES.includes(opts.browser)) fail(`--browser must be one of ${ENGINES.join(', ')}`);
   if (opts.lang !== null && !LANGS.includes(opts.lang)) fail(`--lang must be one of ${LANGS.join(', ')}`);
   if (opts.theme !== null && !THEMES.includes(opts.theme)) fail(`--theme must be one of ${THEMES.join(', ')}`);
   if (!(opts.dpr > 0)) fail('--dpr must be a positive number');
@@ -80,12 +89,15 @@ function parseArgs(argv) {
 
 async function run(opts, steps) {
   if (!existsSync(PW_ENTRY)) fail('playwright-core is missing: run driver.mjs --setup');
-  const executablePath = findChromium() ?? fail(`no Chromium under ${browserCache()}: run driver.mjs --setup`);
-  const { chromium } = await import(pathToFileURL(PW_ENTRY).href);
+  const executablePath = findBrowser(opts.browser)
+    ?? fail(`no ${opts.browser} under ${browserCache()}: run driver.mjs --setup ${opts.browser}`);
+  const playwright = await import(pathToFileURL(PW_ENTRY).href);
   mkdirSync(opts.out, { recursive: true });
 
-  const browser = await chromium.launch({ executablePath });
+  const browser = await playwright[opts.browser].launch({ executablePath });
+  console.log(`browser: ${opts.browser} ${browser.version()}`);
   // A fresh context per run: empty localStorage and no service worker from a previous run.
+  // Only cross-engine options here: Firefox rejects isMobile (ADR 0096).
   const context = await browser.newContext({
     viewport: { width: opts.width, height: opts.height },
     deviceScaleFactor: opts.dpr,
@@ -151,7 +163,7 @@ async function run(opts, steps) {
 
 const argv = process.argv.slice(2);
 if (argv.includes('--help') || argv.length === 0) console.log(USAGE);
-else if (argv[0] === '--setup') setup();
+else if (argv[0] === '--setup') setup(argv.length > 1 ? argv.slice(1) : ['chromium']);
 else {
   const { opts, steps } = parseArgs(argv);
   await run(opts, steps);

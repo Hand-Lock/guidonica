@@ -5,7 +5,7 @@
 
 ### Suckless Engineering Philosophy
 The core software architecture is strictly governed by an uncompromising "suckless", ultra-lightweight, and zero-bloat engineering philosophy:
-- **Zero Framework Bloat**: No React, Vue, Svelte, or Angular. Written in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and Web Audio API directly. Zero virtual DOM reconciliation, zero runtime reactivity overhead, zero state management dependencies. Shipped JS is ~135 kB gzipped: ~41.5 kB of app code (including the English dictionary) plus ~93 kB of VexFlow's font-free `vexflow/core`; each other language is one lazy ~6.4 kB chunk (ADR 0059). The music font is a separate 19.6 kB Bravura subset (ADR 0058); never import the full `'vexflow'` entry, which inlines ~600 kB of fonts.
+- **Zero Framework Bloat**: No React, Vue, Svelte, or Angular. Written in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and Web Audio API directly. Zero virtual DOM reconciliation, zero runtime reactivity overhead, zero state management dependencies. Shipped JS is ~134 kB gzipped: ~41 kB of app code (including the English dictionary) plus ~93 kB of VexFlow's font-free `vexflow/core`; each other language is one lazy ~6.4 kB chunk (ADR 0059). The music font is a separate 19.6 kB Bravura subset (ADR 0058); never import the full `'vexflow'` entry, which inlines ~600 kB of fonts.
 - **Single Source of Truth Hardware Clock**: Visual motion and synthesized metronome audio clicks are mathematically linked to the hardware audio clock (`AudioContext.currentTime`). Never measure time with `setInterval`, `setTimeout`, `Date.now()` or visual time accumulators. The metronome's single 25 ms `setInterval` is allowed because it only wakes the scheduler to queue clicks 100 ms ahead; every click time and tape offset is computed from `currentTime`, so timer jitter never reaches what is heard or seen. Likewise the rAF timestamp only interpolates between the audio clock's coarse updates and is continuously pulled back to it (ADR 0089); position is never accumulated independently. Visual-auditory drift is mathematically impossible; noteheads cross the playhead at the exact physical microsecond the speaker clicks.
 - **Hardware-Accelerated Measure Blitting**: VexFlow layout and font glyph rasterization execute **once** onto an offscreen canvas per measure. The 60/120 FPS animation loop (`requestAnimationFrame`) exclusively executes GPU-accelerated bit-block transfers (`ctx.drawImage()`). Zero per-frame layout, zero font parsing, sub-millisecond per-frame CPU time (< 1% CPU utilization). VexFlow rasterizes new measures in idle time between frames (`requestIdleCallback`, one measure per callback); a frame renders synchronously only if the stage itself would otherwise be uncovered. Beat UI changes only compositor properties (`opacity`, `transform`), so a click never triggers layout or paint (ADR 0091).
 - **Bounded Ring-Buffer & Zero-Leak Memory Discipline**: The buffer holds only the measures covering the viewport plus 6 beats of lookahead (a few measures, more when zoomed out), never an unbounded history. Measures scrolling past the left edge are immediately evicted and their offscreen canvases dereferenced. An infinite 3-hour practice session maintains the exact same memory footprint (~30–45 MB process memory) as a 5-second test.
@@ -40,14 +40,14 @@ guidonica/
 ├── pnpm-lock.yaml          # Locked dependency tree (pnpm install --frozen-lockfile in CI)
 ├── pnpm-workspace.yaml     # pnpm settings
 ├── tsconfig.json           # Strict TypeScript configuration
-├── vite.config.ts          # Minimal Vite configuration + serviceWorker(), channel() and localePages() build plugins (ADRs 0063, 0078, 0086)
+├── vite.config.ts          # Minimal Vite configuration (build.target = support baseline, ADR 0096) + serviceWorker(), channel() and localePages() build plugins (ADRs 0063, 0078, 0086)
 ├── index.html              # Minimal semantic HTML shell
 ├── .claude/
 │   └── skills/
 │       └── run-guidonica/  # Agent run/screenshot skill + Playwright driver (dev-only)
 │           ├── SKILL.md    # How agents run, drive and screenshot the app
-│           ├── driver.mjs  # Headless run/screenshot driver
-│           └── chromium.mjs # Playwright + cached Chromium lookup, shared with build-banners.mjs
+│           ├── driver.mjs  # Headless run/screenshot driver, --browser chromium|firefox|webkit
+│           └── chromium.mjs # Playwright + cached browser lookup (Chromium, Firefox, WebKit; ADR 0096), shared with build-banners.mjs
 ├── .github/
 │   ├── FUNDING.yml         # Sponsor button: Ko-fi only until GitHub Sponsors is approved (ADR 0074)
 │   ├── pull_request_template.md # DCO + MIT checkboxes and hygiene checklist (ADR 0067)

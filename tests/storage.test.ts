@@ -404,3 +404,32 @@ describe('channel storage namespaces (ADR 0078)', () => {
     expect(window.localStorage.getItem('guidonica_seen_version')).toBe('2026.10.0');
   });
 });
+
+describe('blocked site data (ADR 0096)', () => {
+  // Firefox and Safari throw a SecurityError from the window.localStorage getter itself
+  // when cookies and site data are blocked; every helper must fall back, never throw.
+  beforeEach(() => {
+    window.localStorage.clear();
+    const own = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('The operation is insecure.', 'SecurityError');
+      },
+    });
+    return () => {
+      if (own) Object.defineProperty(window, 'localStorage', own);
+      else delete (window as { localStorage?: Storage }).localStorage;
+    };
+  });
+
+  it('boots with the defaults and ignores saves', () => {
+    expect(() => window.localStorage).toThrow();
+    expect(loadStoredSettings()).toEqual(DEFAULT_APP_SETTINGS);
+    expect(() => saveStoredSettings({ ...DEFAULT_APP_SETTINGS, tempo: 144 })).not.toThrow();
+    expect(loadTipCount()).toBe(0);
+    expect(() => saveTipCount(3)).not.toThrow();
+    expect(loadSeenVersion()).toBeNull();
+    expect(() => saveSeenVersion('2026.10.0')).not.toThrow();
+  });
+});

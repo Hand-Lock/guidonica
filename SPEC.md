@@ -268,6 +268,7 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 - A web app manifest with standard and maskable icons lets the app be installed to the home screen or desktop.
 
 ### Device & Lifecycle
+- **Supported browsers**: Chromium 105+ (Chrome, Edge, Opera, Brave…), Firefox 115 ESR+, Safari / iOS 16+; `build.target` matches. Engine differences are handled by feature detection and fallbacks only, never user-agent sniffing (see ADR 0096).
 - **Auto-pause**: playback pauses when the page is hidden (tab switch, minimize, lock screen) and resumes cleanly on Start (see ADR 0035).
 - **Wake lock**: the screen stays on during playback where `navigator.wakeLock` is supported.
 - **Fullscreen**: a header button enters fullscreen where the Fullscreen API exists; it is hidden elsewhere, e.g. on iPhone Safari (see ADR 0033).

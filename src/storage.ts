@@ -160,11 +160,12 @@ function pickTuplets(value: unknown): TupletOptions {
  */
 export function loadStoredSettings(): AppSettings {
   const defaults = (): AppSettings => ({ ...structuredClone(DEFAULT_APP_SETTINGS), language: detectLanguage() });
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return defaults();
-  }
-
+  // Reading window.localStorage itself throws in Firefox and Safari when site data is
+  // blocked, so the check sits inside the try (ADR 0096)
   try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return defaults();
+    }
     let raw = window.localStorage.getItem(STORAGE_KEY);
     let isLegacyV1 = false;
     for (const key of LEGACY_KEYS) {
@@ -244,11 +245,10 @@ export function loadStoredSettings(): AppSettings {
  * Saves current settings to localStorage.
  */
 export function saveStoredSettings(settings: AppSettings): void {
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return;
-  }
-
   try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return;
+    }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch {
     // Ignore quota or private-browsing errors

@@ -167,6 +167,8 @@ class GuidonicaApp {
   private btnThemeToggle: HTMLButtonElement;
   private btnFullscreenToggle: HTMLButtonElement;
   private btnDrawerToggle: HTMLButtonElement;
+  /** Invalidates a drawer fit check still waiting for the fonts (ADR 0096) */
+  private drawerFitCheck = 0;
   private btnLevelToggle: HTMLButtonElement | null;
   private levelSyncedSettings: Readonly<AppSettings> | null = null;
   private controlsDrawer: HTMLElement;
@@ -1989,15 +1991,24 @@ class GuidonicaApp {
   /**
    * Opens the in-flow desktop drawer, then closes it again when it would leave the
    * stage shorter than the measure canvas at the current zoom (ADR 0054). Reads
-   * layout once, at init and on breakpoint changes only.
+   * layout once, at init and on breakpoint changes only. While the text fonts are
+   * still loading, fallback metrics wrap the drawer an extra row, so the check waits
+   * for document.fonts.ready rather than depending on font timing (ADR 0096).
    */
   private openDrawerByDefault(wide: boolean): void {
     this.setDrawerOpen(wide);
+    const check = ++this.drawerFitCheck;
     if (!wide) return;
-    const stage = document.querySelector<HTMLElement>('.canvas-wrapper');
-    if (stage && !stageFitsStaff(stage.clientHeight, this.scroller.getZoom())) {
-      this.setDrawerOpen(false);
-    }
+    const closeUnlessStaffFits = (): void => {
+      if (check !== this.drawerFitCheck || !this.controlsDrawer.classList.contains('open')) return;
+      const stage = document.querySelector<HTMLElement>('.canvas-wrapper');
+      if (stage && !stageFitsStaff(stage.clientHeight, this.scroller.getZoom())) {
+        this.setDrawerOpen(false);
+      }
+    };
+    const fonts = document.fonts as FontFaceSet | undefined;
+    if (fonts?.status === 'loading') void fonts.ready.then(closeUnlessStaffFits);
+    else closeUnlessStaffFits();
   }
 
   /** Repaints a single frame when the rAF loop is not running (paused/stopped). */

@@ -101,6 +101,7 @@ This directory documents the core architectural decisions, implementation method
 | [0093](0093-common-time-and-alla-breve-signs.md) | Common-Time and Alla Breve Signs | Accepted | 2026-10-06 |
 | [0094](0094-drone-tuning.md) | Drone Tuning: Baroque, Classical and Renaissance Pitch | Accepted | 2026-10-06 |
 | [0095](0095-output-soft-clipper.md) | Output Headroom: a Zero-Latency Soft Clipper | Accepted | 2026-10-06 |
+| [0096](0096-cross-engine-support-gecko-webkit.md) | Cross-Engine Support: Gecko and WebKit, Chromium Untouched | Accepted | 2026-10-07 |
 
 ---
 

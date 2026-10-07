@@ -284,6 +284,7 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 - **What's new**: after an update, a returning user sees what changed since their last visit, in their language. About shows the running version and the full history ([ADR 0078](docs/adr/0078-release-channels-calver-changelog-whats-new.md)).
 
 ### 17. Native Device & Lifecycle Resilience
+- **Supported Browsers**: Chromium 105+ (Chrome, Edge, Opera, Brave, Vivaldi…), Firefox 115 ESR+ and Safari / iOS 16+, each verified in its own engine (Blink, Gecko, WebKit) with feature-detected fallbacks only ([ADR 0096](docs/adr/0096-cross-engine-support-gecko-webkit.md)).
 - **Page Lifecycle Auto-Pause**: Automatically pauses playback when switching browser tabs or minimizing the window (`visibilitychange` / `pagehide`), resuming cleanly without phase jitter.
 - **AudioContext State Recovery**: Restores Web Audio contexts interrupted by system sleep, phone calls, or audio route changes.
 - **Screen Wake Lock**: Uses `navigator.wakeLock` to prevent the device display from dimming or sleeping during long practice sessions.
@@ -524,6 +525,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0093](docs/adr/0093-common-time-and-alla-breve-signs.md) | Common-Time and Alla Breve Signs | Accepted |
 | [0094](docs/adr/0094-drone-tuning.md) | Drone Tuning: Baroque, Classical and Renaissance Pitch | Accepted |
 | [0095](docs/adr/0095-output-soft-clipper.md) | Output Headroom: a Zero-Latency Soft Clipper | Accepted |
+| [0096](docs/adr/0096-cross-engine-support-gecko-webkit.md) | Cross-Engine Support: Gecko and WebKit, Chromium Untouched | Accepted |
 
 ---
 

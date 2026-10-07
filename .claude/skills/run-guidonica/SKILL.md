@@ -4,8 +4,8 @@ description: Build, run, and drive Guidonica. Use when asked to run or start the
 ---
 
 Guidonica is a client-only Vite web app. To drive it, start the dev server, then
-run `.claude/skills/run-guidonica/driver.mjs`. That is a one-shot headless Chromium
-(Playwright) script: you give it a list of steps, it runs them in a fresh browser
+run `.claude/skills/run-guidonica/driver.mjs`. That is a one-shot headless
+Playwright script, Chromium by default, Firefox or WebKit with `--browser`: you give it a list of steps, it runs them in a fresh browser
 context, prints any console and page errors, and exits non-zero on any failure.
 
 All paths are relative to the repo root.
@@ -13,24 +13,32 @@ All paths are relative to the repo root.
 ## Prerequisites
 
 Node >= 22.13 and pnpm 11 (`packageManager` in `package.json`). The driver
-needs a Chromium in Playwright's browser cache: `~/Library/Caches/ms-playwright`
+needs the engine's build in Playwright's browser cache: `~/Library/Caches/ms-playwright`
 on macOS, `~/.cache/ms-playwright` on Linux, or `$PLAYWRIGHT_BROWSERS_PATH` if
-that is set. If none is there, `--setup` downloads one.
+that is set. If it is missing, `--setup` downloads it.
 
 ## Setup
 
 ```bash
 pnpm install
-node .claude/skills/run-guidonica/driver.mjs --setup
+node .claude/skills/run-guidonica/driver.mjs --setup                          # Chromium only
+node .claude/skills/run-guidonica/driver.mjs --setup chromium firefox webkit  # all three engines
 ```
 
 `--setup` installs `playwright-core` into `node_modules/.cache/run-guidonica/`.
-The Playwright and Chromium lookup lives in `chromium.mjs`, which
+The Playwright and browser lookup (`findChromium`, `findBrowser(engine)`) lives in `chromium.mjs`, which
 `scripts/build-banners.mjs` (`pnpm banners`, ADR 0079) shares.
 That directory is gitignored, and `package.json` is deliberately left unchanged
-(AGENTS.md keeps the dependency list minimal). It then prints the Chromium it
-will use, which is the newest `chromium-*` or `chromium_headless_shell-*` in the
-cache, and ends with `ready`.
+(AGENTS.md keeps the dependency list minimal). It then prints each engine's
+executable, the newest cached build (`chromium-*` or `chromium_headless_shell-*`,
+`firefox-*`, `webkit-*`), and ends with `ready`.
+
+Playwright's installer deletes cached builds the current `playwright-core` no
+longer uses, so installing Firefox or WebKit can remove an older Chromium build.
+Pass every engine you need to one `--setup`; it reinstalls whatever is missing.
+
+Opera, Edge, Brave, Vivaldi and Arc are Chromium, so the three engines cover
+them. All iOS browsers are WebKit (ADR 0096).
 
 ## Build
 
@@ -79,6 +87,10 @@ node $D --size 390x844 click:#btn-drawer-toggle wait:500 \
 # Keyboard: Space starts, Space pauses
 node $D press:Space wait:6000 press:Space "eval:document.querySelector('#btn-play-pause').innerText"
 
+# The same in Firefox and WebKit (Safari's engine)
+node $D --browser firefox click:#btn-play-pause wait:6000 shot:playing-firefox
+node $D --browser webkit click:#btn-play-pause wait:6000 shot:playing-webkit
+
 # First-visit onboarding, with the language detected from the browser locale
 node $D --intro --lang fr "eval:document.querySelector('#modal-intro').open" text:#intro-title shot:intro-fr
 ```
@@ -90,6 +102,7 @@ dev-server log is in `$TMPDIR/guidonica-dev.log`.
 | option | default | effect |
 |---|---|---|
 | `--url URL` | `http://localhost:3000` | page to load |
+| `--browser chromium\|firefox\|webkit` | `chromium` | engine to launch (Blink, Gecko, WebKit) |
 | `--lang en\|it\|fr\|de\|es` | browser-detected | `language` in `guidonica_settings_v1`, plus the context locale |
 | `--theme light\|dark\|auto` | app default (auto) | `theme` in `guidonica_settings_v1`; `dark` also emulates `prefers-color-scheme: dark` |
 | `--size WxH` | `1280x900` | viewport; below 961 px wide the layout is the phone one |
@@ -134,7 +147,7 @@ pnpm preview    # serves dist/ after pnpm build, with the service worker active
 
 ```bash
 pnpm typecheck
-pnpm test       # vitest + happy-dom: 34 files, 669 tests pass
+pnpm test       # vitest + happy-dom: 37 files, 1011 tests pass
 ```
 
 ## Gotchas
@@ -148,7 +161,11 @@ pnpm test       # vitest + happy-dom: 34 files, 669 tests pass
 - **The `AudioContext` needs a user gesture.** Start playback with `click:` or `press:`, never `eval:`.
 - **The About dialog body scrolls.** Run `scroll:` on the section before `shot:`, or it may be out of view at phone size.
 - **The service worker registers only in production builds** (`src/utils/serviceWorker.ts`). Against `pnpm preview` a reused browser profile can serve stale precached assets. The driver uses a fresh context on every run, so this only affects a manual browser.
-- **No system Chrome or `chromium-cli` was found on the dev machine.** That is why the driver launches Playwright's cached Chromium through `executablePath`.
+- **The driver launches Playwright's cached builds through `executablePath`**, never a system browser, so runs do not depend on what is installed on the machine.
+- **Playwright's Firefox and WebKit paint no `backdrop-filter`**, headless or headed: glass panels and the dialog `::backdrop` show unblurred. Real Firefox and Safari blur them; check by hand (ADR 0096).
+- **WebKit: a mouse click does not focus a `<button>`** (macOS behaviour). Use `press:` for focus-dependent checks.
+- **WebKit: `context.setOffline` plus a reload fails with an internal error.** To test offline, stop the preview server instead and reload.
+- **Firefox has no `navigator.share`**, so the Share button copies the link to the clipboard there.
 
 ## Troubleshooting
 
@@ -158,4 +175,4 @@ pnpm test       # vitest + happy-dom: 34 files, 669 tests pass
 - **`step click:<sel> failed: page.click: Timeout 5000ms exceeded.`**: the selector matches nothing, or the element is hidden or covered (for example by the intro dialog when `--intro` is passed).
 
 Verified on macOS arm64 (Node 22.22, playwright-core 1.63 driving the cached
-`chromium-1223`). The Linux cache path is coded but has not been verified.
+`chromium-1243`, `firefox-1543` and `webkit-2359`: Chromium 153, Firefox 155, WebKit 26.6). The Linux cache path is coded but has not been verified.

@@ -399,6 +399,30 @@ describe('MetronomeEngine', () => {
         });
       });
 
+      it('keeps moving when a coarsened timer repeats a frame timestamp (ADR 0096)', () => {
+        // Firefox resistFingerprinting rounds rAF time to 16.67 ms: some frames read 0 ms
+        // after the previous one and the next 33 ms, although vsync stays regular
+        const Q = 1000 / 60;
+        const ctx = makeCtx();
+        withCtx(ctx, () => {
+          metronome = new MetronomeEngine(60, '4/4');
+          metronome.start(false);
+          const steps: number[] = [];
+          let prev: number | null = null;
+          for (let k = 1; k <= 600; k++) {
+            ctx.currentTime = 10 + (k * Q) / 1000;
+            metronome.tick((k % 7 === 0 ? k - 1 : k) * Q);
+            const shown = metronome.getVisualBeat();
+            if (prev !== null && k > 120) steps.push(shown - prev);
+            prev = shown;
+          }
+          for (const d of steps) {
+            expect(d).toBeGreaterThan((0.75 * Q) / 1000);
+            expect(d).toBeLessThan((1.25 * Q) / 1000);
+          }
+        });
+      });
+
       it('keeps the displayed beat continuous across a tempo change', () => {
         const ctx = makeCtx();
         withCtx(ctx, () => {

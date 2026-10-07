@@ -255,6 +255,8 @@ export default defineConfig({
   base: process.env.BASE_PATH || './',
   plugins: [channel(), localePages(), serviceWorker()],
   build: {
+    // The support baseline (ADR 0096): @container, structuredClone and <dialog> need these
+    target: ['chrome105', 'firefox115', 'safari16'],
     rollupOptions: {
       output: {
         manualChunks: {

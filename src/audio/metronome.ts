@@ -31,6 +31,8 @@ const CLOCK_SMOOTHING_SECONDS = 0.1;
  * discontinuities such as a stalled or resumed device snap.
  */
 const CLOCK_SNAP_SECONDS = 0.25;
+/** Longest rAF gap (ms) still taken as one frame interval; longer ones are stalls or hidden tabs. */
+const MAX_FRAME_INTERVAL_MS = 50;
 
 export class MetronomeEngine {
   private ctx: AudioContext | null = null;
@@ -74,6 +76,8 @@ export class MetronomeEngine {
   // pulls the prediction back toward the real clock. null = not ticked since (re)start.
   private frameClock: number | null = null;
   private lastFrameMs: number = 0;
+  // Last real rAF interval, used when a coarsened timer repeats a timestamp (ADR 0096)
+  private frameIntervalMs: number = 1000 / 60;
 
   private interruptionCallbacks: Set<() => void> = new Set();
 
@@ -559,6 +563,16 @@ export class MetronomeEngine {
   public tick(frameTimeMs: number): void {
     if (!this.ctx || !this.isRunning || this.isPaused) return;
     const raw = this.audibleTime();
+    // A timestamp that does not advance only comes from a coarsened timer (Firefox
+    // resistFingerprinting rounds rAF time to 16.67 ms, so frames read 0 ms then 33 ms
+    // apart): advance it by the last real interval and let the next, longer gap absorb it.
+    // Accurate clocks never take this branch (ADR 0096).
+    if (frameTimeMs <= this.lastFrameMs && this.frameClock !== null) {
+      frameTimeMs = this.lastFrameMs + this.frameIntervalMs;
+    } else {
+      const interval = frameTimeMs - this.lastFrameMs;
+      if (interval > 0 && interval < MAX_FRAME_INTERVAL_MS) this.frameIntervalMs = interval;
+    }
     if (this.frameClock === null) {
       this.frameClock = raw;
     } else {

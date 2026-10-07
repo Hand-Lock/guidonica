@@ -1,4 +1,4 @@
-// Guidonica - Playwright and Chromium lookup shared by the run driver and
+// Guidonica - Playwright and browser lookup shared by the run driver and
 // scripts/build-banners.mjs (dev-only, not shipped)
 //
 // playwright-core lives in node_modules/.cache/run-guidonica/ (gitignored) so the
@@ -24,13 +24,13 @@ export function browserCache() {
 
 const EXECUTABLES = new Set(['Google Chrome for Testing', 'Chromium', 'chrome', 'chrome-headless-shell', 'headless_shell']);
 
-export function findExecutable(dir, depth) {
+export function findExecutable(dir, depth, names = EXECUTABLES) {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
     const stat = statSync(path);
-    if (stat.isFile() && EXECUTABLES.has(name) && stat.mode & 0o111) return path;
+    if (stat.isFile() && names.has(name) && stat.mode & 0o111) return path;
     if (stat.isDirectory() && depth > 0) {
-      const found = findExecutable(path, depth - 1);
+      const found = findExecutable(path, depth - 1, names);
       if (found) return found;
     }
   }
@@ -47,6 +47,34 @@ export function findChromium() {
     .sort((a, b) => Number(b[2]) - Number(a[2]) || (a[1] === 'chromium' ? -1 : 1));
   for (const m of dirs) {
     const exe = findExecutable(join(cache, m[0]), 5);
+    if (exe) return exe;
+  }
+  return null;
+}
+
+/** Playwright's engines: Opera, Edge, Brave, Vivaldi and Arc are all Chromium (ADR 0096). */
+export const ENGINES = ['chromium', 'firefox', 'webkit'];
+
+// Gecko ships as firefox/Nightly.app/…/firefox (macOS) or firefox/firefox (Linux);
+// WebKit's launcher script is pw_run.sh at the top of its directory.
+const ENGINE_EXECUTABLES = { firefox: new Set(['firefox']), webkit: new Set(['pw_run.sh']) };
+
+/** Newest cached build of an engine, or null; chromium is findChromium(). */
+export function findBrowser(engine) {
+  if (engine === 'chromium') return findChromium();
+  const names = ENGINE_EXECUTABLES[engine];
+  const cache = browserCache();
+  if (!names || !existsSync(cache)) return null;
+  const pattern = new RegExp(`^${engine}-(\\d+)$`);
+  const dirs = readdirSync(cache)
+    .map((name) => pattern.exec(name))
+    .filter((m) => m !== null)
+    .sort((a, b) => Number(b[1]) - Number(a[1]));
+  for (const m of dirs) {
+    const dir = join(cache, m[0]);
+    const top = join(dir, 'pw_run.sh');
+    if (engine === 'webkit' && existsSync(top)) return top;
+    const exe = findExecutable(dir, 5, names);
     if (exe) return exe;
   }
   return null;

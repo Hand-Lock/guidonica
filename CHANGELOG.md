@@ -32,6 +32,9 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - Scrolling notation is smooth on high-refresh displays and in Firefox, where it could stutter (ADR 0089).
 - Scrolling no longer hitches on each metronome click or when a new bar is drawn, on displays up to 144 Hz (ADR 0091).
+- Guidonica opens with its default settings instead of failing to start when Firefox or Safari blocks site data (ADR 0096).
+- On a wide screen, Settings now open beside the staff on the first visit, however fast the fonts load (ADR 0096).
+- Scrolling is smooth in Firefox with fingerprinting protection on, and in Tor and Mullvad Browser (ADR 0096).
 
 ### Internal
 
@@ -44,6 +47,9 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - ADR 0094 §5 records the D shortcut: `applyDroneNote` serves the drone select and the key, and the last note lives in memory only.
 - ADR 0095: a zero-latency soft clipper on the output keeps click plus drone below full scale (`src/audio/output.ts`).
 - `AGENTS.md` bundle figures follow the build: ~135 kB of gzipped JS (~41.5 kB app code), ~6.4 kB per extra language.
+- ADR 0096 documents cross-engine support: Chromium 105+, Firefox 115 ESR+ and Safari / iOS 16+, verified in Blink, Gecko and WebKit, with feature-detected fallbacks only; README §17 and `SPEC.md` §6 state the baseline.
+- `build.target` in `vite.config.ts` is the support baseline (`chrome105`, `firefox115`, `safari16`) instead of Vite's implicit default; app JS shrinks from 41.6 to 40.8 kB gzipped, and `AGENTS.md` follows (~134 kB of gzipped JS).
+- The run-guidonica driver takes `--browser chromium|firefox|webkit` and `--setup [engine…]`; `chromium.mjs` gains `findBrowser(engine)`.
 
 ## [2026.10.1] - 2026-10-06
 
