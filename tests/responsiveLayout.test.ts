@@ -71,6 +71,11 @@ describe('Stage-first shell (ADR 0097)', () => {
     expect(base).toMatch(/[^-]text-size-adjust: 100%;/);
   });
 
+  it('turns off double-tap page zoom but keeps pinch zoom (ADR 0100)', () => {
+    const base = styleCss.match(/html,\nbody \{([^}]*)\}/)?.[1] ?? '';
+    expect(base).toContain('touch-action: manipulation;');
+  });
+
   it('never clips the tab labels, which iOS painted through a stale clip (ADR 0099)', () => {
     const span = styleCss.match(/\n\.inspector-tab span \{([^}]*)\}/)?.[1];
     expect(span).toBeDefined();

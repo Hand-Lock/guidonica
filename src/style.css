@@ -267,6 +267,8 @@ body {
   /* Mobile Safari otherwise inflates text in landscape after layout, clipping it (ADR 0099) */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* No double-tap page zoom; pinch zoom stays for accessibility (ADR 0100) */
+  touch-action: manipulation;
 }
 
 kbd {

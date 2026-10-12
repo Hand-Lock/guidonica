@@ -105,6 +105,7 @@ This directory documents the core architectural decisions, implementation method
 | [0097](0097-stage-first-shell.md) | Stage-First Shell: Top Bar, Transport Dock, Tabbed Inspector and ⋯ Menu | Accepted; amended by 0099 | 2026-10-07 |
 | [0098](0098-low-power-frame-rate-notice.md) | Low Power Mode Frame-Rate Notice | Accepted | 2026-10-12 |
 | [0099](0099-ios-landscape-text-size-and-focus-fade.md) | iOS Landscape: Text Autosizing Off, Focus-Mode Fade on a Glass Strip | Accepted | 2026-10-12 |
+| [0100](0100-no-double-tap-zoom.md) | No Double-Tap Zoom: `touch-action: manipulation` on the Root | Accepted | 2026-10-12 |
 
 ---
 

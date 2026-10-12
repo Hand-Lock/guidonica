@@ -35,6 +35,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - On iPhone in landscape, the settings tab labels are no longer cut off until you tap a tab (ADR 0099).
 - On phones held sideways, the bottom bar no longer turns into a hard grey block while the music plays. Its buttons now fade in a soft gradient, and the ⋯ menu stays fully visible (ADR 0099).
+- Tapping twice quickly on a phone no longer zooms the page (ADR 0100).
 
 ### Removed
 
