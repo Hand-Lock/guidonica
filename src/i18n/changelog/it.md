@@ -2,6 +2,35 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.3] - 2026-10-12
+
+### Added
+
+- Un menu ⋯ nella barra in alto raccoglie il link all'esercizio, «Informazioni», Novità, le scorciatoie da tastiera, il tema, GitHub, la Privacy, i social e Sostieni (ADR 0097).
+- Premi ? o scegli Scorciatoie da tastiera nel menu ⋯ per vedere tutte le scorciatoie (ADR 0097).
+- Le etichette nella barra in alto mostrano la chiave, il metro e la nota del bordone; toccane una per cambiarla (ADR 0097).
+- Accorda il bordone con il La a 392 Hz per il diapason barocco francese, in Impostazioni → Suono (ADR 0094).
+- Quando il Risparmio energetico o il risparmio batteria limita l'animazione a 30 fotogrammi al secondo, un avviso ti suggerisce di disattivarlo per uno scorrimento fluido (ADR 0098).
+
+### Changed
+
+- Un nuovo layout dà alla musica tutto lo schermo: una barra sottile in alto, e Avvia, tempo, pulsazioni e muto in una barra in basso, a portata di pollice. Le Impostazioni si aprono come pannello laterale sugli schermi larghi e come foglio sopra il pentagramma su quelli più piccoli; Esc o un tocco sul pentagramma chiude il foglio (ADR 0097).
+- Sui telefoni tenuti in orizzontale, la barra in alto e quella in basso condividono un'unica riga in fondo, così il pentagramma ha quasi tutta l'altezza (ADR 0097).
+- Mentre la musica suona, la barra in alto e i pulsanti dello zoom si attenuano perché il pentagramma risalti; punta il mouse o spostati con Tab su di essi per farli riapparire (ADR 0097).
+- La conferma «Link copiato» ora compare sopra il pentagramma e svanisce dopo qualche secondo (ADR 0097).
+- Sui telefoni, «Informazioni», Novità e Scorciatoie da tastiera si aprono come fogli dal basso dello schermo (ADR 0097).
+- Le impostazioni sono raggruppate in cinque schede: Pentagramma, Ritmo, Melodia, Suono e Aspetto. Clic, volume, preconteggio e bordone sono in Suono; lingua, nomi delle note, testina, suggerimenti e tema in Aspetto (ADR 0097).
+
+### Fixed
+
+- Su iPhone in orizzontale, le etichette delle schede delle impostazioni non sono più tagliate finché non tocchi una scheda (ADR 0099).
+- Sui telefoni tenuti in orizzontale, la barra in basso non diventa più un blocco grigio pieno mentre la musica suona. I suoi pulsanti ora sfumano in un gradiente morbido, e il menu ⋯ resta pienamente visibile (ADR 0099).
+- Due tocchi rapidi su un telefono non ingrandiscono più la pagina (ADR 0100).
+
+### Removed
+
+- Il piè di pagina. I suoi link e le sue scorciatoie sono passati nel menu ⋯ (ADR 0097).
+
 ## [2026.10.2] - 2026-10-07
 
 ### Added

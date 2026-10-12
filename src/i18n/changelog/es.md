@@ -2,6 +2,35 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.3] - 2026-10-12
+
+### Added
+
+- Un menú ⋯ en la barra superior reúne el enlace al ejercicio, «Acerca de», Novedades, los atajos de teclado, el tema, GitHub, Privacidad, las redes sociales y Apoyar (ADR 0097).
+- Pulsa ? o elige Atajos de teclado en el menú ⋯ para ver todos los atajos (ADR 0097).
+- Unas etiquetas en la barra superior muestran la clave, el compás y la nota del bordón; toca una para cambiarla (ADR 0097).
+- Afina el bordón con el La a 392 Hz para la afinación barroca francesa, en Ajustes → Sonido (ADR 0094).
+- Cuando el modo de bajo consumo o el ahorro de batería limita la animación a 30 fotogramas por segundo, un aviso te sugiere desactivarlo para un desplazamiento fluido (ADR 0098).
+
+### Changed
+
+- Un nuevo diseño da toda la pantalla a la música: una barra fina arriba, e Iniciar, el tempo, los pulsos y el silencio en una barra abajo, al alcance del pulgar. Los Ajustes se abren como panel lateral en pantallas anchas y como hoja sobre el pentagrama en las más pequeñas; Esc o un toque en el pentagrama cierra la hoja (ADR 0097).
+- En los teléfonos en horizontal, la barra superior y la inferior comparten una sola fila abajo, para que el pentagrama ocupe casi toda la altura (ADR 0097).
+- Mientras suena la música, la barra superior y los botones de zoom se atenúan para que destaque el pentagrama; señálalos o llega a ellos con Tab para que vuelvan (ADR 0097).
+- La confirmación «Enlace copiado» aparece ahora sobre el pentagrama y se desvanece al cabo de unos segundos (ADR 0097).
+- En los teléfonos, «Acerca de», Novedades y Atajos de teclado se abren como hojas desde la parte inferior de la pantalla (ADR 0097).
+- Los ajustes se agrupan en cinco pestañas: Pentagrama, Ritmo, Melodía, Sonido y Vista. El clic, el volumen, la cuenta previa y el bordón están en Sonido; el idioma, los nombres de notas, el cabezal, los consejos y el tema en Vista (ADR 0097).
+
+### Fixed
+
+- En el iPhone en horizontal, las etiquetas de las pestañas de los ajustes ya no aparecen cortadas hasta que tocas una pestaña (ADR 0099).
+- En los teléfonos en horizontal, la barra inferior ya no se convierte en un bloque gris opaco mientras suena la música. Sus botones se desvanecen ahora en un degradado suave, y el menú ⋯ sigue completamente visible (ADR 0099).
+- Tocar dos veces seguidas en un teléfono ya no amplía la página (ADR 0100).
+
+### Removed
+
+- El pie de página. Sus enlaces y atajos se han trasladado al menú ⋯ (ADR 0097).
+
 ## [2026.10.2] - 2026-10-07
 
 ### Added

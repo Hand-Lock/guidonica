@@ -2,6 +2,35 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.3] - 2026-10-12
+
+### Added
+
+- Un menu ⋯ dans la barre du haut réunit le lien vers l'exercice, « À propos », Nouveautés, les raccourcis clavier, le thème, GitHub, Confidentialité, les réseaux sociaux et Soutenir (ADR 0097).
+- Appuyez sur ? ou choisissez Raccourcis clavier dans le menu ⋯ pour voir tous les raccourcis (ADR 0097).
+- Des étiquettes dans la barre du haut affichent la clé, la mesure et la note du bourdon ; touchez-en une pour la changer (ADR 0097).
+- Accordez le bourdon avec le la à 392 Hz pour le diapason baroque français, dans Réglages → Son (ADR 0094).
+- Quand le mode économie d'énergie ou l'économiseur de batterie limite l'animation à 30 images par seconde, un avis vous suggère de le désactiver pour un défilement fluide (ADR 0098).
+
+### Changed
+
+- Une nouvelle disposition donne tout l'écran à la musique : une fine barre en haut, et Démarrer, le tempo, les temps et la coupure du son dans une barre en bas, à portée de pouce. Les Réglages s'ouvrent en panneau latéral sur les grands écrans et en feuille par-dessus la portée sur les plus petits ; Échap ou un toucher sur la portée ferme la feuille (ADR 0097).
+- Sur un téléphone tenu à l'horizontale, la barre du haut et celle du bas partagent une seule ligne en bas, pour laisser presque toute la hauteur à la portée (ADR 0097).
+- Pendant la lecture, la barre du haut et les boutons de zoom s'estompent pour que la portée ressorte ; pointez-les ou atteignez-les avec Tab pour les faire revenir (ADR 0097).
+- La confirmation « Lien copié » apparaît désormais au-dessus de la portée et s'efface après quelques secondes (ADR 0097).
+- Sur téléphone, « À propos », Nouveautés et Raccourcis clavier s'ouvrent en feuilles depuis le bas de l'écran (ADR 0097).
+- Les réglages sont regroupés en cinq onglets : Portée, Rythme, Mélodie, Son et Affichage. Le clic, le volume, le décompte et le bourdon sont dans Son ; la langue, les noms des notes, la tête de lecture, les astuces et le thème dans Affichage (ADR 0097).
+
+### Fixed
+
+- Sur iPhone à l'horizontale, les intitulés des onglets des réglages ne sont plus coupés tant que vous n'avez pas touché un onglet (ADR 0099).
+- Sur un téléphone tenu à l'horizontale, la barre du bas ne devient plus un bloc gris opaque pendant la lecture. Ses boutons s'estompent désormais dans un dégradé doux, et le menu ⋯ reste entièrement visible (ADR 0099).
+- Deux touchers rapides sur un téléphone ne zooment plus la page (ADR 0100).
+
+### Removed
+
+- Le bas de page. Ses liens et ses raccourcis sont passés dans le menu ⋯ (ADR 0097).
+
 ## [2026.10.2] - 2026-10-07
 
 ### Added

@@ -14,6 +14,10 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ## [Unreleased]
 
+## [2026.10.3] - 2026-10-12
+
+> A new layout gives the music the whole screen, with a slim top bar, a thumb-friendly dock and settings in five tabs, plus a ⋯ menu and a keyboard shortcuts sheet.
+
 ### Added
 
 - A ⋯ menu in the top bar gathers the exercise link, About, What's new, keyboard shortcuts, the theme, GitHub, Privacy, the socials and Support (ADR 0097).
@@ -150,7 +154,8 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - First public release.
 
-[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.2...HEAD
+[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.3...HEAD
+[2026.10.3]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.2...v2026.10.3
 [2026.10.2]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.1...v2026.10.2
 [2026.10.1]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.0...v2026.10.1
 [2026.10.0]: https://github.com/Hand-Lock/guidonica/compare/v1.0.0...v2026.10.0

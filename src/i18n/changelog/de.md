@@ -2,6 +2,35 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.3] - 2026-10-12
+
+### Added
+
+- Ein ⋯-Menü in der oberen Leiste bündelt den Link zur Übung, „Über Guidonica“, Neuigkeiten, die Tastenkürzel, die Darstellung, GitHub, Datenschutz, die sozialen Netzwerke und Unterstützen (ADR 0097).
+- Drücken Sie ? oder wählen Sie Tastenkürzel im ⋯-Menü, um alle Tastenkürzel zu sehen (ADR 0097).
+- Chips in der oberen Leiste zeigen Schlüssel, Taktart und Bordunton; tippen Sie auf einen, um ihn zu ändern (ADR 0097).
+- Stimmen Sie den Bordun auf a = 392 Hz für die französische Barockstimmung, unter Einstellungen → Klang (ADR 0094).
+- Wenn der Stromsparmodus oder Energiesparmodus die Animation auf 30 Bilder pro Sekunde begrenzt, schlägt ein Hinweis vor, ihn für flüssiges Scrollen auszuschalten (ADR 0098).
+
+### Changed
+
+- Ein neues Layout gibt der Musik den ganzen Bildschirm: oben eine schmale Leiste, unten eine Leiste mit Start, Tempo, Schlägen und Stummschaltung, in Reichweite des Daumens. Die Einstellungen öffnen sich auf breiten Bildschirmen als Seitenleiste und auf kleineren als Blatt über dem Notensystem; Esc oder ein Tippen auf das Notensystem schließt das Blatt (ADR 0097).
+- Auf quer gehaltenen Telefonen teilen sich die obere und die untere Leiste eine einzige Zeile am unteren Rand, sodass das Notensystem fast die ganze Höhe bekommt (ADR 0097).
+- Während die Musik läuft, treten die obere Leiste und die Zoomknöpfe zurück, damit das Notensystem hervortritt; zeigen Sie mit der Maus darauf oder springen Sie mit Tab hin, um sie zurückzuholen (ADR 0097).
+- Die Bestätigung „Link kopiert“ erscheint jetzt über dem Notensystem und verblasst nach einigen Sekunden (ADR 0097).
+- Auf Telefonen öffnen sich „Über Guidonica“, Neuigkeiten und Tastenkürzel als Blätter vom unteren Bildschirmrand (ADR 0097).
+- Die Einstellungen sind in fünf Reitern gruppiert: Notensystem, Rhythmus, Melodie, Klang und Anzeige. Klick, Lautstärke, Einzähler und Bordun stehen unter Klang; Sprache, Notennamen, Abspielposition, Tipps und Darstellung unter Anzeige (ADR 0097).
+
+### Fixed
+
+- Auf dem iPhone im Querformat sind die Beschriftungen der Einstellungsreiter nicht mehr abgeschnitten, bis Sie auf einen Reiter tippen (ADR 0099).
+- Auf quer gehaltenen Telefonen wird die untere Leiste während der Wiedergabe nicht mehr zu einem harten grauen Block. Ihre Knöpfe blenden jetzt in einem weichen Verlauf aus, und das ⋯-Menü bleibt voll sichtbar (ADR 0099).
+- Zweimal schnell Tippen auf einem Telefon zoomt die Seite nicht mehr (ADR 0100).
+
+### Removed
+
+- Die Fußzeile. Ihre Links und Tastenkürzel sind ins ⋯-Menü umgezogen (ADR 0097).
+
 ## [2026.10.2] - 2026-10-07
 
 ### Added
