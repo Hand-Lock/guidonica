@@ -44,7 +44,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - ADR 0097 documents the stage-first shell: one `#app` grid switched by media queries (wide, compact, short landscape, phone), the docked or overlaid inspector with five ARIA tabs (`src/utils/tabs.ts`), the summary chips (`src/summary.ts`), the ⋯ menu disclosure, the Escape order, focus mode and the `dock` container thresholds. It amends ADRs 0045, 0053, 0054 and 0082; `DESIGN_MANIFESTO.md` §3 and §5F–I, `SPEC.md`, the README and `AGENTS.md` follow (~135 kB of gzipped JS, ~41.7 kB app code, ~9.5 kB CSS).
 - ADR 0098 documents the Low Power Mode notice: WebKit's 30 fps rAF throttle, the `FrameRateMonitor` band test (`src/utils/frameRate.ts`, 75 % of 60 intervals in 30–37 ms) and its tests. The `run-guidonica` driver gains `--fps N` to simulate the throttle.
-- ADR 0099 documents the iOS landscape fixes: `text-size-adjust: 100%` against Mobile Safari's lazy landscape autosizing, the short layout's `#app::before` glass strip, and the `--bar-fade` gradient mask with its `#app.menu-open` exception (`showAppMenu` in `src/main.ts`).
+- ADR 0099 documents the iOS landscape fixes: settings tab labels without their own `overflow: hidden`, which iOS WebKit painted through a stale clip, `text-size-adjust: 100%` as hardening against Mobile Safari's landscape autosizing, the short layout's `#app::before` glass strip, and the `--bar-fade` gradient mask with its `#app.menu-open` exception (`showAppMenu` in `src/main.ts`).
 
 ## [2026.10.2] - 2026-10-07
 

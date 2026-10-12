@@ -1075,10 +1075,12 @@ input[type='range']:focus-visible::-moz-range-thumb {
   transition: background-color var(--fast) ease, border-color var(--fast) ease, color var(--fast) ease;
 }
 
+/* No overflow: hidden here: iOS WebKit painted the labels through a stale,
+   near-empty clip until a tap repainted each tab (ADR 0099). */
 .inspector-tab span {
+  flex-shrink: 0;
   max-width: 100%;
-  overflow: hidden;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   hyphens: auto;
   text-align: center;
 }

@@ -65,10 +65,18 @@ describe('Stage-first shell (ADR 0097)', () => {
     expect(short).toMatch(/\.app-menu \{\s*top: auto;\s*bottom: calc\(100% \+ 8px\);/);
   });
 
-  it('turns off iOS text autosizing, which clipped the landscape tab labels (ADR 0099)', () => {
+  it('turns off iOS text autosizing (ADR 0099)', () => {
     const base = styleCss.match(/html,\nbody \{([^}]*)\}/)?.[1] ?? '';
     expect(base).toContain('-webkit-text-size-adjust: 100%;');
     expect(base).toMatch(/[^-]text-size-adjust: 100%;/);
+  });
+
+  it('never clips the tab labels, which iOS painted through a stale clip (ADR 0099)', () => {
+    const span = styleCss.match(/\n\.inspector-tab span \{([^}]*)\}/)?.[1];
+    expect(span).toBeDefined();
+    expect(span).not.toMatch(/overflow:/);
+    expect(span).toContain('flex-shrink: 0;');
+    expect(span).toContain('overflow-wrap: anywhere;');
   });
 
   it('draws the merged row as one glass strip and fades only the bar contents (ADR 0099)', () => {
