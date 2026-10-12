@@ -200,6 +200,9 @@ const es: Messages = {
   landscapeDismissAria: 'Ocultar el consejo',
   inAppTitle: 'Horizontal en el navegador',
   inAppBody: 'Esta app no gira. Abre Guidonica en tu navegador desde el menú ⋯.',
+  powerTitle: 'Desplazamiento poco fluido',
+  powerBody: 'El pentagrama se mueve a 30 fotogramas por segundo, normalmente porque el modo de bajo consumo o el ahorro de batería está activado. Desactívalo para un desplazamiento fluido.',
+  powerDismissAria: 'Ocultar el aviso',
   dismiss: 'Ocultar',
 
   // Rotating tips (ADR 0087)

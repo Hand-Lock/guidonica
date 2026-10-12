@@ -2106,12 +2106,30 @@ class GuidonicaApp {
 
   private bindAudioEvents(): void {
     this.scroller.onFrame(() => this.syncBeatIndicator());
+    this.bindPowerNotice();
 
     // Handle OS-level audio interruptions (system sleep, Bluetooth disconnect, phone call)
     this.metronome.onInterruption(() => {
       if (globalState.playbackState === 'playing' || globalState.playbackState === 'counting-in') {
         this.pausePlayback();
       }
+    });
+  }
+
+  /**
+   * Low Power Mode and battery saver hold the frame loop to 30 fps; the scroller notices
+   * and this shows the notice once per visit. Nothing is stored (ADR 0098).
+   */
+  private bindPowerNotice(): void {
+    const notice = document.getElementById('power-notice');
+    if (!notice) return;
+    this.scroller.onThrottled(() => {
+      notice.hidden = false;
+      this.scroller.onThrottled(null);
+    });
+    document.getElementById('btn-power-dismiss')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      notice.hidden = true;
     });
   }
 

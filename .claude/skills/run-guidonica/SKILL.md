@@ -110,6 +110,7 @@ dev-server log is in `$TMPDIR/guidonica-dev.log`.
 | `--intro` | off | keeps the onboarding dialog; nothing is seeded in localStorage |
 | `--tips` | off | shows the rotating tip (ADR 0087); without it `showTips: false` is seeded so no tip covers the stage |
 | `--seen VERSION` | `9999.0.0` | last version whose "What's new" notes were seen; pass an older one (e.g. `1.0.0`) against a newer build to open the dialog at boot |
+| `--fps N` | uncapped | caps `requestAnimationFrame` at N fps, as Low Power Mode or battery saver does (`--fps 30` shows `#power-notice` after about 3 s of playback; ADR 0098) |
 | `--out DIR` | `$TMPDIR/guidonica-shots` | screenshot directory |
 
 | step | what it does |
@@ -147,7 +148,7 @@ pnpm preview    # serves dist/ after pnpm build, with the service worker active
 
 ```bash
 pnpm typecheck
-pnpm test       # vitest + happy-dom: 37 files, 1011 tests pass
+pnpm test       # vitest + happy-dom: 39 files, 1031 tests pass
 ```
 
 ## Gotchas
@@ -165,6 +166,7 @@ pnpm test       # vitest + happy-dom: 37 files, 1011 tests pass
 - **Playwright's Firefox and WebKit paint no `backdrop-filter`**, headless or headed: glass panels and the dialog `::backdrop` show unblurred. Real Firefox and Safari blur them; check by hand (ADR 0096).
 - **WebKit: a mouse click does not focus a `<button>`** (macOS behaviour). Use `press:` for focus-dependent checks.
 - **WebKit: `context.setOffline` plus a reload fails with an internal error.** To test offline, stop the preview server instead and reload.
+- **`--fps 30` needs a 60 Hz vsync.** Headless Chromium runs at 60 Hz, so the cap gives 33.3 ms frames and shows `#power-notice`. Headless WebKit vsyncs at about 72 Hz, so the cap gives 42 ms (24 fps) frames, outside the notice's band, and the notice stays hidden (ADR 0098).
 - **Firefox has no `navigator.share`**, so the Share button copies the link to the clipboard there.
 
 ## Troubleshooting

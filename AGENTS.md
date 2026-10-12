@@ -98,6 +98,7 @@ guidonica/
     │   ├── radioGroup.ts   # Shared roving-tabindex radiogroup helpers (intro cards, language chips)
     │   ├── tabs.ts         # Roving-tabindex tablist for the settings inspector (ADR 0097)
     │   ├── inAppBrowser.ts # Portrait-locked in-app browser detection for the landscape tip (ADR 0083)
+    │   ├── frameRate.ts    # Steady ~30 fps rAF detector behind the Low Power Mode notice (ADR 0098)
     │   ├── serviceWorker.ts # Production-only service worker registration (ADR 0063)
     │   └── wakeLock.ts     # Screen Wake Lock controller
     ├── audio/

@@ -220,6 +220,9 @@ const en = {
   landscapeDismissAria: 'Dismiss landscape tip',
   inAppTitle: 'Landscape in your browser',
   inAppBody: "This app can't rotate. Open Guidonica in your browser from the ⋯ menu.",
+  powerTitle: 'Smooth scrolling is limited',
+  powerBody: 'The staff is moving at 30 frames per second, usually because Low Power Mode or battery saver is on. Turn it off for smooth scrolling.',
+  powerDismissAria: 'Dismiss frame rate notice',
   dismiss: 'Dismiss',
 
   // Rotating tips (ADR 0087)

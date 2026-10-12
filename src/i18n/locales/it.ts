@@ -200,6 +200,9 @@ const it: Messages = {
   landscapeDismissAria: 'Chiudi il suggerimento',
   inAppTitle: 'Orizzontale nel browser',
   inAppBody: "Quest'app non ruota. Apri Guidonica nel browser dal menu ⋯.",
+  powerTitle: 'Scorrimento poco fluido',
+  powerBody: 'Il pentagramma si muove a 30 fotogrammi al secondo, di solito perché è attivo il Risparmio energetico o il risparmio batteria. Disattivalo per uno scorrimento fluido.',
+  powerDismissAria: "Chiudi l'avviso",
   dismiss: 'Chiudi',
 
   // Rotating tips (ADR 0087)

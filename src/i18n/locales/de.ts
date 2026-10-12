@@ -200,6 +200,9 @@ const de: Messages = {
   landscapeDismissAria: 'Hinweis ausblenden',
   inAppTitle: 'Querformat im Browser',
   inAppBody: 'Diese App dreht sich nicht. Öffne Guidonica über das ⋯-Menü im Browser.',
+  powerTitle: 'Flüssiges Scrollen eingeschränkt',
+  powerBody: 'Die Notenzeile bewegt sich mit 30 Bildern pro Sekunde, meist weil der Stromsparmodus oder Energiesparmodus aktiv ist. Schalte ihn aus, damit sie flüssig läuft.',
+  powerDismissAria: 'Hinweis ausblenden',
   dismiss: 'Ausblenden',
 
   // Rotating tips (ADR 0087)

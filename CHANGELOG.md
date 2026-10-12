@@ -20,6 +20,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - Press ? or choose Keyboard shortcuts in the ⋯ menu to see every shortcut (ADR 0097).
 - Chips in the top bar show the clef, the meter and the drone note; tap one to change it (ADR 0097).
 - Tune the drone to A = 392 Hz for French Baroque pitch, in Settings → Sound (ADR 0094).
+- When Low Power Mode or battery saver holds animation to 30 frames per second, a notice suggests turning it off for smooth scrolling (ADR 0098).
 
 ### Changed
 
@@ -37,6 +38,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 ### Internal
 
 - ADR 0097 documents the stage-first shell: one `#app` grid switched by media queries (wide, compact, short landscape, phone), the docked or overlaid inspector with five ARIA tabs (`src/utils/tabs.ts`), the summary chips (`src/summary.ts`), the ⋯ menu disclosure, the Escape order, focus mode and the `dock` container thresholds. It amends ADRs 0045, 0053, 0054 and 0082; `DESIGN_MANIFESTO.md` §3 and §5F–I, `SPEC.md`, the README and `AGENTS.md` follow (~135 kB of gzipped JS, ~41.7 kB app code, ~9.5 kB CSS).
+- ADR 0098 documents the Low Power Mode notice: WebKit's 30 fps rAF throttle, the `FrameRateMonitor` band test (`src/utils/frameRate.ts`, 75 % of 60 intervals in 30–37 ms) and its tests. The `run-guidonica` driver gains `--fps N` to simulate the throttle.
 
 ## [2026.10.2] - 2026-10-07
 

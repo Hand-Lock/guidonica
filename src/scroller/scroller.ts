@@ -24,6 +24,7 @@ import { MetronomeEngine } from '../audio/metronome';
 import { MeasureBuffer } from './buffer';
 import { MeasureRenderer } from '../notation/renderer';
 import { isMusicFontReady } from '../notation/fonts';
+import { FrameRateMonitor } from '../utils/frameRate';
 
 /**
  * Measures past the right edge are rendered in idle time, between frames, up to this
@@ -42,6 +43,8 @@ export class ScrollerView {
   private getSettings: () => AppSettings;
   private frameCallback: (() => void) | null = null;
   private resizeCallback: (() => void) | null = null;
+  private throttledCallback: (() => void) | null = null;
+  private frameRate = new FrameRateMonitor();
 
   private dpr: number = 1;
   private zoom: number = DEFAULT_ZOOM;
@@ -196,12 +199,14 @@ export class ScrollerView {
   public startLoop(): void {
     if (this.isLoopRunning) return;
     this.isLoopRunning = true;
+    this.frameRate.reset();
 
     const loop = (now: DOMHighResTimeStamp): void => {
       if (!this.isLoopRunning) return;
       // Advance the frame-locked audio clock once per vsync, before anything reads it (ADR 0089)
       this.metronome.tick(now);
       this.renderFrame();
+      if (this.throttledCallback && this.frameRate.sample(now)) this.throttledCallback();
       this.rafId = requestAnimationFrame(loop);
     };
 
@@ -224,6 +229,14 @@ export class ScrollerView {
    */
   public onResize(callback: (() => void) | null): void {
     this.resizeCallback = callback;
+  }
+
+  /**
+   * Registers a hook invoked once when the loop runs steadily at ~30 fps, as under Low
+   * Power Mode or battery saver (ADR 0098).
+   */
+  public onThrottled(callback: (() => void) | null): void {
+    this.throttledCallback = callback;
   }
 
   public stopLoop(): void {

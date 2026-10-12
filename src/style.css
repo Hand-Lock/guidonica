@@ -1660,8 +1660,9 @@ select:focus-visible {
   }
 }
 
-/* Stage notices: the portrait phone tip (ADR 0055) and the rotating tips (ADR 0087).
-   They float over the stage without resizing it, so they never move auto zoom. */
+/* Stage notices: the frame-rate notice (ADR 0098), the portrait phone tip (ADR 0055) and
+   the rotating tips (ADR 0087). They float over the stage without resizing it, so they
+   never move auto zoom. The frame-rate notice comes first and hides the others while shown. */
 .stage-notice {
   position: absolute;
   top: calc(12px + env(safe-area-inset-top));
@@ -1694,6 +1695,15 @@ select:focus-visible {
 .stage-notice strong {
   display: block;
   color: var(--text);
+}
+
+/* Frame-rate notice: JS shows it once per visit; the tips wait until it is dismissed */
+.power-notice:not([hidden]) {
+  display: flex;
+}
+
+.power-notice:not([hidden]) ~ .stage-notice {
+  display: none;
 }
 
 /* Portrait phone tip: visibility is pure CSS, so rotating hides it at once */

@@ -20,7 +20,7 @@ const STEP_KINDS = ['click', 'press', 'wait', 'scroll', 'text', 'eval', 'shot'];
 
 const USAGE = `usage: driver.mjs --setup [${ENGINES.join('|')} ...]
        driver.mjs [--browser ${ENGINES.join('|')}] [--url URL] [--lang ${LANGS.join('|')}] [--theme ${THEMES.join('|')}]
-                  [--size WxH] [--dpr N] [--intro] [--tips] [--seen VERSION] [--out DIR] <step>...
+                  [--size WxH] [--dpr N] [--intro] [--tips] [--seen VERSION] [--fps N] [--out DIR] <step>...
 steps: click:<sel> press:<Key> wait:<ms> scroll:<sel> text:<sel> eval:<js> shot:<name>`;
 
 function fail(message) {
@@ -53,7 +53,7 @@ function setup(engines) {
 }
 
 function parseArgs(argv) {
-  const opts = { browser: 'chromium', url: 'http://localhost:3000', lang: null, theme: null, width: 1280, height: 900, dpr: 2, intro: false, tips: false, seen: null, out: join(tmpdir(), 'guidonica-shots') };
+  const opts = { browser: 'chromium', url: 'http://localhost:3000', lang: null, theme: null, width: 1280, height: 900, dpr: 2, intro: false, tips: false, seen: null, fps: null, out: join(tmpdir(), 'guidonica-shots') };
   const steps = [];
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -70,6 +70,7 @@ function parseArgs(argv) {
     else if (arg === '--intro') opts.intro = true;
     else if (arg === '--tips') opts.tips = true;
     else if (arg === '--seen') opts.seen = value();
+    else if (arg === '--fps') opts.fps = Number(value());
     else if (arg === '--out') opts.out = resolve(value());
     else if (arg.startsWith('--')) fail(`unknown option ${arg}\n${USAGE}`);
     else {
@@ -83,6 +84,7 @@ function parseArgs(argv) {
   if (opts.lang !== null && !LANGS.includes(opts.lang)) fail(`--lang must be one of ${LANGS.join(', ')}`);
   if (opts.theme !== null && !THEMES.includes(opts.theme)) fail(`--theme must be one of ${THEMES.join(', ')}`);
   if (!(opts.dpr > 0)) fail('--dpr must be a positive number');
+  if (opts.fps !== null && !(opts.fps > 0)) fail('--fps must be a positive number');
   if (steps.length === 0) fail(`no steps given\n${USAGE}`);
   return { opts, steps };
 }
@@ -129,6 +131,40 @@ async function run(opts, steps) {
         localStorage.setItem(`${prefix}settings_v1`, JSON.stringify(settings));
       }
     }, { lang: opts.lang, theme: opts.theme, seen: opts.seen, tips: opts.tips });
+  }
+
+  // --fps caps requestAnimationFrame like Low Power Mode or battery saver (ADR 0098): a
+  // callback waits for the first vsync at least one capped interval after the last delivered
+  // frame. Every callback of one vsync shares its timestamp, so they still run together.
+  if (opts.fps !== null) {
+    await page.addInitScript((fps) => {
+      const minInterval = 1000 / fps - 4;
+      const request = window.requestAnimationFrame.bind(window);
+      const cancel = window.cancelAnimationFrame.bind(window);
+      const pending = new Map();
+      let last = -Infinity;
+      let nextId = 1;
+      window.requestAnimationFrame = (callback) => {
+        const id = nextId++;
+        const step = (time) => {
+          if (!pending.has(id)) return;
+          if (time !== last && time - last < minInterval) {
+            pending.set(id, request(step));
+            return;
+          }
+          pending.delete(id);
+          last = time;
+          callback(time);
+        };
+        pending.set(id, request(step));
+        return id;
+      };
+      window.cancelAnimationFrame = (id) => {
+        const native = pending.get(id);
+        if (native !== undefined) cancel(native);
+        pending.delete(id);
+      };
+    }, opts.fps);
   }
 
   let failed = false;

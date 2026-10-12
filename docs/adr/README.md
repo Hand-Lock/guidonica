@@ -94,7 +94,7 @@ This directory documents the core architectural decisions, implementation method
 | [0086](0086-language-landing-pages.md) | Language Landing Pages | Accepted | 2026-10-06 |
 | [0087](0087-rotating-tips.md) | Rotating Tips | Accepted | 2026-10-06 |
 | [0088](0088-pre-release-audit-2026-10-06.md) | Pre-release Audit 2026-10-06: Second History Rewrite, Privacy Policy | Accepted | 2026-10-06 |
-| [0089](0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted; followed by 0091 | 2026-10-06 |
+| [0089](0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted; followed by 0091, 0098 | 2026-10-06 |
 | [0090](0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted; amended by 0093 | 2026-10-06 |
 | [0091](0091-jank-free-beat-and-measure-frames.md) | Jank-Free Beat and Measure Frames | Accepted | 2026-10-06 |
 | [0092](0092-drone.md) | Drone: a Steady Tonic to Sight-Sing Against | Accepted; amended by 0094, 0095 | 2026-10-06 |
@@ -103,6 +103,7 @@ This directory documents the core architectural decisions, implementation method
 | [0095](0095-output-soft-clipper.md) | Output Headroom: a Zero-Latency Soft Clipper | Accepted | 2026-10-06 |
 | [0096](0096-cross-engine-support-gecko-webkit.md) | Cross-Engine Support: Gecko and WebKit, Chromium Untouched | Accepted | 2026-10-07 |
 | [0097](0097-stage-first-shell.md) | Stage-First Shell: Top Bar, Transport Dock, Tabbed Inspector and ⋯ Menu | Accepted | 2026-10-07 |
+| [0098](0098-low-power-frame-rate-notice.md) | Low Power Mode Frame-Rate Notice | Accepted | 2026-10-12 |
 
 ---
 

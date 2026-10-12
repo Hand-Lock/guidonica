@@ -202,6 +202,9 @@ const fr: Messages = {
   landscapeDismissAria: "Masquer l'astuce",
   inAppTitle: 'Paysage dans le navigateur',
   inAppBody: 'Cette app ne pivote pas. Ouvrez Guidonica dans votre navigateur via le menu ⋯.',
+  powerTitle: 'Défilement saccadé',
+  powerBody: "La portée avance à 30 images par seconde, en général parce que le mode économie d'énergie ou l'économiseur de batterie est activé. Désactivez-le pour un défilement fluide.",
+  powerDismissAria: "Masquer l'avis",
   dismiss: 'Masquer',
 
   // Rotating tips (ADR 0087)
