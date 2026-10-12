@@ -164,6 +164,7 @@ const de: Messages = {
   dronePad: 'Pad',
   droneTuning: 'Bordun-Stimmton',
   droneTuningAria: 'Stimmton des Borduns (a¹)',
+  tuningFrenchBaroque: 'Französischer Barock',
   tuningBaroque: 'Barock',
   tuningClassical: 'Klassik',
   tuningRenaissance: 'Renaissance',

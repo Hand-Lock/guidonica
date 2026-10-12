@@ -1,7 +1,7 @@
 # 0094. Drone Tuning: Baroque, Classical and Renaissance Pitch
 
 - **Status**: Accepted (amends [0092](0092-drone.md))
-- **Date**: 2026-10-06
+- **Date**: 2026-10-06; amended 2026-10-12 (A = 392 Hz, French Baroque)
 - **Author**: Claude & A. C. Lo Cascio
 
 ## Context & Problem Statement
@@ -16,7 +16,7 @@ The drone is the only pitched sound Guidonica makes, so its A4 is the only thing
 
 | Setting | Values | Default | Travels in links |
 |---|---|---|---|
-| `referencePitch` | `415`, `430`, `440`, `442`, `466` (`REFERENCE_PITCHES`) | `440` | yes, `a4=<hz>` |
+| `referencePitch` | `392`, `415`, `430`, `440`, `442`, `466` (`REFERENCE_PITCHES`) | `440` | yes, `a4=<hz>` |
 
 - A fixed list rather than a free number: every value names a practice a teacher can point to, the select stays short, and storage and links validate by membership (`REFERENCE_PITCHES.find`), so `441`, `'415'` and junk fall back.
 - The tuning belongs with the drone note in a link: "sing this in D Dorian at 415" is one exercise. `decodeExercise` reads `a4` against the list and otherwise keeps `base.referencePitch`, so links from before this ADR leave the recipient's tuning alone. The change is additive and the link `VERSION` stays `'1'`.
@@ -33,7 +33,7 @@ $$f = a_4 \cdot 2^{(m - 69)/12}, \qquad m = 48 + [0, 2, 4, 5, 7, 9, 11]_i$$
 
 ### 4. UI
 
-Settings → Practice gains **Drone tuning** after Drone sound, a `select` of five options: "A = 415 Hz (Baroque)", "A = 430 Hz (Classical)", "A = 440 Hz", "A = 442 Hz", "A = 466 Hz (Renaissance)". The note name comes from `pitchClassNames`, like the drone note options, so Labels and the language rename it (La = 415 Hz (Barocco) in Italian). The era names are locale keys (`tuningBaroque`, `tuningClassical`, `tuningRenaissance`); `updatePitchClassLabels` builds the option text. No CSS was added.
+Settings → Practice gains **Drone tuning** after Drone sound, a `select` of six options: "A = 392 Hz (French Baroque)", "A = 415 Hz (Baroque)", "A = 430 Hz (Classical)", "A = 440 Hz", "A = 442 Hz", "A = 466 Hz (Renaissance)". The note name comes from `pitchClassNames`, like the drone note options, so Labels and the language rename it (La = 415 Hz (Barocco) in Italian). The era names are locale keys (`tuningFrenchBaroque`, `tuningBaroque`, `tuningClassical`, `tuningRenaissance`); `updatePitchClassLabels` builds the option text. No CSS was added.
 
 ### 5. The D key
 
@@ -48,6 +48,7 @@ Settings → Practice gains **Drone tuning** after Drone sound, a `select` of fi
 
 - One number threaded through two functions; the click is unpitched and unaffected.
 - The list can grow (432, 435 for 19th-century French *diapason normal*) by adding to `REFERENCE_PITCHES` and, if wanted, an era key.
+- **Amendment (2026-10-12)**: 392 Hz joined the list as the first option, for French Baroque repertoire (Lully, Rameau, Couperin) sung at the *ton de chambre* / *ton d'opéra*, a whole tone below 440 (A3 = 196 Hz). It follows the path above: one value in `REFERENCE_PITCHES`, one `<option>`, and the era key `tuningFrenchBaroque` in every locale. Storage and links validate by membership, so they accept `a4=392` with no other change and `VERSION` stays `'1'`.
 - Equal temperament stays: historical temperaments (meantone, Werckmeister) would matter only for a drone with more than one note, and Guidonica's drone is the tonic alone.
 - The D key is checked in the headless driver (off → C → a chosen G → off → G while playing at 415 Hz); `main.ts` has no unit harness.
 - **Tests**: `tests/drone.test.ts` (frequencies at every reference, a voice built at 430, the engine crossfading a change while playing and ignoring repeats), `tests/share.test.ts` (round trip, a link without `a4` keeps the recipient's, junk falls back) and `tests/storage.test.ts` (default and validation).

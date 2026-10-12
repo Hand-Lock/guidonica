@@ -202,7 +202,7 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 ### Drone
 - Settings → Sound → Drone holds the tonic of any of the seven notes (or Off, the default) to sing against; over white notes a drone on D gives Dorian, on A Aeolian (ADR 0092).
 - Tonic only, in octave 3, 12-TET from the reference pitch $a_4$: $f = a_4 \cdot 2^{(m-69)/12}$, $m = 48 + [0, 2, 4, 5, 7, 9, 11]_i$ (at 440 Hz, C3 ≈ 130.81 Hz … B3 ≈ 246.94 Hz).
-- **Drone tuning** (ADR 0094): A4 = 415 Hz (Baroque), 430 Hz (Classical), 440 Hz (default), 442 Hz or 466 Hz (Renaissance). Changing it during playback crossfades like a note change.
+- **Drone tuning** (ADR 0094): A4 = 392 Hz (French Baroque), 415 Hz (Baroque), 430 Hz (Classical), 440 Hz (default), 442 Hz or 466 Hz (Renaissance). Changing it during playback crossfades like a note change.
 - Two synthesized timbres, equal in loudness, built from `OscillatorNode`, `PeriodicWave`, `BiquadFilterNode` and `GainNode` only:
   - **Shruti box** (default): two reeds at the tonic and its octave, 3 cents apart, under a slow bellows swell.
   - **Pad**: two detuned sawtooths through a slowly breathing lowpass.

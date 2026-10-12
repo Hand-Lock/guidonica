@@ -183,6 +183,7 @@ const en = {
   dronePad: 'Pad',
   droneTuning: 'Drone tuning',
   droneTuningAria: 'Reference pitch of the drone (A4)',
+  tuningFrenchBaroque: 'French Baroque',
   tuningBaroque: 'Baroque',
   tuningClassical: 'Classical',
   tuningRenaissance: 'Renaissance',

@@ -132,6 +132,7 @@ describe('drone voice (ADR 0092)', () => {
   });
 
   it('tunes from any reference pitch (ADR 0094)', () => {
+    expect(droneFrequency('a', 392)).toBe(196);
     expect(droneFrequency('a', 415)).toBe(207.5);
     expect(droneFrequency('a', 466)).toBe(233);
     expect(droneFrequency('c', 415)).toBeCloseTo(123.38, 2);

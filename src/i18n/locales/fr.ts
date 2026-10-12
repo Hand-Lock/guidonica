@@ -166,6 +166,7 @@ const fr: Messages = {
   dronePad: 'Nappe',
   droneTuning: 'Diapason du bourdon',
   droneTuningAria: 'Hauteur de référence du bourdon (La3)',
+  tuningFrenchBaroque: 'Baroque français',
   tuningBaroque: 'Baroque',
   tuningClassical: 'Classique',
   tuningRenaissance: 'Renaissance',

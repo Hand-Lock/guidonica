@@ -2217,6 +2217,7 @@ class GuidonicaApp {
     });
     const m = t();
     const era: Partial<Record<ReferencePitch, string>> = {
+      392: m.tuningFrenchBaroque,
       415: m.tuningBaroque,
       430: m.tuningClassical,
       466: m.tuningRenaissance,

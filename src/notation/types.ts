@@ -194,8 +194,8 @@ export type DroneSound = (typeof DRONE_SOUNDS)[number];
 export type DroneNote = 'off' | PitchClass;
 export const DRONE_NOTES: readonly DroneNote[] = ['off', ...PITCH_CLASSES];
 
-/** The drone's A4 in Hz: Baroque, Classical, modern, orchestral and Renaissance pitch (ADR 0094). */
-export const REFERENCE_PITCHES = [415, 430, 440, 442, 466] as const;
+/** The drone's A4 in Hz: French Baroque, Baroque, Classical, modern, orchestral and Renaissance pitch (ADR 0094). */
+export const REFERENCE_PITCHES = [392, 415, 430, 440, 442, 466] as const;
 export type ReferencePitch = (typeof REFERENCE_PITCHES)[number];
 
 /** Ledger lines reachable above / below the staff (0 to MAX_LEDGER_LINES each). */

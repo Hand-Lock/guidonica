@@ -164,6 +164,7 @@ const es: Messages = {
   dronePad: 'Pad',
   droneTuning: 'Afinación del bordón',
   droneTuningAria: 'Diapasón del bordón (La3)',
+  tuningFrenchBaroque: 'Barroco francés',
   tuningBaroque: 'Barroco',
   tuningClassical: 'Clásico',
   tuningRenaissance: 'Renacimiento',

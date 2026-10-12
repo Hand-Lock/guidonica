@@ -19,6 +19,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - A ⋯ menu in the top bar gathers the exercise link, About, What's new, keyboard shortcuts, the theme, GitHub, Privacy, the socials and Support (ADR 0097).
 - Press ? or choose Keyboard shortcuts in the ⋯ menu to see every shortcut (ADR 0097).
 - Chips in the top bar show the clef, the meter and the drone note; tap one to change it (ADR 0097).
+- Tune the drone to A = 392 Hz for French Baroque pitch, in Settings → Sound (ADR 0094).
 
 ### Changed
 
