@@ -102,8 +102,9 @@ This directory documents the core architectural decisions, implementation method
 | [0094](0094-drone-tuning.md) | Drone Tuning: Baroque, Classical and Renaissance Pitch | Accepted | 2026-10-06 |
 | [0095](0095-output-soft-clipper.md) | Output Headroom: a Zero-Latency Soft Clipper | Accepted | 2026-10-06 |
 | [0096](0096-cross-engine-support-gecko-webkit.md) | Cross-Engine Support: Gecko and WebKit, Chromium Untouched | Accepted | 2026-10-07 |
-| [0097](0097-stage-first-shell.md) | Stage-First Shell: Top Bar, Transport Dock, Tabbed Inspector and ⋯ Menu | Accepted | 2026-10-07 |
+| [0097](0097-stage-first-shell.md) | Stage-First Shell: Top Bar, Transport Dock, Tabbed Inspector and ⋯ Menu | Accepted; amended by 0099 | 2026-10-07 |
 | [0098](0098-low-power-frame-rate-notice.md) | Low Power Mode Frame-Rate Notice | Accepted | 2026-10-12 |
+| [0099](0099-ios-landscape-text-size-and-focus-fade.md) | iOS Landscape: Text Autosizing Off, Focus-Mode Fade on a Glass Strip | Accepted | 2026-10-12 |
 
 ---
 

@@ -143,6 +143,16 @@ export const DOCKED_INSPECTOR_QUERY = '(min-width: 1024px) and (min-height: 501p
 /** Docked and roomy enough to open by default */
 export const OPEN_INSPECTOR_QUERY = '(min-width: 1280px) and (min-height: 501px)';
 
+/**
+ * Shows or hides the ⋯ menu. #app.menu-open lifts the short layout's focus-mode mask,
+ * which would clip the menu opening above the bar (ADR 0099).
+ */
+export function showAppMenu(menu: HTMLElement, toggle: HTMLElement, isOpen: boolean): void {
+  menu.hidden = !isOpen;
+  toggle.setAttribute('aria-expanded', String(isOpen));
+  document.getElementById('app')?.classList.toggle('menu-open', isOpen);
+}
+
 class GuidonicaApp {
   private metronome: MetronomeEngine;
   private generator: MusicGenerator;
@@ -2038,8 +2048,7 @@ class GuidonicaApp {
 
   private setMenuOpen(isOpen: boolean): void {
     if (!this.appMenu || !this.btnMenuToggle) return;
-    this.appMenu.hidden = !isOpen;
-    this.btnMenuToggle.setAttribute('aria-expanded', String(isOpen));
+    showAppMenu(this.appMenu, this.btnMenuToggle, isOpen);
   }
 
   /**

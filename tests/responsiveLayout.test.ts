@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { DOCKED_INSPECTOR_QUERY, OPEN_INSPECTOR_QUERY } from '../src/main';
+import { DOCKED_INSPECTOR_QUERY, OPEN_INSPECTOR_QUERY, showAppMenu } from '../src/main';
 
 const rootDir = path.resolve(__dirname, '..');
 const styleCss = fs.readFileSync(path.join(rootDir, 'src/style.css'), 'utf-8');
@@ -63,6 +63,39 @@ describe('Stage-first shell (ADR 0097)', () => {
     // An auto track sized from content cannot hold a size container
     expect(short).toMatch(/\.app-bar \{\s*container-type: normal;/);
     expect(short).toMatch(/\.app-menu \{\s*top: auto;\s*bottom: calc\(100% \+ 8px\);/);
+  });
+
+  it('turns off iOS text autosizing, which clipped the landscape tab labels (ADR 0099)', () => {
+    const base = styleCss.match(/html,\nbody \{([^}]*)\}/)?.[1] ?? '';
+    expect(base).toContain('-webkit-text-size-adjust: 100%;');
+    expect(base).toMatch(/[^-]text-size-adjust: 100%;/);
+  });
+
+  it('draws the merged row as one glass strip and fades only the bar contents (ADR 0099)', () => {
+    const short = mediaBlock('(max-height: 500px)');
+    expect(short).toMatch(/#app::before \{[^}]*grid-row: 2;[^}]*grid-column: 1 \/ -1;[^}]*backdrop-filter/);
+    expect(short).toMatch(/\.app-bar::before,\s*\.transport-dock::before \{\s*content: none;/);
+    expect(short).toMatch(/\.app-bar \{[^}]*[^-]mask-image: linear-gradient\(90deg, #000, rgb\(0 0 0 \/ var\(--bar-fade\)\) 120px\);/);
+    expect(short).toMatch(/#app\[data-playback='playing'\] \.app-bar:not\(:focus-within\) \{\s*opacity: 1;\s*--bar-fade: 0\.4;/);
+    expect(short).toMatch(/#app\.menu-open \.app-bar \{\s*-webkit-mask-image: none;\s*mask-image: none;/);
+    expect(styleCss).toMatch(/@property --bar-fade \{\s*syntax: '<number>';\s*inherits: false;\s*initial-value: 1;/);
+  });
+
+  it('marks #app while the ⋯ menu is open, so the fade mask never clips it', () => {
+    const body = (indexHtml.match(/<body[\s\S]*<\/body>/)?.[0] ?? '').replace(/<script[\s\S]*?<\/script>/g, '');
+    document.body.innerHTML = new DOMParser().parseFromString(body, 'text/html').body.innerHTML;
+    const app = document.getElementById('app');
+    const menu = document.getElementById('app-menu');
+    const toggle = document.getElementById('btn-menu-toggle');
+    expect(app && menu && toggle).toBeTruthy();
+    if (!app || !menu || !toggle) return;
+    showAppMenu(menu, toggle, true);
+    expect(app.classList.contains('menu-open')).toBe(true);
+    expect(menu.hidden).toBe(false);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    showAppMenu(menu, toggle, false);
+    expect(app.classList.contains('menu-open')).toBe(false);
+    expect(menu.hidden).toBe(true);
   });
 
   it('sheds the merged row by dock width, budgeted for touch and the 12/8 LEDs', () => {
