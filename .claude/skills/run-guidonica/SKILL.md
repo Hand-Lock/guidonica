@@ -51,7 +51,7 @@ To drive both channels, serve `site/` and point the driver at either URL:
 
 ```bash
 (pnpm exec vite preview --outDir site --port 4173 --strictPort > $TMPDIR/guidonica-preview.log 2>&1 &)
-node .claude/skills/run-guidonica/driver.mjs --url http://localhost:4173/nightly/ click:#btn-about-toggle text:#about-version
+node .claude/skills/run-guidonica/driver.mjs --url http://localhost:4173/nightly/ click:#btn-menu-toggle click:#btn-about-toggle text:#about-version
 ```
 
 ## Run (agent path)
@@ -76,7 +76,7 @@ D=.claude/skills/run-guidonica/driver.mjs
 node $D click:#btn-play-pause wait:6000 shot:playing-a wait:1000 shot:playing-b
 
 # About dialog in Italian, dark mode, at phone size, scrolled to the Trademarks section
-node $D --lang it --theme dark --size 390x844 click:#btn-about-toggle \
+node $D --lang it --theme dark --size 390x844 click:#btn-menu-toggle click:#btn-about-toggle \
   'scroll:#modal-about .about-section:has([data-i18n="trademarkHeading"])' wait:300 \
   'text:#modal-about .about-section:has([data-i18n="trademarkHeading"])' shot:about-it-dark-phone
 
@@ -127,9 +127,11 @@ Exit codes: 0 means every step ran and there were no console or page errors.
 1 means a step failed (`step click:#x failed: …`) or errors were logged; they
 are listed after `errors (N):`.
 
-Useful selectors: `#btn-play-pause`, `#btn-reset`, `#btn-about-toggle`,
-`#modal-about`, `#btn-drawer-toggle`, `#controls-drawer`, `#btn-level-toggle`,
-`#modal-intro`, `#btn-theme-toggle`.
+Useful selectors: `#btn-play-pause`, `#btn-reset`, `#modal-about`,
+`#btn-drawer-toggle`, `#controls-drawer`, `#btn-level-toggle`, `#modal-intro`.
+The ⋯ menu (`#btn-menu-toggle`, panel `#app-menu`) holds `#btn-share-exercise`,
+`#btn-about-toggle`, `#btn-menu-whats-new`, `#btn-shortcuts`, `#btn-theme-toggle`
+and the social row `.menu-social`; click `#btn-menu-toggle` first (ADR 0097).
 
 Stop the server only if you started it:
 
@@ -148,7 +150,7 @@ pnpm preview    # serves dist/ after pnpm build, with the service worker active
 
 ```bash
 pnpm typecheck
-pnpm test       # vitest + happy-dom: 39 files, 1031 tests pass
+pnpm test       # vitest + happy-dom: 39 files, 1038 tests pass
 ```
 
 ## Gotchas
@@ -157,6 +159,7 @@ pnpm test       # vitest + happy-dom: 39 files, 1031 tests pass
 - **"What's new" can open at boot and block clicks** (ADR 0078). The driver seeds both channels' keys (`guidonica_` and `guidonica_nightly_`) with the onboarded flag and a far-future seen version, so it stays closed unless you pass `--seen`.
 - **Language and theme are read from the `guidonica_settings_v1` JSON.** Without `--lang`, the language is detected from `navigator.languages`. The driver writes only the fields you pass plus `showTips`, and every other setting stays at its default.
 - **A rotating tip shows at the top of the stage on every returning visit** (ADR 0087). The driver turns tips off by default; pass `--tips` to see one. Each shown tip advances `guidonica_tip_count_v1`, so a reload within one run (`eval:location.reload()` then `wait:`) shows the next one.
+- **About, What's new, shortcuts and the theme toggle are inside the ⋯ menu** (ADR 0097). `click:#btn-about-toggle` alone times out because the item is hidden; run `click:#btn-menu-toggle` first.
 - **The Settings drawer is already open on wide screens.** At 961 px and wider it opens by default whenever the staff still fits, so `click:#btn-drawer-toggle` at the default 1280x900 *closes* it. Use `--size 390x844` to screenshot it opening.
 - **The count-in delays the first notes.** Playback starts with a 4-beat count-in, so shots taken earlier than about 5 s after Play show a stationary staff.
 - **The `AudioContext` needs a user gesture.** Start playback with `click:` or `press:`, never `eval:`.

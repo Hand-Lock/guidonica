@@ -22,6 +22,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 ### Internal
 
 - The README ADR table lists the missing ADRs 0099 and 0100.
+- The run-guidonica skill opens the ⋯ menu before clicking About or the theme toggle, which moved there in ADR 0097.
 
 ## [2026.10.3] - 2026-10-12
 
