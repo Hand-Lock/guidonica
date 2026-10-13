@@ -1,6 +1,6 @@
 # 0084. Instagram Link
 
-- **Status**: Accepted; amended by [0101](0101-tiktok-link.md)
+- **Status**: Accepted; amended by [0101](0101-tiktok-link.md), [0102](0102-youtube-link.md)
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0080](0080-social-profiles-verification.md), [0082](0082-visible-social-links.md)
@@ -39,3 +39,4 @@ Instagram follows the ADR 0082 recipe with no new mechanism:
 - The sprite grows by about 2.2 kB before gzip. No new request, dependency or token.
 - *Amended by [0101](0101-tiktok-link.md)*: TikTok is linked this way, in the ⋯ menu, the follow tip
   and About.
+- *Amended by [0102](0102-youtube-link.md)*: YouTube is linked this way too, after TikTok.

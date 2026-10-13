@@ -17,6 +17,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 ### Added
 
 - The About dialog, the ⋯ menu and the follow tip link to Guidonica on TikTok, where you can watch the trailer (ADR 0101).
+- The About dialog, the ⋯ menu and the follow tip link to Guidonica on YouTube, where the trailer plays as a video and as a Short (ADR 0102).
 
 ### Internal
 

@@ -87,9 +87,9 @@ This directory documents the core architectural decisions, implementation method
 | [0079](0079-social-profile-banners.md) | Social Profile Banners | Accepted | 2026-10-05 |
 | [0080](0080-social-profiles-verification.md) | Social Profiles: rel="me" Verification and Bluesky Domain Handle | Accepted; amended by 0082, 0084 | 2026-10-06 |
 | [0081](0081-release-announcements-bluesky-mastodon.md) | Release Announcements on Bluesky and Mastodon | Accepted | 2026-10-06 |
-| [0082](0082-visible-social-links.md) | Visible Bluesky and Mastodon Links | Accepted; amended by 0084, 0097, 0101 | 2026-10-06 |
+| [0082](0082-visible-social-links.md) | Visible Bluesky and Mastodon Links | Accepted; amended by 0084, 0097, 0101, 0102 | 2026-10-06 |
 | [0083](0083-in-app-browser-landscape-tip.md) | In-App Browser Landscape Tip | Accepted | 2026-10-06 |
-| [0084](0084-instagram-link.md) | Instagram Link | Accepted; amended by 0101 | 2026-10-06 |
+| [0084](0084-instagram-link.md) | Instagram Link | Accepted; amended by 0101, 0102 | 2026-10-06 |
 | [0085](0085-shareable-exercise-links.md) | Shareable Exercise Links | Accepted | 2026-10-06 |
 | [0086](0086-language-landing-pages.md) | Language Landing Pages | Accepted | 2026-10-06 |
 | [0087](0087-rotating-tips.md) | Rotating Tips | Accepted | 2026-10-06 |
@@ -106,7 +106,8 @@ This directory documents the core architectural decisions, implementation method
 | [0098](0098-low-power-frame-rate-notice.md) | Low Power Mode Frame-Rate Notice | Accepted | 2026-10-12 |
 | [0099](0099-ios-landscape-text-size-and-focus-fade.md) | iOS Landscape: Text Autosizing Off, Focus-Mode Fade on a Glass Strip | Accepted | 2026-10-12 |
 | [0100](0100-no-double-tap-zoom.md) | No Double-Tap Zoom: `touch-action: manipulation` on the Root | Accepted | 2026-10-12 |
-| [0101](0101-tiktok-link.md) | TikTok Link | Accepted | 2026-10-13 |
+| [0101](0101-tiktok-link.md) | TikTok Link | Accepted; amended by 0102 | 2026-10-13 |
+| [0102](0102-youtube-link.md) | YouTube Link | Accepted | 2026-10-13 |
 
 ---
 

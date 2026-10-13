@@ -225,7 +225,7 @@ const fr: Messages = {
     playhead: { title: 'Lire sans tête de lecture', body: 'Désactivez Tête de lecture dans Réglages → Affichage → Aides pour lire sans la ligne rouge.' },
     drone: { title: 'Chanter sur un bourdon', body: 'Réglages → Son → Bourdon tient une shruti box ou une nappe sur la note de votre choix. Sur ré, la mélodie est en dorien, sur la en éolien.' },
     whatsNew: { title: 'Nouveautés', body: 'Chaque version apporte du nouveau. Les notes de version sont toujours dans À propos.' },
-    follow: { title: 'Suivre Guidonica', body: 'Les nouvelles versions et des idées de pratique sur Bluesky, Mastodon, Instagram et TikTok.' },
+    follow: { title: 'Suivre Guidonica', body: 'Les nouvelles versions et des idées de pratique sur Bluesky, Mastodon, Instagram, TikTok et YouTube.' },
     support: { title: 'Soutenir Guidonica', body: 'Guidonica est gratuit, sans publicité ni pistage. Un pourboire sur Ko-fi finance son développement.' },
   },
 
@@ -242,6 +242,7 @@ const fr: Messages = {
   mastodonTitle: 'Guidonica sur Mastodon (@guidonica@mastodon.social)',
   instagramTitle: 'Guidonica sur Instagram (@guidonica.it)',
   tiktokTitle: 'Guidonica sur TikTok (@guidonica.it)',
+  youtubeTitle: 'Guidonica sur YouTube (@guidonica)',
 
   aboutTitle: 'À propos de Guidonica',
   closeDialog: 'Fermer',

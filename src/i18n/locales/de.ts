@@ -223,7 +223,7 @@ const de: Messages = {
     playhead: { title: 'Ohne Abspielposition lesen', body: 'Schalte Abspielposition unter Einstellungen → Anzeige → Hilfen aus, um ohne die rote Linie zu lesen.' },
     drone: { title: 'Gegen einen Bordun singen', body: 'Einstellungen → Klang → Bordun hält eine Shruti-Box oder ein Pad auf dem Ton deiner Wahl. Über D klingt die Melodie dorisch, über A äolisch.' },
     whatsNew: { title: 'Neuigkeiten', body: 'Jede Version bringt Neues. Die Versionshinweise findest du jederzeit unter Info.' },
-    follow: { title: 'Guidonica folgen', body: 'Neue Versionen und Übungsideen auf Bluesky, Mastodon, Instagram und TikTok.' },
+    follow: { title: 'Guidonica folgen', body: 'Neue Versionen und Übungsideen auf Bluesky, Mastodon, Instagram, TikTok und YouTube.' },
     support: { title: 'Guidonica unterstützen', body: 'Guidonica ist kostenlos, ohne Werbung und ohne Tracking. Ein Trinkgeld auf Ko-fi finanziert die Weiterentwicklung.' },
   },
 
@@ -240,6 +240,7 @@ const de: Messages = {
   mastodonTitle: 'Guidonica auf Mastodon (@guidonica@mastodon.social)',
   instagramTitle: 'Guidonica auf Instagram (@guidonica.it)',
   tiktokTitle: 'Guidonica auf TikTok (@guidonica.it)',
+  youtubeTitle: 'Guidonica auf YouTube (@guidonica)',
 
   aboutTitle: 'Über Guidonica',
   closeDialog: 'Dialog schließen',

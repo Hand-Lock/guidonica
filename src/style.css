@@ -1911,10 +1911,12 @@ select:focus-visible {
   text-underline-offset: 2px;
 }
 
+/* Five pills plus Ko-fi: below ~360 px a long label (de) wraps Ko-fi to its own line (ADR 0102) */
 .menu-social {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 2px;
+  gap: 4px 2px;
   padding: 2px 4px 2px 4px;
 }
 

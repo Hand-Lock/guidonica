@@ -223,7 +223,7 @@ const es: Messages = {
     playhead: { title: 'Leer sin cabezal', body: 'Desactiva Cabezal en Ajustes → Vista → Ayudas para leer sin la línea roja.' },
     drone: { title: 'Canta sobre un bordón', body: 'Ajustes → Sonido → Bordón sostiene una caja shruti o un pad en la nota que elijas. Sobre Re la melodía es dórica, sobre La eólica.' },
     whatsNew: { title: 'Novedades', body: 'Cada versión trae algo nuevo. Las notas de versión están siempre en Acerca de.' },
-    follow: { title: 'Sigue a Guidonica', body: 'Novedades y propuestas de práctica en Bluesky, Mastodon, Instagram y TikTok.' },
+    follow: { title: 'Sigue a Guidonica', body: 'Novedades y propuestas de práctica en Bluesky, Mastodon, Instagram, TikTok y YouTube.' },
     support: { title: 'Apoya a Guidonica', body: 'Guidonica es gratuita, sin anuncios ni rastreo. Una propina en Ko-fi financia su desarrollo.' },
   },
 
@@ -240,6 +240,7 @@ const es: Messages = {
   mastodonTitle: 'Guidonica en Mastodon (@guidonica@mastodon.social)',
   instagramTitle: 'Guidonica en Instagram (@guidonica.it)',
   tiktokTitle: 'Guidonica en TikTok (@guidonica.it)',
+  youtubeTitle: 'Guidonica en YouTube (@guidonica)',
 
   aboutTitle: 'Acerca de Guidonica',
   closeDialog: 'Cerrar',

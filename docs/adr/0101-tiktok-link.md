@@ -1,6 +1,6 @@
 # 0101. TikTok Link
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0102](0102-youtube-link.md)
 - **Date**: 2026-10-13
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0082](0082-visible-social-links.md), [0084](0084-instagram-link.md)
@@ -41,4 +41,5 @@ TikTok follows the ADR 0082 and 0084 recipe with no new mechanism:
   Instagram, Facebook and Threads only. TikTok's in-app browser is left out until its rotation
   behaviour is checked on a device.
 - The ⋯ menu's social row holds four pills plus Ko-fi and still fits a 375 px phone.
+  *Amended by [0102](0102-youtube-link.md)*: a fifth pill, YouTube, follows TikTok; below ~360 px Ko-fi wraps to its own line.
 - The sprite grows by about 0.8 kB before gzip. No new request, dependency or token.

@@ -15,7 +15,7 @@ Several features stay out of sight for less experienced users:
 - offline install;
 - the "What's new" history.
 
-The Bluesky, Mastodon, Instagram, TikTok and Ko-fi links are in About and in the footer. The footer is hidden at 960 px and below, so a phone user can only reach them through About.
+The Bluesky, Mastodon, Instagram, TikTok, YouTube and Ko-fi links are in About and in the footer. The footer is hidden at 960 px and below, so a phone user can only reach them through About.
 
 Guidonica needs a way to point these out that does not interrupt practice, never runs a timer, adds no dependency, and can be switched off.
 

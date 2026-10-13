@@ -8,7 +8,7 @@
 
 https://github.com/user-attachments/assets/fc6b1dc2-3802-40bb-8175-ab54c51cde60
 
-*24-second trailer: tempo 100→160, triplets, alto clef, wide leaps, five languages. Also on [Instagram @guidonica.it](https://www.instagram.com/guidonica.it/) and [TikTok @guidonica.it](https://www.tiktok.com/@guidonica.it).*
+*24-second trailer: tempo 100→160, triplets, alto clef, wide leaps, five languages. Also on [Instagram @guidonica.it](https://www.instagram.com/guidonica.it/), [TikTok @guidonica.it](https://www.tiktok.com/@guidonica.it) and [YouTube @guidonica](https://www.youtube.com/@guidonica).*
 
 > **Guidonica** is a high-performance, client-only web engine for deliberate sight-reading and solfège practice, inspired by Guido d'Arezzo's historic pedagogical method. It continuously streams procedurally generated sheet music across a fixed playhead in sample-accurate synchronization with a Web Audio synthesized metronome—built with zero framework bloat in pure Vanilla TypeScript, pure CSS3 liquid glass, and 60/120 FPS GPU blitting.
 
@@ -513,9 +513,9 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0079](docs/adr/0079-social-profile-banners.md) | Social Profile Banners | Accepted |
 | [0080](docs/adr/0080-social-profiles-verification.md) | Social Profiles: rel="me" Verification and Bluesky Domain Handle | Accepted; amended by 0082, 0084 |
 | [0081](docs/adr/0081-release-announcements-bluesky-mastodon.md) | Release Announcements on Bluesky and Mastodon | Accepted |
-| [0082](docs/adr/0082-visible-social-links.md) | Visible Bluesky and Mastodon Links | Accepted; amended by 0084, 0097, 0101 |
+| [0082](docs/adr/0082-visible-social-links.md) | Visible Bluesky and Mastodon Links | Accepted; amended by 0084, 0097, 0101, 0102 |
 | [0083](docs/adr/0083-in-app-browser-landscape-tip.md) | In-App Browser Landscape Tip | Accepted |
-| [0084](docs/adr/0084-instagram-link.md) | Instagram Link | Accepted; amended by 0101 |
+| [0084](docs/adr/0084-instagram-link.md) | Instagram Link | Accepted; amended by 0101, 0102 |
 | [0085](docs/adr/0085-shareable-exercise-links.md) | Shareable Exercise Links | Accepted |
 | [0086](docs/adr/0086-language-landing-pages.md) | Language Landing Pages | Accepted |
 | [0087](docs/adr/0087-rotating-tips.md) | Rotating Tips | Accepted |
@@ -532,7 +532,8 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0098](docs/adr/0098-low-power-frame-rate-notice.md) | Low Power Mode Frame-Rate Notice | Accepted |
 | [0099](docs/adr/0099-ios-landscape-text-size-and-focus-fade.md) | iOS Landscape: Text Autosizing Off, Focus-Mode Fade on a Glass Strip | Accepted |
 | [0100](docs/adr/0100-no-double-tap-zoom.md) | No Double-Tap Zoom: `touch-action: manipulation` on the Root | Accepted |
-| [0101](docs/adr/0101-tiktok-link.md) | TikTok Link | Accepted |
+| [0101](docs/adr/0101-tiktok-link.md) | TikTok Link | Accepted; amended by 0102 |
+| [0102](docs/adr/0102-youtube-link.md) | YouTube Link | Accepted |
 
 ---
 
@@ -547,7 +548,7 @@ Issues, translations and code are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING
 - **[hello@guidonica.it](mailto:hello@guidonica.it)**: teachers, schools, press and general questions.
 - **[legal@guidonica.it](mailto:legal@guidonica.it)**: trademark permissions, commercial licensing, takedown notices and privacy requests. How Guidonica handles personal data is in [`PRIVACY.md`](PRIVACY.md).
 - **[security@guidonica.it](mailto:security@guidonica.it)**: security vulnerabilities. Report them privately, never in a public issue; see [`SECURITY.md`](SECURITY.md).
-- **Follow**: [Bluesky @guidonica.it](https://bsky.app/profile/guidonica.it), [Mastodon @guidonica@mastodon.social](https://mastodon.social/@guidonica), [Instagram @guidonica.it](https://www.instagram.com/guidonica.it/) and [TikTok @guidonica.it](https://www.tiktok.com/@guidonica.it).
+- **Follow**: [Bluesky @guidonica.it](https://bsky.app/profile/guidonica.it), [Mastodon @guidonica@mastodon.social](https://mastodon.social/@guidonica), [Instagram @guidonica.it](https://www.instagram.com/guidonica.it/), [TikTok @guidonica.it](https://www.tiktok.com/@guidonica.it) and [YouTube @guidonica](https://www.youtube.com/@guidonica).
 - **Support**: Guidonica is free; voluntary tips go through [Ko-fi](https://ko-fi.com/guidonica).
 
 Bugs and feature requests go to [GitHub issues](https://github.com/Hand-Lock/guidonica/issues).
