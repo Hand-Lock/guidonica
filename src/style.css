@@ -2155,7 +2155,7 @@ dialog.about-dialog::backdrop {
   padding-left: 18px;
 }
 
-/* Bluesky and Mastodon: monochrome logos in the link color (ADR 0082) */
+/* Social links: monochrome logos in the link color (ADRs 0082, 0101) */
 .social-links {
   display: inline-flex;
   flex-wrap: wrap;

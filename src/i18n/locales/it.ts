@@ -223,7 +223,7 @@ const it: Messages = {
     playhead: { title: 'Leggi senza testina', body: 'Disattiva Testina in Impostazioni → Aspetto → Aiuti per leggere senza la linea rossa.' },
     drone: { title: 'Canta su un bordone', body: 'Impostazioni → Suono → Bordone tiene una shruti box o un pad sulla nota che scegli. Su Re la melodia è dorica, su La eolia.' },
     whatsNew: { title: 'Novità', body: 'Ogni versione porta qualcosa di nuovo. Le note di rilascio sono sempre in Informazioni.' },
-    follow: { title: 'Segui Guidonica', body: 'Nuove versioni e idee per esercitarti su Bluesky, Mastodon e Instagram.' },
+    follow: { title: 'Segui Guidonica', body: 'Nuove versioni e idee per esercitarti su Bluesky, Mastodon, Instagram e TikTok.' },
     support: { title: 'Sostieni Guidonica', body: 'Guidonica è gratuita, senza pubblicità né tracciamento. Una mancia su Ko-fi ne finanzia lo sviluppo.' },
   },
 
@@ -239,6 +239,7 @@ const it: Messages = {
   blueskyTitle: 'Guidonica su Bluesky (@guidonica.it)',
   mastodonTitle: 'Guidonica su Mastodon (@guidonica@mastodon.social)',
   instagramTitle: 'Guidonica su Instagram (@guidonica.it)',
+  tiktokTitle: 'Guidonica su TikTok (@guidonica.it)',
 
   aboutTitle: 'Informazioni su Guidonica',
   closeDialog: 'Chiudi',

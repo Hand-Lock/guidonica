@@ -14,6 +14,14 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ## [Unreleased]
 
+### Added
+
+- The About dialog, the ⋯ menu and the follow tip link to Guidonica on TikTok, where you can watch the trailer (ADR 0101).
+
+### Internal
+
+- The README ADR table lists the missing ADRs 0099 and 0100.
+
 ## [2026.10.3] - 2026-10-12
 
 > A new layout gives the music the whole screen, with a slim top bar, a thumb-friendly dock and settings in five tabs, plus a ⋯ menu and a keyboard shortcuts sheet.

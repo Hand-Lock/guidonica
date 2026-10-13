@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Last updated: 6 October 2026. [Versione italiana più sotto](#informativa-sulla-privacy).
+Last updated: 13 October 2026. [Versione italiana più sotto](#informativa-sulla-privacy).
 
 This policy covers the Guidonica™ web app at [guidonica.it](https://guidonica.it), including `/nightly/`, and the project's email addresses. It is written to meet Articles 13 and 14 of the EU General Data Protection Regulation (GDPR).
 
@@ -30,7 +30,7 @@ The legal basis is my legitimate interest in running a secure, working website (
 
 ## External links
 
-Links to GitHub, Ko-fi, Bluesky, Mastodon and Instagram open those services only when you click them, and their own privacy policies then apply.
+Links to GitHub, Ko-fi, Bluesky, Mastodon, Instagram and TikTok open those services only when you click them, and their own privacy policies then apply.
 
 If you leave a tip, Ko-fi and its payment processors (Stripe or PayPal) handle the payment as independent controllers. I receive the tip details that Ko-fi shows to creators, such as the amount, the name you give and any message you write. I keep them only as long as accounting and tax law requires (GDPR Art. 6(1)(c)).
 
@@ -50,7 +50,7 @@ There is no automated decision-making or profiling. If this policy changes, the 
 
 # Informativa sulla privacy
 
-Ultimo aggiornamento: 6 ottobre 2026. [English version above](#privacy-policy).
+Ultimo aggiornamento: 13 ottobre 2026. [English version above](#privacy-policy).
 
 Questa informativa riguarda la web app Guidonica™ su [guidonica.it](https://guidonica.it), compresa `/nightly/`, e gli indirizzi email del progetto. È redatta ai sensi degli articoli 13 e 14 del Regolamento generale sulla protezione dei dati (GDPR).
 
@@ -80,7 +80,7 @@ La base giuridica è il mio legittimo interesse a gestire un sito sicuro e funzi
 
 ## Link esterni
 
-I link a GitHub, Ko-fi, Bluesky, Mastodon e Instagram aprono quei servizi solo quando li clicchi, e da quel momento valgono le loro informative.
+I link a GitHub, Ko-fi, Bluesky, Mastodon, Instagram e TikTok aprono quei servizi solo quando li clicchi, e da quel momento valgono le loro informative.
 
 Se lasci una mancia, Ko-fi e i suoi processori di pagamento (Stripe o PayPal) gestiscono il pagamento come titolari autonomi. Io ricevo i dati della mancia che Ko-fi mostra ai creatori, come l'importo, il nome che indichi e l'eventuale messaggio. Li conservo solo per il tempo richiesto dalla normativa contabile e fiscale (art. 6(1)(c) GDPR).
 

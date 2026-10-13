@@ -1,6 +1,6 @@
 # 0084. Instagram Link
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0101](0101-tiktok-link.md)
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0080](0080-social-profiles-verification.md), [0082](0082-visible-social-links.md)
@@ -37,3 +37,5 @@ Instagram follows the ADR 0082 recipe with no new mechanism:
 - CI still doesn't post releases to Instagram (ADR [0081](0081-release-announcements-bluesky-mastodon.md)):
   it has no text-post API, so Instagram posts stay manual.
 - The sprite grows by about 2.2 kB before gzip. No new request, dependency or token.
+- *Amended by [0101](0101-tiktok-link.md)*: TikTok is linked this way, in the ⋯ menu, the follow tip
+  and About.

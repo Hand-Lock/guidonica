@@ -1,6 +1,6 @@
 # 0082. Visible Bluesky and Mastodon Links
 
-- **Status**: Accepted; amended by 0084, [0097](0097-stage-first-shell.md)
+- **Status**: Accepted; amended by 0084, [0097](0097-stage-first-shell.md), [0101](0101-tiktok-link.md)
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
 
@@ -61,4 +61,5 @@ fails the test.
 - Adding a network (Instagram, later) means a sprite symbol, a `rel="me"` link, a visible link in
   both places and a title key in every locale; the sync test enforces the first three together.
   *Amended by [0084](0084-instagram-link.md)*: Instagram is linked this way.
+  *Amended by [0101](0101-tiktok-link.md)*: TikTok is linked this way.
 - If a network changes its logo, update the path from Simple Icons.

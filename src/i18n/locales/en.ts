@@ -243,7 +243,7 @@ const en = {
     playhead: { title: 'Read without the playhead', body: 'Turn off Playhead in Settings → Display → Assists to read without the red line.' },
     drone: { title: 'Sing against a drone', body: 'Settings → Sound → Drone holds a shruti box or pad on the note you choose. Over D the melody is Dorian, over A Aeolian.' },
     whatsNew: { title: "What's new", body: 'Every release brings something new. The release notes are always in About.' },
-    follow: { title: 'Follow Guidonica', body: 'New releases and practice ideas on Bluesky, Mastodon and Instagram.' },
+    follow: { title: 'Follow Guidonica', body: 'New releases and practice ideas on Bluesky, Mastodon, Instagram and TikTok.' },
     support: { title: 'Support Guidonica', body: 'Guidonica is free, with no ads and no tracking. A tip on Ko-fi funds its development.' },
   } as TipText,
 
@@ -260,6 +260,7 @@ const en = {
   blueskyTitle: 'Guidonica on Bluesky (@guidonica.it)',
   mastodonTitle: 'Guidonica on Mastodon (@guidonica@mastodon.social)',
   instagramTitle: 'Guidonica on Instagram (@guidonica.it)',
+  tiktokTitle: 'Guidonica on TikTok (@guidonica.it)',
 
   // About
   aboutTitle: 'About Guidonica',
