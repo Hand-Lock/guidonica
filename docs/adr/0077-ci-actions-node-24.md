@@ -20,6 +20,8 @@ Each action moves to the latest release whose `action.yml` declares `using: node
 | `actions/upload-pages-artifact` | v3.0.1 | v5.0.0 | composite; runs `upload-artifact` v7.0.0 (node24) | `fc324d3547104276b827a68afc52ff2a11cc49c9` |
 | `actions/deploy-pages` | v4.0.5 | v5.0.1 | node24 | `368f82528645a54fb793d4d04e342629a3f51346` |
 
+**Amendment (2026-10-13)**: `actions/setup-node` moved to v7.1.0 (`949feb2413d6458794dcd2491c4babbbce0c15c1`), a bug-fix release that validates the Node version and retries the manifest fetch. The other pins are still the latest releases.
+
 ### Breaking changes and how each is handled
 
 - **`checkout` v6+** keeps the persisted credentials in a separate file instead of `.git/config`. Neither workflow uses git credentials after checkout, so nothing changes. `dco.yml` keeps `fetch-depth: 0`.

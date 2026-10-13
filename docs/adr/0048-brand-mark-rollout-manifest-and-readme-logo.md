@@ -67,4 +67,4 @@
   - drift guard for `docs/brand/guidonica-mark.svg`;
   - `index.html` links the manifest relatively;
   - the manifest parses, has relative `start_url` and `scope`, and every icon exists as a PNG whose IHDR size matches its `sizes`; one icon is `maskable`.
-- **Follow-up (not done)**: an Open Graph / Twitter social card (1200 × 630). It needs its own layout and typography, so it is out of scope here.
+- **Follow-up: resolved in [ADR 0061](0061-social-preview-card-and-share-metadata.md).** The Open Graph / Twitter social card (1200 × 630) ships as `public/og-image.png`.
