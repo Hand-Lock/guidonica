@@ -44,3 +44,22 @@ export function createOutputStage(ctx: BaseAudioContext): AudioNode {
   shaper.connect(ctx.destination);
   return input;
 }
+
+/** The two buses of the mix: the click's and the drone's (ADR 0092). */
+export interface Mixer {
+  click: GainNode;
+  drone: GainNode;
+}
+
+/**
+ * Builds the whole mix graph on any context: click plus drone can pass full scale, so both
+ * buses meet in one soft clipper (ADR 0095). Shared by the metronome and offline renders (ADR 0103).
+ */
+export function createMixer(ctx: BaseAudioContext): Mixer {
+  const click = ctx.createGain();
+  const drone = ctx.createGain();
+  const output = createOutputStage(ctx);
+  click.connect(output);
+  drone.connect(output);
+  return { click, drone };
+}

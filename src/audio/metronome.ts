@@ -12,8 +12,9 @@ import {
   clampTempo,
   secondsPerBeat,
 } from '../notation/types';
+import { clickAccent, scheduleClick } from './click';
 import { DroneVoice, createDroneVoice } from './drone';
-import { createOutputStage } from './output';
+import { createMixer } from './output';
 
 /** Beat currently being heard, derived from the hardware audio clock (no timers). */
 export interface BeatInfo {
@@ -169,13 +170,11 @@ export class MetronomeEngine {
       if (AudioCtxClass) {
         this.ctx = new AudioCtxClass();
         this.ctx.onstatechange = this.handleAudioContextStateChange;
-        this.masterGainNode = this.ctx.createGain();
-        this.droneBus = this.ctx.createGain();
-        this.droneBus.gain.value = this.droneBusGain();
         // Click plus drone can pass full scale: both meet in one soft clipper (ADR 0095)
-        const output = createOutputStage(this.ctx);
-        this.masterGainNode.connect(output);
-        this.droneBus.connect(output);
+        const mix = createMixer(this.ctx);
+        this.masterGainNode = mix.click;
+        this.droneBus = mix.drone;
+        this.droneBus.gain.value = this.droneBusGain();
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
@@ -443,8 +442,7 @@ export class MetronomeEngine {
   }
 
   private scheduler(): void {
-    if (!this.ctx || !this.isRunning || this.isPaused) return;
-
+    if (!this.ctx || !this.masterGainNode || !this.isRunning || this.isPaused) return;
 
     while (this.nextBeatTime < this.ctx.currentTime + this.scheduleAheadSeconds) {
       const beatTime = this.nextBeatTime;
@@ -455,88 +453,13 @@ export class MetronomeEngine {
         : this.scheduledBeatCount - this.countInBeatsTotal;
       const beatNumber = (beatIndex % this.beatsPerMeasure) + 1;
 
-      // Beat pulse: only the metric beat that starts each felt beat clicks (1, 4, 7, 10 in
-      // 12/8; 1, 3, 5, 7 in 4/2), as every beat does in ungrouped meters (ADR 0076, 0090)
-      const shouldClick = this.pulse === 'division' || (beatNumber - 1) % METER[this.timeSignature].beatGroup === 0;
-
-      if (shouldClick) {
-        this.scheduleClick(beatTime, beatAccent(this.timeSignature, beatNumber));
-      }
+      // The same click voice an offline render uses (ADR 0103)
+      const accent = clickAccent(this.timeSignature, this.pulse, beatNumber);
+      if (accent) scheduleClick(this.ctx, this.masterGainNode, beatTime, accent, this.soundProfile);
 
       this.scheduledBeatCount++;
       this.nextBeatTime += this.secondsPerBeat;
     }
-  }
-
-  private scheduleClick(time: number, accent: BeatAccent): void {
-    if (!this.ctx || !this.masterGainNode) return;
-
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    if (this.soundProfile === 'woodblock') {
-      // Woodblock: sine wave with rapid downward pitch sweep
-      osc.type = 'sine';
-      let freqStart = 1100;
-      let freqEnd = 550;
-      let gainLevel = 0.9;
-
-      if (accent === 'primary') {
-        freqStart = 1600;
-        freqEnd = 800;
-        gainLevel = 1.0;
-      } else if (accent === 'secondary') {
-        freqStart = 1350;
-        freqEnd = 675;
-        gainLevel = 0.95;
-      }
-
-      osc.frequency.setValueAtTime(freqStart, time);
-      osc.frequency.exponentialRampToValueAtTime(freqEnd, time + 0.025);
-
-      gain.gain.setValueAtTime(gainLevel, time);
-      gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.025);
-
-      osc.connect(gain);
-      gain.connect(this.masterGainNode);
-
-      osc.start(time);
-      osc.stop(time + 0.03);
-    } else {
-      // Electronic triangle click
-      osc.type = 'triangle';
-      let freq = 800;
-      let gainLevel = 0.7;
-
-      if (accent === 'primary') {
-        freq = 1300;
-        gainLevel = 1.0;
-      } else if (accent === 'secondary') {
-        freq = 1050;
-        gainLevel = 0.85;
-      }
-
-      osc.frequency.setValueAtTime(freq, time);
-
-      gain.gain.setValueAtTime(gainLevel, time);
-      // Smooth exponential decay over 35 milliseconds
-      gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.035);
-
-      osc.connect(gain);
-      gain.connect(this.masterGainNode);
-
-      osc.start(time);
-      osc.stop(time + 0.04);
-    }
-
-    osc.onended = () => {
-      try {
-        osc.disconnect();
-        gain.disconnect();
-      } catch {
-        // Safe disposal
-      }
-    };
   }
 
   /**

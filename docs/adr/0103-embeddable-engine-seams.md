@@ -1,6 +1,6 @@
 # 0103. Embeddable Engine Seams: Seeded Generation, Explicit-Time Drawing, Offline Audio, Sized Rendering
 
-- **Status**: Proposed (seams 1–2 implemented 2026-10-15; becomes Accepted when all four are)
+- **Status**: Proposed (seams 1–3 implemented 2026-10-15; becomes Accepted when all four are)
 - **Date**: 2026-10-15
 - **Author**: Claude & A. C. Lo Cascio
 - **Relates to**: [0065](0065-grammar-driven-rhythm-sampler.md), [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md), [0067](0067-contribution-licensing-dco-and-trademark-policy.md), [0070](0070-note-selection-and-level-progression.md), [0085](0085-shareable-exercise-links.md), [0089](0089-frame-locked-audio-clock.md), [0092](0092-drone.md), [0095](0095-output-soft-clipper.md)
@@ -113,6 +113,79 @@ exactly as before and never passes anything new.
   no timer. An `OfflineAudioContext` can then render a whole exercise in one call.
 - The live path is unchanged: one realtime `AudioContext`, resumed only inside a user gesture
   (AGENTS.md §3.3), and the 25 ms scheduler queuing clicks 100 ms ahead of `currentTime`.
+
+**Implemented (2026-10-15).** The drone and the soft clipper already took a `BaseAudioContext`;
+what assumed the realtime context lived inside `MetronomeEngine` and moved out:
+
+- `src/audio/click.ts`:
+  - `clickAccent(ts, pulse, beatNumber): BeatAccent | null` is the scheduler's rule, moved
+    verbatim: `null` unless `pulse === 'division'` or `(beatNumber - 1) % METER[ts].beatGroup === 0`,
+    else `beatAccent(ts, beatNumber)`.
+  - `scheduleClick(ctx, out, time, accent, profile)` is the former private method, unchanged
+    except that it feeds `out` instead of the metronome's click gain: woodblock sweep or triangle,
+    envelopes, `start`/`stop`, `onended` disposal. Scalar arguments, so the live scheduler
+    allocates nothing per click. It never reads `ctx.currentTime`.
+  - `scheduleClicks(ctx, out, clicks, profile)` loops it over `Click[] = { time, accent }[]`,
+    with no timer.
+  - `clickTrack({ tempo, timeSignature, pulse, countIn, beats, startTime = 0 })` is the
+    scheduler's beat walk as a list. With `spb = secondsPerBeat(tempo, ts)` (seam 2) and
+    `countInBeats = countIn ? beatsPerMeasure : 0`, beat `k < countInBeats + beats` is at
+    `startTime + k·spb` and has beat number `(k − countInBeats if past the count-in) mod
+    beatsPerMeasure + 1`; it is kept when `clickAccent` is non-null. Measure 0 starts at
+    `startTime + countInBeats·spb`, matching seam 2's `beat = t / spb − countInBeats`. Times are
+    multiplied, not accumulated as in the live loop, so long offline tracks carry no float drift.
+- `createMixer(ctx): { click, drone }` in `src/audio/output.ts` builds the click gain, the drone
+  gain and `createOutputStage(ctx)`, and connects both gains to it: today's graph, creation order
+  and connections, shared by both paths (ADR 0095).
+- `MetronomeEngine` keeps everything realtime: `unlock`/`resume` in gestures, latency, the
+  frame-locked clock, interruptions, gain changes on pause and stop, and the 25 ms `setInterval`
+  scheduler. `ensureAudioContext()` calls `createMixer`, and `scheduler()` calls
+  `clickAccent` and `scheduleClick(this.ctx, this.masterGainNode, …)`: the same nodes, parameter
+  calls and order as before. `metronome.ts` no longer creates an oscillator itself.
+
+An offline render of a whole exercise:
+
+```ts
+const ctx = new OfflineAudioContext(2, Math.ceil((end + 1.2) * 48000), 48000);
+const mix = createMixer(ctx);
+mix.click.gain.value = volume;
+mix.drone.gain.value = droneVolume;
+const startTime = 0.05;
+scheduleClicks(ctx, mix.click, clickTrack({ tempo, timeSignature, pulse, countIn, beats, startTime }), profile);
+createDroneVoice(ctx, mix.drone, droneSound, droneNote, startTime, referencePitch).release(end);
+const buffer = await ctx.startRendering();
+```
+
+Tests, `tests/click.test.ts`, on a recording mock context whose `currentTime` throws:
+`clickAccent` equals the old inline rule for every meter and pulse (12/8 beat pulse clicks 1, 4,
+7, 10; 4/2 clicks 1, 3, 5, 7); `clickTrack` gives 4/4 at 60 with count-in and 8 beats as 12 clicks
+at 0…11 s, primary on 0, 4, 8, and 6/8 on the beat pulse every 1.5 s, with `startTime + k·spb`
+exact; every click starts at its time, stops 30 ms (woodblock) or 40 ms (triangle) later, starts
+at 1600/1350/1100 Hz or 1300/1050/800 Hz and ends in `out`; `createMixer` meets both gains in the
+stage input before the shaper and `destination`. **Live = offline**: a `MetronomeEngine` on a mock
+realtime context, started at `currentTime = 10` and driven by fake 25 ms timers for 24 s, queues
+the same `(start time, start frequency, envelope level)` list as
+`scheduleClicks(clickTrack({ …, startTime: 10.05 }))` up to its 100 ms horizon (times within
+1e-9), for 4/4, 6/8 and 4/2 × both pulses × both profiles × count-in on and off, at 77 BPM so no
+beat falls on a wake-up boundary. `tests/metronome.test.ts`, `tests/drone.test.ts` and
+`tests/output.test.ts` pass unchanged.
+
+Real render, by hand in Chromium 153 through run-guidonica on the dev server (happy-dom has no
+`OfflineAudioContext`, and a Node Web Audio dependency is not worth one check): 4/4 at 120 with
+count-in, 2 bars, `startTime` 0.1, 48 kHz mono, click and drone gains at 1. Onsets (first sample
+with |x| > 1e-3 after ≥ 20 ms of silence) minus `round(time × 48000)`:
+
+| Render | Clicks / onsets | Δ (samples) | Peak |
+|---|---|---|---|
+| woodblock | 12 / 12 | 1 on 11 clicks, 2 on one | 0.828 |
+| triangle | 12 / 12 | 1 on 11 clicks, 2 on one | 0.853 |
+| woodblock + shruti on C, full drone volume | 12 | | 0.979 |
+| triangle + shruti on C, full drone volume | 12 | | 0.929 |
+
+Every Δ is within one 128-sample render quantum (0 ≤ Δ < 128): the oscillator starts on the first
+sample at or after its time, and a sine or triangle starts at zero phase, so its first sample under
+the threshold adds one. The click at 1.1 s adds another: 1.1 × 48000 is a hair above 52800 in
+floating point, so it starts on sample 52801. Peaks stay under full scale with the drone through the soft clipper.
 
 ### 4. Sized and SVG rendering
 

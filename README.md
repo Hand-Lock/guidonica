@@ -534,7 +534,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0100](docs/adr/0100-no-double-tap-zoom.md) | No Double-Tap Zoom: `touch-action: manipulation` on the Root | Accepted |
 | [0101](docs/adr/0101-tiktok-link.md) | TikTok Link | Accepted; amended by 0102 |
 | [0102](docs/adr/0102-youtube-link.md) | YouTube Link | Accepted |
-| [0103](docs/adr/0103-embeddable-engine-seams.md) | Embeddable Engine Seams: Seeded Generation, Explicit-Time Drawing, Offline Audio, Sized Rendering | Proposed; seams 1–2 implemented |
+| [0103](docs/adr/0103-embeddable-engine-seams.md) | Embeddable Engine Seams: Seeded Generation, Explicit-Time Drawing, Offline Audio, Sized Rendering | Proposed; seams 1–3 implemented |
 
 ---
 

@@ -103,6 +103,7 @@ guidonica/
     │   └── wakeLock.ts     # Screen Wake Lock controller
     ├── audio/
     │   ├── metronome.ts    # Web Audio oscillator synthesis & clock scheduler
+    │   ├── click.ts        # Click voice, accents & click track into any BaseAudioContext (ADR 0103)
     │   ├── drone.ts        # Drone synthesis: shruti box, pad (ADR 0092)
     │   └── output.ts       # Output stage: zero-latency soft clipper before the destination (ADR 0095)
     ├── notation/
