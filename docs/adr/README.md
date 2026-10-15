@@ -108,7 +108,7 @@ This directory documents the core architectural decisions, implementation method
 | [0100](0100-no-double-tap-zoom.md) | No Double-Tap Zoom: `touch-action: manipulation` on the Root | Accepted | 2026-10-12 |
 | [0101](0101-tiktok-link.md) | TikTok Link | Accepted; amended by 0102 | 2026-10-13 |
 | [0102](0102-youtube-link.md) | YouTube Link | Accepted | 2026-10-13 |
-| [0103](0103-embeddable-engine-seams.md) | Embeddable Engine Seams: Seeded Generation, Explicit-Time Drawing, Offline Audio, Sized Rendering | Proposed; seam 1 implemented | 2026-10-15 |
+| [0103](0103-embeddable-engine-seams.md) | Embeddable Engine Seams: Seeded Generation, Explicit-Time Drawing, Offline Audio, Sized Rendering | Proposed; seams 1–2 implemented | 2026-10-15 |
 
 ---
 

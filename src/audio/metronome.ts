@@ -10,6 +10,7 @@ import {
   TimeSignature,
   beatAccent,
   clampTempo,
+  secondsPerBeat,
 } from '../notation/types';
 import { DroneVoice, createDroneVoice } from './drone';
 import { createOutputStage } from './output';
@@ -219,9 +220,8 @@ export class MetronomeEngine {
   }
 
   private updateMeterParams(): void {
-    const meter = METER[this.timeSignature];
-    this.beatsPerMeasure = meter.beatsPerMeasure;
-    this.secondsPerBeat = (60 / this.tempo) * meter.secondsPerBeatFactor;
+    this.beatsPerMeasure = METER[this.timeSignature].beatsPerMeasure;
+    this.secondsPerBeat = secondsPerBeat(this.tempo, this.timeSignature);
   }
 
   public setVolume(volume: number): void {

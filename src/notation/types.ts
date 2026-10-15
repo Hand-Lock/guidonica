@@ -62,6 +62,14 @@ export const METER: Record<TimeSignature, MeterConfig> = {
   '6/4': { beatsPerMeasure: 6, beatValue: 4, secondsPerBeatFactor: 1, beatGroup: 3 },
 };
 
+/**
+ * Length of one metric beat at a ♩ BPM tempo: the metronome's clock and an offline
+ * renderer converting seconds to beats share this formula (ADR 0103).
+ */
+export function secondsPerBeat(tempo: number, ts: TimeSignature): number {
+  return (60 / tempo) * METER[ts].secondsPerBeatFactor;
+}
+
 /** Compound meter: a dotted beat of three divisions, 6/8 and 6/4 alike (ADR 0076, 0090). */
 export function isCompound(ts: TimeSignature): boolean {
   return METER[ts].beatGroup === 3;

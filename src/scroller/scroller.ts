@@ -284,11 +284,27 @@ export class ScrollerView {
   }
 
   /**
-   * Primary high-performance rendering frame:
-   * Uses AudioContext.currentTime single source of truth clock and GPU-accelerated blitting.
+   * Primary high-performance rendering frame: draws the stage at the frame-locked audio
+   * clock's beat (ADR 0089) via draw(), queues idle VexFlow work and fires onFrame.
    */
   public renderFrame(overrideSettings?: AppSettings): void {
-    const settings = overrideSettings ?? this.getSettings();
+    this.draw(this.metronome.getVisualBeat(), overrideSettings ?? this.getSettings(), true);
+  }
+
+  /**
+   * Draws the frame the live loop would draw at `visualBeat`, with the same pixel math
+   * (playheadX - NOTE_START_OFFSET·zoom + (startBeat - beat)·beatWidth·zoom), so a caller
+   * can draw frame n at t = n / fps (ADR 0103). It never reads the metronome, never
+   * schedules idle work and never fires onFrame: each call renders synchronously whatever
+   * the stage needs. Beats must not decrease between calls, because measures behind the
+   * playhead are evicted; buffer.reset() starts over.
+   */
+  public renderAt(visualBeat: number, overrideSettings?: AppSettings): void {
+    this.draw(visualBeat, overrideSettings ?? this.getSettings(), false);
+  }
+
+  /** Draws the stage at `visualBeat`; `live` adds idle rendering and the onFrame hook. */
+  private draw(visualBeat: number, settings: AppSettings, live: boolean): void {
     if (settings.zoom !== undefined && settings.zoom !== this.zoom) {
       this.setZoom(settings.zoom);
     }
@@ -310,8 +326,7 @@ export class ScrollerView {
     // 2. Draw continuous stationary staff lines across the entire viewport
     this.drawStaffLines(ctx, 0, w, palette);
 
-    // 3. Obtain visual beat position from hardware audio clock (waits at 0 during count-in)
-    const visualBeat = this.metronome.getVisualBeat();
+    // 3. Beat width at the given beat (the audio clock's waits at 0 during count-in)
     const activeBeatWidth = computeBeatWidth(
       settings.subdivisions,
       settings.timeSignature,
@@ -322,7 +337,7 @@ export class ScrollerView {
     //    rendered between frames (ADR 0091); then evict offscreen measures
     const edgeBeats = this.beatsToRightEdge(activeBeatWidth);
     this.buffer.ensureAhead(visualBeat, edgeBeats + FRAME_LOOKAHEAD_BEATS, settings);
-    if (isMusicFontReady() && this.buffer.getEndBeat() < visualBeat + edgeBeats + IDLE_LOOKAHEAD_BEATS) {
+    if (live && isMusicFontReady() && this.buffer.getEndBeat() < visualBeat + edgeBeats + IDLE_LOOKAHEAD_BEATS) {
       this.scheduleIdleRender();
     }
 
@@ -362,7 +377,7 @@ export class ScrollerView {
 
     ctx.restore();
 
-    this.frameCallback?.();
+    if (live) this.frameCallback?.();
   }
 
   private drawStaffLines(
