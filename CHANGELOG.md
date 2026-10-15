@@ -14,6 +14,10 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ## [Unreleased]
 
+## [2026.10.4] - 2026-10-15
+
+> Follow Guidonica on TikTok and YouTube: the About dialog and the ⋯ menu now link to both, where the trailer plays.
+
 ### Added
 
 - The About dialog, the ⋯ menu and the follow tip link to Guidonica on TikTok, where you can watch the trailer (ADR 0101).
@@ -172,7 +176,8 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - First public release.
 
-[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.3...HEAD
+[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.4...HEAD
+[2026.10.4]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.3...v2026.10.4
 [2026.10.3]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.2...v2026.10.3
 [2026.10.2]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.1...v2026.10.2
 [2026.10.1]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.0...v2026.10.1

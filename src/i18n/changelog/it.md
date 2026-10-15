@@ -2,6 +2,13 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.4] - 2026-10-15
+
+### Added
+
+- «Informazioni», il menu ⋯ e il suggerimento per seguirci portano a Guidonica su TikTok, dove puoi guardare il trailer (ADR 0101).
+- «Informazioni», il menu ⋯ e il suggerimento per seguirci portano a Guidonica su YouTube, dove il trailer è disponibile come video e come Short (ADR 0102).
+
 ## [2026.10.3] - 2026-10-12
 
 ### Added
