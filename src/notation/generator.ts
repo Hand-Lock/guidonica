@@ -32,9 +32,10 @@ import {
   noteSpan,
   placementOf,
 } from './ties';
+import type { Random } from './random';
 
-function pick<T>(items: readonly T[]): T {
-  return items[Math.floor(Math.random() * items.length)];
+function pick<T>(items: readonly T[], random: Random): T {
+  return items[Math.floor(random() * items.length)];
 }
 
 export interface PartitionItem {
@@ -262,8 +263,13 @@ export function tupletCompositions(n: number, value: TupletValue, values: Readon
 }
 
 /** Member lengths of one tuplet: a uniform member count, then a uniform composition (ADR 0066). */
-export function drawTupletMembers(n: number, value: TupletValue, values: ReadonlySet<string>): number[] {
-  return pick(pick(tupletCompositions(n, value, values)));
+export function drawTupletMembers(
+  n: number,
+  value: TupletValue,
+  values: ReadonlySet<string>,
+  random: Random = Math.random
+): number[] {
+  return pick(pick(tupletCompositions(n, value, values), random), random);
 }
 
 // Diatonic pitch pools (C Major / A Minor baseline), derived per clef from the bottom staff line.
@@ -424,7 +430,7 @@ function nearestIndex(steps: readonly number[], step: number): number {
 }
 
 /** startIndex over already-resolved moves. */
-function startFrom(choices: readonly IntervalChoice[], clef: Clef, steps: readonly number[]): number {
+function startFrom(choices: readonly IntervalChoice[], clef: Clef, steps: readonly number[], random: Random): number {
   const anchor = nearestIndex(steps, toStep(CLEF_PITCH_RANGES[clef].defaultAnchor));
   const live = livePitches(choices, steps);
   const seen = new Set<number>([anchor]);
@@ -438,7 +444,7 @@ function startFrom(choices: readonly IntervalChoice[], clef: Clef, steps: readon
       }
     }
   }
-  return live.includes(anchor) && live.every((i) => seen.has(i)) ? anchor : pick(live);
+  return live.includes(anchor) && live.every((i) => seen.has(i)) ? anchor : pick(live, random);
 }
 
 /**
@@ -451,8 +457,13 @@ function startFrom(choices: readonly IntervalChoice[], clef: Clef, steps: readon
  * move by k back; a 9+ leap leaves a 9+ leap back), so a live start never reaches a pitch
  * without a move.
  */
-export function startIndex(intervals: IntervalOptions, clef: Clef, steps: readonly number[]): number {
-  return startFrom(effectiveIntervals(intervals, steps).choices, clef, steps);
+export function startIndex(
+  intervals: IntervalOptions,
+  clef: Clef,
+  steps: readonly number[],
+  random: Random = Math.random
+): number {
+  return startFrom(effectiveIntervals(intervals, steps).choices, clef, steps, random);
 }
 
 /** Last note of the previously generated measure, source of an incoming barline tie. */
@@ -477,7 +488,8 @@ export class MusicGenerator {
   /** Whether the last note or tuplet member was silent: the state of the rest chain. */
   private lastSilent: boolean = false;
 
-  constructor() {
+  /** `random` is every draw's source (ADR 0103): Math.random in the app, seeded to repeat a run. */
+  constructor(private readonly random: Random = Math.random) {
     this.resetPitch();
   }
 
@@ -494,7 +506,7 @@ export class MusicGenerator {
 
   /** One step of the two-state rest chain (ADR 0066). */
   private drawSilent(): boolean {
-    this.lastSilent = Math.random() < (this.lastSilent ? SILENCE_CONTINUE_PROBABILITY : SILENCE_PROBABILITY);
+    this.lastSilent = this.random() < (this.lastSilent ? SILENCE_CONTINUE_PROBABILITY : SILENCE_PROBABILITY);
     return this.lastSilent;
   }
 
@@ -527,7 +539,7 @@ export class MusicGenerator {
       this.lookahead = this.composeRhythm(settings);
       const last = rawRhythms[rawRhythms.length - 1];
       const next = this.lookahead[0];
-      if (canTieAcrossBarline(last, next) && Math.random() < TIE_PROBABILITY) {
+      if (canTieAcrossBarline(last, next) && this.random() < TIE_PROBABILITY) {
         last.tieStart = true;
         next.tieEnd = true;
       }
@@ -550,7 +562,7 @@ export class MusicGenerator {
         this.isFirstNoteOfSession = false;
         // Pool pitch nearest the anchor (treble with 0 ledger lines below starts on D4), or a
         // random live pitch when the anchor cannot reach the whole pool
-        this.lastStep = steps[startFrom(choices, clef, steps)];
+        this.lastStep = steps[startFrom(choices, clef, steps, this.random)];
         pitch = toKey(this.lastStep);
       } else {
         pitch = this.sampleNextPitch(choices, clef, this.lastStep, steps);
@@ -616,7 +628,7 @@ export class MusicGenerator {
    * clamping. The walk is symmetric: up and down are equally likely whenever both exist
    * (ADR 0065). The walk starts on a live pitch (startIndex) and every move is reversible,
    * so some move always exists. With every note on, `steps` is contiguous and the draws
-   * (and their Math.random() order) are those of the index walk before ADR 0070.
+   * (and their draw order) are those of the index walk before ADR 0070.
    */
   private sampleNextPitch(
     choices: readonly IntervalChoice[],
@@ -639,7 +651,7 @@ export class MusicGenerator {
     if (active.length === 0) {
       // Unreachable from a live start; guards a pool or interval change without a reset
       this.consecutiveUnisons = 0;
-      return commit(startFrom(choices, clef, steps));
+      return commit(startFrom(choices, clef, steps, this.random));
     }
 
     // Pick an interval step size from the active set. Unison is softly down-weighted
@@ -647,7 +659,7 @@ export class MusicGenerator {
     // repeated-note runs grow rarer but never become impossible (P > 0).
     const weights = active.map((m) => (m.choice === 0 ? 1 / (1 + this.consecutiveUnisons) : 1));
     const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-    let r = Math.random() * totalWeight;
+    let r = this.random() * totalWeight;
     let chosen = active[active.length - 1];
     for (let i = 0; i < active.length; i++) {
       r -= weights[i];
@@ -669,14 +681,14 @@ export class MusicGenerator {
       const directions: number[][] = [];
       if (chosen.up.length > 0) directions.push(chosen.up);
       if (chosen.down.length > 0) directions.push(chosen.down);
-      return commit(pick(pick(directions)));
+      return commit(pick(pick(directions, this.random), this.random));
     }
 
     // A fixed step lands on at most one pitch per side. Both exist: a fair coin.
     // Feasibility alone keeps the walk in range, so no inward bias is applied and the
     // edge notes stay as reachable as the middle
     if (chosen.up.length > 0 && chosen.down.length > 0) {
-      return commit(Math.random() < 0.5 ? chosen.up[0] : chosen.down[0]);
+      return commit(this.random() < 0.5 ? chosen.up[0] : chosen.down[0]);
     }
     return commit(chosen.up.length > 0 ? chosen.up[0] : chosen.down[0]);
   }
@@ -695,7 +707,7 @@ export class MusicGenerator {
     while (u < grammar.barUnits) {
       const notes = grammar.notes[u];
       const groups = grammar.tuplets[u];
-      const k = Math.floor(Math.random() * (notes.length + (groups.length > 0 ? 1 : 0)));
+      const k = Math.floor(this.random() * (notes.length + (groups.length > 0 ? 1 : 0)));
       if (k < notes.length) {
         const step = notes[k];
         items.push({
@@ -705,13 +717,13 @@ export class MusicGenerator {
         });
         u += step.units;
       } else {
-        const step = pick(groups);
+        const step = pick(groups, this.random);
         items.push(...this.makeTupletItems(ts, step, grammar, rests));
         u += step.units;
       }
     }
     const spelled = rests ? consolidateRests(items, ts, grammar.values) : items;
-    return ties ? applyTies(spelled, ts) : spelled;
+    return ties ? applyTies(spelled, ts, this.random) : spelled;
   }
 
   /**
@@ -731,7 +743,7 @@ export class MusicGenerator {
     const unit = step.units / grammar.unitsPerBeat / n;
     const values = grammar.values;
 
-    const members = drawTupletMembers(n, step.value, values);
+    const members = drawTupletMembers(n, step.value, values, this.random);
 
     const before = this.lastSilent;
     let silent: boolean[];

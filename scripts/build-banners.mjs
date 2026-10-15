@@ -112,7 +112,8 @@ async function captureStrip(browser, url, { clef, seed, width, crop = width, ban
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   await page.addInitScript(({ settings, seed }) => {
-    // mulberry32: the generator draws only from Math.random (generator.ts, ties.ts)
+    // mulberry32, the same as src/notation/random.ts (this runs in the page, so it cannot import it). The app's
+    // generator draws from Math.random by default (ADR 0103), read when it is constructed, after this script
     let a = seed >>> 0;
     Math.random = () => {
       a = (a + 0x6d2b79f5) >>> 0;

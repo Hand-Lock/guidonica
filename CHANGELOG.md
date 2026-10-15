@@ -26,6 +26,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - CI pins `actions/setup-node` v7.1.0 (ADR 0077 amendment), and vitest moves to 5.0.4.
 - ADR 0048 marks its social card follow-up as resolved by ADR 0061.
 - ADR 0103 plans the engine seams (seeded generation, drawing at an explicit time, offline audio, sized and SVG rendering) that let the engine run reproducibly outside the live app.
+- The generator draws from an injectable random source, so a seeded generator repeats the same music exactly; the app still never seeds it (ADR 0103).
 
 ## [2026.10.3] - 2026-10-12
 

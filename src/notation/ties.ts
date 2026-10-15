@@ -1,4 +1,5 @@
 import type { PartitionItem } from './generator';
+import type { Random } from './random';
 import { METER, TimeSignature } from './types';
 
 /** Probability that a legal tie boundary is actually tied (see applyTies). */
@@ -404,7 +405,7 @@ export function canTieAcrossBarline(a: PartitionItem, b: PartitionItem): boolean
  * Every legal tied spelling therefore has P > 0, and no redundant tie (one a single
  * canonical notehead could replace) is ever written. Durations are untouched.
  */
-export function applyTies(items: PartitionItem[], ts: TimeSignature): PartitionItem[] {
+export function applyTies(items: PartitionItem[], ts: TimeSignature, random: Random = Math.random): PartitionItem[] {
   const offsets: number[] = [];
   let offset = 0;
   for (const item of items) {
@@ -414,7 +415,7 @@ export function applyTies(items: PartitionItem[], ts: TimeSignature): PartitionI
   let chainStart = 0;
   for (let i = 0; i < items.length - 1; i++) {
     if (!items[i].tieEnd) chainStart = i;
-    if (isLegalInnerTie(items, offsets, i, chainStart, ts) && Math.random() < TIE_PROBABILITY) {
+    if (isLegalInnerTie(items, offsets, i, chainStart, ts) && random() < TIE_PROBABILITY) {
       items[i].tieStart = true;
       items[i + 1].tieEnd = true;
     }

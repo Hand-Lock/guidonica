@@ -1,6 +1,6 @@
 # 0103. Embeddable Engine Seams: Seeded Generation, Explicit-Time Drawing, Offline Audio, Sized Rendering
 
-- **Status**: Proposed (becomes Accepted when implemented)
+- **Status**: Proposed (seam 1 implemented 2026-10-15; becomes Accepted when all four are)
 - **Date**: 2026-10-15
 - **Author**: Claude & A. C. Lo Cascio
 - **Relates to**: [0065](0065-grammar-driven-rhythm-sampler.md), [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md), [0067](0067-contribution-licensing-dco-and-trademark-policy.md), [0070](0070-note-selection-and-level-progression.md), [0085](0085-shareable-exercise-links.md), [0089](0089-frame-locked-audio-clock.md), [0092](0092-drone.md), [0095](0095-output-soft-clipper.md)
@@ -46,6 +46,29 @@ exactly as before and never passes anything new.
 - **The free app stays unseeded.** It never constructs a seeded generator, and a shared link
   carries no seed (ADR 0085, SPEC: "the generator is never seeded"). Two students who open the same
   link still read different music. A reproducible sequence remains outside the free app.
+
+**Implemented (2026-10-15).** The final signatures:
+
+- `new MusicGenerator(random: Random = Math.random)`, kept as a private readonly field. The default
+  is read at construction, so a page that patches `Math.random` before the generator exists (the
+  banner captures of `scripts/build-banners.mjs`, ADR 0079) still drives it; `resetPitch()` keeps the
+  source.
+- Internal helpers take the source as a **required** argument, so no draw can silently fall back
+  to `Math.random`: `pick(items, random)`, `startFrom(choices, clef, steps, random)`.
+- Exported helpers take it as an **optional trailing** argument, default `Math.random`, so existing
+  callers and tests are unchanged: `drawTupletMembers(n, value, values, random?)`,
+  `startIndex(intervals, clef, steps, random?)` and `applyTies(items, ts, random?)` in `ties.ts`.
+- Inside the class every draw goes through `this.random`: the rest chain, the barline tie, the
+  interval weight, the step direction, the rhythm step, the tuplet group and member draws, the
+  9+ leap, the start pitch and the inner ties. `src/main.ts` and `src/notation/preview.ts` still
+  call `new MusicGenerator()`.
+- `tests/random.test.ts` checks `mulberry32`, then, over every meter and clef at the defaults and
+  with rests, ties, dotted values, every tuplet, every interval including 9+ and a pitch-class
+  subset on: with `Math.random` mocked to throw, a seeded generator never calls it (no leak); the
+  same seed repeats the measure list and another seed does not; and a seeded generator equals the
+  default one with `Math.random` mocked to the same stream, so the draw order is unchanged. A
+  one-off dump of 3 seeds × 192 configurations × 40 bars, before and after the refactor, was
+  byte-identical.
 
 ### 2. Drawing at an explicit time
 
