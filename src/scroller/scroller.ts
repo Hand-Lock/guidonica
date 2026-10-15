@@ -34,6 +34,13 @@ import { FrameRateMonitor } from '../utils/frameRate';
 const IDLE_LOOKAHEAD_BEATS = 6;
 const FRAME_LOOKAHEAD_BEATS = 1;
 
+/** A stage size fixed by the caller instead of read from the window (ADR 0103). */
+export interface FixedViewport {
+  width: number;
+  height: number;
+  dpr: number;
+}
+
 export class ScrollerView {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -72,13 +79,19 @@ export class ScrollerView {
   private rafId: number | null = null;
   private isLoopRunning: boolean = false;
   private resizeObserver: ResizeObserver | null = null;
+  private fixedViewport: FixedViewport | null;
 
+  /**
+   * With `options.viewport`, the stage keeps that size and pixel ratio and never listens
+   * to the window, so renderAt draws the same frame wherever it runs (ADR 0103).
+   */
   constructor(
     canvas: HTMLCanvasElement,
     buffer: MeasureBuffer,
     metronome: MetronomeEngine,
     renderer: MeasureRenderer,
-    getSettings: () => AppSettings
+    getSettings: () => AppSettings,
+    options: { viewport?: FixedViewport } = {}
   ) {
     this.canvas = canvas;
     const context = canvas.getContext('2d', { alpha: false });
@@ -91,8 +104,11 @@ export class ScrollerView {
     this.renderer = renderer;
     this.getSettings = getSettings;
     this.zoom = getSettings().zoom || DEFAULT_ZOOM;
+    this.fixedViewport = options.viewport ?? null;
 
     this.updateDimensions();
+    // A fixed stage never resizes, so it listens to nothing
+    if (this.fixedViewport) return;
     // Observe the wrapper, not the window: collapsing the settings drawer resizes the
     // canvas area without any window resize. The window listener only catches dpr
     // changes (dragging to a monitor of different density) the observer cannot see.
@@ -161,11 +177,12 @@ export class ScrollerView {
   };
 
   public updateDimensions(): void {
-    this.dpr = window.devicePixelRatio || 1;
+    const fixed = this.fixedViewport;
+    this.dpr = fixed ? fixed.dpr : window.devicePixelRatio || 1;
     const parent = this.canvas.parentElement;
-    let width = window.innerWidth;
-    let height = window.innerHeight - 60;
-    if (parent) {
+    let width = fixed ? fixed.width : window.innerWidth;
+    let height = fixed ? fixed.height : window.innerHeight - 60;
+    if (parent && !fixed) {
       // Content box, not border box: the wrapper pads by the notch insets (ADR 0056)
       const rect = parent.getBoundingClientRect();
       const style = getComputedStyle(parent);

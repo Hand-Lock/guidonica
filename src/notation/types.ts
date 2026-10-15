@@ -661,6 +661,14 @@ export interface RenderedMeasure {
   height: number;
 }
 
+/** A measure drawn as detached SVG: viewBox in measure units, width/height in CSS px (ADR 0103). */
+export interface RenderedMeasureSvg {
+  data: MeasureData;
+  svg: SVGSVGElement;
+  width: number;
+  height: number;
+}
+
 /** Global metric layout constants */
 export const NOTE_START_OFFSET = 26; // Padding before beat 0 after the left barline
 export const MEASURE_CANVAS_HEIGHT = 220;

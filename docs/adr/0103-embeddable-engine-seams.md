@@ -1,6 +1,6 @@
 # 0103. Embeddable Engine Seams: Seeded Generation, Explicit-Time Drawing, Offline Audio, Sized Rendering
 
-- **Status**: Proposed (seams 1–3 implemented 2026-10-15; becomes Accepted when all four are)
+- **Status**: Accepted (2026-10-15; all four seams implemented)
 - **Date**: 2026-10-15
 - **Author**: Claude & A. C. Lo Cascio
 - **Relates to**: [0065](0065-grammar-driven-rhythm-sampler.md), [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md), [0067](0067-contribution-licensing-dco-and-trademark-policy.md), [0070](0070-note-selection-and-level-progression.md), [0085](0085-shareable-exercise-links.md), [0089](0089-frame-locked-audio-clock.md), [0092](0092-drone.md), [0095](0095-output-soft-clipper.md)
@@ -195,6 +195,71 @@ floating point, so it starts on sample 52801. Peaks stay under full scale with t
 - It can also render a measure through VexFlow's SVG backend (`Renderer.Backends.SVG`) next to the
   offscreen canvas, with the same layout code and the same subset music font (ADR 0058). The live
   app keeps blitting canvases (AGENTS.md §1).
+
+**Implemented (2026-10-15).** In `src/notation/renderer.ts` and `src/scroller/scroller.ts`:
+
+- **Constructor.** `new MeasureRenderer({ dpr?, zoom? } = {})`. `dpr` is clamped to ≥ 1 and not
+  above; `window.devicePixelRatio` is read only when it is left out. `zoom` goes through the
+  existing `setZoom` clamp. `setDpr`/`setZoom` are unchanged, and `src/main.ts` and
+  `src/notation/preview.ts` still call `new MeasureRenderer()` and set the ratio themselves.
+- **No target-height input** (changed from the plan above). All geometry is in
+  `MEASURE_CANVAS_HEIGHT` (220) units, and a measure canvas is `220 · zoom · dpr` pixels tall, so
+  a caller reaches any pixel height through `dpr` (e.g. `dpr = 1080 / 220` at zoom 1). A separate
+  height would only be a third name for the same factor. `zoom` stays clamped to the app's
+  0.3–1.5, since it also sets the on-screen size of the live stage.
+- **Backend-free drawing.** `private drawMeasure(ctx: RenderContext, data, theme)` holds the old
+  body, from `setFillStyle`/`setStrokeStyle` to the cross-barline ties, unchanged and in the same
+  order; it returns the stave notes, tuplets and tuplet locations. `drawPinnedClef(ctx, …)` is
+  the header's equivalent.
+- **Labels.** The old `drawSolfegeLabels` is now the pure, exported
+  `solfegeLabelPlacements(data, staveNotes, tupletByNote, tupletLocations, labels): { text, x, y }[]`,
+  with the same anchor, tuplet clearance (ADR 0041, 0057) and margin clamp. `renderMeasure` keeps
+  the old raw 2D block (`save`, `fillStyle`, `font`, `textAlign center`, `textBaseline middle`,
+  one `fillText` per placement, `restore`) under the same `dpr · zoom` transform (ADR 0042).
+- **SVG.** `renderMeasureSvg(data, theme, labels): RenderedMeasureSvg` (`{ data, svg, width,
+  height }`, in `types.ts`) and `renderPinnedClefSvg(clef, ts, theme, meterSigns): SVGSVGElement`
+  build an `SVGContext` on a detached `<div>`, `resize(width · zoom, 220 · zoom)` and set the
+  viewBox to `0 0 width 220` directly (not through `scale(zoom)`, since `width · zoom / zoom` need
+  not round-trip), then call the same draw function. Labels are `<text>` with
+  `text-anchor="middle"`, `dominant-baseline="middle"`, Alegreya Sans 700 11 px and the palette's
+  solfège colour, at coordinates rounded to 3 places like VexFlow's. `overflow="hidden"` clips a
+  cross-barline tie half as the canvas edge does. The `<svg>` is detached before it is returned.
+  The SVG path never reads the pixel ratio. VexFlow measures text on its own static canvas
+  whatever the backend, so both lay out identically, and `vexflow/core` already contains
+  `SVGContext`: the build's VexFlow chunk is unchanged (93.29 kB gzipped), the app chunk grows
+  from 42.46 to 42.95 kB.
+- **Fonts.** Glyphs are `<text>` in the inherited `font-family="Guidonica Notation"`. Inline in the
+  page, they use the registered subset face (ADR 0058). A standalone `.svg` file has no access to
+  it: an exporter must add an `@font-face` with the subset woff2 (and the text fonts for labels).
+  Nothing new ships for that here.
+- **Fixed scroller viewport.** `new ScrollerView(…, getSettings, { viewport?: { width, height,
+  dpr } })`. With it, `updateDimensions()` takes the size and ratio from the option instead of the
+  window and the parent's content box; the 300 × 220 minimums, the playhead, the staff geometry
+  and `renderer.setDpr` are unchanged, and the constructor registers no ResizeObserver and no
+  window listener. Without it, nothing changes. This makes seam 2's `renderAt` independent of the
+  browser window, so seams 2 and 4 compose: frame `n` at any size.
+
+Tests: `tests/svgRender.test.ts` renders seeded measures (seam 1) for 4/4, 6/8, 3/2 and 12/8 ×
+treble and bass, with ties, dotted values, rests, every tuplet the meter allows and labels on.
+The canvas `fillText` list (glyphs, tuplet digits and labels, in order) equals the SVG `<text>`
+list within 1e-3; the SVG's `width`/`height` are `width · zoom`/`220 · zoom` with viewBox
+`0 0 width 220` and hidden overflow; glyphs inherit the music font and labels are centred bold
+Alegreya Sans; renderers at dpr 1 and 3 give the same SVG (ids aside); and the pinned header's
+SVG draws the same glyphs as its canvas, with and without the C and ¢ signs. With
+`window.devicePixelRatio` throwing, `{ dpr: 2, zoom: 1.5 }` sizes canvases to
+`floor(width · 3) × floor(220 · 3)`, and `dpr = 1080 / 220` gives a 1080-pixel measure; without
+options the window's ratio is used. In `tests/renderAt.test.ts`, a fixed 1920 × 1080 viewport
+ignores a parent of 1000 × 500, puts the playhead at `round(1920 · 0.22)`, hands the renderer dpr 1
+and registers no listener or observer; a fixed 640 × 360 at dpr 3 gives a 1920 × 1080 canvas; and
+`renderAt` on a fixed 1000 × 500 viewport draws exactly the calls of a window-sized one, for three
+meters and zooms. The other render suites pass unchanged.
+
+A one-off dump of every 2D call and property write (labels on, dpr 2, zoom 1.2) over 3 seeds × 12
+meters × 4 clefs × 8 bars, plus two pinned headers per combination, was byte-identical before and
+after the refactor (1,065,481 calls). By hand in Chromium 153 through run-guidonica, the same seeded
+4/4, 6/8 and 3/2 measures and headers drawn as canvas and as inline SVG were visually identical,
+with every glyph in the music font, and the live app played, zoomed and paused with no console
+errors.
 
 ## Implementation Order
 

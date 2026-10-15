@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ScrollerView } from '../src/scroller/scroller';
+import { FixedViewport, ScrollerView } from '../src/scroller/scroller';
 import { MeasureBuffer } from '../src/scroller/buffer';
 import { MusicGenerator } from '../src/notation/generator';
 import { mulberry32 } from '../src/notation/random';
@@ -51,23 +51,34 @@ function recordingContext(calls: Call[]): CanvasRenderingContext2D {
 interface Stage {
   scroller: ScrollerView;
   buffer: MeasureBuffer;
+  canvas: HTMLCanvasElement;
   calls: Call[];
   playheadX: number;
+  /** Every pixel ratio the scroller handed the renderer. */
+  dprs: number[];
 }
 
-function makeStage(settings: AppSettings, metronome: MetronomeEngine, seed: number): Stage {
+function makeStage(
+  settings: AppSettings,
+  metronome: MetronomeEngine,
+  seed: number,
+  viewport?: FixedViewport
+): Stage {
   const parent = document.createElement('main');
   const canvas = document.createElement('canvas');
   parent.appendChild(canvas);
   parent.getBoundingClientRect = () => ({ width: 1000, height: 500 }) as DOMRect;
 
+  const dprs: number[] = [];
   const renderer = {
     renderMeasure: (data: MeasureData): RenderedMeasure => {
       const measureCanvas = document.createElement('canvas');
       labels.set(measureCanvas, `m${data.index}@${data.startBeat}:${JSON.stringify(data.notes)}`);
       return { data, canvas: measureCanvas, width: data.width, height: 1 };
     },
-    setDpr: () => {},
+    setDpr: (dpr: number) => {
+      dprs.push(dpr);
+    },
     renderPinnedClef: () => {
       const clef = document.createElement('canvas');
       labels.set(clef, 'clef');
@@ -75,10 +86,10 @@ function makeStage(settings: AppSettings, metronome: MetronomeEngine, seed: numb
     },
   } as unknown as MeasureRenderer;
   const buffer = new MeasureBuffer(new MusicGenerator(mulberry32(seed)), renderer);
-  const scroller = new ScrollerView(canvas, buffer, metronome, renderer, () => settings);
+  const scroller = new ScrollerView(canvas, buffer, metronome, renderer, () => settings, { viewport });
   const calls = recorders.get(canvas) ?? [];
   const playheadX = (scroller as unknown as { playheadX: number }).playheadX;
-  return { scroller, buffer, calls, playheadX };
+  return { scroller, buffer, canvas, calls, playheadX, dprs };
 }
 
 /** A rising, irregular beat sequence to about 40 beats. */
@@ -177,6 +188,58 @@ describe('Drawing a frame at an explicit beat (ADR 0103 seam 2)', () => {
     const blit = calls.find((c) => c[0] === 'drawImage' && String(c[1]).startsWith(`m${target.index}@`));
     expect(blit?.[6]).toBeCloseTo(playheadX - NOTE_START_OFFSET * scroller.getZoom(), 9);
     scroller.destroy();
+  });
+
+  it('keeps a fixed viewport whatever the window and parent measure (ADR 0103 seam 4)', () => {
+    const addListener = vi.spyOn(window, 'addEventListener');
+    const observer = vi.fn();
+    vi.stubGlobal('ResizeObserver', observer);
+    const settings: AppSettings = { ...structuredClone(DEFAULT_APP_SETTINGS), zoom: 1 };
+    // The parent reports 1000 × 500, which the fixed viewport overrides
+    const { scroller, canvas, playheadX, dprs } = makeStage(settings, throwingMetronome, 5, {
+      width: 1920,
+      height: 1080,
+      dpr: 1,
+    });
+    expect(canvas.width).toBe(1920);
+    expect(canvas.height).toBe(1080);
+    expect(scroller.getViewportWidth()).toBe(1920);
+    expect(playheadX).toBe(Math.round(1920 * 0.22));
+    expect(dprs).toEqual([1]);
+    expect(addListener).not.toHaveBeenCalled();
+    expect(observer).not.toHaveBeenCalled();
+
+    scroller.setZoom(0.5);
+    expect(canvas.width).toBe(1920);
+    expect(dprs).toEqual([1, 1]);
+    scroller.destroy();
+    addListener.mockRestore();
+  });
+
+  it('sizes the canvas by the fixed pixel ratio', () => {
+    const settings: AppSettings = structuredClone(DEFAULT_APP_SETTINGS);
+    const { scroller, canvas, dprs } = makeStage(settings, throwingMetronome, 5, { width: 640, height: 360, dpr: 3 });
+    expect(canvas.width).toBe(1920);
+    expect(canvas.height).toBe(1080);
+    expect(canvas.style.width).toBe('640px');
+    expect(dprs).toEqual([3]);
+    scroller.destroy();
+  });
+
+  it.each(CASES)('draws the same frames at a fixed viewport as on a window of that size ($timeSignature, zoom $zoom)', ({ timeSignature, zoom }) => {
+    const settings: AppSettings = { ...structuredClone(DEFAULT_APP_SETTINGS), timeSignature, zoom };
+    const windowed = makeStage(settings, throwingMetronome, 13);
+    const fixed = makeStage(settings, throwingMetronome, 13, { width: 1000, height: 500, dpr: window.devicePixelRatio || 1 });
+    expect(fixed.playheadX).toBe(windowed.playheadX);
+    for (const beat of beatSequence()) {
+      windowed.calls.length = 0;
+      fixed.calls.length = 0;
+      windowed.scroller.renderAt(beat);
+      fixed.scroller.renderAt(beat);
+      expect(fixed.calls).toEqual(windowed.calls);
+    }
+    windowed.scroller.destroy();
+    fixed.scroller.destroy();
   });
 
   it('converts tempo to seconds per beat with the meter factor', () => {

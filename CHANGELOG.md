@@ -29,6 +29,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - The generator draws from an injectable random source, so a seeded generator repeats the same music exactly; the app still never seeds it (ADR 0103).
 - The scroller can draw the frame for any beat, not only the audio clock's, with the same pixel math as playback (ADR 0103).
 - The metronome's clicks and mix can be built into any audio context, so a whole exercise can render offline with the sound of playback (ADR 0103).
+- The measure renderer takes its pixel ratio as a parameter and can draw measures as SVG with the same layout, and the scroller can draw at a fixed size, so frames and print pages render at any size (ADR 0103).
 
 ## [2026.10.3] - 2026-10-12
 

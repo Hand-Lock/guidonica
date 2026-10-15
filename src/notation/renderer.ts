@@ -4,7 +4,9 @@ import {
   Formatter,
   Metrics,
   ModifierContext,
+  RenderContext,
   Renderer,
+  SVGContext,
   Stave,
   StaveNote,
   StaveTie,
@@ -26,6 +28,7 @@ import {
   NoteData,
   PINNED_HEADER_WIDTH,
   RenderedMeasure,
+  RenderedMeasureSvg,
   STAVE_CANVAS_Y,
   ThemeMode,
   TimeSignature,
@@ -86,6 +89,9 @@ function tieDirection(note: StaveNote): number {
 /** Distance from notehead center to label center: half head (5) + gap (~4) + half text height (~6). */
 export const SOLFEGE_LABEL_OFFSET = 15;
 const SOLFEGE_FONT_PX = 11;
+const SOLFEGE_FONT_WEIGHT = 700;
+const SOLFEGE_FONT_FAMILY = '"Alegreya Sans", system-ui, sans-serif';
+const SOLFEGE_FONT = `${SOLFEGE_FONT_WEIGHT} ${SOLFEGE_FONT_PX}px ${SOLFEGE_FONT_FAMILY}`;
 /** Labels stay at least this far from the measure canvas's top and bottom edges. */
 const SOLFEGE_CANVAS_MARGIN = 8;
 
@@ -124,9 +130,110 @@ function labelFor(labels: readonly string[], key: string): string {
   return index < 0 ? '' : labels[index] ?? '';
 }
 
+/** What a drawn measure hands its solfège labels. */
+interface DrawnMeasure {
+  staveNotes: StaveNote[];
+  tuplets: Tuplet[];
+  tupletLocations: Map<Tuplet, number>;
+}
+
+/** A label to center at (x, y), in measure units (MEASURE_CANVAS_HEIGHT tall). */
+export interface LabelPlacement {
+  text: string;
+  x: number;
+  y: number;
+}
+
+/** Each sounding, articulated note's label, with its tuplet looked up per note. */
+function labelPlacements(data: MeasureData, drawn: DrawnMeasure, labels: readonly string[]): LabelPlacement[] {
+  const tupletByNote = new Map<StaveNote, Tuplet>();
+  for (const tuplet of drawn.tuplets) {
+    for (const note of tuplet.getNotes()) {
+      if (note instanceof StaveNote) tupletByNote.set(note, tuplet);
+    }
+  }
+  return solfegeLabelPlacements(data, drawn.staveNotes, tupletByNote, drawn.tupletLocations, labels);
+}
+
+/**
+ * Where each note's solfège label is centered, in measure units: the notehead anchor,
+ * moved clear of its tuplet's bracket and number on the same side, and kept inside the
+ * measure's top and bottom margins. Shared by the canvas and SVG backends (ADR 0103).
+ */
+export function solfegeLabelPlacements(
+  data: MeasureData,
+  staveNotes: StaveNote[],
+  tupletByNote: Map<StaveNote, Tuplet>,
+  tupletLocations: Map<Tuplet, number>,
+  labels: readonly string[]
+): LabelPlacement[] {
+  const placements: LabelPlacement[] = [];
+  for (let i = 0; i < data.notes.length; i++) {
+    const nData = data.notes[i];
+    // Tie continuations are not re-articulated, so they get no syllable
+    if (nData.isRest || nData.tieEnd || !nData.keys || nData.keys.length === 0) continue;
+    const label = labelFor(labels, nData.keys[0]);
+    if (!label) continue;
+
+    const staveNote = staveNotes[i];
+    // Stem direction is read after beaming, since Beam may have flipped it
+    const stemDir = staveNote.getStemDirection();
+    const anchor = solfegeLabelAnchor(
+      staveNote.getNoteHeadBeginX(),
+      staveNote.getNoteHeadEndX(),
+      staveNote.getYs()[0],
+      stemDir
+    );
+    let y = anchor.y;
+    const tuplet = tupletByNote.get(staveNote);
+    if (tuplet) {
+      // A label on the same side as its tuplet's bracket and number clears them (ADR 0041, 0057)
+      const location = tupletLocations.get(tuplet) ?? Tuplet.LOCATION_TOP;
+      const labelAbove = stemDir !== Stem.UP;
+      if (labelAbove && location === Tuplet.LOCATION_TOP) {
+        y = Math.min(y, tuplet.getYPosition() - SOLFEGE_LABEL_OFFSET);
+      } else if (!labelAbove && location === Tuplet.LOCATION_BOTTOM) {
+        y = Math.max(y, tuplet.getYPosition() + SOLFEGE_LABEL_OFFSET);
+      }
+    }
+    y = Math.max(SOLFEGE_CANVAS_MARGIN, Math.min(MEASURE_CANVAS_HEIGHT - SOLFEGE_CANVAS_MARGIN, y));
+    placements.push({ text: label, x: anchor.x, y });
+  }
+  return placements;
+}
+
+/** SVG coordinates are rounded like VexFlow's SVGContext (Tables.RENDER_PRECISION_PLACES = 3). */
+function svgRound(n: number): number {
+  return Math.round(n * 1000) / 1000;
+}
+
+/**
+ * An SVG context `width` × MEASURE_CANVAS_HEIGHT units in its viewBox, displayed at
+ * `zoom` times that size. Never reads the pixel ratio: SVG is resolution-free (ADR 0103).
+ */
+function measureSvgContext(width: number, zoom: number): SVGContext {
+  const ctx = new SVGContext(document.createElement('div'));
+  ctx.resize(width * zoom, MEASURE_CANVAS_HEIGHT * zoom);
+  // Set directly, not via scale(zoom): width·zoom/zoom need not round-trip to width
+  ctx.setViewBox(0, 0, width, MEASURE_CANVAS_HEIGHT);
+  // A cross-barline tie half is clipped at the edge, as the canvas clips it
+  ctx.svg.setAttribute('overflow', 'hidden');
+  return ctx;
+}
+
 export class MeasureRenderer {
-  private dpr: number = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+  private dpr: number;
   private zoom: number = DEFAULT_ZOOM;
+
+  /**
+   * `dpr` multiplies canvas pixels and is not clamped above 1, so a caller reaches any
+   * pixel height (MEASURE_CANVAS_HEIGHT · zoom · dpr) through it; the window's ratio is
+   * read only when it is left out. `zoom` is clamped to the app's range (ADR 0103).
+   */
+  constructor(options: { dpr?: number; zoom?: number } = {}) {
+    this.dpr = Math.max(1, options.dpr ?? ((typeof window !== 'undefined' && window.devicePixelRatio) || 1));
+    if (options.zoom !== undefined) this.setZoom(options.zoom);
+  }
 
   public setDpr(dpr: number): void {
     this.dpr = Math.max(1, dpr);
@@ -158,16 +265,87 @@ export class MeasureRenderer {
     canvas.width = Math.max(1, Math.floor(data.width * dpr * zoom));
     canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr * zoom));
 
-    const palette = CANVAS_PALETTE[resolveTheme(theme)];
-    const noteColor = palette.ink;
-    const staffColor = palette.staff;
-    const tupletColor = palette.tuplet;
-    const solfegeColor = palette.solfege;
-
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     // No renderer.resize(): VexFlow re-applies devicePixelRatio on top of our sizing (dpr²).
     const ctx = renderer.getContext();
     ctx.scale(dpr * zoom, dpr * zoom);
+    const drawn = this.drawMeasure(ctx, data, theme);
+
+    // Draw pedagogical Solfège syllables or note names beside noteheads
+    if (labels) {
+      const rawCtx = canvas.getContext('2d');
+      if (rawCtx) {
+        // Keep the context's current transform: it is exactly the one VexFlow drew the notes
+        // with (our dpr·zoom), so notehead coordinates map 1:1. Never setTransform here —
+        // labels must share whatever matrix the notes used (see ADR 0041, ADR 0042).
+        rawCtx.save();
+        rawCtx.fillStyle = CANVAS_PALETTE[resolveTheme(theme)].solfege;
+        rawCtx.font = SOLFEGE_FONT;
+        rawCtx.textAlign = 'center';
+        rawCtx.textBaseline = 'middle';
+        for (const { text, x, y } of labelPlacements(data, drawn, labels)) {
+          rawCtx.fillText(text, x, y);
+        }
+        rawCtx.restore();
+      }
+    }
+
+    return {
+      data,
+      canvas,
+      width: data.width * zoom,
+      height: MEASURE_CANVAS_HEIGHT * zoom,
+    };
+  }
+
+  /**
+   * Renders a measure as SVG with the same layout as renderMeasure: the viewBox is the
+   * measure's own units and the element is `zoom` times that size. Glyphs are text in the
+   * music font (ADR 0058), so a standalone file must embed it with @font-face (ADR 0103).
+   */
+  public renderMeasureSvg(
+    data: MeasureData,
+    theme: ThemeMode = 'auto',
+    labels: readonly string[] | null = null
+  ): RenderedMeasureSvg {
+    const zoom = this.zoom;
+    const ctx = measureSvgContext(data.width, zoom);
+    const drawn = this.drawMeasure(ctx, data, theme);
+    const svg = ctx.svg;
+
+    if (labels) {
+      const color = CANVAS_PALETTE[resolveTheme(theme)].solfege;
+      for (const { text, x, y } of labelPlacements(data, drawn, labels)) {
+        const node = svg.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'text');
+        node.setAttribute('x', String(svgRound(x)));
+        node.setAttribute('y', String(svgRound(y)));
+        node.setAttribute('fill', color);
+        node.setAttribute('stroke', 'none');
+        node.setAttribute('font-family', SOLFEGE_FONT_FAMILY);
+        node.setAttribute('font-size', `${SOLFEGE_FONT_PX}px`);
+        node.setAttribute('font-weight', String(SOLFEGE_FONT_WEIGHT));
+        node.setAttribute('text-anchor', 'middle');
+        node.setAttribute('dominant-baseline', 'middle');
+        node.textContent = text;
+        svg.appendChild(node);
+      }
+    }
+
+    svg.remove();
+    return {
+      data,
+      svg,
+      width: data.width * zoom,
+      height: MEASURE_CANVAS_HEIGHT * zoom,
+    };
+  }
+
+  /** Lays out and draws a measure through any VexFlow backend; labels are left to the caller. */
+  private drawMeasure(ctx: RenderContext, data: MeasureData, theme: ThemeMode): DrawnMeasure {
+    const palette = CANVAS_PALETTE[resolveTheme(theme)];
+    const noteColor = palette.ink;
+    const staffColor = palette.staff;
+    const tupletColor = palette.tuplet;
     ctx.setFillStyle(noteColor);
     ctx.setStrokeStyle(noteColor);
 
@@ -391,26 +569,7 @@ export class MeasureRenderer {
       });
     }
 
-    // Draw pedagogical Solfège syllables or note names beside noteheads
-    if (labels) {
-      const rawCtx = canvas.getContext('2d');
-      if (rawCtx) {
-        const tupletByNote = new Map<StaveNote, Tuplet>();
-        for (const tuplet of tuplets) {
-          for (const note of tuplet.getNotes()) {
-            if (note instanceof StaveNote) tupletByNote.set(note, tuplet);
-          }
-        }
-        this.drawSolfegeLabels(rawCtx, data, staveNotes, tupletByNote, tupletLocations, labels, solfegeColor);
-      }
-    }
-
-    return {
-      data,
-      canvas,
-      width: data.width * zoom,
-      height: MEASURE_CANVAS_HEIGHT * zoom,
-    };
+    return { staveNotes, tuplets, tupletLocations };
   }
 
   /**
@@ -427,17 +586,41 @@ export class MeasureRenderer {
   ): HTMLCanvasElement {
     const dpr = this.dpr;
     const zoom = this.zoom;
-    const width = PINNED_HEADER_WIDTH;
     const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.floor(width * dpr * zoom));
+    canvas.width = Math.max(1, Math.floor(PINNED_HEADER_WIDTH * dpr * zoom));
     canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr * zoom));
-
-    const headerColor = CANVAS_PALETTE[resolveTheme(theme)].ink;
 
     const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     // No renderer.resize(): VexFlow re-applies devicePixelRatio on top of our sizing (dpr²).
     const ctx = renderer.getContext();
     ctx.scale(dpr * zoom, dpr * zoom);
+    this.drawPinnedClef(ctx, clef, timeSignature, theme, meterSigns);
+    return canvas;
+  }
+
+  /** The pinned header as SVG, sized and laid out like renderPinnedClef (ADR 0103). */
+  public renderPinnedClefSvg(
+    clef: Clef | null,
+    timeSignature: TimeSignature | null,
+    theme: ThemeMode,
+    meterSigns = false
+  ): SVGSVGElement {
+    const ctx = measureSvgContext(PINNED_HEADER_WIDTH, this.zoom);
+    this.drawPinnedClef(ctx, clef, timeSignature, theme, meterSigns);
+    const svg = ctx.svg;
+    svg.remove();
+    return svg;
+  }
+
+  private drawPinnedClef(
+    ctx: RenderContext,
+    clef: Clef | null,
+    timeSignature: TimeSignature | null,
+    theme: ThemeMode,
+    meterSigns: boolean
+  ): void {
+    const width = PINNED_HEADER_WIDTH;
+    const headerColor = CANVAS_PALETTE[resolveTheme(theme)].ink;
     ctx.setFillStyle(headerColor);
     ctx.setStrokeStyle(headerColor);
 
@@ -461,60 +644,6 @@ export class MeasureRenderer {
       mod.setStyle({ fillStyle: headerColor, strokeStyle: headerColor });
     }
     stave.setContext(ctx).draw();
-
-    return canvas;
-  }
-
-  private drawSolfegeLabels(
-    rawCtx: CanvasRenderingContext2D,
-    data: MeasureData,
-    staveNotes: StaveNote[],
-    tupletByNote: Map<StaveNote, Tuplet>,
-    tupletLocations: Map<Tuplet, number>,
-    labels: readonly string[],
-    color: string
-  ): void {
-    // Keep the context's current transform: it is exactly the one VexFlow drew the notes
-    // with (our dpr·zoom), so notehead coordinates map 1:1. Never setTransform here —
-    // labels must share whatever matrix the notes used (see ADR 0041, ADR 0042).
-    rawCtx.save();
-    rawCtx.fillStyle = color;
-    rawCtx.font = `700 ${SOLFEGE_FONT_PX}px "Alegreya Sans", system-ui, sans-serif`;
-    rawCtx.textAlign = 'center';
-    rawCtx.textBaseline = 'middle';
-
-    for (let i = 0; i < data.notes.length; i++) {
-      const nData = data.notes[i];
-      // Tie continuations are not re-articulated, so they get no syllable
-      if (nData.isRest || nData.tieEnd || !nData.keys || nData.keys.length === 0) continue;
-      const label = labelFor(labels, nData.keys[0]);
-      if (!label) continue;
-
-      const staveNote = staveNotes[i];
-      // Stem direction is read after beaming, since Beam may have flipped it
-      const stemDir = staveNote.getStemDirection();
-      const anchor = solfegeLabelAnchor(
-        staveNote.getNoteHeadBeginX(),
-        staveNote.getNoteHeadEndX(),
-        staveNote.getYs()[0],
-        stemDir
-      );
-      let y = anchor.y;
-      const tuplet = tupletByNote.get(staveNote);
-      if (tuplet) {
-        // A label on the same side as its tuplet's bracket and number clears them (ADR 0041, 0057)
-        const location = tupletLocations.get(tuplet) ?? Tuplet.LOCATION_TOP;
-        const labelAbove = stemDir !== Stem.UP;
-        if (labelAbove && location === Tuplet.LOCATION_TOP) {
-          y = Math.min(y, tuplet.getYPosition() - SOLFEGE_LABEL_OFFSET);
-        } else if (!labelAbove && location === Tuplet.LOCATION_BOTTOM) {
-          y = Math.max(y, tuplet.getYPosition() + SOLFEGE_LABEL_OFFSET);
-        }
-      }
-      y = Math.max(SOLFEGE_CANVAS_MARGIN, Math.min(MEASURE_CANVAS_HEIGHT - SOLFEGE_CANVAS_MARGIN, y));
-      rawCtx.fillText(label, anchor.x, y);
-    }
-    rawCtx.restore();
   }
 
   /**
@@ -551,7 +680,7 @@ export class MeasureRenderer {
   }
 
   private drawBarlineTie(
-    ctx: ReturnType<Renderer['getContext']>,
+    ctx: RenderContext,
     note: StaveNote,
     noteColor: string,
     span: { firstX: number; lastX: number }
