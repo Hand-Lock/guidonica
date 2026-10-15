@@ -25,6 +25,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - The run-guidonica skill opens the ⋯ menu before clicking About or the theme toggle, which moved there in ADR 0097.
 - CI pins `actions/setup-node` v7.1.0 (ADR 0077 amendment), and vitest moves to 5.0.4.
 - ADR 0048 marks its social card follow-up as resolved by ADR 0061.
+- ADR 0103 plans the engine seams (seeded generation, drawing at an explicit time, offline audio, sized and SVG rendering) that let the engine run reproducibly outside the live app.
 
 ## [2026.10.3] - 2026-10-12
 
