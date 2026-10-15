@@ -1,8 +1,18 @@
-import { AppSettings, RenderedMeasure, getBeatsPerMeasure } from '../notation/types';
+import { AppSettings, NoteNames, RenderedMeasure, SolfegeLabelMode, getBeatsPerMeasure } from '../notation/types';
 import { MusicGenerator } from '../notation/generator';
 import { MeasureRenderer } from '../notation/renderer';
 import { isMusicFontReady } from '../notation/fonts';
-import { noteLabels } from '../i18n';
+
+/**
+ * The note-name table for a label mode, indexed c d e f g a b, or null for no labels.
+ * The app resolves it from the UI language; an embedder passes its own (ADR 0104).
+ */
+export type LabelResolver = (mode: SolfegeLabelMode) => readonly string[] | null;
+
+/** A fixed-language resolver over a locale's `noteNames`, e.g. `labelResolver(it.noteNames)`. */
+export function labelResolver(names: NoteNames): LabelResolver {
+  return (mode) => (mode === 'none' ? null : mode === 'syllables' ? names.syllables : names.letters);
+}
 
 export class MeasureBuffer {
   private measures: RenderedMeasure[] = [];
@@ -11,10 +21,12 @@ export class MeasureBuffer {
 
   private generator: MusicGenerator;
   private renderer: MeasureRenderer;
+  private labels: LabelResolver;
 
-  constructor(generator: MusicGenerator, renderer: MeasureRenderer) {
+  constructor(generator: MusicGenerator, renderer: MeasureRenderer, labels: LabelResolver) {
     this.generator = generator;
     this.renderer = renderer;
+    this.labels = labels;
   }
 
   public getMeasures(): readonly RenderedMeasure[] {
@@ -48,7 +60,7 @@ export class MeasureBuffer {
     this.measures = this.measures.map((m) => {
       m.canvas.width = 0;
       m.canvas.height = 0;
-      return this.renderer.renderMeasure(m.data, settings.theme, noteLabels(settings.solfegeLabelMode));
+      return this.renderer.renderMeasure(m.data, settings.theme, this.labels(settings.solfegeLabelMode));
     });
   }
 
@@ -100,7 +112,7 @@ export class MeasureBuffer {
       const rendered = this.renderer.renderMeasure(
         measureData,
         settings.theme,
-        noteLabels(settings.solfegeLabelMode)
+        this.labels(settings.solfegeLabelMode)
       );
       this.measures.push(rendered);
 

@@ -5,6 +5,7 @@ import { MeasureRenderer } from '../src/notation/renderer';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import { AppSettings, MeasureData, RenderedMeasure, getBeatsPerMeasure } from '../src/notation/types';
 import en from '../src/i18n/locales/en';
+import { noteLabels } from '../src/i18n';
 
 vi.mock('../src/notation/fonts', () => ({ isMusicFontReady: () => true }));
 
@@ -20,7 +21,7 @@ describe('MeasureBuffer.rerender', () => {
       })
     );
     const renderer = { renderMeasure } as unknown as MeasureRenderer;
-    const buffer = new MeasureBuffer(generator, renderer);
+    const buffer = new MeasureBuffer(generator, renderer, noteLabels);
     const settings: AppSettings = structuredClone(DEFAULT_APP_SETTINGS);
 
     buffer.ensureAhead(0, 12, settings);
@@ -55,7 +56,7 @@ describe('MeasureBuffer.ensureAhead measure limit (ADR 0091)', () => {
         height: 1,
       })
     );
-    const buffer = new MeasureBuffer(new MusicGenerator(), { renderMeasure } as unknown as MeasureRenderer);
+    const buffer = new MeasureBuffer(new MusicGenerator(), { renderMeasure } as unknown as MeasureRenderer, () => null);
     return { buffer, renderMeasure };
   };
   const settings: AppSettings = structuredClone(DEFAULT_APP_SETTINGS);

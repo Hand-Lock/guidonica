@@ -475,6 +475,13 @@ export interface SubdivisionOptions {
 
 /** Note labels drawn beside noteheads; the UI language supplies the spelling (ADR 0059). */
 export type SolfegeLabelMode = 'none' | 'syllables' | 'letters';
+
+/** A locale's note names, indexed c d e f g a b: the shape of every `Messages['noteNames']`. */
+export interface NoteNames {
+  syllables: readonly string[];
+  letters: readonly string[];
+}
+
 export type SoundProfile = 'triangle' | 'woodblock';
 /** Click on every felt beat or on every metric beat of a grouped meter (ADR 0076, 0090). */
 export type PulseMode = 'beat' | 'division';
@@ -614,6 +621,55 @@ export const MIN_ZOOM = 0.3;
 export const MAX_ZOOM = 1.5;
 export const DEFAULT_ZOOM = 1.0;
 export const ZOOM_STEP = 0.1;
+
+/** The settings of a first visit; the app replaces `language` with the browser's on load. */
+export const DEFAULT_APP_SETTINGS: AppSettings = {
+  tempo: 60,
+  timeSignature: '4/4',
+  clef: 'treble',
+  ledgerLines: { above: 3, below: 3 },
+  subdivisions: {
+    whole: true,
+    half: true,
+    quarter: true,
+    eighth: true,
+    sixteenth: false,
+    thirtySecond: false,
+    dotted: true,
+  },
+  tuplets: structuredClone(DEFAULT_TUPLET_OPTIONS),
+  rests: false,
+  ties: false,
+  intervals: {
+    unison: false,
+    second: true,
+    third: true,
+    fourth: false,
+    fifth: false,
+    sixth: false,
+    seventh: false,
+    octave: false,
+    ninthPlus: false,
+  },
+  pitchClasses: { c: true, d: true, e: true, f: true, g: true, a: true, b: true },
+  solfegeLabelMode: 'none',
+  language: 'en', // Replaced by the detected browser language on load
+  soundProfile: 'woodblock',
+  pulse: 'beat',
+  meterSigns: false,
+  countIn: true,
+  theme: 'auto',
+  volume: 0.8,
+  isMuted: false,
+  droneNote: 'off',
+  droneSound: 'shruti', // Sustained: the steadiest reference to sing against
+  droneVolume: 0.6,
+  referencePitch: 440,
+  zoom: DEFAULT_ZOOM,
+  zoomMode: 'auto',
+  showPlayhead: true,
+  showTips: true,
+};
 
 export type PlaybackState = 'stopped' | 'counting-in' | 'playing' | 'paused';
 

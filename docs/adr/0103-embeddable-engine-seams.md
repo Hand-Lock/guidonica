@@ -3,7 +3,7 @@
 - **Status**: Accepted (2026-10-15; all four seams implemented)
 - **Date**: 2026-10-15
 - **Author**: Claude & A. C. Lo Cascio
-- **Relates to**: [0065](0065-grammar-driven-rhythm-sampler.md), [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md), [0067](0067-contribution-licensing-dco-and-trademark-policy.md), [0070](0070-note-selection-and-level-progression.md), [0085](0085-shareable-exercise-links.md), [0089](0089-frame-locked-audio-clock.md), [0092](0092-drone.md), [0095](0095-output-soft-clipper.md)
+- **Relates to**: [0065](0065-grammar-driven-rhythm-sampler.md), [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md), [0067](0067-contribution-licensing-dco-and-trademark-policy.md), [0070](0070-note-selection-and-level-progression.md), [0085](0085-shareable-exercise-links.md), [0089](0089-frame-locked-audio-clock.md), [0092](0092-drone.md), [0095](0095-output-soft-clipper.md), [0104](0104-engine-entry-point.md)
 
 ## Context & Problem Statement
 

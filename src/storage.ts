@@ -2,7 +2,7 @@ import {
   AppSettings,
   CLEFS,
   Clef,
-  DEFAULT_TUPLET_OPTIONS,
+  DEFAULT_APP_SETTINGS,
   DRONE_NOTES,
   DRONE_SOUNDS,
   DroneNote,
@@ -51,53 +51,8 @@ export const LEGACY_STORAGE_KEY_V1 = 'solfege_scroller_settings_v1';
 const LEGACY_KEYS: readonly string[] =
   __APP_CHANNEL__ === 'nightly' ? [] : [LEGACY_STORAGE_KEY_V2, LEGACY_STORAGE_KEY_V1];
 
-export const DEFAULT_APP_SETTINGS: AppSettings = {
-  tempo: 60,
-  timeSignature: '4/4',
-  clef: 'treble',
-  ledgerLines: { above: 3, below: 3 },
-  subdivisions: {
-    whole: true,
-    half: true,
-    quarter: true,
-    eighth: true,
-    sixteenth: false,
-    thirtySecond: false,
-    dotted: true,
-  },
-  tuplets: structuredClone(DEFAULT_TUPLET_OPTIONS),
-  rests: false,
-  ties: false,
-  intervals: {
-    unison: false,
-    second: true,
-    third: true,
-    fourth: false,
-    fifth: false,
-    sixth: false,
-    seventh: false,
-    octave: false,
-    ninthPlus: false,
-  },
-  pitchClasses: { c: true, d: true, e: true, f: true, g: true, a: true, b: true },
-  solfegeLabelMode: 'none',
-  language: 'en', // Replaced by the detected browser language on load
-  soundProfile: 'woodblock',
-  pulse: 'beat',
-  meterSigns: false,
-  countIn: true,
-  theme: 'auto',
-  volume: 0.8,
-  isMuted: false,
-  droneNote: 'off',
-  droneSound: 'shruti', // Sustained: the steadiest reference to sing against
-  droneVolume: 0.6,
-  referencePitch: 440,
-  zoom: DEFAULT_ZOOM,
-  zoomMode: 'auto',
-  showPlayhead: true,
-  showTips: true,
-};
+// Defined beside AppSettings so the engine entry point needs no storage (ADR 0104)
+export { DEFAULT_APP_SETTINGS };
 
 type Parsed = Record<string, unknown>;
 

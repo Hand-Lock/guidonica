@@ -4,6 +4,10 @@
   "version": "2026.10.3",
   "description": "Free sight-reading and solfège practice: endless fresh sheet music scrolls past a playhead in time with a metronome",
   "type": "module",
+  "exports": {
+    "./engine": "./src/engine.ts",
+    "./locales/*": "./src/i18n/locales/*.ts"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

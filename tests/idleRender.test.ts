@@ -62,7 +62,7 @@ describe('VexFlow rendering out of the animation frame (ADR 0091)', () => {
       setDpr: () => {},
       renderPinnedClef: () => document.createElement('canvas'),
     } as unknown as MeasureRenderer;
-    const buffer = new MeasureBuffer(new MusicGenerator(), renderer);
+    const buffer = new MeasureBuffer(new MusicGenerator(), renderer, () => null);
     const metronome = { getVisualBeat: () => 0 } as unknown as MetronomeEngine;
     const settings = structuredClone(DEFAULT_APP_SETTINGS);
     const scroller = new ScrollerView(canvas, buffer, metronome, renderer, () => settings);

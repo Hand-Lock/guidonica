@@ -85,7 +85,7 @@ function makeStage(
       return clef;
     },
   } as unknown as MeasureRenderer;
-  const buffer = new MeasureBuffer(new MusicGenerator(mulberry32(seed)), renderer);
+  const buffer = new MeasureBuffer(new MusicGenerator(mulberry32(seed)), renderer, () => null);
   const scroller = new ScrollerView(canvas, buffer, metronome, renderer, () => settings, { viewport });
   const calls = recorders.get(canvas) ?? [];
   const playheadX = (scroller as unknown as { playheadX: number }).playheadX;

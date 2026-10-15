@@ -67,6 +67,7 @@ import {
   getLanguage,
   isLanguage,
   loadLocale,
+  noteLabels,
   pitchClassNames,
   t,
 } from './i18n';
@@ -442,7 +443,7 @@ class GuidonicaApp {
     this.generator = new MusicGenerator();
     this.renderer = new MeasureRenderer();
     this.renderer.setZoom(initialSettings.zoom || DEFAULT_ZOOM);
-    this.buffer = new MeasureBuffer(this.generator, this.renderer);
+    this.buffer = new MeasureBuffer(this.generator, this.renderer, noteLabels);
     this.scroller = new ScrollerView(
       canvas,
       this.buffer,
