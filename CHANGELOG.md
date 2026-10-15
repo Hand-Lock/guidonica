@@ -14,6 +14,14 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ## [Unreleased]
 
+### Added
+
+- Going to guidonica.it/reset clears your saved settings and the offline copy, so Guidonica starts again as on your first visit (ADR 0105).
+
+### Internal
+
+- `/reset` also works on the dev and preview servers, and on guidonica.it/nightly/reset for the nightly channel (ADR 0105).
+
 ## [2026.10.4] - 2026-10-15
 
 > Follow Guidonica on TikTok and YouTube: the About dialog and the ⋯ menu now link to both, where the trailer plays.

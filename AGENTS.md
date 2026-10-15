@@ -40,7 +40,7 @@ guidonica/
 ├── pnpm-lock.yaml          # Locked dependency tree (pnpm install --frozen-lockfile in CI)
 ├── pnpm-workspace.yaml     # pnpm settings
 ├── tsconfig.json           # Strict TypeScript configuration
-├── vite.config.ts          # Minimal Vite configuration (build.target = support baseline, ADR 0096) + serviceWorker(), channel() and localePages() build plugins (ADRs 0063, 0078, 0086)
+├── vite.config.ts          # Minimal Vite configuration (build.target = support baseline, ADR 0096) + serviceWorker(), channel(), localePages() and resetPages() build plugins (ADRs 0063, 0078, 0086, 0105)
 ├── index.html              # Minimal semantic HTML shell
 ├── .claude/
 │   └── skills/

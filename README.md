@@ -536,6 +536,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0102](docs/adr/0102-youtube-link.md) | YouTube Link | Accepted |
 | [0103](docs/adr/0103-embeddable-engine-seams.md) | Embeddable Engine Seams: Seeded Generation, Explicit-Time Drawing, Offline Audio, Sized Rendering | Accepted; amended by 0104 |
 | [0104](docs/adr/0104-engine-entry-point.md) | Engine Entry Point | Accepted |
+| [0105](docs/adr/0105-reset-page.md) | Reset Page: `/reset` Restores a First Visit | Accepted |
 
 ---
 

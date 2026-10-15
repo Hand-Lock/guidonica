@@ -48,7 +48,7 @@ describe('offline navigation (ADR 0086)', () => {
 
 describe('precache list (ADR 0063)', () => {
   const list = precacheList(
-    ['index.html', 'it/index.html', 'de/index.html', 'assets/index-abc.js', 'assets/vexflow-def.js', 'assets/index-123.css'],
+    ['index.html', 'it/index.html', 'de/index.html', 'reset/index.html', 'assets/index-abc.js', 'assets/vexflow-def.js', 'assets/index-123.css'],
     ['favicon.svg', 'icon-192.png', 'manifest.webmanifest', 'og-image.png', 'CNAME', 'robots.txt', 'sitemap.xml', '.DS_Store', '.well-known'],
   );
 
@@ -60,7 +60,7 @@ describe('precache list (ADR 0063)', () => {
   });
 
   it('excludes index.html, crawler, share and hosting files, and dotfiles such as .well-known (ADR 0068)', () => {
-    for (const name of ['index.html', 'it/index.html', 'it/', 'de/index.html', 'og-image.png', 'CNAME', 'robots.txt', 'sitemap.xml', '.DS_Store', '.well-known']) {
+    for (const name of ['index.html', 'it/index.html', 'it/', 'de/index.html', 'reset/index.html', 'og-image.png', 'CNAME', 'robots.txt', 'sitemap.xml', '.DS_Store', '.well-known']) {
       expect(list).not.toContain(name);
     }
   });

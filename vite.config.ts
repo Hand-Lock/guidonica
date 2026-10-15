@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { transformWithEsbuild, type Plugin } from 'vite';
+import { transformWithEsbuild, type Connect, type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { UNRELEASED, appNotes } from './scripts/changelog.mjs';
 import { LANDING, landingUrl } from './src/i18n/landing';
@@ -188,6 +188,98 @@ export function localePages(): Plugin {
   };
 }
 
+/**
+ * The reset page (ADR 0105), served at reset/ next to each channel's shell: it removes this
+ * channel's localStorage keys, worker and caches, then opens the app as on a first visit.
+ * The prefixes mirror storageKey() and cachePrefix(); tests check the parity. Each step has
+ * its own try/catch, since blocked storage throws (ADR 0096), and the redirect always runs.
+ */
+export function resetPage(channel: Channel): string {
+  const nightly = channel === 'nightly';
+  const keys = nightly ? 'guidonica_nightly_' : 'guidonica_';
+  const cachesPrefix = nightly ? 'guidonica-nightly-' : 'guidonica-';
+  const legacy = nightly ? [] : ['solfege_scroller_settings_v1', 'solfege_scroller_settings_v2'];
+  const script = `(async () => {
+  const mine = (name, prefix, other) => name.startsWith(prefix) && (!other || !name.startsWith(other));
+  try {
+    const legacy = ${JSON.stringify(legacy)};
+    const names = [];
+    for (let i = 0; i < localStorage.length; i++) names.push(localStorage.key(i));
+    for (const name of names) {
+      if (name !== null && (mine(name, ${JSON.stringify(keys)}, ${JSON.stringify(nightly ? '' : 'guidonica_nightly_')}) || legacy.includes(name))) {
+        localStorage.removeItem(name);
+      }
+    }
+  } catch (e) {}
+  try {
+    const scope = new URL('../', location.href).href;
+    for (const registration of await navigator.serviceWorker.getRegistrations()) {
+      if (registration.scope === scope) await registration.unregister();
+    }
+  } catch (e) {}
+  try {
+    for (const name of await caches.keys()) {
+      if (mine(name, ${JSON.stringify(cachesPrefix)}, ${JSON.stringify(nightly ? '' : 'guidonica-nightly-')})) await caches.delete(name);
+    }
+  } catch (e) {}
+  location.replace('../');
+})();`;
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#e9eef3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)" />
+    <meta name="robots" content="noindex" />
+    <title>Guidonica — Reset</title>
+    <style>
+      body { margin: 0; background: #e9eef3; }
+      @media (prefers-color-scheme: dark) { body { background: #0b1220; } }
+    </style>
+    <script>
+${script}
+    </script>
+  </head>
+  <body></body>
+</html>
+`;
+}
+
+/**
+ * Emits reset/index.html (ADR 0105). The dev server answers /reset/ with the release page,
+ * since dev has no build output; dev and preview redirect /reset to /reset/ as GitHub Pages
+ * does, so the page's '../' resolves to the app root.
+ */
+export function resetPages(): Plugin {
+  const serve =
+    (dev: boolean): Connect.NextHandleFunction =>
+    (req, res, next) => {
+      const path = req.url?.split('?')[0];
+      if (path === '/reset') {
+        res.writeHead(301, { Location: '/reset/' }).end();
+      } else if (dev && path === '/reset/') {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.end(resetPage('release'));
+      } else {
+        next();
+      }
+    };
+  return {
+    name: 'guidonica:reset-page',
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'reset/index.html', source: resetPage(buildChannel()) });
+    },
+    configureServer(server) {
+      server.middlewares.use(serve(true));
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(serve(false));
+    },
+  };
+}
+
 /** The nightly web manifest, installable next to the release app. */
 export function nightlyManifest(json: string): string {
   const manifest = JSON.parse(json) as Record<string, unknown>;
@@ -253,7 +345,7 @@ export function channel(): Plugin {
 
 export default defineConfig({
   base: process.env.BASE_PATH || './',
-  plugins: [channel(), localePages(), serviceWorker()],
+  plugins: [channel(), localePages(), resetPages(), serviceWorker()],
   build: {
     // The support baseline (ADR 0096): @container, structuredClone and <dialog> need these
     target: ['chrome105', 'firefox115', 'safari16'],
