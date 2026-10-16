@@ -85,7 +85,7 @@ describe('language landing pages (ADR 0086)', () => {
     expect(html).toContain('<meta name="robots" content="noindex" />');
     expect(html).not.toContain('rel="canonical"');
     expect(hreflang(html)).toEqual([]);
-    expect(html).toContain('data-page-lang="fr"');
+    expect(html).toContain('<html lang="fr" data-page-lang="fr" data-channel="nightly">');
   });
 });
 

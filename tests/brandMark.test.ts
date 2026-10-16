@@ -18,6 +18,26 @@ describe('Guidonian Hand brand mark', () => {
     expect(svg).toBe(`${buildTileSvg({ detail: 'small' })}\n`);
   });
 
+  it('keeps public-nightly/favicon.svg in sync with the generator (ADR 0107)', () => {
+    const svg = fs.readFileSync(path.join(root, 'public-nightly/favicon.svg'), 'utf-8');
+    expect(svg).toBe(`${buildTileSvg({ detail: 'small', channel: 'nightly' })}\n`);
+    expect(svg).not.toBe(fs.readFileSync(path.join(root, 'public/favicon.svg'), 'utf-8'));
+  });
+
+  it('overrides only public/ files in public-nightly/, every manifest icon included (ADR 0107)', () => {
+    const nightly = fs.readdirSync(path.join(root, 'public-nightly'));
+    for (const file of nightly) expect(fs.existsSync(path.join(root, 'public', file))).toBe(true);
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, 'public/manifest.webmanifest'), 'utf-8')) as {
+      icons: { src: string; sizes: string }[];
+    };
+    for (const icon of manifest.icons) {
+      const png = fs.readFileSync(path.join(root, 'public-nightly', icon.src));
+      expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+      expect(`${png.readUInt32BE(16)}x${png.readUInt32BE(20)}`).toBe(icon.sizes);
+    }
+    expect(nightly).toEqual(expect.arrayContaining(['favicon.ico', 'favicon.svg', 'apple-touch-icon.png']));
+  });
+
   it('places a decorative hand mark before the brand title', () => {
     const brand = indexHtml.match(/<div class="brand">([\s\S]*?)<\/div>/);
     expect(brand).not.toBeNull();

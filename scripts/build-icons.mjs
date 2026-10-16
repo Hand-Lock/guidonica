@@ -6,9 +6,11 @@
  * one palm path plus tapered digits, authored thumb-right and mirrored when fitted. The thread is a 3D Catmull-Rom curve (z > 0 in front of
  * the hand, z < 0 behind it) split into front and back runs where it crosses z = 0.
  *
- *   node scripts/build-icons.mjs            public/favicon.svg, docs/brand/guidonica-mark.svg + #g-hand symbol in index.html
+ *   node scripts/build-icons.mjs            public/favicon.svg, docs/brand/guidonica-mark.svg + #g-hand symbol in index.html,
+ *                                           and the nightly public-nightly/favicon.svg (ADR 0107)
  *   node scripts/build-icons.mjs --raster   also apple-touch-icon.png, favicon.ico and the web app manifest
- *                                           icons icon-192/512.png + icon-maskable-512.png (Firefox headless)
+ *                                           icons icon-192/512.png + icon-maskable-512.png (Firefox headless),
+ *                                           in public/ and, night-blue with a moon, in public-nightly/
  *
  * Zero dependencies. Every coordinate is rounded to 2 decimals so output is byte-stable.
  */
@@ -298,14 +300,46 @@ export function buildGlyphSymbol() {
   ].join('');
 }
 
+// Maskable icon margin: the hand's silhouette must stay inside the central circle of radius 0.4 · size
+// (25.6 units on the 64 grid) that every Android launcher mask preserves.
+export const MASKABLE_MARGIN = 12;
+
+// Tile colours per release channel (ADR 0107). Nightly swaps the teal gel for a night-blue one and
+// adds a crescent moon; the pearl hand, aqua thread, glow and bead are the same in both.
+const PALETTES = {
+  release: { gel: ['#1d9c82', '#0a6f5b', '#065646'], shadow: '#003d31', back: '#0b8a72', moon: false },
+  nightly: { gel: ['#5a4fc4', '#352a92', '#1b1550'], shadow: '#120d3a', back: '#4f6fc0', moon: true },
+};
+
+// The moon in tile units, top left above the thumb: inside the rounded tile and iOS's mask, and for the
+// maskable icon inside Android's safe circle (centre distance + radius ≤ 25.6 around 32, 32).
+const MOON = { cx: 13, cy: 13, r: 6.5 };
+const MOON_SAFE = { cx: 20, cy: 19.5, r: 5 };
+
+/** Crescent: the disc of radius r at (cx, cy) less a disc of radius 0.8 r pushed towards the upper right. */
+function crescent({ cx, cy, r }) {
+  const ri = r * 0.8;
+  const [dx, dy] = [r * 0.42, -r * 0.3];
+  const d = Math.hypot(dx, dy);
+  // Intersections of the two circles: distance a along the centre line, h either side of it.
+  const a = (d * d + r * r - ri * ri) / (2 * d);
+  const h = Math.sqrt(r * r - a * a);
+  const [ux, uy] = [dx / d, dy / d];
+  const p = [cx + ux * a - uy * h, cy + uy * a + ux * h];
+  const q = [cx + ux * a + uy * h, cy + uy * a - ux * h];
+  return `M ${pt(p)} A ${n(r)} ${n(r)} 0 1 1 ${pt(q)} A ${n(ri)} ${n(ri)} 0 1 0 ${pt(p)} Z`;
+}
+
 /**
  * Gel app-icon tile. detail 'small' → favicon, 'full' → apple-touch-icon.
  * bleed (default: full) → full-bleed square without the rim, since iOS applies its own mask.
  * margin → space between the hand's bounding box and the tile edge (64-unit grid); the maskable
  * icon widens it to keep the hand inside Android's safe circle.
+ * channel → 'release' (teal) or 'nightly' (night blue with a moon, ADR 0107).
  */
-export function buildTileSvg({ detail = 'small', size = GRID, bleed = detail === 'full', margin = detail === 'full' ? 5.5 : 4 } = {}) {
+export function buildTileSvg({ detail = 'small', size = GRID, bleed = detail === 'full', margin = detail === 'full' ? 5.5 : 4, channel = 'release' } = {}) {
   const full = detail === 'full';
+  const pal = PALETTES[channel];
   const s = shapes(detail, margin);
   const k = s.fit.k;
   const rx = bleed ? 0 : 14;
@@ -320,7 +354,7 @@ export function buildTileSvg({ detail = 'small', size = GRID, bleed = detail ===
   ];
   const defs = [
     '<linearGradient id="gel" x1="0" y1="0" x2="0" y2="1">',
-    '<stop offset="0" stop-color="#1d9c82"/><stop offset="0.5" stop-color="#0a6f5b"/><stop offset="1" stop-color="#065646"/>',
+    `<stop offset="0" stop-color="${pal.gel[0]}"/><stop offset="0.5" stop-color="${pal.gel[1]}"/><stop offset="1" stop-color="${pal.gel[2]}"/>`,
     '</linearGradient>',
     // Diagonal sheen: fades out towards its curved lower edge instead of stopping at a hard line.
     '<linearGradient id="sheen" gradientUnits="userSpaceOnUse" x1="21" y1="-4" x2="31" y2="22">',
@@ -329,6 +363,14 @@ export function buildTileSvg({ detail = 'small', size = GRID, bleed = detail ===
     '<radialGradient id="glow"><stop offset="0" stop-color="#00ffcc" stop-opacity="0.85"/><stop offset="1" stop-color="#00ffcc" stop-opacity="0"/></radialGradient>',
     `<clipPath id="tile"><rect width="64" height="64" rx="${rx}"/></clipPath>`,
   ];
+  const moon = pal.moon ? (margin >= MASKABLE_MARGIN ? MOON_SAFE : MOON) : null;
+  if (moon) {
+    defs.push(
+      `<linearGradient id="moonlit" gradientUnits="userSpaceOnUse" x1="${n(moon.cx - moon.r)}" y1="${n(moon.cy - moon.r)}" x2="${n(moon.cx + moon.r)}" y2="${n(moon.cy + moon.r)}">` +
+        '<stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#dfe4f4"/></linearGradient>',
+      '<radialGradient id="moonglow"><stop offset="0" stop-color="#cfd6ff" stop-opacity="0.45"/><stop offset="1" stop-color="#cfd6ff" stop-opacity="0"/></radialGradient>',
+    );
+  }
   let hand;
   if (full) {
     // Light from the top-left: every digit is white on its lit edge, grey on the far edge.
@@ -344,8 +386,8 @@ export function buildTileSvg({ detail = 'small', size = GRID, bleed = detail ===
       '<stop offset="0" stop-color="#fff"/><stop offset="0.5" stop-color="#f3f6f7"/><stop offset="0.82" stop-color="#dce4e6"/><stop offset="1" stop-color="#c3cfd2"/></radialGradient>',
     );
     hand = [
-      `<g fill="#003d31" fill-opacity="0.35" transform="translate(${n(-0.6 / k)} ${n(1.2 / k)})">${handPaths}</g>`,
-      `<path d="${s.back.map((r) => r.d).join(' ')}" fill="none" stroke="#0b8a72" stroke-width="${n(line * 0.72)}"/>`,
+      `<g fill="${pal.shadow}" fill-opacity="0.35" transform="translate(${n(-0.6 / k)} ${n(1.2 / k)})">${handPaths}</g>`,
+      `<path d="${s.back.map((r) => r.d).join(' ')}" fill="none" stroke="${pal.back}" stroke-width="${n(line * 0.72)}"/>`,
       // Outline of the union: every primitive stroked, then every fill on top hides the inner seams.
       `<g fill="none" stroke="#a9bcc0" stroke-width="${n(1 / k)}" stroke-linejoin="round">${handPaths}</g>`,
       ...s.digits.map((f) => `<path d="${f.path}" fill="url(#d-${f.name})"/>`),
@@ -360,7 +402,7 @@ export function buildTileSvg({ detail = 'small', size = GRID, bleed = detail ===
       '<stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#dfeeea"/></linearGradient>',
     );
     hand = [
-      `<g fill="#003d31" fill-opacity="0.38" transform="translate(${n(-0.6 / k)} ${n(1.2 / k)})">${handPaths}</g>`,
+      `<g fill="${pal.shadow}" fill-opacity="0.38" transform="translate(${n(-0.6 / k)} ${n(1.2 / k)})">${handPaths}</g>`,
       `<g fill="url(#pearl)">${handPaths}</g>`,
       ...tube,
     ];
@@ -371,6 +413,7 @@ export function buildTileSvg({ detail = 'small', size = GRID, bleed = detail ===
     `<rect width="64" height="64" rx="${rx}" fill="url(#gel)"/>`,
     '<path d="M 0 0 L 64 0 L 64 11.5 Q 30 19 0 36.5 Z" fill="url(#sheen)" clip-path="url(#tile)"/>',
     bleed ? '' : `<rect x="1.4" y="1.4" width="61.2" height="61.2" rx="${rx - 1.4}" fill="none" stroke="#fff" stroke-opacity="0.85" stroke-width="${full ? 0.8 : 1.1}"/>`,
+    moon ? `<circle cx="${n(moon.cx)}" cy="${n(moon.cy)}" r="${n(moon.r * 1.6)}" fill="url(#moonglow)"/><path d="${crescent(moon)}" fill="url(#moonlit)"/>` : '',
     `<g transform="${s.fit.transform}">`,
     ...hand,
     `<circle cx="${n(s.start[0])}" cy="${n(s.start[1])}" r="${n(bead * 2.1)}" fill="url(#glow)"/>`,
@@ -488,13 +531,14 @@ export function pngToIco(png, size) {
   return Buffer.concat([head, png]);
 }
 
-// Maskable icon margin: the hand's silhouette must stay inside the central circle of radius 0.4 · size
-// (25.6 units on the 64 grid) that every Android launcher mask preserves.
-export const MASKABLE_MARGIN = 12;
+// Each channel's icon set, same file names: public/ ships with the release, public-nightly/ overrides it in nightly builds (ADR 0107).
+const ICON_DIRS = [['public', 'release'], ['public-nightly', 'nightly']];
 
 function main() {
-  const favicon = buildTileSvg({ detail: 'small' });
-  writeFileSync(join(ROOT, 'public/favicon.svg'), `${favicon}\n`);
+  for (const [dir, channel] of ICON_DIRS) {
+    mkdirSync(join(ROOT, dir), { recursive: true });
+    writeFileSync(join(ROOT, dir, 'favicon.svg'), `${buildTileSvg({ detail: 'small', channel })}\n`);
+  }
   mkdirSync(join(ROOT, 'docs/brand'), { recursive: true });
   writeFileSync(join(ROOT, 'docs/brand/guidonica-mark.svg'), `${buildTileSvg({ detail: 'full', bleed: false, size: 256 })}\n`);
 
@@ -503,15 +547,17 @@ function main() {
   const next = html.replace(/<symbol id="g-hand"[\s\S]*?<\/symbol>/, buildGlyphSymbol());
   if (next !== html) writeFileSync(indexPath, next);
 
-  if (process.argv.includes('--raster')) {
-    writeFileSync(join(ROOT, 'public/apple-touch-icon.png'), rasterize(buildTileSvg({ detail: 'full' }), 180));
+  if (!process.argv.includes('--raster')) return;
+  for (const [dir, channel] of ICON_DIRS) {
+    const out = (file) => join(ROOT, dir, file);
+    writeFileSync(out('apple-touch-icon.png'), rasterize(buildTileSvg({ detail: 'full', channel }), 180));
     // The tile's rx = 14 on the 64 grid → 7 px at 32 px.
-    writeFileSync(join(ROOT, 'public/favicon.ico'), pngToIco(roundCorners(rasterize(favicon, 32), 7), 32));
+    writeFileSync(out('favicon.ico'), pngToIco(roundCorners(rasterize(buildTileSvg({ detail: 'small', channel }), 32), 7), 32));
     // Web app manifest: rimmed rounded tiles for 'any' (rx = 14/64 of the size), full bleed for 'maskable'.
     for (const size of [192, 512]) {
-      writeFileSync(join(ROOT, `public/icon-${size}.png`), roundCorners(rasterize(buildTileSvg({ detail: 'full', bleed: false }), size), (size * 14) / GRID));
+      writeFileSync(out(`icon-${size}.png`), roundCorners(rasterize(buildTileSvg({ detail: 'full', bleed: false, channel }), size), (size * 14) / GRID));
     }
-    writeFileSync(join(ROOT, 'public/icon-maskable-512.png'), rasterize(buildTileSvg({ detail: 'full', margin: MASKABLE_MARGIN }), 512));
+    writeFileSync(out('icon-maskable-512.png'), rasterize(buildTileSvg({ detail: 'full', margin: MASKABLE_MARGIN, channel }), 512));
   }
 }
 

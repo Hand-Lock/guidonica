@@ -136,6 +136,12 @@ describe('release channels (ADR 0078)', () => {
     expect(html).not.toContain('solfege_scroller_settings');
   });
 
+  it('marks the nightly shell with data-channel for the header tint (ADR 0107)', () => {
+    const shell = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf-8');
+    expect(nightlyHtml(shell)).toContain('<html lang="en" data-channel="nightly">');
+    expect(shell).not.toContain('data-channel');
+  });
+
   it('names the nightly manifest apart so both channels can be installed', () => {
     const manifest = JSON.parse(nightlyManifest(fs.readFileSync(path.join(ROOT, 'public/manifest.webmanifest'), 'utf-8')));
     expect(manifest.name).toBe('Guidonica Nightly');

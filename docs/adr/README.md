@@ -53,7 +53,7 @@ This directory documents the core architectural decisions, implementation method
 | [0045](0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md) | Aero-Guidonica 2: Material Hierarchy & Responsive Redesign | Accepted; amended by 0054, 0097 | 2026-10-02 |
 | [0046](0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Superseded in part by [0047](0047-guidonian-hand-v2.md) | 2026-10-02 |
 | [0047](0047-guidonian-hand-v2.md) | Guidonian Hand v2: Anatomical Proportions, Volume Shading & 3D Thread | Accepted | 2026-10-02 |
-| [0048](0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted; amended by 0063 | 2026-10-03 |
+| [0048](0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted; amended by 0063, 0107 | 2026-10-03 |
 | [0049](0049-level-presets-onboarding-intro.md) | Level Presets & Onboarding Intro ("What's your level?") | Accepted; amended by 0053, 0059, 0070, 0071 | 2026-10-03 |
 | [0050](0050-intro-notation-previews.md) | Procedural Notation Previews in the Onboarding Intro | Accepted; amended by 0051, 0052, 0071 | 2026-10-03 |
 | [0051](0051-intro-preview-representation-presets.md) | Representation Presets for the Intro Level Previews | Accepted; amended by 0052, 0070 | 2026-10-03 |
@@ -112,6 +112,7 @@ This directory documents the core architectural decisions, implementation method
 | [0104](0104-engine-entry-point.md) | Engine Entry Point | Accepted | 2026-10-15 |
 | [0105](0105-reset-page.md) | Reset Page: `/reset` Restores a First Visit | Accepted | 2026-10-15 |
 | [0106](0106-keyboard-detection.md) | Keyboard Detection: Shortcuts Only Where Keys Exist | Accepted | 2026-10-16 |
+| [0107](0107-nightly-icon.md) | Nightly Icon: A Night-Blue Tile and a Violet Thread | Accepted | 2026-10-16 |
 
 ---
 

@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { transformWithEsbuild, type Connect, type Plugin } from 'vite';
@@ -101,10 +101,11 @@ function replaceOnce(html: string, search: string | RegExp, replacement: string)
   return next;
 }
 
-/** The nightly shell: noindex, its own title and the nightly settings key (ADR 0078). */
+/** The nightly shell: noindex, its own title, the nightly settings key (ADR 0078) and data-channel (ADR 0107). */
 export function nightlyHtml(html: string): string {
-  let out = replaceOnce(
-    html,
+  let out = replaceOnce(html, '<html lang="en">', '<html lang="en" data-channel="nightly">');
+  out = replaceOnce(
+    out,
     /<title>[^<]*<\/title>/,
     '<title>Guidonica Nightly</title>\n    <meta name="robots" content="noindex" />',
   );
@@ -137,7 +138,7 @@ export function localePage(html: string, lang: Exclude<Language, 'en'>, nightly:
   const url = landingUrl(lang);
   // Relative to the root page: anything but fragments, absolute paths and schemes
   let out = html.replace(/(?<=\s)(href|src)="(?!#|\/|[a-z][a-z0-9+.-]*:)(?:\.\/)?([^"]*)"/g, '$1="../$2"');
-  out = replaceOnce(out, '<html lang="en">', `<html lang="${lang}" data-page-lang="${lang}">`);
+  out = replaceOnce(out, '<html lang="en"', `<html lang="${lang}" data-page-lang="${lang}"`);
   if (!nightly) {
     out = replaceOnce(out, /<title>[^<]*<\/title>/, `<title>${escapeHtml(m.docTitle)}</title>`);
     out = replaceOnce(out, '<link rel="canonical" href="https://guidonica.it/" />', `<link rel="canonical" href="${url}" />`);
@@ -332,10 +333,12 @@ export function channel(): Plugin {
     generateBundle() {
       if (!nightly) return;
       const publicDir = resolve(ROOT, 'public');
+      const nightlyDir = resolve(ROOT, 'public-nightly');
       for (const file of readdirSync(publicDir).sort()) {
         // Hosting, crawler and share files belong to the release site only
         if (file.startsWith('.') || PUBLIC_NOT_PRECACHED.has(file)) continue;
-        const path = join(publicDir, file);
+        // The nightly icons replace their release namesakes (ADR 0107)
+        const path = existsSync(join(nightlyDir, file)) ? join(nightlyDir, file) : join(publicDir, file);
         const source = file === 'manifest.webmanifest' ? nightlyManifest(readFileSync(path, 'utf8')) : readFileSync(path);
         this.emitFile({ type: 'asset', fileName: file, source });
       }

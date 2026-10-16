@@ -17,6 +17,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 ### Added
 
 - Going to guidonica.it/reset clears your saved settings and the offline copy, so Guidonica starts again as on your first visit (ADR 0105).
+- Nightly builds have their own icon, a night-blue tile with a crescent moon, and a violet thread on the header hand, so they can't be mistaken for the release (ADR 0107).
 
 ### Changed
 
@@ -29,6 +30,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 ### Internal
 
 - `/reset` also works on the dev and preview servers, and on guidonica.it/nightly/reset for the nightly channel (ADR 0105).
+- The README ADR table lists ADRs 0106 and 0107.
 
 ## [2026.10.4] - 2026-10-15
 
