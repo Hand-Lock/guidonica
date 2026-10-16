@@ -22,6 +22,10 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - The Keyboard shortcuts item in the ⋯ menu is hidden on touch devices until a physical keyboard is used (ADR 0106).
 
+### Fixed
+
+- On phones, the What's new, About and other dialogs no longer scroll or bounce as a whole; only their content scrolls.
+
 ### Internal
 
 - `/reset` also works on the dev and preview servers, and on guidonica.it/nightly/reset for the nightly channel (ADR 0105).

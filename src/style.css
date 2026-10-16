@@ -2008,10 +2008,19 @@ dialog.about-dialog::backdrop {
   -webkit-backdrop-filter: blur(4px);
 }
 
+/* A column flexbox hands the content exactly the sheet's inner height, borders
+   already subtracted; max-height: inherit overflowed the dialog by its border,
+   which made the whole sheet scroll and bounce on iOS. [open] only: a display
+   here would override the UA's hidden state of a closed dialog. */
+dialog.about-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
 .about-dialog-content {
   display: flex;
   flex-direction: column;
-  max-height: inherit;
+  min-height: 0;
 }
 
 .about-dialog-header,
@@ -2040,6 +2049,7 @@ dialog.about-dialog::backdrop {
   gap: 16px;
   padding: 18px 22px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   font-size: 14px;
   line-height: 1.55;
 }
