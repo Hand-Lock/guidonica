@@ -43,7 +43,7 @@ Guidonica needs a way to point these out that does not interrupt practice, never
    |---|---|---|
    | `levels` | open the level intro | always |
    | `labels` | Settings → Practice | labels are off |
-   | `keys` | none | fine pointer with hover |
+   | `keys` | none | a physical keyboard is likely (ADR 0106) |
    | `clefs` | Settings → Staff | always |
    | `notes` | Settings → Melody | all seven notes are on |
    | `pinch` | none | coarse pointer |

@@ -1854,7 +1854,8 @@ select:focus-visible {
   animation: pop var(--slow) var(--ease);
 }
 
-.app-menu[hidden] {
+.app-menu[hidden],
+.menu-item[hidden] {
   display: none;
 }
 

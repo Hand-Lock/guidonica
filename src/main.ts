@@ -98,6 +98,7 @@ import {
 import { SettingsSection, Tip, TipContext, pickTip } from './tips';
 import { exerciseSummary } from './summary';
 import { bindTabs } from './utils/tabs';
+import { watchKeyboard } from './utils/keyboard';
 import {
   APP_VERSION,
   NOTES_LOADERS,
@@ -186,6 +187,8 @@ class GuidonicaApp {
   private btnDrawerToggle: HTMLButtonElement;
   private btnMenuToggle: HTMLButtonElement | null;
   private appMenu: HTMLElement | null;
+  /** A physical keyboard is likely (ADR 0106): gates the shortcuts menu item and the keys tip. */
+  private keyboardLikely = true;
   private btnLevelToggle: HTMLButtonElement | null;
   private levelSyncedSettings: Readonly<AppSettings> | null = null;
   private summarySyncedSettings: Readonly<AppSettings> | null = null;
@@ -1358,7 +1361,7 @@ class GuidonicaApp {
     return {
       settings: globalState.settings,
       touch: media('(pointer: coarse)'),
-      keyboard: media('(hover: hover) and (pointer: fine)'),
+      keyboard: this.keyboardLikely,
       standalone: media('(display-mode: standalone)') || (navigator as StandaloneNavigator).standalone === true,
     };
   }
@@ -2079,7 +2082,13 @@ class GuidonicaApp {
     document.getElementById('btn-menu-whats-new')?.addEventListener('click', () => {
       void this.openWhatsNew(null);
     });
-    document.getElementById('btn-shortcuts')?.addEventListener('click', () => this.openShortcuts());
+    const btnShortcuts = document.getElementById('btn-shortcuts');
+    btnShortcuts?.addEventListener('click', () => this.openShortcuts());
+    // Hidden on touch-only devices until a physical key is pressed; `?` works everywhere
+    watchKeyboard((likely) => {
+      this.keyboardLikely = likely;
+      if (btnShortcuts) btnShortcuts.hidden = !likely;
+    });
     const dialog = this.modalShortcuts;
     if (!dialog) return;
     const close = (): void => {

@@ -18,6 +18,10 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - Going to guidonica.it/reset clears your saved settings and the offline copy, so Guidonica starts again as on your first visit (ADR 0105).
 
+### Changed
+
+- The Keyboard shortcuts item in the ⋯ menu is hidden on touch devices until a physical keyboard is used (ADR 0106).
+
 ### Internal
 
 - `/reset` also works on the dev and preview servers, and on guidonica.it/nightly/reset for the nightly channel (ADR 0105).

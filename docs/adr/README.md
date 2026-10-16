@@ -92,7 +92,7 @@ This directory documents the core architectural decisions, implementation method
 | [0084](0084-instagram-link.md) | Instagram Link | Accepted; amended by 0101, 0102 | 2026-10-06 |
 | [0085](0085-shareable-exercise-links.md) | Shareable Exercise Links | Accepted | 2026-10-06 |
 | [0086](0086-language-landing-pages.md) | Language Landing Pages | Accepted | 2026-10-06 |
-| [0087](0087-rotating-tips.md) | Rotating Tips | Accepted | 2026-10-06 |
+| [0087](0087-rotating-tips.md) | Rotating Tips | Accepted; amended by 0106 | 2026-10-06 |
 | [0088](0088-pre-release-audit-2026-10-06.md) | Pre-release Audit 2026-10-06: Second History Rewrite, Privacy Policy | Accepted | 2026-10-06 |
 | [0089](0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted; followed by 0091, 0098 | 2026-10-06 |
 | [0090](0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted; amended by 0093 | 2026-10-06 |
@@ -111,6 +111,7 @@ This directory documents the core architectural decisions, implementation method
 | [0103](0103-embeddable-engine-seams.md) | Embeddable Engine Seams: Seeded Generation, Explicit-Time Drawing, Offline Audio, Sized Rendering | Accepted; amended by 0104 | 2026-10-15 |
 | [0104](0104-engine-entry-point.md) | Engine Entry Point | Accepted | 2026-10-15 |
 | [0105](0105-reset-page.md) | Reset Page: `/reset` Restores a First Visit | Accepted | 2026-10-15 |
+| [0106](0106-keyboard-detection.md) | Keyboard Detection: Shortcuts Only Where Keys Exist | Accepted | 2026-10-16 |
 
 ---
 

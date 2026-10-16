@@ -100,6 +100,7 @@ guidonica/
     │   ├── tabs.ts         # Roving-tabindex tablist for the settings inspector (ADR 0097)
     │   ├── inAppBrowser.ts # Portrait-locked in-app browser detection for the landscape tip (ADR 0083)
     │   ├── frameRate.ts    # Steady ~30 fps rAF detector behind the Low Power Mode notice (ADR 0098)
+    │   ├── keyboard.ts     # Physical keyboard guess: pointer media query + first real key press (ADR 0106)
     │   ├── serviceWorker.ts # Production-only service worker registration (ADR 0063)
     │   └── wakeLock.ts     # Screen Wake Lock controller
     ├── audio/

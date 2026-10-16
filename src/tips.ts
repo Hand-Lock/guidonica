@@ -38,7 +38,7 @@ export type TipAction =
 export interface TipContext {
   settings: AppSettings;
   touch: boolean; // coarse pointer: pinch zoom exists
-  keyboard: boolean; // fine pointer with hover: shortcuts are usable
+  keyboard: boolean; // a physical keyboard is likely (ADR 0106): shortcuts are usable
   standalone: boolean; // installed (home screen or app window)
 }
 
