@@ -71,7 +71,7 @@ This directory documents the core architectural decisions, implementation method
 | [0063](0063-offline-service-worker.md) | Offline Service Worker | Accepted; amended by 0078, 0086 | 2026-10-03 |
 | [0064](0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Superseded by 0065 | 2026-10-03 |
 | [0065](0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066, 0076, 0090 | 2026-10-04 |
-| [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted; amended by 0070 | 2026-10-04 |
+| [0066](0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted; amended by 0070, 0108 | 2026-10-04 |
 | [0067](0067-contribution-licensing-dco-and-trademark-policy.md) | Contribution Licensing (Inbound MIT + DCO) & Trademark Policy | Accepted; amended by 0068, 0069 | 2026-10-04 |
 | [0068](0068-project-email-guidonica-it-migadu.md) | Project Email on guidonica.it (Migadu), Contact Addresses & security.txt | Accepted; amended by 0069, 0077, 0088 | 2026-10-04 |
 | [0069](0069-security-privacy-audit.md) | Security & Privacy Audit: History Rewrite, CI Least Privilege & Repository Hardening | Accepted; amended by 0077, 0088 | 2026-10-04 |
@@ -113,6 +113,7 @@ This directory documents the core architectural decisions, implementation method
 | [0105](0105-reset-page.md) | Reset Page: `/reset` Restores a First Visit | Accepted | 2026-10-15 |
 | [0106](0106-keyboard-detection.md) | Keyboard Detection: Shortcuts Only Where Keys Exist | Accepted | 2026-10-16 |
 | [0107](0107-nightly-icon.md) | Nightly Icon & Accent: A Night-Blue Tile and a Violet UI | Accepted | 2026-10-16 |
+| [0108](0108-no-consecutive-bar-rests.md) | No Back-to-Back Bar Rests | Accepted | 2026-10-16 |
 
 ---
 

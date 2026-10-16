@@ -1256,6 +1256,33 @@ describe('Rest runs (ADR 0066)', () => {
     const bars = generateMany(settings, 20000);
     expect(bars.some((m) => m.notes.length === 1 && m.notes[0].isRest)).toBe(true);
   }, 20000);
+
+  /** 2/4 quarters with rests: the most bar-rest-prone configuration (ADR 0108). */
+  const BAR_REST_PRONE: AppSettings = {
+    ...DEFAULT_APP_SETTINGS,
+    timeSignature: '2/4',
+    rests: true,
+    subdivisions: QUARTERS,
+  };
+  const isBarRest = (m: MeasureData): boolean => m.notes.every((n) => n.isRest);
+
+  it('never writes two bar rests in a row (ADR 0108)', () => {
+    const bars = generateMany(BAR_REST_PRONE, 20000);
+    expect(bars.some(isBarRest)).toBe(true);
+    for (let i = 1; i < bars.length; i++) {
+      expect(isBarRest(bars[i - 1]) && isBarRest(bars[i])).toBe(false);
+    }
+  }, 20000);
+
+  it('never opens a session on a bar rest (ADR 0108)', () => {
+    const generator = new MusicGenerator();
+    for (let session = 0; session < 2000; session++) {
+      generator.resetPitch();
+      expect(isBarRest(generator.generateMeasure(0, BAR_REST_PRONE, 0))).toBe(false);
+      // A few more bars, so the next reset starts from a mid-session chain state
+      for (let m = 1; m < 4; m++) generator.generateMeasure(m, BAR_REST_PRONE, m * 2);
+    }
+  }, 20000);
 });
 
 describe('Tuplet member shapes (ADR 0066)', () => {

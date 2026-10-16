@@ -22,6 +22,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 ### Changed
 
 - The Keyboard shortcuts item in the ⋯ menu is hidden on touch devices until a physical keyboard is used (ADR 0106).
+- Rests never fill two bars in a row, and an exercise never starts with an empty bar (ADR 0108).
 
 ### Fixed
 
@@ -30,7 +31,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 ### Internal
 
 - `/reset` also works on the dev and preview servers, and on guidonica.it/nightly/reset for the nightly channel (ADR 0105).
-- The README ADR table lists ADRs 0106 and 0107.
+- The README ADR table lists ADRs 0106, 0107 and 0108.
 - The small LEDs on checked chips glow through a `--led-on-halo` token instead of a literal Olo colour (ADR 0107).
 
 ## [2026.10.4] - 2026-10-15

@@ -202,7 +202,7 @@ Each bar is sampled left to right over a 32nd grid from a grammar derived from t
   - compound meters have a dotted-quarter rest on each beat, and 12/8 a dotted-half rest on either half (6/4, 9/4, 12/4 one value up);
   - quarter, eighth, 16th and 32nd rests sit on multiples of their own length.
 
-  Rests can run on across tuplets and barlines.
+  Rests can run on across tuplets and barlines, but never fill two bars in a row, and no exercise opens on an empty bar ([ADR 0108](docs/adr/0108-no-consecutive-bar-rests.md)).
 
 ### 5. Arbitrary n-Tuplet Matrix Engine
 A dedicated tuplet menu crosses ratio and base value:
@@ -497,7 +497,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0063](docs/adr/0063-offline-service-worker.md) | Offline Service Worker | Accepted; amended by 0078, 0086 |
 | [0064](docs/adr/0064-two-beat-sub-eighth-slots.md) | Sub-Eighth Half-Beat Slots in Two-Beat Groups | Superseded by 0065 |
 | [0065](docs/adr/0065-grammar-driven-rhythm-sampler.md) | Grammar-Driven Rhythm Sampler, Rest Spelling & Tuplet Merges | Accepted; amended by 0066, 0076, 0090 |
-| [0066](docs/adr/0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted; amended by 0070 |
+| [0066](docs/adr/0066-ergodicity-audit-connected-pitch-start-rest-runs-tuplet-shapes.md) | Ergodicity Audit: Connected Pitch Start, Rest Runs & Uniform Tuplet Shapes | Accepted; amended by 0070, 0108 |
 | [0067](docs/adr/0067-contribution-licensing-dco-and-trademark-policy.md) | Contribution Licensing (Inbound MIT + DCO) & Trademark Policy | Accepted; amended by 0068, 0069 |
 | [0068](docs/adr/0068-project-email-guidonica-it-migadu.md) | Project Email on guidonica.it (Migadu), Contact Addresses & security.txt | Accepted; amended by 0069, 0077, 0088 |
 | [0069](docs/adr/0069-security-privacy-audit.md) | Security & Privacy Audit: History Rewrite, CI Least Privilege & Repository Hardening | Accepted; amended by 0077, 0088 |
@@ -539,6 +539,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0105](docs/adr/0105-reset-page.md) | Reset Page: `/reset` Restores a First Visit | Accepted |
 | [0106](docs/adr/0106-keyboard-detection.md) | Keyboard Detection: Shortcuts Only Where Keys Exist | Accepted |
 | [0107](docs/adr/0107-nightly-icon.md) | Nightly Icon & Accent: A Night-Blue Tile and a Violet UI | Accepted |
+| [0108](docs/adr/0108-no-consecutive-bar-rests.md) | No Back-to-Back Bar Rests | Accepted |
 
 ---
 

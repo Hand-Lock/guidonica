@@ -56,6 +56,8 @@ export interface PartitionItem {
  * Silence is a two-state chain over notes and tuplet members (ADR 0066): a rest starts after
  * a sounding item with SILENCE_PROBABILITY and continues after a silent one with
  * SILENCE_CONTINUE_PROBABILITY, so a k-item silence costs 0.1 · 0.5^(k−1), not 0.15^k.
+ * A bar rest only follows a bar holding a note (ADR 0108): an all-silent bar is redrawn
+ * after another one and as a session's first bar, so silence never spans two whole bars.
  */
 export const SILENCE_PROBABILITY = 0.1;
 export const SILENCE_CONTINUE_PROBABILITY = 0.5;
@@ -487,6 +489,8 @@ export class MusicGenerator {
   private lastSoundingPitch: string | null = null;
   /** Whether the last note or tuplet member was silent: the state of the rest chain. */
   private lastSilent: boolean = false;
+  /** Whether the last composed bar was all rests; true after a reset, so no bar rest opens. */
+  private lastBarSilent: boolean = true;
 
   /** `random` is every draw's source (ADR 0103): Math.random in the app, seeded to repeat a run. */
   constructor(private readonly random: Random = Math.random) {
@@ -502,6 +506,7 @@ export class MusicGenerator {
     this.lastSoundingPitch = null;
     this.lastStep = null;
     this.lastSilent = false;
+    this.lastBarSilent = true;
   }
 
   /** One step of the two-state rest chain (ADR 0066). */
@@ -700,7 +705,22 @@ export class MusicGenerator {
    * every legal bar has P > 0 and no figure is buried by the number of enabled tuplets.
    */
   private composeRhythm(settings: AppSettings): PartitionItem[] {
-    const { timeSignature: ts, subdivisions, tuplets, rests, ties } = settings;
+    // A bar rest never follows a bar rest, nor opens a session (ADR 0108): redrawing from the
+    // chain state before the bar conditions exactly on "not all silent", keeping every other
+    // bar's relative probability. It ends: a sounding first item has P ≥ 1 − p_c > 0.
+    const chain = this.lastSilent;
+    let items: PartitionItem[];
+    do {
+      this.lastSilent = chain;
+      items = this.drawBar(settings);
+    } while (this.lastBarSilent && items.every((i) => i.isRest));
+    this.lastBarSilent = items.every((i) => i.isRest);
+    return settings.ties ? applyTies(items, settings.timeSignature, this.random) : items;
+  }
+
+  /** One draw of the sampler and the rest chain, rests spelled (ADR 0065, 0066). */
+  private drawBar(settings: AppSettings): PartitionItem[] {
+    const { timeSignature: ts, subdivisions, tuplets, rests } = settings;
     const grammar = rhythmGrammar(ts, subdivisions, tuplets);
     const items: PartitionItem[] = [];
     let u = 0;
@@ -722,8 +742,7 @@ export class MusicGenerator {
         u += step.units;
       }
     }
-    const spelled = rests ? consolidateRests(items, ts, grammar.values) : items;
-    return ties ? applyTies(spelled, ts, this.random) : spelled;
+    return rests ? consolidateRests(items, ts, grammar.values) : items;
   }
 
   /**
