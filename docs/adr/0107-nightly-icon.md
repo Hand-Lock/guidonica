@@ -1,4 +1,4 @@
-# 0107. Nightly Icon: A Night-Blue Tile and a Violet Thread
+# 0107. Nightly Icon & Accent: A Night-Blue Tile and a Violet UI
 
 - **Status**: Accepted
 - **Date**: 2026-10-16
@@ -14,7 +14,7 @@ both channels installed could not tell them apart.
 
 ## Decision
 
-Nightly gets its own icon family with the same hand, and its header hand is tinted.
+Nightly gets its own icon family with the same hand, and violet replaces Olo as its UI accent.
 
 ### 1. Palette per channel (`scripts/build-icons.mjs`)
 
@@ -61,18 +61,54 @@ so the manifest, the `index.html` icon links and the service-worker precache lis
 no change. The worker version hashes the nightly bytes because they are in the bundle. Release
 builds never read `public-nightly/`.
 
-### 4. Header tint
+### 4. Nightly accent
 
 `nightlyHtml()` turns `<html lang="en">` into `<html lang="en" data-channel="nightly">`. The
 language pages derive from the built shell, and `localePage()` now matches `<html lang="en"`
 without the closing bracket, so they keep the attribute.
 
-`style.css` adds a `--nightly` token (`#5b4bd0` light, `#a99cff` dark; about 5.7:1 and 7.6:1
-against the bar) and
-`[data-channel='nightly'] .brand-mark, [data-channel='nightly'] .intro-mark { --accent: var(--nightly); }`.
-The `#g-hand` symbol strokes its thread and bead in `var(--accent)`, and custom properties inherit
-into the `<use>` shadow tree, so only the header and onboarding hands turn violet. There is no JS
-and no layout or paint cost.
+Every teal in the UI chrome is a token in the two theme blocks of `style.css`. Right after them,
+two blocks override the whole accent family:
+
+- `[data-channel='nightly']` (specificity 0,1,0, later than both theme blocks) holds the light
+  values.
+- `[data-channel='nightly'][data-theme='dark']` (0,2,0) holds the dark ones. It restates every
+  token the light block sets, or the light value would beat the dark theme block.
+
+| token | light | dark |
+|---|---|---|
+| `--accent` | `#5b4bd0` | `#a99cff` |
+| `--accent-strong` | `#4535b0` | `#c7bfff` |
+| `--accent-tint` | `rgba(110, 90, 240, 0.13)` | `rgba(169, 156, 255, 0.12)` |
+| `--focus-ring` | 3px `rgba(100, 80, 230, 0.45)` | 3px `rgba(169, 156, 255, 0.45)` |
+| `--gel-bg` | `#7566dd` → `#5b4bd0` → `#4a3bb8` | `#cfc7ff` → `#ac9fff` → `#8f80f5` |
+| `--gel-hover` | `#8174e2` → `#6455d6` → `#5243c0` | `#ddd7ff` → `#bdb2ff` → `#a092fa` |
+| `--gel-border` | `#3a2c96` | `rgba(169, 156, 255, 0.7)` |
+| `--gel-ink` | white (theme value) | `#150f3d` |
+| `--gel-ink-shadow`, `--gel-glow` | indigo shadow, violet glow | theme shadow, violet glow |
+| `--bead`, `--bead-border`, `--bead-shadow` | radial `#fff` / `#b9adff` / `#6a5ad6` / `#4535b0` | radial `#fff` / `#c2b8ff` / `#8a7af0` / `#3f2fa0` |
+| `--led-on`, `--led-on-glow` | radial `#fff` / `#b9adff` / `#7a6ae0` / `#4a3bb8`, `#a99cff` glow | radial `#fff` / `#b9adff` / `#8a7af0` / `#352a92`, `#a99cff` glow |
+| `--led-on-halo` | `0 0 6px #a99cff` | `0 0 6px #a99cff` |
+
+Gradient and glow stops keep the positions of the teal originals, so only the hue changes.
+`--led-on-halo` is new: the small LEDs of checked chips, intro cards and language chips glowed in a
+literal `var(--color-olo)`, which is now the token's release value.
+
+WCAG contrast: light `--accent` 6.3:1 on white and 5.4:1 on the page background,
+`--accent-strong` 8.8:1, white gel ink 6.3:1 on the gel's middle stop. Dark `--accent` 7.6:1 and
+`--accent-strong` 10.5:1 on `#0f172a`, the deep gel ink 7.8:1 on the middle stop and 5.6:1 on the
+bottom one. The release's light teal accent is 4.8:1 on white, so violet is never weaker.
+
+The header and onboarding hands stroke their thread and bead in `var(--accent)`, and custom
+properties inherit into the `<use>` shadow tree, so they turn violet with the rest; the earlier
+`--nightly` token and its `.brand-mark` rule are gone. There is no JS and no layout or paint cost.
+
+Out of scope, on purpose:
+
+- The canvas. Staff solfège and the intro level previews draw with `CANVAS_PALETTE`'s teal. The
+  engine has no channel knowledge (ADR 0104), and the score should look the same on both channels.
+- Amber (Playing gel), danger red, the playhead and the orange and red accent LEDs: they carry
+  meaning, not brand.
 
 ## Verification
 
@@ -82,11 +118,15 @@ and no layout or paint cost.
 - `GUIDONICA_CHANNEL=nightly pnpm build`: `dist/` icons equal `public-nightly/`, the manifest names
   "Guidonica Nightly", and `dist/index.html` and `dist/it/index.html` carry `data-channel`. In a
   release build the icons equal `public/` and there is no `data-channel`.
-- Screenshots of `pnpm build:site` in light and dark: the header thread is violet only under
-  `/nightly/`.
+- Screenshots of `pnpm build:site` in light and dark, inspector open and playing: the release is
+  all teal; under `/nightly/` the header thread, tabs, checked chips, Settings button, focus ring,
+  Start gel, tempo bead, zoom label and lit beat LEDs are violet, while the amber Pause gel, the
+  playhead, the count-in LED and the staff are unchanged.
 - `tests/brandMark.test.ts` checks that `public-nightly/favicon.svg` matches the generator, that
   every nightly file has a release namesake, and that every manifest icon exists in
-  `public-nightly/` as a PNG of its declared size. `tests/serviceWorker.test.ts` and
+  `public-nightly/` as a PNG of its declared size. It also checks that both nightly blocks in
+  `style.css` set every accent token above, that the dark block restates every light override,
+  and that neither contains Olo. `tests/serviceWorker.test.ts` and
   `tests/localePages.test.ts` check `data-channel`.
 
 ## Consequences
@@ -96,5 +136,6 @@ and no layout or paint cost.
   regenerates both sets with one `pnpm icons -- --raster`.
 - A release tag built before this ADR has no `public-nightly/`. That is harmless, since only the
   nightly build reads it.
-- Any other accent use inside `.brand-mark` or `.intro-mark` would also turn violet on Nightly.
-  Today the thread and bead are the only ones.
+- A new accent token in the theme blocks needs a nightly value in both override blocks, or
+  Nightly shows teal there. Add it to the test's token list too. A teal literal outside the theme
+  blocks would escape the override, so accent colours stay tokens.

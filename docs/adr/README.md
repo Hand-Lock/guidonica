@@ -112,7 +112,7 @@ This directory documents the core architectural decisions, implementation method
 | [0104](0104-engine-entry-point.md) | Engine Entry Point | Accepted | 2026-10-15 |
 | [0105](0105-reset-page.md) | Reset Page: `/reset` Restores a First Visit | Accepted | 2026-10-15 |
 | [0106](0106-keyboard-detection.md) | Keyboard Detection: Shortcuts Only Where Keys Exist | Accepted | 2026-10-16 |
-| [0107](0107-nightly-icon.md) | Nightly Icon: A Night-Blue Tile and a Violet Thread | Accepted | 2026-10-16 |
+| [0107](0107-nightly-icon.md) | Nightly Icon & Accent: A Night-Blue Tile and a Violet UI | Accepted | 2026-10-16 |
 
 ---
 

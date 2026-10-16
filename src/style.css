@@ -84,6 +84,7 @@
 
 :root {
   --color-olo: #00ffcc;
+  --led-on-halo: 0 0 6px var(--color-olo);
   --font-title: 'Alegreya', Georgia, 'Palatino Linotype', Palatino, serif;
   --font-body: 'Alegreya Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Ubuntu Mono', 'SF Mono', 'Cascadia Code', Consolas, Menlo, monospace;
@@ -132,7 +133,6 @@
   --accent-tint: rgba(0, 196, 158, 0.13);
   --focus-ring: 0 0 0 3px rgba(0, 170, 140, 0.45);
   --danger: #e11d48;
-  --nightly: #5b4bd0; /* the thread of the header hand on nightly builds (ADR 0107) */
 
   /* Glass */
   --glass-bg: rgba(255, 255, 255, 0.74);
@@ -200,7 +200,6 @@
   --accent-tint: rgba(0, 255, 204, 0.11);
   --focus-ring: 0 0 0 3px rgba(0, 255, 204, 0.4);
   --danger: #f43f5e;
-  --nightly: #a99cff;
 
   --glass-bg: rgba(13, 22, 40, 0.78);
   --glass-solid: rgba(13, 22, 40, 0.95);
@@ -240,6 +239,45 @@
   --led-on-glow: 0 0 12px #00ffcc, 0 0 22px rgba(0, 255, 204, 0.65), inset 0 1px 1px #ffffff;
   --led-down-glow: 0 0 14px #f43f5e, 0 0 24px rgba(244, 63, 94, 0.7), inset 0 1px 1px #ffffff;
   --led-mid-glow: 0 0 13px #fb923c, 0 0 23px rgba(251, 146, 60, 0.7), inset 0 1px 1px #ffffff;
+}
+
+/* Nightly accent (ADR 0107): violet replaces Olo across the UI chrome on /nightly/, so a nightly
+   can't pass for the release. The canvas keeps CANVAS_PALETTE; amber, danger and playhead stay. */
+[data-channel='nightly'] {
+  --accent: #5b4bd0;
+  --accent-strong: #4535b0;
+  --accent-tint: rgba(110, 90, 240, 0.13);
+  --focus-ring: 0 0 0 3px rgba(100, 80, 230, 0.45);
+  --gel-bg: linear-gradient(180deg, #7566dd 0%, #5b4bd0 50%, #4a3bb8 100%);
+  --gel-hover: linear-gradient(180deg, #8174e2 0%, #6455d6 50%, #5243c0 100%);
+  --gel-border: #3a2c96;
+  --gel-ink-shadow: 0 -1px 0 rgba(30, 20, 80, 0.5);
+  --gel-glow: 0 2px 10px rgba(91, 75, 208, 0.32);
+  --bead: radial-gradient(circle at 35% 35%, #ffffff 0%, #b9adff 30%, #6a5ad6 75%, #4535b0 100%);
+  --bead-border: #4a3bb8;
+  --bead-shadow: 0 2px 6px rgba(106, 90, 214, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --led-on: radial-gradient(circle at 35% 35%, #ffffff 0%, #b9adff 35%, #7a6ae0 75%, #4a3bb8 100%);
+  --led-on-glow: 0 0 10px #a99cff, 0 0 20px rgba(169, 156, 255, 0.55), inset 0 1px 1px #ffffff;
+  --led-on-halo: 0 0 6px #a99cff;
+}
+
+[data-channel='nightly'][data-theme='dark'] {
+  --accent: #a99cff;
+  --accent-strong: #c7bfff;
+  --accent-tint: rgba(169, 156, 255, 0.12);
+  --focus-ring: 0 0 0 3px rgba(169, 156, 255, 0.45);
+  --gel-bg: linear-gradient(180deg, #cfc7ff 0%, #ac9fff 50%, #8f80f5 100%);
+  --gel-hover: linear-gradient(180deg, #ddd7ff 0%, #bdb2ff 50%, #a092fa 100%);
+  --gel-border: rgba(169, 156, 255, 0.7);
+  --gel-ink: #150f3d;
+  --gel-ink-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  --gel-glow: 0 2px 14px rgba(169, 156, 255, 0.35);
+  --bead: radial-gradient(circle at 35% 35%, #ffffff 0%, #c2b8ff 30%, #8a7af0 75%, #3f2fa0 100%);
+  --bead-border: #a99cff;
+  --bead-shadow: 0 2px 8px rgba(169, 156, 255, 0.45), 0 1px 2px rgba(0, 0, 0, 0.6);
+  --led-on: radial-gradient(circle at 35% 35%, #ffffff 0%, #b9adff 30%, #8a7af0 75%, #352a92 100%);
+  --led-on-glow: 0 0 12px #a99cff, 0 0 22px rgba(169, 156, 255, 0.65), inset 0 1px 1px #ffffff;
+  --led-on-halo: 0 0 6px #a99cff;
 }
 
 /* ==========================================================================
@@ -503,12 +541,6 @@ input {
   height: 26px;
   flex: none;
   color: var(--text);
-}
-
-/* Nightly builds thread the hand in violet, so they can't pass for the release (ADR 0107) */
-[data-channel='nightly'] .brand-mark,
-[data-channel='nightly'] .intro-mark {
-  --accent: var(--nightly);
 }
 
 .brand h1 {
@@ -1277,7 +1309,7 @@ select:focus-visible {
 
 .checkbox-item input:checked + span::before {
   background: var(--led-on);
-  box-shadow: 0 0 6px var(--color-olo);
+  box-shadow: var(--led-on-halo);
 }
 
 .checkbox-item input:focus-visible + span {
@@ -2373,7 +2405,7 @@ dialog.intro-dialog {
 
 .intro-option[aria-checked='true']::before {
   background: var(--led-on);
-  box-shadow: 0 0 6px var(--color-olo);
+  box-shadow: var(--led-on-halo);
 }
 
 .intro-option:focus-visible {
@@ -2445,7 +2477,7 @@ dialog.intro-dialog {
 
 .intro-language[aria-checked='true']::before {
   background: var(--led-on);
-  box-shadow: 0 0 6px var(--color-olo);
+  box-shadow: var(--led-on-halo);
 }
 
 .intro-language:focus-visible {

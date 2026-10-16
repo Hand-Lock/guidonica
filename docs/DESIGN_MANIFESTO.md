@@ -119,6 +119,9 @@ The notation canvas cannot read CSS variables cheaply, so its colours live in on
 
 `--canvas-bg` and `--playhead-color` in CSS must equal these values; `tests/canvasPalette.test.ts` enforces it. Staff lines and ledger lines always share one colour.
 
+#### Nightly accent
+On guidonica.it/nightly/ only, `<html data-channel="nightly">` swaps Olo for violet in the UI chrome (ADR 0107). Two override blocks follow the theme blocks: `[data-channel='nightly']` (light: accent `#5b4bd0`, 6.3:1 on white; deep violet gel with white ink) and `[data-channel='nightly'][data-theme='dark']` (accent `#a99cff`, 7.6:1 on `#0f172a`; bright lavender gel with deep ink `#150f3d`, 7.8:1). They restate the whole accent family: accent, tint, focus ring, gel, bead and lit LEDs. The canvas palette, amber gel, danger red and playhead are the same on both channels. Every accent colour must therefore stay a token: a new one needs a nightly value in both blocks.
+
 #### Font weights
 Only the loaded faces may be used: Alegreya 700 (plus italic 400/700), Alegreya Sans 400/500/700, Ubuntu Mono 400/700. **Never use `font-weight: 600`**: the browser would synthesize it.
 

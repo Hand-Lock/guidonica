@@ -538,7 +538,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0104](docs/adr/0104-engine-entry-point.md) | Engine Entry Point | Accepted |
 | [0105](docs/adr/0105-reset-page.md) | Reset Page: `/reset` Restores a First Visit | Accepted |
 | [0106](docs/adr/0106-keyboard-detection.md) | Keyboard Detection: Shortcuts Only Where Keys Exist | Accepted |
-| [0107](docs/adr/0107-nightly-icon.md) | Nightly Icon: A Night-Blue Tile and a Violet Thread | Accepted |
+| [0107](docs/adr/0107-nightly-icon.md) | Nightly Icon & Accent: A Night-Blue Tile and a Violet UI | Accepted |
 
 ---
 

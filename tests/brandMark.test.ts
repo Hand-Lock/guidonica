@@ -124,4 +124,28 @@ describe('Guidonian Hand brand mark', () => {
     expect(runs.some((r) => r.front)).toBe(true);
     expect(runs.some((r) => !r.front)).toBe(true);
   });
+
+  it('gives nightly a violet value for every accent token in both themes (ADR 0107)', () => {
+    const css = fs.readFileSync(path.join(root, 'src/style.css'), 'utf-8');
+    const block = (selector: string): string => {
+      const start = css.indexOf(`${selector} {`);
+      expect(start).toBeGreaterThan(-1);
+      return css.slice(start, css.indexOf('}', start));
+    };
+    const names = (body: string) => new Set([...body.matchAll(/(--[\w-]+):/g)].map((m) => m[1]));
+    const accent = [
+      '--accent', '--accent-strong', '--accent-tint', '--focus-ring',
+      '--gel-bg', '--gel-hover', '--gel-border', '--gel-ink-shadow', '--gel-glow',
+      '--bead', '--bead-border', '--bead-shadow', '--led-on', '--led-on-glow', '--led-on-halo',
+    ];
+    const light = block("[data-channel='nightly']");
+    const dark = block("[data-channel='nightly'][data-theme='dark']");
+    expect([...names(light)]).toEqual(expect.arrayContaining(accent));
+    // The dark block restates every light override, or the light value would win in dark mode
+    expect([...names(dark)]).toEqual(expect.arrayContaining([...names(light), '--gel-ink']));
+    for (const body of [light, dark]) {
+      expect(body.toLowerCase()).not.toContain('#00ffcc');
+      expect(body).not.toContain('0, 255, 204');
+    }
+  });
 });
