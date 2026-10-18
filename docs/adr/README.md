@@ -115,6 +115,7 @@ This directory documents the core architectural decisions, implementation method
 | [0107](0107-nightly-icon.md) | Nightly Icon & Accent: A Night-Blue Tile and a Violet UI | Accepted | 2026-10-16 |
 | [0108](0108-no-consecutive-bar-rests.md) | No Back-to-Back Bar Rests | Accepted | 2026-10-16 |
 | [0109](0109-squishy-view.md) | Squishy View: Engraved Note Spacing & Continuous Scroll Speed | Accepted | 2026-10-18 |
+| [0110](0110-page-view.md) | Page View: Multi-Line Staves with Vertical Scrolling | Accepted | 2026-10-18 |
 
 ---
 

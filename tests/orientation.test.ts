@@ -48,7 +48,7 @@ describe('Auto zoom follows the measured stage (ADR 0055)', () => {
 
     const scroller = new ScrollerView(
       canvas,
-      { rerender: () => {} } as unknown as MeasureBuffer,
+      { rerender: () => {}, setPageWidth: () => {} } as unknown as MeasureBuffer,
       {} as unknown as MetronomeEngine,
       { setDpr: () => {} } as unknown as MeasureRenderer,
       () => DEFAULT_APP_SETTINGS
@@ -78,7 +78,7 @@ describe('Auto zoom follows the measured stage (ADR 0055)', () => {
 
     const scroller = new ScrollerView(
       canvas,
-      { rerender: () => {} } as unknown as MeasureBuffer,
+      { rerender: () => {}, setPageWidth: () => {} } as unknown as MeasureBuffer,
       {} as unknown as MetronomeEngine,
       { setDpr: () => {} } as unknown as MeasureRenderer,
       () => DEFAULT_APP_SETTINGS
@@ -133,6 +133,17 @@ describe('Portrait landscape tip (ADR 0055)', () => {
     expect(html).toContain('id="orientation-notice"');
     expect(html).toContain('id="btn-orientation-dismiss"');
     expect(html).toContain('<symbol id="i-rotate"');
+  });
+
+  it('offers the page view, and hides while it is on (ADR 0110)', () => {
+    const html = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf-8');
+    expect(html).toMatch(/id="btn-orientation-page"[^>]*data-i18n="landscapePage"/);
+    expect(html).toContain('<option value="page" data-i18n="viewPage">Page</option>');
+    const styleCss = fs.readFileSync(path.join(rootDir, 'src/style.css'), 'utf-8');
+    expect(styleCss).toMatch(/:root\[data-view="page"\] \.orientation-notice \{\s*display: none;/);
+    const mainTs = fs.readFileSync(path.join(rootDir, 'src/main.ts'), 'utf-8');
+    expect(mainTs).toMatch(/btn-orientation-page[\s\S]{0,200}setView\('page', true\)/);
+    expect(mainTs).toMatch(/document\.documentElement\.dataset\.view = /);
   });
 
   it('round-trips the dismissal flag', () => {

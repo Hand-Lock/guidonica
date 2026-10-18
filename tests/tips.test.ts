@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { COMMUNITY_EVERY, COMMUNITY_TIPS, FEATURE_TIPS, TipContext, TipId, pickTip } from '../src/tips';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import { AppSettings } from '../src/notation/types';
+import en from '../src/i18n/locales/en';
 
 /** A context in which every feature tip is eligible. */
 function openContext(): TipContext {
@@ -102,5 +103,8 @@ describe('rotating tips (ADR 0087)', () => {
     ctx.settings.view = 'squishy';
     expect(tip('viewsKey')?.when?.(ctx)).toBe(false);
     expect(tip('views')?.action).toEqual({ kind: 'settings', section: 'display' });
+    // Both view tips name the page view (ADR 0110)
+    expect(en.tips.views.body).toMatch(/Page/);
+    expect(en.tips.viewsKey.body).toMatch(/Page/);
   });
 });

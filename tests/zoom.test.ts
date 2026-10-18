@@ -15,6 +15,8 @@ import {
   computeBeatWidth,
   computeOptimalZoom,
   fitZoom,
+  fitPageZoom,
+  PAGE_MIN_AUTO_ZOOM,
   TIME_SIGNATURES,
 } from '../src/notation/types';
 import { typicalBarWidth } from '../src/notation/spacing';
@@ -373,6 +375,19 @@ describe('In-App Notation Zoom Pipeline', () => {
       const squishy = fitZoom(390, typicalBarWidth(settings));
       expect(squishy).toBeGreaterThan(steady);
       expect(squishy).toBeLessThanOrEqual(DEFAULT_ZOOM);
+    });
+
+    it('fits two page bars across a phone line and caps a desktop page at 100% (ADR 0110)', () => {
+      const bar = typicalBarWidth(DEFAULT_APP_SETTINGS, 'page');
+      const zoom = fitPageZoom(390, 600, bar, 50);
+      expect(zoom).toBe(0.7);
+      // Two bars and the header fit in the line at that zoom, and would not at the next step up
+      expect(16 + 50 + 2 * bar + 30).toBeLessThanOrEqual(390 / zoom);
+      expect(16 + 50 + 2 * bar + 30).toBeGreaterThan(390 / (zoom + 0.1));
+      expect(fitPageZoom(1280, 800, bar, 50)).toBe(DEFAULT_ZOOM);
+      // A short stage keeps four lines; nothing goes under the page floor
+      expect(fitPageZoom(1280, 300, bar, 50)).toBe(0.7);
+      expect(fitPageZoom(200, 100, bar, 50)).toBe(PAGE_MIN_AUTO_ZOOM);
     });
 
     it.each([390, 844])('zooms in further than steady with sixteenths and triplets in most bars (%i px)', (viewport) => {

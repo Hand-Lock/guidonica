@@ -11,6 +11,7 @@ import {
   AppSettings,
   MeasureData,
   NOTE_START_OFFSET,
+  PAGE_LEFT_MARGIN,
   RenderedMeasure,
   TimeSignature,
   computeBeatWidth,
@@ -35,6 +36,7 @@ function recordingContext(calls: Call[]): CanvasRenderingContext2D {
     save: record('save'),
     restore: record('restore'),
     scale: record('scale'),
+    translate: record('translate'),
     fillRect: record('fillRect'),
     beginPath: record('beginPath'),
     moveTo: record('moveTo'),
@@ -85,6 +87,12 @@ function makeStage(
       const clef = document.createElement('canvas');
       labels.set(clef, 'clef');
       return clef;
+    },
+    systemHeaderWidth: (_clef: string, ts: string | null) => (ts ? 60 : 40),
+    renderSystemHeader: (clef: string, ts: string | null) => {
+      const header = document.createElement('canvas');
+      labels.set(header, `header:${clef}:${ts}`);
+      return { canvas: header, width: ts ? 60 : 40 };
     },
   } as unknown as MeasureRenderer;
   const buffer = new MeasureBuffer(new MusicGenerator(mulberry32(seed)), renderer, () => null);
@@ -247,6 +255,72 @@ describe('Drawing a frame at an explicit beat (ADR 0103 seam 2)', () => {
     const d = buffer.getMeasures().find((m) => m.data.startBeat <= beat && beat < m.data.startBeat + 4)?.data;
     const blit = calls.find((c) => c[0] === 'drawImage' && String(c[1]).startsWith(`m${d?.index}@`));
     expect(d && (blit?.[6] as number) + beatX(d, '4/4', beat - d.startBeat)).toBeCloseTo(playheadX, 6);
+    scroller.destroy();
+  });
+
+  it.each(CASES)('draws the same page frames as the live loop ($timeSignature, zoom $zoom)', ({ timeSignature, zoom }) => {
+    const settings: AppSettings = { ...structuredClone(DEFAULT_APP_SETTINGS), timeSignature, zoom, view: 'page' };
+    let liveBeat = 0;
+    const live = makeStage(settings, { getVisualBeat: () => liveBeat } as unknown as MetronomeEngine, 7);
+    const offline = makeStage(settings, throwingMetronome, 7);
+    for (const beat of beatSequence()) {
+      liveBeat = beat;
+      live.calls.length = 0;
+      offline.calls.length = 0;
+      live.scroller.renderFrame();
+      offline.scroller.renderAt(beat);
+      expect(offline.calls).toEqual(live.calls);
+      expect(offline.calls.some((c) => c[0] === 'drawImage' && String(c[1]).startsWith('header:'))).toBe(true);
+    }
+    live.scroller.destroy();
+    offline.scroller.destroy();
+  });
+
+  it.each(CASES)('puts the page cursor on each note at its click ($timeSignature, zoom $zoom)', ({ timeSignature, zoom }) => {
+    const settings: AppSettings = { ...structuredClone(DEFAULT_APP_SETTINGS), timeSignature, zoom, view: 'page' };
+    settings.subdivisions.sixteenth = true;
+    const { scroller, buffer, calls } = makeStage(settings, throwingMetronome, 19);
+    const z = scroller.getZoom();
+    scroller.renderAt(0);
+    const systems = buffer.getSystems().slice(0, 3);
+    const bars = buffer.getMeasures().slice();
+    expect(systems.length).toBe(3);
+    let pos = 0;
+    for (const system of systems) {
+      for (let i = pos; i < pos + system.count; i++) {
+        const d = bars[i].data;
+        for (const note of d.notes) {
+          const beat = d.startBeat + note.beatOffset;
+          calls.length = 0;
+          scroller.renderAt(beat);
+          // The bar's blit x plus beatX into it: the cursor sits on the notehead's x
+          const blit = calls.find((c) => c[0] === 'drawImage' && String(c[1]).startsWith(`m${d.index}@`));
+          expect(blit).toBeDefined();
+          const noteX = (blit?.[6] as number) + beatX(d, d.timeSignature, note.beatOffset) * z;
+          const cursor = calls.find((c) => c[0] === 'translate');
+          expect(cursor?.[1] as number).toBeCloseTo(Math.round(noteX) + 0.5, 6);
+          const offset = (PAGE_LEFT_MARGIN + system.header) * z;
+          expect(noteX).toBeGreaterThanOrEqual(offset + NOTE_START_OFFSET * z - 1e-6);
+        }
+      }
+      pos += system.count;
+    }
+    // Pure in the beat: drawn twice, a frame is identical
+    calls.length = 0;
+    scroller.renderAt(5.25);
+    const first = calls.slice();
+    calls.length = 0;
+    scroller.renderAt(5.25);
+    expect(calls).toEqual(first);
+    expect(requestIdle).not.toHaveBeenCalled();
+    scroller.destroy();
+  });
+
+  it('hides the page cursor and wash with the playhead off', () => {
+    const settings: AppSettings = { ...structuredClone(DEFAULT_APP_SETTINGS), view: 'page', showPlayhead: false };
+    const { scroller, calls } = makeStage(settings, throwingMetronome, 3);
+    scroller.renderAt(2.5);
+    expect(calls.some((c) => c[0] === 'translate')).toBe(false);
     scroller.destroy();
   });
 

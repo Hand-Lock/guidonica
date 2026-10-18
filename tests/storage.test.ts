@@ -327,6 +327,8 @@ describe('storage module', () => {
     expect(loadStoredSettings().view).toBe('steady');
     saveStoredSettings({ ...DEFAULT_APP_SETTINGS, view: 'squishy' });
     expect(loadStoredSettings().view).toBe('squishy');
+    saveStoredSettings({ ...DEFAULT_APP_SETTINGS, view: 'page' });
+    expect(loadStoredSettings().view).toBe('page');
     for (const view of ['wobbly', 3, null]) {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ view }));
       expect(loadStoredSettings().view).toBe('steady');

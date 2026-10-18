@@ -13,6 +13,13 @@ import { beatX, spaceMeasure } from '../notation/spacing';
 import { MusicGenerator } from '../notation/generator';
 import { MeasureRenderer } from '../notation/renderer';
 import { isMusicFontReady } from '../notation/fonts';
+import { PageSystem, closeLine, findSystem, fitsLine, lineAvailable, lineDistance } from './page';
+
+/** A closed page line whose justified bars are still being rendered, one per call. */
+interface QueuedLine {
+  bars: MeasureData[];
+  system: PageSystem;
+}
 
 /**
  * The note-name table for a label mode, indexed c d e f g a b, or null for no labels.
@@ -24,6 +31,10 @@ export type LabelResolver = (mode: SolfegeLabelMode) => readonly string[] | null
 export function labelResolver(names: NoteNames): LabelResolver {
   return (mode) => (mode === 'none' ? null : mode === 'syllables' ? names.syllables : names.letters);
 }
+
+/** Ink of a bar whose renderer reports none: the staff alone. */
+const STAFF_INK_TOP = 80;
+const STAFF_INK_BOTTOM = 120;
 
 export class MeasureBuffer {
   private measures: RenderedMeasure[] = [];
@@ -39,6 +50,17 @@ export class MeasureBuffer {
   /** The view the kept measures are laid out for. */
   private view: ViewMode = 'steady';
 
+  // Page view (ADR 0110): `measures` holds the rendered bars of the complete lines in
+  // `systems`, in order; a closed line's bars wait in `queued` until each is rendered, and
+  // the bars after them, laid out at their natural width, wait in `open` for their line.
+  private systems: PageSystem[] = [];
+  private queued: QueuedLine | null = null;
+  private open: MeasureData[] = [];
+  /** Page width in measure units, set by the scroller; lines break to fit it. */
+  private pageWidth = 0;
+  /** Whether the kept lines were broken for another page width. */
+  private pageDirty = false;
+
   private generator: MusicGenerator;
   private renderer: MeasureRenderer;
   private labels: LabelResolver;
@@ -51,6 +73,21 @@ export class MeasureBuffer {
 
   public getMeasures(): readonly RenderedMeasure[] {
     return this.measures;
+  }
+
+  /** The complete page lines, aligned with getMeasures() (ADR 0110). Empty in the tape views. */
+  public getSystems(): readonly PageSystem[] {
+    return this.systems;
+  }
+
+  /**
+   * Sets the page width (measure units) lines break to. A change re-breaks the kept bars on
+   * the next ensureRows; sub-unit changes are ignored.
+   */
+  public setPageWidth(width: number): void {
+    if (Math.abs(width - this.pageWidth) <= 0.5) return;
+    this.pageWidth = width;
+    this.pageDirty = true;
   }
 
   /**
@@ -67,7 +104,14 @@ export class MeasureBuffer {
     this.nextMeasureStartBeat = 0;
     this.pending = null;
     this.lastLaidOut = null;
+    this.clearPage();
     this.generator.resetPitch();
+  }
+
+  private clearPage(): void {
+    this.systems = [];
+    this.queued = null;
+    this.open = [];
   }
 
   /**
@@ -83,6 +127,24 @@ export class MeasureBuffer {
       return;
     }
     const view = settings.view ?? 'steady';
+    if (view === 'page') {
+      this.relayoutPage(settings);
+      return;
+    }
+    const labels = this.labels(settings.solfegeLabelMode);
+    if (this.view === 'page') {
+      // Back to the tape: every generated bar, rendered or not, joins it in order
+      const bars = this.pageBars();
+      this.releaseAll();
+      this.view = view;
+      let prev: MeasureData | null = null;
+      for (let i = 0; i < bars.length; i++) {
+        prev = spaceMeasure(bars[i], prev, i + 1 < bars.length ? bars[i + 1] : this.pending, view, settings);
+        this.measures.push(this.renderer.renderMeasure(prev, settings.theme, labels));
+      }
+      if (prev) this.lastLaidOut = prev;
+      return;
+    }
     if (view !== this.view) {
       this.view = view;
       let prev: MeasureData | null = null;
@@ -96,8 +158,199 @@ export class MeasureBuffer {
     this.measures = this.measures.map((m) => {
       m.canvas.width = 0;
       m.canvas.height = 0;
-      return this.renderer.renderMeasure(m.data, settings.theme, this.labels(settings.solfegeLabelMode));
+      return this.renderer.renderMeasure(m.data, settings.theme, labels);
     });
+  }
+
+  /** The kept page bars in order: the rendered lines', the queued line's, then the open ones. */
+  private pageBars(): MeasureData[] {
+    const bars = this.measures.map((m) => m.data);
+    if (this.queued) bars.push(...this.queued.bars);
+    bars.push(...this.open);
+    return bars;
+  }
+
+  /** Releases every rendered bar's canvas and drops the page state; the bars are kept by the caller. */
+  private releaseAll(): void {
+    for (const m of this.measures) {
+      m.canvas.width = 0;
+      m.canvas.height = 0;
+    }
+    this.measures = [];
+    this.clearPage();
+  }
+
+  /**
+   * Breaks the kept bars into page lines again (ADR 0110), from the first kept one, for the
+   * current page width: each bar is laid out at its natural width, lines are packed and
+   * justified, and the complete lines are rendered now, keeping the first line's y. Ink
+   * changes with labels, so every line's y is set again. The bars after the last complete
+   * line stay open; the notes are never changed.
+   */
+  private relayoutPage(settings: AppSettings): void {
+    const firstY = this.systems.length > 0 ? this.systems[0].y : 0;
+    const bars = this.pageBars();
+    this.releaseAll();
+    this.view = 'page';
+    this.pageDirty = false;
+    let prev: MeasureData | null = null;
+    for (let i = 0; i < bars.length; i++) {
+      const next = i + 1 < bars.length ? bars[i + 1] : this.pending;
+      prev = spaceMeasure(bars[i], prev, next, 'page', settings);
+      this.addToLine(prev, settings);
+      while (this.queued) this.renderQueued(settings, firstY);
+    }
+    if (prev) this.lastLaidOut = prev;
+  }
+
+  /**
+   * Adds a bar at its natural page width to the open line, first closing that line when the
+   * bar would overflow it, or when it does not follow the line's last bar (a skipped
+   * stretch). A lone bar wider than the line stays: its line is compressed to fit.
+   */
+  private addToLine(natural: MeasureData, settings: AppSettings): void {
+    const open = this.open;
+    if (open.length > 0) {
+      const last = open[open.length - 1];
+      const contiguous = natural.index === last.index + 1 && natural.startBeat === last.startBeat + last.beatsPerMeasure;
+      let used = 0;
+      for (const d of open) used += d.width;
+      const available = lineAvailable(this.pageWidth, this.headerFor(open[0], settings));
+      if (!contiguous || !fitsLine(used, natural.width, available)) this.closeOpen(settings);
+    }
+    this.open.push(natural);
+  }
+
+  /** The header width of a line starting with `first`: the meter only on bar 0's line. */
+  private headerFor(first: MeasureData, settings: AppSettings): number {
+    return this.renderer.systemHeaderWidth(first.clef, first.index === 0 ? first.timeSignature : null, settings.meterSigns);
+  }
+
+  /** Justifies the open line and queues its bars for rendering. */
+  private closeOpen(settings: AppSettings): void {
+    const open = this.open;
+    if (open.length === 0) return;
+    const first = open[0];
+    const last = open[open.length - 1];
+    const header = this.headerFor(first, settings);
+    const bars = closeLine(open, lineAvailable(this.pageWidth, header));
+    this.open = [];
+    this.queued = {
+      bars,
+      system: {
+        firstIndex: first.index,
+        count: bars.length,
+        startBeat: first.startBeat,
+        endBeat: last.startBeat + last.beatsPerMeasure,
+        header,
+        meter: first.index === 0,
+        y: 0,
+        prevY: 0,
+        inkTop: Infinity,
+        inkBottom: -Infinity,
+      },
+    };
+  }
+
+  /**
+   * Renders the queued line's next bar; after its last bar the line is complete and takes
+   * its y from the line above, or `firstY` as the first line.
+   */
+  private renderQueued(settings: AppSettings, firstY: number): void {
+    const queued = this.queued;
+    if (!queued) return;
+    const data = queued.bars.shift();
+    if (data) {
+      const rendered = this.renderer.renderMeasure(data, settings.theme, this.labels(settings.solfegeLabelMode));
+      this.measures.push(rendered);
+      const ink = rendered.ink ?? { top: STAFF_INK_TOP, bottom: STAFF_INK_BOTTOM };
+      queued.system.inkTop = Math.min(queued.system.inkTop, ink.top);
+      queued.system.inkBottom = Math.max(queued.system.inkBottom, ink.bottom);
+    }
+    if (queued.bars.length > 0) return;
+    const system = queued.system;
+    const above = this.systems[this.systems.length - 1];
+    if (above) {
+      system.prevY = above.y;
+      system.y = above.y + lineDistance(above.inkBottom, system.inkTop);
+    } else {
+      system.prevY = firstY;
+      system.y = firstY;
+    }
+    this.systems.push(system);
+    this.queued = null;
+  }
+
+  /**
+   * Whether complete lines reach `rows` lines below the one playing at `vb` (ADR 0110).
+   */
+  public coversRows(vb: number, rows: number): boolean {
+    const systems = this.systems;
+    if (systems.length === 0) return false;
+    const a = findSystem(systems, vb);
+    if (vb >= systems[a].endBeat) return false;
+    return systems.length - 1 - a >= rows;
+  }
+
+  /**
+   * Page view's ensureAhead (ADR 0110): renders bars until complete lines reach `rowsBelow`
+   * lines below the one playing at `vb`, at most `maxMeasures` renders per call (ADR 0091).
+   * Bars are generated one ahead, in order, exactly as on the tape. Returns true while the
+   * page still falls short.
+   */
+  public ensureRows(vb: number, rowsBelow: number, settings: AppSettings, maxMeasures: number = Infinity): boolean {
+    if (!isMusicFontReady()) {
+      return false;
+    }
+    if (this.nextMeasureStartBeat < vb - 2) {
+      const beatsPerMeasure = getBeatsPerMeasure(settings.timeSignature);
+      const skipped = Math.floor((vb - 2 - this.nextMeasureStartBeat) / beatsPerMeasure);
+      if (skipped > 0) {
+        this.releaseAll();
+        this.nextMeasureIndex += skipped;
+        this.nextMeasureStartBeat += skipped * beatsPerMeasure;
+        this.pending = null;
+        this.lastLaidOut = null;
+      }
+    }
+    if (this.view !== 'page' || this.pageDirty) this.relayoutPage(settings);
+
+    const firstY = this.systems.length > 0 ? this.systems[0].y : 0;
+    let count = 0;
+    while (count < maxMeasures && !this.coversRows(vb, rowsBelow)) {
+      if (this.queued) {
+        this.renderQueued(settings, firstY);
+        count++;
+        continue;
+      }
+      const measureData =
+        this.pending ?? this.generator.generateMeasure(this.nextMeasureIndex, settings, this.nextMeasureStartBeat);
+      this.pending = this.generator.generateMeasure(
+        this.nextMeasureIndex + 1,
+        settings,
+        this.nextMeasureStartBeat + measureData.beatsPerMeasure
+      );
+      const natural = spaceMeasure(measureData, this.lastLaidOut, this.pending, 'page', settings);
+      this.lastLaidOut = natural;
+      this.nextMeasureIndex++;
+      this.nextMeasureStartBeat += measureData.beatsPerMeasure;
+      this.addToLine(natural, settings);
+    }
+    return !this.coversRows(vb, rowsBelow);
+  }
+
+  /**
+   * Evicts the page lines above the one before the line playing at `vb`: that departing
+   * line is still easing off the stage top (ADR 0110). Their canvases are released.
+   */
+  public evictRowsBefore(vb: number): void {
+    const a = findSystem(this.systems, vb);
+    const keepFrom = a - 1;
+    if (keepFrom <= 0) return;
+    let bars = 0;
+    for (let i = 0; i < keepFrom; i++) bars += this.systems[i].count;
+    this.systems.splice(0, keepFrom);
+    this.evictFirst(bars);
   }
 
   /** Global beat where the next measure to render would start: the buffer covers up to here. */
@@ -152,6 +405,8 @@ export class MeasureBuffer {
     if (!isMusicFontReady()) {
       return false;
     }
+    // A page is filled by lines, not tape pixels: one line below the playing one at least
+    if ((settings.view ?? 'steady') === 'page') return this.ensureRows(currentGlobalBeat, 1, settings, maxMeasures);
 
     // If the browser tab was throttled in the background and currentGlobalBeat jumped ahead,
     // skip rendering offscreen measures that would be immediately discarded.

@@ -15,6 +15,7 @@ export { MUSIC_FONT_FAMILY, isMusicFontReady, waitForMusicFonts } from './notati
 export {
   SPACING_EXPONENT,
   beatX,
+  justifyMeasure,
   noteSpace,
   shortestBeats,
   spaceMeasure,
@@ -27,6 +28,8 @@ export { MeasureBuffer, labelResolver } from './scroller/buffer';
 export type { LabelResolver } from './scroller/buffer';
 export { ScrollerView } from './scroller/scroller';
 export type { FixedViewport } from './scroller/scroller';
+export { pageScrollY } from './scroller/page';
+export type { PageSystem } from './scroller/page';
 
 // Audio
 export { MetronomeEngine } from './audio/metronome';

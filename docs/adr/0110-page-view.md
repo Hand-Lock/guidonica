@@ -1,0 +1,202 @@
+# 0110. Page View: Multi-Line Staves with Vertical Scrolling
+
+- **Status**: Accepted (a third view beside ADR 0109's steady and squishy tapes)
+- **Date**: 2026-10-18
+- **Author**: Claude & A. C. Lo Cascio
+- **Relates to**: [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md), [0087](0087-rotating-tips.md), [0091](0091-jank-free-beat-and-measure-frames.md), [0103](0103-embeddable-engine-seams.md), [0104](0104-engine-entry-point.md), [0109](0109-squishy-view.md)
+
+## Context & Problem Statement
+
+Every view so far is a tape: one staff whose music slides sideways past a fixed playhead. On a
+portrait phone the tape is narrow, so the reader sees about one bar ahead, and the app asks
+to rotate the phone ("Best in landscape", ADR 0055).
+
+Printed music solves the narrow page with lines (systems): the music wraps, and the reader's
+eye moves along a still line and jumps to the next. A third view, **Page**, does the same.
+A cursor moves along the current line in time with the clicks, and at each line break the
+page eases up by one line so the next one takes the reading position. Notes no longer move
+while they are read; the page moves only between lines, and every line holds still long
+enough to read ahead into the lines below.
+
+Kept invariants:
+
+- the audio clock is the only time source: cursor x and page scroll are pure functions of
+  `metronome.getVisualBeat()`, and a note is under the cursor on its click;
+- frames only blit: VexFlow runs once per bar, one bar per idle callback (ADR 0091);
+- memory is bounded by the stage area;
+- the generator is untouched: same ergodicity, same random draws in every view;
+- steady and squishy stay pixel-identical (their tests are unchanged).
+
+## Decision & Implementation
+
+### 1. A third view (`types.ts`)
+
+`VIEW_MODES = ['steady', 'squishy', 'page']`. Page joins the swipe, `V` and Settings →
+Display → View cycle of ADR 0109; it is one axis, not a separate layout toggle, because a
+page always uses engraved spacing. The view is a personal preference, so share links do not
+carry it (ADR 0085), and rotating the phone never switches it: changing the layout under a
+reader mid-exercise is worse than one tap. The landscape notice instead gains a **Page
+view** button, and is hidden while the view is Page by
+`:root[data-view="page"] .orientation-notice { display: none }`; `main.ts` mirrors the view
+on `<html data-view>` at boot and in `setView`.
+
+### 2. Natural widths (`spacing.ts`)
+
+Each bar is first laid out with ADR 0109's engraved knots at `PAGE_DENSITY = 0.7` of the
+squishy space. A still page reads denser than a moving tape. `spacingBase(settings, ts,
+density)` scales the linear cap and $s_{\min}$ by
+
+$$\text{scale} = \max\!\Big(\rho,\ \min\big(1,\ \tfrac{44}{s_{\min}}\big)\Big),\qquad \rho = \texttt{PAGE\_DENSITY},$$
+
+so the shortest note never gets less than `PAGE_MIN_NOTE_SPACE = 44` units. A bar's last
+note sits $s_{\text{last}}$ before the knot at $26 + W$, and the next barline $26$ units
+before that, so its head and flag keep about $s_{\text{last}} - 26 \ge 18$ units to the
+barline. `spaceMeasure(…, 'page', …)` strips `lineStart` as well as `knots` and `tieIn`, so a
+bar can be laid out again in any view. `typicalBarWidth(settings, view)` is memoised per view.
+
+### 3. Lines: greedy breaking and justification (`scroller/page.ts`)
+
+A line's bars share `lineAvailable(W_page, header) = W_page − 16 − header − (26 + 4)` units:
+the page width in units ($W_{\text{viewport}}/\text{zoom}$), less the left margin, the
+clef header, and a right margin that leaves the cursor its run-out past the last note.
+
+Bars are packed greedily: a bar joins the open line while `fitsLine(used, w, available)`,
+i.e. $\text{used} + w \le \text{available}$ (the first bar always joins). A line is closed
+when the next bar would overflow it, and is then **justified**: every bar is scaled by the
+same factor
+
+$$j = \frac{\text{available}}{\sum_i W_i},\qquad x_k' = 26 + (x_k - 26)\,j,\quad m_k' = m_k\,j,\quad W' = W\,j,$$
+
+(`justifyMeasure`). A line fills its width exactly, like print. Because every bar in a line
+shares $j$, a barline's two slopes, equal before (ADR 0109), stay equal, so the cursor's
+speed is continuous across barlines inside a line. Lines only stretch: squeezing ($j<1$)
+was tried and dropped, because at $j = 0.9$ a flagged last eighth reaches the next barline.
+The one exception is a lone bar wider than the line (a large manual zoom), compressed to fit.
+The notes are shared and never changed.
+
+### 4. Engraving conventions (`renderer.ts`)
+
+- Every line starts with a clef; the time signature appears only on the line holding bar 0.
+  The top bar's meter chip always shows it.
+- A line's first bar has `MeasureData.lineStart`, drawn without a left barline
+  (`leftBar: !data.lineStart`). The scroller draws each line's closing barline.
+- The header is drawn by `renderSystemHeader(clef, ts | null, theme, meterSigns)` with the
+  pinned header's stave (`headerStave`, shared with `drawPinnedClef`). Its width,
+  `systemHeaderWidth = getNoteStartX() − 10`, is memoised once the music font is ready.
+- A tie across a line break draws as two halves, as in print. Inside a line a bar takes its
+  `tieIn` from the justified bar before it; at a line start it keeps its natural `tieIn`,
+  and the existing per-canvas clipping draws the incoming half after the clef.
+
+### 5. Vertical spacing from the ink
+
+`drawMeasure` returns the bar's ink extent, `RenderedMeasure.ink = {top, bottom}`:
+noteheads ±10 units, stem tips (which carry the beams), and tuplet number boxes, widened by
+the label placements, unioned with the staff [80, 120] and clamped to the canvas [0, 220].
+A line's ink is the union over its bars, and the distance from one line's `y` to the next is
+
+$$\Delta y = \max\big(100,\ \text{inkBottom}_r - \text{inkTop}_{r+1} + 12\big)$$
+
+(`lineDistance`; `PAGE_MIN_STAFF_DISTANCE`, `PAGE_SYSTEM_GAP`). Lines are as tight as their
+notes allow and never collide. That matters most in portrait, where height is the scarce
+resource. A line's `y` is fixed once its last bar renders, always before it reaches the stage.
+
+### 6. Motion: cursor and line turns
+
+The cursor's x on its line (`cursorOffsetX`) is
+
+$$x(v_b) = 16 + \text{header} + \sum_{\text{bars before}} W' + \text{beatX}(\text{bar},\ v_b - \text{start}),$$
+
+times zoom. On the justified knots `beatX` is ADR 0109's monotone Hermite, so every note is
+under the cursor on its click (`tests/renderAt.test.ts`).
+
+The scroll $Y(v_b)$ (`pageScrollY`) is the active line's `y`, except across a break at beat
+$b$, where it eases from the previous line's `y` with a smoothstep centred on the break:
+
+$$Y = y_{\text{prev}} + (y - y_{\text{prev}})\,\sigma\!\Big(\frac{v_b - (b - T/2)}{T}\Big),\qquad \sigma(t) = 3t^2 - 2t^3,\quad T = \texttt{PAGE\_TURN\_BEATS} = 1.$$
+
+$\sigma$ has zero slope at both ends, so the motion is C¹ and never jerks. The step happens
+while the eye is already jumping lines. Each line stores `prevY`, so the curve never reads an
+evicted line. With `prefers-reduced-motion` the page cuts at the barline instead
+(`scroller.setReducedMotion`, default false so `renderAt` stays deterministic). `findSystem`
+finds the active line by binary search.
+
+The active line's canvas top sits at the stage top. A finished line fades out over the half
+beat after its break (`lineAlpha`, $1 - \sigma(2(v_b - b)/T)$, applied with `globalAlpha`)
+while the turn carries it up, so no tail of its low notes lingers above the active line. A
+cached 24-unit top fade (`PAGE_FADE_HEIGHT`) softens the stage edge. The lines below are
+the read-ahead: about nine on a 390 × 844 phone.
+
+### 7. Assists
+
+With the playhead on, the page draws the cursor and a light wash over the part of the current
+line already played, so the eye finds its place at a glance. The cursor is a red line
+spanning the staff with the playhead's triangles and glow; the glow gradient is cached and
+placed with `translate`. With the playhead off neither is drawn, so the exercise still trains
+an internal pulse, and only the line turns show where the music is.
+
+### 8. Buffer (`buffer.ts`)
+
+The tape paths are unchanged. In page view `measures` holds the rendered bars of the
+complete lines in `systems`, in order; a closed line's justified bars wait in `queued` until
+each renders, and the bars after them wait in `open` at their natural width.
+
+- `ensureRows(vb, rowsBelow, settings, maxMeasures)` renders a queued bar if there is one,
+  otherwise generates the next bar (with the same one-bar-ahead `pending` as the tape), lays
+  it out naturally and adds it to the open line, closing that line when the bar does not
+  fit. Each render counts toward `maxMeasures`, so idle callbacks still render one bar each
+  (ADR 0091). It stops once complete lines reach `rowsBelow` past the active one;
+  `coversRows` asks the same question. `ensureAhead` delegates to it in page view.
+- `evictRowsBefore(vb)` keeps the active line and the departing one before it, and
+  releases the rest's canvases, as `evictFirst` does.
+- `setPageWidth(w)` marks the layout dirty when the width changes by more than half a unit.
+  The next `ensureRows` re-breaks every kept bar from the first one, keeping the first
+  line's `y`, and renders them again (`relayoutPage`). `rerender` does the same, since ink
+  changes with labels. Leaving the page view flattens the kept bars, rendered, queued and
+  open, back onto the tape in order. `reset()` and the background-tab skip drop the page
+  state.
+
+### 9. Scroller (`scroller.ts`)
+
+`draw()` branches to `drawPage()` in page view. `drawPage` fills the background, ensures
+`ceil(H / (100·zoom)) + 1` rows (scheduling idle renders for one more), evicts, and draws
+each line on the stage at $(y - Y)\cdot\text{zoom}$: its staff lines (`drawStaffLines` now
+takes a y), header, bars and closing barline. It then draws the wash and cursor, then the top
+fade. Header canvases are cached per clef, meter, meter signs and theme, and released with
+the pinned clef on a zoom or DPR change. `renderEmptyFrame` draws empty lines while the font
+loads. `updateDimensions` pushes `W_viewport/zoom` to the buffer.
+
+### 10. Auto zoom
+
+`fitPageZoom(W, H, bar, header)` takes the floor, in 10% steps, of
+
+$$\min\Big(\frac{W}{16 + \text{header} + 2\,\overline{W}_{\text{page}} + 30},\ \frac{H}{4 \cdot 100}\Big),$$
+
+two typical page bars per line and at least four lines down the stage, clamped to
+[0.6, 1.0] (`PAGE_TARGET_BARS`, `PAGE_TARGET_LINES`, `PAGE_MIN_AUTO_ZOOM`). With the
+default rhythm a 390 × 844 phone gets 70%, a staff space of 7 CSS px, and about 1.8 bars per
+line. Bars of eighths (~300 units) sit alone on a line; at 60% they would pair, but the
+staff would be too small to read at arm's length. In landscape the height binds (80% at
+844 × 390); a desktop gets 100%.
+
+### 11. Engine and copy
+
+`src/engine.ts` exports `justifyMeasure`, `pageScrollY` and `PageSystem`; the constants flow
+through `types`. Locales gain `viewPage` and `landscapePage`, and the `views` and `viewsKey`
+tips name the page view.
+
+## Consequences
+
+- **Portrait gets a real reading layout**: about nine lines on a phone, read ahead like
+  print, with no rotation needed.
+- **Memory is bounded by the stage area**, not its width: the active line, the departing one
+  and the rows that fill the stage plus one. A three-hour session holds the same few lines.
+- **Line widths move with the music.** A dense bar can take a line alone; at the default
+  zoom the typical line holds two bars.
+- **Relayout re-renders every kept bar.** A rotation, zoom or label change rasterizes about
+  a dozen bars once, synchronously. That is acceptable for a user action; frames during
+  play never re-break.
+- **A lone overwide bar is compressed** ($j<1$), which can crowd its last note against the
+  closing barline; it needs a manual zoom far above auto.
+- **Ties across a line break** draw as two halves with the incoming arc's start estimated from
+  the bar's natural predecessor, not the justified one at the end of the line above. The arc
+  is clipped after the clef, so the difference is invisible.

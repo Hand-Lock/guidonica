@@ -588,11 +588,13 @@ export function subscribeSystemTheme(callback: (isDark: boolean) => void): () =>
 export type ZoomMode = 'auto' | 'manual';
 
 /**
- * How bars are spaced on the tape (ADR 0109): `steady` gives every bar the width of the
+ * How the staff is laid out (ADR 0109, 0110): `steady` gives every bar the width of the
  * session's densest value (SPEC §3 metric linearity), `squishy` spaces each note by its own
- * duration as engravers do, with a continuous scroll speed. Ordered for cycling.
+ * duration as engravers do, with a continuous scroll speed, and `page` lays engraved bars
+ * out in justified lines that a cursor reads, stepping up a line at each line break.
+ * Ordered for cycling.
  */
-export const VIEW_MODES = ['steady', 'squishy'] as const;
+export const VIEW_MODES = ['steady', 'squishy', 'page'] as const;
 export type ViewMode = (typeof VIEW_MODES)[number];
 
 export interface AppSettings {
@@ -621,7 +623,7 @@ export interface AppSettings {
   droneVolume: number; // 0.0 to 1.0, independent of the click volume
   zoom: number; // 0.3 to 1.5 (default 1.0)
   zoomMode: ZoomMode;
-  view: ViewMode; // Bar spacing on the tape (ADR 0109)
+  view: ViewMode; // Staff layout: tape spacing or page lines (ADR 0109, 0110)
   showPlayhead: boolean; // default true: stationary red playhead cursor line
   showTips: boolean; // default true: one rotating tip per visit (ADR 0087)
 }
@@ -718,8 +720,10 @@ export interface MeasureData {
   beatWidth: number; // Metric beat width (px): the session's in steady, the bar's mean (width / beats) in squishy
   width: number; // Measure pixel width
   startBeat: number; // Global start beat offset from beginning of piece
-  /** Squishy only (ADR 0109): the bar's engraved spacing curve, read through beatX. */
+  /** Squishy and page only (ADR 0109): the bar's engraved spacing curve, read through beatX. */
   knots?: SpacingKnots;
+  /** Page only (ADR 0110): the bar opens a line, after its clef, so it has no left barline. */
+  lineStart?: boolean;
   /**
    * Tie arriving at notes[0] from the previous bar's last note. Self-contained (the
    * previous note's layout, not a reference to that measure), so re-rendering and
@@ -734,11 +738,19 @@ export interface MeasureData {
   };
 }
 
+/** Vertical extent of a bar's ink, in measure units (0 = canvas top; ADR 0110). */
+export interface InkExtent {
+  top: number;
+  bottom: number;
+}
+
 export interface RenderedMeasure {
   data: MeasureData;
   canvas: HTMLCanvasElement;
   width: number;
   height: number;
+  /** The bar's ink, staff included; the page view spaces its lines by it (ADR 0110). */
+  ink?: InkExtent;
 }
 
 /** A measure drawn as detached SVG: viewBox in measure units, width/height in CSS px (ADR 0103). */
@@ -747,6 +759,7 @@ export interface RenderedMeasureSvg {
   svg: SVGSVGElement;
   width: number;
   height: number;
+  ink?: InkExtent;
 }
 
 /** Global metric layout constants */
@@ -763,6 +776,19 @@ export const PINNED_HEADER_FADE_WIDTH = 40; // Horizontal width of gradient fade
 export const PINNED_HEADER_TOTAL_MARGIN = PINNED_HEADER_MASK_WIDTH + PINNED_HEADER_FADE_WIDTH; // 175
 export const PLAYHEAD_MIN_CLEARANCE = 30; // Clearance between fade margin and fixed playhead
 export const MIN_PLAYHEAD_X = PINNED_HEADER_TOTAL_MARGIN + PLAYHEAD_MIN_CLEARANCE; // 205
+
+/** Page view layout (ADR 0110), in measure units unless noted */
+export const PAGE_DENSITY = 0.7; // Page note space as a share of the squishy space: a still page reads denser
+export const PAGE_MIN_NOTE_SPACE = 44; // Least page space of the shortest note: its head clears the barline
+export const PAGE_MIN_STAFF_DISTANCE = 100; // Least distance between two lines' staves (10 staff spaces)
+export const PAGE_SYSTEM_GAP = 12; // Least clearance between one line's ink and the next one's
+export const PAGE_TURN_BEATS = 1; // The page steps up a line over this many beats, centred on the break
+export const PAGE_LEFT_MARGIN = 16; // Where each line's staff begins
+export const PAGE_RIGHT_MARGIN = NOTE_START_OFFSET + 4; // Room past the closing barline for the cursor's run-out
+export const PAGE_FADE_HEIGHT = 24; // Top fade the departing line leaves under
+export const PAGE_TARGET_BARS = 2; // Auto zoom fits this many typical bars across a line
+export const PAGE_TARGET_LINES = 4; // ... and at least this many lines down the stage
+export const PAGE_MIN_AUTO_ZOOM = 0.6;
 
 /**
  * Computes the metric beat width (W_beat) beforehand based on the active
@@ -887,6 +913,25 @@ export function fitZoom(viewportWidth: number, measureWidth: number): number {
 
   // Cap at 1.0 (100%) on larger screens, and clamp between MIN_ZOOM (0.3) and MAX_ZOOM (1.5)
   return Math.max(MIN_ZOOM, Math.min(DEFAULT_ZOOM, stepped));
+}
+
+/**
+ * The page view's auto zoom (ADR 0110): the largest 10% step at which PAGE_TARGET_BARS bars
+ * `pageBarWidth` units wide fit across a line beside its `headerWidth` clef header and the
+ * margins, and PAGE_TARGET_LINES lines at the least staff distance fit down the stage.
+ * Clamped to [PAGE_MIN_AUTO_ZOOM, 100%].
+ */
+export function fitPageZoom(
+  viewportWidth: number,
+  viewportHeight: number,
+  pageBarWidth: number,
+  headerWidth: number
+): number {
+  const lineWidth = PAGE_LEFT_MARGIN + headerWidth + PAGE_TARGET_BARS * pageBarWidth + PAGE_RIGHT_MARGIN;
+  const raw = Math.min(viewportWidth / lineWidth, viewportHeight / (PAGE_TARGET_LINES * PAGE_MIN_STAFF_DISTANCE));
+  // Floor, never round up: a line that rounds up no longer holds its two bars
+  const stepped = Math.floor(raw * 10 + 1e-9) / 10;
+  return Math.max(PAGE_MIN_AUTO_ZOOM, Math.min(DEFAULT_ZOOM, stepped));
 }
 
 /**

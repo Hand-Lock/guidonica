@@ -1814,6 +1814,15 @@ select:focus-visible {
   }
 }
 
+/* The page view is made for portrait, so it needs no landscape tip (ADR 0110) */
+:root[data-view="page"] .orientation-notice {
+  display: none;
+}
+
+.orientation-notice .btn {
+  flex-shrink: 0;
+}
+
 /* Rotating tip: JS shows one per visit; the actions wrap under the text when narrow */
 .tip-notice:not([hidden]) {
   display: flex;

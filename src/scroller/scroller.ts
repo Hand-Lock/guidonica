@@ -8,6 +8,10 @@ import {
   MEASURE_CANVAS_HEIGHT,
   MIN_PLAYHEAD_X,
   MIN_ZOOM,
+  PAGE_FADE_HEIGHT,
+  PAGE_LEFT_MARGIN,
+  PAGE_MIN_STAFF_DISTANCE,
+  PAGE_RIGHT_MARGIN,
   PINNED_HEADER_FADE_WIDTH,
   PINNED_HEADER_MASK_WIDTH,
   PINNED_HEADER_OFFSET_X,
@@ -26,6 +30,7 @@ import { MeasureBuffer } from './buffer';
 import { MeasureRenderer } from '../notation/renderer';
 import { isMusicFontReady } from '../notation/fonts';
 import { FrameRateMonitor } from '../utils/frameRate';
+import { PageSystem, cursorOffsetX, findSystem, lineAlpha, pageScrollY } from './page';
 
 /**
  * Measures past the right edge are rendered in idle time, between frames, up to this
@@ -34,6 +39,22 @@ import { FrameRateMonitor } from '../utils/frameRate';
  */
 const IDLE_LOOKAHEAD_BEATS = 6;
 const FRAME_LOOKAHEAD_BEATS = 1;
+
+/** Where a page line's header stave starts, left of the line's staff (renderer's HEADER_STAVE_X). */
+const SYSTEM_HEADER_STAVE_X = 10;
+/** The cursor spans the staff with this clearance, in units, as the playhead does. */
+const CURSOR_ABOVE = 35;
+const CURSOR_BELOW = 75;
+
+/** A cached page line header and what it was rendered for. */
+interface SystemHeader {
+  canvas: HTMLCanvasElement;
+  width: number;
+  clef: Clef;
+  timeSignature: TimeSignature | null;
+  meterSigns: boolean;
+  theme: ResolvedTheme;
+}
 
 /** A stage size fixed by the caller instead of read from the window (ADR 0103). */
 export interface FixedViewport {
@@ -73,6 +94,13 @@ export class ScrollerView {
   private playheadGradient: CanvasGradient | null = null;
   private fadeGradient: CanvasGradient | null = null;
   private gradientPalette: CanvasPalette | null = null;
+
+  // Page view (ADR 0110): line headers cached per clef, meter, signs and theme at this zoom
+  private systemHeaders: SystemHeader[] = [];
+  private washStyle = '';
+  private cursorGradient: CanvasGradient | null = null;
+  private pageFadeGradient: CanvasGradient | null = null;
+  private reducedMotion = false;
 
   // Pending idle-time measure render, cancelled by stopLoop/destroy (ADR 0091)
   private cancelIdleRender: (() => void) | null = null;
@@ -136,13 +164,28 @@ export class ScrollerView {
     this.cachedClef = null;
     this.cachedTimeSignature = null;
     this.cachedClefTheme = null;
+    for (const header of this.systemHeaders) {
+      header.canvas.width = 0;
+      header.canvas.height = 0;
+    }
+    this.systemHeaders = [];
     this.invalidateGradients();
   }
 
   private invalidateGradients(): void {
     this.playheadGradient = null;
     this.fadeGradient = null;
+    this.cursorGradient = null;
+    this.pageFadeGradient = null;
     this.gradientPalette = null;
+  }
+
+  /**
+   * With reduced motion the page view cuts to the next line at the barline instead of
+   * easing up to it (ADR 0110). Off by default, so renderAt stays deterministic.
+   */
+  public setReducedMotion(on: boolean): void {
+    this.reducedMotion = on;
   }
 
   public setZoom(zoom: number): void {
@@ -159,6 +202,10 @@ export class ScrollerView {
 
   public getViewportWidth(): number {
     return this.viewportWidth;
+  }
+
+  public getViewportHeight(): number {
+    return this.viewportHeight;
   }
 
   private handleDprChange = (): void => {
@@ -211,6 +258,8 @@ export class ScrollerView {
     this.staveTopY = centerY - 2 * lineSpacing;
     // Measure canvas line 0 is at 80 * zoom from measure canvas top (STAVE_TOP_LINE_Y = 80)
     this.measureDrawY = centerY - Math.round(100 * this.zoom);
+    // Page lines break to the stage width in measure units (ADR 0110)
+    this.buffer.setPageWidth(this.viewportWidth / this.zoom);
     this.invalidateGradients();
   }
 
@@ -283,6 +332,11 @@ export class ScrollerView {
     const run = (): void => {
       this.cancelIdleRender = null;
       const settings = this.getSettings();
+      if (settings.view === 'page') {
+        const short = this.buffer.ensureRows(this.metronome.getVisualBeat(), this.pageRowsBelow() + 1, settings, 1);
+        if (short) this.scheduleIdleRender();
+        return;
+      }
       const beatWidth = computeBeatWidth(settings.subdivisions, settings.timeSignature, settings.tuplets);
       const short = this.buffer.ensureAhead(
         this.metronome.getVisualBeat(),
@@ -325,6 +379,11 @@ export class ScrollerView {
   private draw(visualBeat: number, settings: AppSettings, live: boolean): void {
     if (settings.zoom !== undefined && settings.zoom !== this.zoom) {
       this.setZoom(settings.zoom);
+    }
+    if (settings.view === 'page') {
+      this.drawPage(visualBeat, settings, live);
+      if (live) this.frameCallback?.();
+      return;
     }
     const ctx = this.ctx;
     const dpr = this.dpr;
@@ -406,14 +465,15 @@ export class ScrollerView {
     ctx: CanvasRenderingContext2D,
     fromX: number,
     toX: number,
-    palette: CanvasPalette
+    palette: CanvasPalette,
+    topY: number = this.staveTopY
   ): void {
     ctx.strokeStyle = palette.staff;
     ctx.lineWidth = 1;
     ctx.beginPath();
 
     const lineSpacing = Math.round(10 * this.zoom);
-    const startY = Math.round(this.staveTopY);
+    const startY = Math.round(topY);
     for (let line = 0; line < 5; line++) {
       const y = startY + line * lineSpacing + 0.5;
       ctx.moveTo(fromX, y);
@@ -444,12 +504,218 @@ export class ScrollerView {
     ctx.fillStyle = palette.background;
     ctx.fillRect(0, 0, w, h);
 
-    this.drawStaffLines(ctx, 0, w, palette);
-    if (settings.showPlayhead !== false) {
-      this.drawPlayhead(ctx, h, palette);
+    if (settings.view === 'page') {
+      // Empty page lines at the least staff distance, as the page will lay them out
+      const right = w - PAGE_RIGHT_MARGIN * this.zoom;
+      const step = PAGE_MIN_STAFF_DISTANCE * this.zoom;
+      for (let top = STAVE_TOP_LINE_Y * this.zoom; top < h; top += step) {
+        this.drawStaffLines(ctx, PAGE_LEFT_MARGIN * this.zoom, right, palette, top);
+      }
+    } else {
+      this.drawStaffLines(ctx, 0, w, palette);
+      if (settings.showPlayhead !== false) {
+        this.drawPlayhead(ctx, h, palette);
+      }
     }
 
     ctx.restore();
+  }
+
+  /** Lines a page keeps rendered below the playing one: enough to fill the stage. */
+  private pageRowsBelow(): number {
+    return Math.ceil(this.viewportHeight / (PAGE_MIN_STAFF_DISTANCE * this.zoom)) + 1;
+  }
+
+  /**
+   * The page view's frame (ADR 0110): lines at (y − Y(vb))·zoom down the stage, each with
+   * its staff, header, bars and closing barline; then the played wash and the cursor when
+   * the playhead is on, and the top fade the departing line leaves under. Lines are
+   * rendered as the stage needs them and, beyond it, in idle time (ADR 0091).
+   */
+  private drawPage(vb: number, settings: AppSettings, live: boolean): void {
+    const ctx = this.ctx;
+    const zoom = this.zoom;
+    const w = this.viewportWidth;
+    const h = this.viewportHeight;
+    const theme = resolveTheme(settings.theme);
+    const palette = CANVAS_PALETTE[theme];
+    if (this.gradientPalette !== palette) {
+      this.invalidateGradients();
+      this.washStyle = `rgba(${palette.playheadRgb}, 0.05)`;
+    }
+    this.gradientPalette = palette;
+
+    ctx.save();
+    ctx.scale(this.dpr, this.dpr);
+    ctx.fillStyle = palette.background;
+    ctx.fillRect(0, 0, w, h);
+
+    const rows = this.pageRowsBelow();
+    this.buffer.ensureRows(vb, rows, settings);
+    if (live && isMusicFontReady() && !this.buffer.coversRows(vb, rows + 1)) this.scheduleIdleRender();
+    this.buffer.evictRowsBefore(vb);
+
+    const systems = this.buffer.getSystems();
+    const measures = this.buffer.getMeasures();
+    const scrollY = pageScrollY(systems, vb, this.reducedMotion);
+    const active = findSystem(systems, vb);
+    let pos = 0;
+    let activePos = 0;
+    for (let i = 0; i < systems.length; i++) {
+      const system = systems[i];
+      const top = (system.y - scrollY) * zoom;
+      if (top > h) break;
+      if (i === active) activePos = pos;
+      const alpha = lineAlpha(systems, i, vb);
+      if (alpha > 0 && top + MEASURE_CANVAS_HEIGHT * zoom >= 0) {
+        ctx.globalAlpha = alpha;
+        this.drawSystem(ctx, system, measures, pos, top, settings, theme, palette);
+        ctx.globalAlpha = 1;
+      }
+      pos += system.count;
+    }
+
+    if (active >= 0 && settings.showPlayhead !== false) {
+      const system = systems[active];
+      const top = (system.y - scrollY) * zoom;
+      const x = cursorOffsetX(system, measures, activePos, vb) * zoom;
+      this.drawPageCursor(ctx, (PAGE_LEFT_MARGIN + system.header) * zoom, x, top + STAVE_TOP_LINE_Y * zoom, palette);
+    }
+
+    // The departing line eases out under a fade at the stage top
+    const fade = PAGE_FADE_HEIGHT * zoom;
+    if (!this.pageFadeGradient) {
+      this.pageFadeGradient = ctx.createLinearGradient(0, 0, 0, fade);
+      this.pageFadeGradient.addColorStop(0, `rgba(${palette.backgroundRgb}, 1)`);
+      this.pageFadeGradient.addColorStop(1, `rgba(${palette.backgroundRgb}, 0)`);
+    }
+    ctx.fillStyle = this.pageFadeGradient;
+    ctx.fillRect(0, 0, w, fade);
+
+    ctx.restore();
+  }
+
+  /** One page line at screen y `top` (its canvases' top): staff, header, bars and closing barline. */
+  private drawSystem(
+    ctx: CanvasRenderingContext2D,
+    system: PageSystem,
+    measures: readonly RenderedMeasure[],
+    first: number,
+    top: number,
+    settings: AppSettings,
+    theme: ResolvedTheme,
+    palette: CanvasPalette
+  ): void {
+    const zoom = this.zoom;
+    const left = PAGE_LEFT_MARGIN * zoom;
+    let x = (PAGE_LEFT_MARGIN + system.header) * zoom;
+    const last = Math.min(measures.length, first + system.count);
+    let end = x;
+    for (let i = first; i < last; i++) end += measures[i].width;
+    const staffTop = top + STAVE_TOP_LINE_Y * zoom;
+    this.drawStaffLines(ctx, left, end, palette, staffTop);
+
+    const firstBar = measures[first];
+    if (firstBar && isMusicFontReady()) {
+      const header = this.systemHeader(firstBar.data.clef, system.meter ? firstBar.data.timeSignature : null, settings.meterSigns, theme);
+      ctx.drawImage(
+        header.canvas,
+        0,
+        0,
+        header.canvas.width,
+        header.canvas.height,
+        left - SYSTEM_HEADER_STAVE_X * zoom,
+        top,
+        header.canvas.width / this.dpr,
+        MEASURE_CANVAS_HEIGHT * zoom
+      );
+    }
+
+    for (let i = first; i < last; i++) {
+      const m = measures[i];
+      ctx.drawImage(m.canvas, 0, 0, m.canvas.width, m.canvas.height, x, top, m.width, m.height);
+      x += m.width;
+    }
+
+    // The closing barline: inside a line each bar's left barline closes the one before
+    const lineSpacing = Math.round(10 * zoom);
+    ctx.fillStyle = palette.staff;
+    ctx.fillRect(Math.round(end) - 1, Math.round(staffTop), 1, 4 * lineSpacing + 1);
+  }
+
+  /** A page line header from the cache, rendered on first use at this zoom. */
+  private systemHeader(
+    clef: Clef,
+    timeSignature: TimeSignature | null,
+    meterSigns: boolean,
+    theme: ResolvedTheme
+  ): SystemHeader {
+    for (const header of this.systemHeaders) {
+      if (header.clef === clef && header.timeSignature === timeSignature && header.meterSigns === meterSigns && header.theme === theme) {
+        return header;
+      }
+    }
+    const header = { ...this.renderer.renderSystemHeader(clef, timeSignature, theme, meterSigns), clef, timeSignature, meterSigns, theme };
+    this.systemHeaders.push(header);
+    return header;
+  }
+
+  /**
+   * The page cursor at screen x on the line whose staff top is `staffTop`: a light wash
+   * over the line already played, from `lineStart`, then the playhead's glow, line and
+   * pointers. The glow gradient is cached in cursor coordinates and placed with translate.
+   */
+  private drawPageCursor(
+    ctx: CanvasRenderingContext2D,
+    lineStart: number,
+    cursorX: number,
+    staffTop: number,
+    palette: CanvasPalette
+  ): void {
+    const zoom = this.zoom;
+    const x = Math.round(cursorX) + 0.5;
+    const topY = staffTop - CURSOR_ABOVE * zoom;
+    const bottomY = staffTop + CURSOR_BELOW * zoom;
+    const span = bottomY - topY;
+
+    ctx.fillStyle = this.washStyle;
+    if (x > lineStart) ctx.fillRect(lineStart, topY, x - lineStart, span);
+
+    if (!this.cursorGradient) {
+      const gradient = ctx.createLinearGradient(0, 0, 0, span);
+      gradient.addColorStop(0, `rgba(${palette.playheadRgb}, 0)`);
+      gradient.addColorStop(0.5, `rgba(${palette.playheadRgb}, 0.18)`);
+      gradient.addColorStop(1, `rgba(${palette.playheadRgb}, 0)`);
+      this.cursorGradient = gradient;
+    }
+    ctx.save();
+    ctx.translate(x, topY);
+    ctx.fillStyle = this.cursorGradient;
+    ctx.fillRect(-3, 0, 7, span);
+    ctx.restore();
+
+    ctx.strokeStyle = palette.playhead;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, topY);
+    ctx.lineTo(x, bottomY);
+    ctx.stroke();
+
+    ctx.fillStyle = palette.playhead;
+    const triW = 4 * Math.min(1.2, Math.max(0.75, zoom));
+    const triH = 8 * Math.min(1.2, Math.max(0.75, zoom));
+    ctx.beginPath();
+    ctx.moveTo(x - triW, topY);
+    ctx.lineTo(x + triW, topY);
+    ctx.lineTo(x, topY + triH);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x - triW, bottomY);
+    ctx.lineTo(x + triW, bottomY);
+    ctx.lineTo(x, bottomY - triH);
+    ctx.closePath();
+    ctx.fill();
   }
 
   private drawPinnedClef(

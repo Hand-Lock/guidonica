@@ -15,11 +15,12 @@ import {
   Voice,
 } from 'vexflow/core';
 import { BeatSpacing, beatX } from './spacing';
-import './fonts'; // registers the music font and points VexFlow at it (ADR 0058)
+import { isMusicFontReady } from './fonts'; // registers the music font and points VexFlow at it (ADR 0058)
 import {
   CANVAS_PALETTE,
   Clef,
   DEFAULT_ZOOM,
+  InkExtent,
   MAX_ZOOM,
   MEASURE_CANVAS_HEIGHT,
   METER,
@@ -31,6 +32,7 @@ import {
   RenderedMeasure,
   RenderedMeasureSvg,
   STAVE_CANVAS_Y,
+  STAVE_TOP_LINE_Y,
   ThemeMode,
   TimeSignature,
   isGrouped,
@@ -39,6 +41,27 @@ import {
 } from './types';
 
 const tieHeadOffsets = new Map<string, number>();
+
+/** Where the pinned and page-line headers start their stave. */
+const HEADER_STAVE_X = 10;
+
+/** The header's stave: clef and meter on hidden lines, so it overlays the drawn staff. */
+function headerStave(clef: Clef | null, timeSignature: TimeSignature | null, meterSigns: boolean): Stave {
+  const stave = new Stave(HEADER_STAVE_X, STAVE_CANVAS_Y, PINNED_HEADER_WIDTH - HEADER_STAVE_X, {
+    leftBar: false,
+    rightBar: false,
+  });
+  stave.setConfigForLines([
+    { visible: false },
+    { visible: false },
+    { visible: false },
+    { visible: false },
+    { visible: false },
+  ]);
+  if (clef) stave.addClef(clef);
+  if (timeSignature) stave.addTimeSignature(timeSignatureSpec(timeSignature, meterSigns));
+  return stave;
+}
 
 /**
  * Spells a duration with VexFlow's numeric code ('q' -> '4', 'hd' -> '2d', 'b' -> '1/2', the
@@ -148,6 +171,48 @@ interface DrawnMeasure {
   staveNotes: StaveNote[];
   tuplets: Tuplet[];
   tupletLocations: Map<Tuplet, number>;
+  /** Ink extent of the notes, stems, beams and tuplet numbers, labels not included. */
+  ink: InkExtent;
+}
+
+/** Room kept around a notehead's centre for its head, ledger line and tie arc. */
+const NOTEHEAD_INK = 10;
+
+/**
+ * The bar's vertical ink extent in measure units (ADR 0110): noteheads with room for their
+ * ties, stem tips (which carry the beams) and tuplet numbers, unioned with the staff and
+ * clamped to the canvas. The page view spaces its lines by it.
+ */
+function inkExtent(staveNotes: readonly StaveNote[], tuplets: readonly Tuplet[], locations: Map<Tuplet, number>): InkExtent {
+  let top = STAVE_TOP_LINE_Y;
+  let bottom = STAVE_TOP_LINE_Y + 40;
+  for (const note of staveNotes) {
+    for (const y of note.getYs()) {
+      top = Math.min(top, y - NOTEHEAD_INK);
+      bottom = Math.max(bottom, y + NOTEHEAD_INK);
+    }
+    if (note.hasStem()) {
+      const { topY, baseY } = note.getStemExtents();
+      top = Math.min(top, topY, baseY);
+      bottom = Math.max(bottom, topY, baseY);
+    }
+  }
+  for (const tuplet of tuplets) {
+    const box = tupletNumberBox(tuplet.getYPosition(), locations.get(tuplet) ?? Tuplet.LOCATION_TOP);
+    top = Math.min(top, box.top);
+    bottom = Math.max(bottom, box.bottom);
+  }
+  return { top: Math.max(0, top), bottom: Math.min(MEASURE_CANVAS_HEIGHT, bottom) };
+}
+
+/** The ink extent widened by the labels drawn beside the noteheads. */
+function withLabels(ink: InkExtent, placements: readonly LabelPlacement[]): InkExtent {
+  let { top, bottom } = ink;
+  for (const { y } of placements) {
+    top = Math.min(top, y - SOLFEGE_FONT_PX / 2);
+    bottom = Math.max(bottom, y + SOLFEGE_FONT_PX / 2);
+  }
+  return { top: Math.max(0, top), bottom: Math.min(MEASURE_CANVAS_HEIGHT, bottom) };
 }
 
 /** A label to center at (x, y), in measure units (MEASURE_CANVAS_HEIGHT tall). */
@@ -237,6 +302,7 @@ function measureSvgContext(width: number, zoom: number): SVGContext {
 export class MeasureRenderer {
   private dpr: number;
   private zoom: number = DEFAULT_ZOOM;
+  private readonly headerWidths = new Map<string, number>();
 
   /**
    * `dpr` multiplies canvas pixels and is not clamped above 1, so a caller reaches any
@@ -283,9 +349,12 @@ export class MeasureRenderer {
     const ctx = renderer.getContext();
     ctx.scale(dpr * zoom, dpr * zoom);
     const drawn = this.drawMeasure(ctx, data, theme);
+    let ink = drawn.ink;
 
     // Draw pedagogical Solfège syllables or note names beside noteheads
     if (labels) {
+      const placements = labelPlacements(data, drawn, labels);
+      ink = withLabels(ink, placements);
       const rawCtx = canvas.getContext('2d');
       if (rawCtx) {
         // Keep the context's current transform: it is exactly the one VexFlow drew the notes
@@ -296,7 +365,7 @@ export class MeasureRenderer {
         rawCtx.font = SOLFEGE_FONT;
         rawCtx.textAlign = 'center';
         rawCtx.textBaseline = 'middle';
-        for (const { text, x, y } of labelPlacements(data, drawn, labels)) {
+        for (const { text, x, y } of placements) {
           rawCtx.fillText(text, x, y);
         }
         rawCtx.restore();
@@ -308,6 +377,7 @@ export class MeasureRenderer {
       canvas,
       width: data.width * zoom,
       height: MEASURE_CANVAS_HEIGHT * zoom,
+      ink,
     };
   }
 
@@ -325,10 +395,13 @@ export class MeasureRenderer {
     const ctx = measureSvgContext(data.width, zoom);
     const drawn = this.drawMeasure(ctx, data, theme);
     const svg = ctx.svg;
+    let ink = drawn.ink;
 
     if (labels) {
       const color = CANVAS_PALETTE[resolveTheme(theme)].solfege;
-      for (const { text, x, y } of labelPlacements(data, drawn, labels)) {
+      const placements = labelPlacements(data, drawn, labels);
+      ink = withLabels(ink, placements);
+      for (const { text, x, y } of placements) {
         const node = svg.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'text');
         node.setAttribute('x', String(svgRound(x)));
         node.setAttribute('y', String(svgRound(y)));
@@ -350,6 +423,7 @@ export class MeasureRenderer {
       svg,
       width: data.width * zoom,
       height: MEASURE_CANVAS_HEIGHT * zoom,
+      ink,
     };
   }
 
@@ -363,9 +437,10 @@ export class MeasureRenderer {
     ctx.setStrokeStyle(noteColor);
 
     // Create stave with left barline separating measures, but with invisible horizontal lines
-    // so notes, ledger lines, and barlines blit seamlessly over the stationary staff lines
+    // so notes, ledger lines, and barlines blit seamlessly over the stationary staff lines.
+    // A page line's first bar follows its clef, with no barline (ADR 0110).
     const stave = new Stave(0, STAVE_CANVAS_Y, data.width, {
-      leftBar: true,
+      leftBar: !data.lineStart,
       rightBar: false,
     });
     stave.setConfigForLines([
@@ -582,7 +657,7 @@ export class MeasureRenderer {
       });
     }
 
-    return { staveNotes, tuplets, tupletLocations };
+    return { staveNotes, tuplets, tupletLocations, ink: inkExtent(staveNotes, tuplets, tupletLocations) };
   }
 
   /**
@@ -625,6 +700,45 @@ export class MeasureRenderer {
     return svg;
   }
 
+  /**
+   * Width of a page line's header (ADR 0110), in units from where the line's staff begins
+   * to its first bar: the clef, the meter when given, and their padding. The first bar then
+   * leaves its own NOTE_START_OFFSET before its first note. Memoised once the
+   * music font has loaded, since the glyph widths come from it.
+   */
+  public systemHeaderWidth(clef: Clef, timeSignature: TimeSignature | null, meterSigns = false): number {
+    const key = `${clef}|${timeSignature ?? ''}|${meterSigns}`;
+    const known = this.headerWidths.get(key);
+    if (known !== undefined) return known;
+    const stave = headerStave(clef, timeSignature, meterSigns);
+    const width = Math.max(0, stave.getNoteStartX() - HEADER_STAVE_X);
+    if (isMusicFontReady()) this.headerWidths.set(key, width);
+    return width;
+  }
+
+  /**
+   * A page line's clef (and meter) header on an offscreen canvas, laid out like the pinned
+   * header with its stave at x = 10, and its width from systemHeaderWidth (ADR 0110).
+   */
+  public renderSystemHeader(
+    clef: Clef,
+    timeSignature: TimeSignature | null,
+    theme: ThemeMode,
+    meterSigns = false
+  ): { canvas: HTMLCanvasElement; width: number } {
+    const dpr = this.dpr;
+    const zoom = this.zoom;
+    const width = this.systemHeaderWidth(clef, timeSignature, meterSigns);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.ceil((HEADER_STAVE_X + width + NOTE_START_OFFSET) * dpr * zoom));
+    canvas.height = Math.max(1, Math.floor(MEASURE_CANVAS_HEIGHT * dpr * zoom));
+    const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
+    const ctx = renderer.getContext();
+    ctx.scale(dpr * zoom, dpr * zoom);
+    this.drawPinnedClef(ctx, clef, timeSignature, theme, meterSigns);
+    return { canvas, width };
+  }
+
   private drawPinnedClef(
     ctx: RenderContext,
     clef: Clef | null,
@@ -632,26 +746,12 @@ export class MeasureRenderer {
     theme: ThemeMode,
     meterSigns: boolean
   ): void {
-    const width = PINNED_HEADER_WIDTH;
     const headerColor = CANVAS_PALETTE[resolveTheme(theme)].ink;
     ctx.setFillStyle(headerColor);
     ctx.setStrokeStyle(headerColor);
 
     // The pinned clef + time signature is drawn with hidden lines so it cleanly overlays stationary staff lines
-    const stave = new Stave(10, STAVE_CANVAS_Y, width - 10, {
-      leftBar: false,
-      rightBar: false,
-    });
-    stave.setConfigForLines([
-      { visible: false },
-      { visible: false },
-      { visible: false },
-      { visible: false },
-      { visible: false },
-    ]);
-
-    if (clef) stave.addClef(clef);
-    if (timeSignature) stave.addTimeSignature(timeSignatureSpec(timeSignature, meterSigns));
+    const stave = headerStave(clef, timeSignature, meterSigns);
     stave.setStyle({ strokeStyle: headerColor, fillStyle: headerColor });
     for (const mod of stave.getModifiers()) {
       mod.setStyle({ fillStyle: headerColor, strokeStyle: headerColor });

@@ -266,6 +266,7 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 - **Quantized Steps**: Zoom moves in steps of 10 points between 30% and 150%, so staff lines align cleanly with screen pixels.
 - **Manual Controls & Floating Pill**: An on-canvas liquid glass pill (`-`, `100%`, `+`), keyboard shortcuts and pinch-to-zoom. Tap the percentage, or press <kbd>0</kbd>, to return to auto zoom.
 - **Squishy view**: swipe the staff sideways, press <kbd>V</kbd>, or pick it in Settings → Display → View, and notes are spaced like printed music: each note takes room by its own duration, long notes less than their length, so more of the staff fits on a phone. The scroll speed follows the notes smoothly, notes still cross the playhead on the click, and auto zoom fits the typical bar ([ADR 0109](docs/adr/0109-squishy-view.md)).
+- **Page view**: the third view sets the music in lines, like a printed page, for reading in portrait. A cursor follows the clicks along the line, and at each line break the page eases up one line, so the lines below are always there to read ahead. Every line starts with a clef, lines are justified to the page width and spaced by their notes ([ADR 0110](docs/adr/0110-page-view.md)).
 
 ### 13. Unassisted Sight-Reading Mode (Toggleable Playhead)
 - A stationary red playhead cursor with top and bottom guide triangles marks the exact instant of downbeat arrival.
@@ -325,7 +326,7 @@ Constructed strictly following the [Aero-Guidonica Design Manifesto](docs/DESIGN
 | <kbd>-</kbd> or <kbd>_</kbd> | **Zoom Out** | Decrease notation scale by 10% |
 | <kbd>0</kbd> | **Auto Zoom** | Recalculate and reset to optimal device-adaptive forereading zoom |
 | <kbd>D</kbd> | **Drone** | Turn the drone off, or back on to the last note used ([ADR 0094](docs/adr/0094-drone-tuning.md)) |
-| <kbd>V</kbd> | **Change view** | Switch between the steady and squishy staff views; <kbd>Shift</kbd> + <kbd>V</kbd> goes back ([ADR 0109](docs/adr/0109-squishy-view.md)) |
+| <kbd>V</kbd> | **Change view** | Switch between the steady, squishy and page views; <kbd>Shift</kbd> + <kbd>V</kbd> goes back ([ADR 0109](docs/adr/0109-squishy-view.md), [0110](docs/adr/0110-page-view.md)) |
 | <kbd>?</kbd> | **Keyboard shortcuts** | List every shortcut, also under the ⋯ menu ([ADR 0097](docs/adr/0097-stage-first-shell.md)) |
 
 Shortcuts pause while a dialog (About, What's new, Keyboard shortcuts, the level intro) is open. <kbd>Esc</kbd> first closes whatever is open, in order the ⋯ menu, the tuplets list and the settings sheet, and resets only when nothing is.
@@ -543,6 +544,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0107](docs/adr/0107-nightly-icon.md) | Nightly Icon & Accent: A Night-Blue Tile and a Violet UI | Accepted |
 | [0108](docs/adr/0108-no-consecutive-bar-rests.md) | No Back-to-Back Bar Rests | Accepted |
 | [0109](docs/adr/0109-squishy-view.md) | Squishy View: Engraved Note Spacing & Continuous Scroll Speed | Accepted |
+| [0110](docs/adr/0110-page-view.md) | Page View: Multi-Line Staves with Vertical Scrolling | Accepted |
 
 ---
 

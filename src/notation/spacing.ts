@@ -5,6 +5,8 @@ import {
   MeasureData,
   NOTE_START_OFFSET,
   NoteData,
+  PAGE_DENSITY,
+  PAGE_MIN_NOTE_SPACE,
   SpacingKnots,
   TUPLET_NAMES,
   TUPLET_VALUES,
@@ -105,13 +107,21 @@ interface SpacingBase {
 let baseKey: string | null = null;
 let lastBase: SpacingBase = { linear: 0, shortest: 1, base: 0 };
 
-function spacingBase(settings: RhythmSettings, ts: TimeSignature): SpacingBase {
-  const key = JSON.stringify([ts, settings.subdivisions, settings.tuplets]);
+/**
+ * The spacing constants at `density` times the squishy space: 1 in squishy, PAGE_DENSITY on
+ * a page (ADR 0110). Scaling both the linear cap and s_min scales every note's space alike.
+ * A denser layout never brings s_min under PAGE_MIN_NOTE_SPACE, so a bar's last notehead
+ * still clears the next barline, which sits NOTE_START_OFFSET before the next note.
+ */
+function spacingBase(settings: RhythmSettings, ts: TimeSignature, density = 1): SpacingBase {
+  const key = JSON.stringify([ts, settings.subdivisions, settings.tuplets, density]);
   if (key === baseKey) return lastBase;
   const linear = computeBeatWidth(settings.subdivisions, ts, settings.tuplets);
   const shortest = shortestBeats(settings, ts);
+  const base = linear * Math.min(shortest, 1);
+  const scale = density < 1 ? Math.max(density, Math.min(1, PAGE_MIN_NOTE_SPACE / base)) : density;
   baseKey = key;
-  lastBase = { linear, shortest, base: linear * Math.min(shortest, 1) };
+  lastBase = { linear: linear * scale, shortest, base: base * scale };
   return lastBase;
 }
 
@@ -176,10 +186,11 @@ function follows(a: MeasureData, b: MeasureData): boolean {
 
 /**
  * Lays a generated bar out for `view`: a new MeasureData with its beat width, width and, in
- * squishy, its engraved knots. `prev` is the previous bar as laid out, `next` the following
- * bar as generated (only its notes are read); either is ignored unless it is the adjacent
- * bar. An incoming tie shares `prev`'s knots, so both halves still draw the same curve. The
- * notes are shared, never copied or changed.
+ * squishy, its engraved knots. On a page it is the squishy layout at PAGE_DENSITY, the bar's
+ * natural width before its line is justified (ADR 0110). `prev` is the previous bar as laid
+ * out, `next` the following bar as generated (only its notes are read); either is ignored
+ * unless it is the adjacent bar. An incoming tie shares `prev`'s knots, so both halves still
+ * draw the same curve. The notes are shared, never copied or changed.
  */
 export function spaceMeasure(
   data: MeasureData,
@@ -191,11 +202,12 @@ export function spaceMeasure(
   const ts = data.timeSignature;
   const before = prev && follows(prev, data) ? prev : null;
   const after = next && follows(data, next) ? next : null;
-  const { knots: _knots, tieIn, ...rest } = data;
+  const { knots: _knots, tieIn, lineStart: _lineStart, ...rest } = data;
   const spaced: MeasureData = rest;
 
-  if (view === 'squishy' && data.notes.length > 0) {
-    const { knots, width } = squishyKnots(data, before, after, spacingBase(settings, ts));
+  if (view !== 'steady' && data.notes.length > 0) {
+    const density = view === 'page' ? PAGE_DENSITY : 1;
+    const { knots, width } = squishyKnots(data, before, after, spacingBase(settings, ts, density));
     spaced.knots = knots;
     spaced.width = width;
     spaced.beatWidth = width / data.beatsPerMeasure;
@@ -218,23 +230,62 @@ export function spaceMeasure(
   return spaced;
 }
 
+/**
+ * A page line's bars justified by `j` (ADR 0110): a new MeasureData whose knots are scaled
+ * about the first note, x' = 26 + (x − 26)·j, with slopes, width and beat width × j. Every bar
+ * of a line shares one j, so the cursor's speed stays continuous across the barlines inside
+ * it. `prevInLine` is the line's previous bar, already justified: an incoming tie takes its
+ * spacing, so both halves draw one curve. A line's first bar (no `prevInLine`) is marked
+ * `lineStart`; its incoming tie keeps the natural spacing and is drawn as the half arc after
+ * the clef. The notes are shared, never copied or changed.
+ */
+export function justifyMeasure(data: MeasureData, j: number, prevInLine: MeasureData | null): MeasureData {
+  const { knots, tieIn, lineStart: _lineStart, ...rest } = data;
+  const justified: MeasureData = { ...rest, width: data.width * j, beatWidth: data.beatWidth * j };
+  if (knots) {
+    const n = knots.offsets.length;
+    const xs = new Float64Array(n);
+    const slopes = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      xs[i] = NOTE_START_OFFSET + (knots.xs[i] - NOTE_START_OFFSET) * j;
+      slopes[i] = knots.slopes[i] * j;
+    }
+    justified.knots = { offsets: knots.offsets, xs, slopes };
+  }
+  if (prevInLine === null) justified.lineStart = true;
+  if (tieIn) {
+    justified.tieIn =
+      prevInLine && follows(prevInLine, data)
+        ? {
+            beatOffset: tieIn.beatOffset,
+            duration: tieIn.duration,
+            beatWidth: prevInLine.beatWidth,
+            measureWidth: prevInLine.width,
+            ...(prevInLine.knots && { knots: prevInLine.knots }),
+          }
+        : tieIn;
+  }
+  return justified;
+}
+
 /** Bars sampled for the typical squishy width; their neighbours are generated too. */
 const SAMPLE_BARS = 32;
 const SAMPLE_SEED = 0x5eed;
 
-let typicalKey: string | null = null;
-let typicalWidth = 0;
+const typicalWidths = new Map<ViewMode, { key: string; width: number }>();
 
 /**
- * The squishy view's typical bar width for the session's rhythm: the median width of
- * SAMPLE_BARS bars from a seeded generator. Pitch settings are fixed to the defaults, so
- * the answer depends on the rhythm options alone; it is memoised for the last rhythm asked
- * about. The app's auto zoom fits this bar (ADR 0109).
+ * The typical bar width of `view` for the session's rhythm: the median width of SAMPLE_BARS
+ * bars from a seeded generator. Pitch settings are fixed to the defaults, so the answer
+ * depends on the rhythm options alone; it is memoised per view for the last rhythm asked
+ * about. Auto zoom fits this bar in squishy (ADR 0109) and two of them in a page line,
+ * where it is the natural width before justification (ADR 0110).
  */
-export function typicalBarWidth(settings: AppSettings): number {
+export function typicalBarWidth(settings: AppSettings, view: ViewMode = 'squishy'): number {
   const { timeSignature, subdivisions, tuplets, rests, ties } = settings;
   const key = JSON.stringify([timeSignature, subdivisions, tuplets, rests, ties]);
-  if (key === typicalKey) return typicalWidth;
+  const memo = typicalWidths.get(view);
+  if (memo?.key === key) return memo.width;
 
   const d = DEFAULT_APP_SETTINGS;
   const sample: AppSettings = {
@@ -250,14 +301,14 @@ export function typicalBarWidth(settings: AppSettings): number {
   for (let i = 0; i < SAMPLE_BARS + 2; i++) raw.push(generator.generateMeasure(i, sample, i * beats));
 
   const widths: number[] = [];
-  let prev = spaceMeasure(raw[0], null, raw[1], 'squishy', sample);
+  let prev = spaceMeasure(raw[0], null, raw[1], view, sample);
   for (let i = 1; i <= SAMPLE_BARS; i++) {
-    prev = spaceMeasure(raw[i], prev, raw[i + 1], 'squishy', sample);
+    prev = spaceMeasure(raw[i], prev, raw[i + 1], view, sample);
     widths.push(prev.width);
   }
   widths.sort((a, b) => a - b);
   const mid = widths.length >> 1;
-  typicalKey = key;
-  typicalWidth = widths.length % 2 ? widths[mid] : (widths[mid - 1] + widths[mid]) / 2;
-  return typicalWidth;
+  const width = widths.length % 2 ? widths[mid] : (widths[mid - 1] + widths[mid]) / 2;
+  typicalWidths.set(view, { key, width });
+  return width;
 }

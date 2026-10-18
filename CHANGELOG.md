@@ -19,6 +19,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - Going to guidonica.it/reset clears your saved settings and the offline copy, so Guidonica starts again as on your first visit (ADR 0105).
 - Nightly builds have their own icon, a night-blue tile with a crescent moon, and a violet accent throughout the app, so they can't be mistaken for the release (ADR 0107).
 - Squishy view: notes are spaced like printed music, long notes taking less room than their length, so more of the staff fits on small screens; the staff's speed follows the notes smoothly. Swipe the staff sideways, press V, or pick it in Display. (ADR 0109)
+- Page view: the music is set in lines, like a printed page, for reading on a phone held upright. A cursor follows the clicks along each line, and at the end of a line the page eases up to the next, so the lines below are always there to read ahead. Pick it like the other views, or tap Page view on the "Best in landscape" notice. (ADR 0110)
 
 ### Changed
 

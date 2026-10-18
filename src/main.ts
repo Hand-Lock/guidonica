@@ -36,6 +36,7 @@ import {
   beatAccent,
   clampTempo,
   computeOptimalZoom,
+  fitPageZoom,
   fitZoom,
   getBeatsPerMeasure,
   isCompound,
@@ -80,6 +81,8 @@ import {
 const SWIPE_MIN_PX = 48;
 /** How long the view pill stays on screen, fades included (ADR 0109). */
 const VIEW_PILL_MS = 1400;
+/** The locale key naming each view in the pill. */
+const VIEW_NAME_KEYS = { steady: 'viewSteady', squishy: 'viewSquishy', page: 'viewPage' } as const satisfies Record<ViewMode, string>;
 
 /** Tooltip of each interval chip, to which a dormant chip appends why (ADR 0070). */
 const INTERVAL_TITLE_KEYS = {
@@ -470,6 +473,13 @@ class GuidonicaApp {
       () => globalState.settings
     );
     this.scroller.setZoom(initialSettings.zoom || DEFAULT_ZOOM);
+    // The page view cuts between lines instead of easing when motion is reduced (ADR 0110)
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (reducedMotion) {
+      this.scroller.setReducedMotion(reducedMotion.matches);
+      reducedMotion.addEventListener?.('change', (e) => this.scroller.setReducedMotion(e.matches));
+    }
+    document.documentElement.dataset.view = initialSettings.view;
 
     // 3. Hydrate UI elements from stored settings
     this.hydrateUI(initialSettings);
@@ -602,6 +612,12 @@ class GuidonicaApp {
     const settings = globalState.settings;
     // Squishy bars vary: fit the session's typical one, not the densest (ADR 0109)
     if (settings.view === 'squishy') return fitZoom(viewportWidth, typicalBarWidth(settings));
+    // A page fits two typical bars and the clef across a line, and four lines down (ADR 0110)
+    if (settings.view === 'page') {
+      const viewportHeight = this.scroller ? this.scroller.getViewportHeight() : window.innerHeight;
+      const header = this.renderer.systemHeaderWidth(settings.clef, null, settings.meterSigns);
+      return fitPageZoom(viewportWidth, viewportHeight, typicalBarWidth(settings, 'page'), header);
+    }
     return computeOptimalZoom(
       viewportWidth,
       settings.subdivisions,
@@ -1015,6 +1031,11 @@ class GuidonicaApp {
         e.stopPropagation();
         orientationNotice.hidden = true;
         dismissOrientationTip();
+      });
+      // Or read in portrait: the page view lays the music out in lines (ADR 0110)
+      document.getElementById('btn-orientation-page')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.setView('page', true);
       });
     }
 
@@ -2096,6 +2117,8 @@ class GuidonicaApp {
       if (globalState.settings.zoom === zoom) this.rerenderBuffer();
     }
     if (this.selectView) this.selectView.value = view;
+    // CSS keys the portrait notice off the view: a page needs no landscape (ADR 0110)
+    document.documentElement.dataset.view = view;
     if (showPill) this.showViewPill(view);
   }
 
@@ -2105,7 +2128,7 @@ class GuidonicaApp {
     if (!pill) return;
     const name = pill.querySelector('.view-pill-name');
     const dots = pill.querySelector('.view-pill-dots');
-    if (name) name.textContent = view === 'squishy' ? t().viewSquishy : t().viewSteady;
+    if (name) name.textContent = t()[VIEW_NAME_KEYS[view]];
     if (dots) {
       dots.replaceChildren(
         ...VIEW_MODES.map((v) => {
