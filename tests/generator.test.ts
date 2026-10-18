@@ -779,7 +779,13 @@ describe('MusicGenerator 32nd notes', () => {
 
   it('32nd-only configuration produces only 32nds', () => {
     for (const ts of METERS) {
-      const durations = new Set(generate(ts, ONLY_32, 200).flatMap((m) => m.notes.map((n) => n.duration)));
+      // An all-silent bar is spelled as one bar rest whatever the enabled values (ADR 0108)
+      const isBarRest = (m: MeasureData): boolean => m.notes.length === 1 && m.notes[0].isRest;
+      const durations = new Set(
+        generate(ts, ONLY_32, 200)
+          .filter((m) => !isBarRest(m))
+          .flatMap((m) => m.notes.map((n) => n.duration))
+      );
       expect([...durations]).toEqual(['32']);
     }
   });
