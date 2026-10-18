@@ -10,6 +10,7 @@ import {
   PAGE_DENSITY,
   PAGE_LEFT_MARGIN,
   PAGE_MIN_STAFF_DISTANCE,
+  PAGE_PLAYED_ALPHA,
   PAGE_RIGHT_MARGIN,
   PAGE_SYSTEM_GAP,
   PAGE_TURN_BEATS,
@@ -26,6 +27,9 @@ import {
   lineAlpha,
   lineAvailable,
   lineDistance,
+  lineFocus,
+  pageAnchor,
+  pageRowsAbove,
   pageScrollY,
 } from '../src/scroller/page';
 import { mulberry32 } from '../src/notation/random';
@@ -197,37 +201,110 @@ describe('Page scroll curve (ADR 0110)', () => {
 
   it('holds still outside the turns and eases C¹ across each break', () => {
     const half = PAGE_TURN_BEATS / 2;
-    expect(pageScrollY(systems, 1)).toBe(0);
-    expect(pageScrollY(systems, 4 - half)).toBe(0);
-    expect(pageScrollY(systems, 4)).toBeCloseTo(50, 9);
-    expect(pageScrollY(systems, 4 + half)).toBe(100);
-    expect(pageScrollY(systems, 12)).toBe(230);
+    expect(pageScrollY(systems, 1, 0)).toBe(0);
+    expect(pageScrollY(systems, 4 - half, 0)).toBe(0);
+    expect(pageScrollY(systems, 4, 0)).toBeCloseTo(50, 9);
+    expect(pageScrollY(systems, 4 + half, 0)).toBe(100);
+    expect(pageScrollY(systems, 12, 0)).toBe(230);
     const h = 1e-4;
     for (let vb = 0; vb < 18; vb += 0.01) {
-      const y = pageScrollY(systems, vb);
-      const next = pageScrollY(systems, vb + h);
+      const y = pageScrollY(systems, vb, 0);
+      const next = pageScrollY(systems, vb + h, 0);
       // Continuous, monotone, and with a bounded slope: no jump anywhere
       expect(next).toBeGreaterThanOrEqual(y - 1e-9);
       expect(next - y).toBeLessThan(h * 1.5 * 130 / PAGE_TURN_BEATS + 1e-9);
     }
     // C¹: zero slope where each turn begins and ends
     for (const edge of [4 - half, 4 + half, 8 - half, 8 + half]) {
-      expect(Math.abs(pageScrollY(systems, edge + h) - pageScrollY(systems, edge - h))).toBeLessThan(1e-4);
+      expect(Math.abs(pageScrollY(systems, edge + h, 0) - pageScrollY(systems, edge - h, 0))).toBeLessThan(1e-4);
+    }
+  });
+
+  it('starts at the page top and scrolls once the reading line reaches the anchor', () => {
+    const anchor = 150;
+    // Lines at y ≤ anchor: the page holds at its top, the reading line moves down
+    expect(pageScrollY(systems, 1, anchor)).toBe(0);
+    expect(pageScrollY(systems, 5, anchor)).toBe(0);
+    // Past the anchor, the page scrolls to y − anchor
+    expect(pageScrollY(systems, 12, anchor)).toBe(230 - anchor);
+    expect(pageScrollY(systems, 20, anchor)).toBe(330 - anchor);
+    // The turn where the clamp releases (100 → 230) eases from 0, C¹ at both ends
+    const h = 1e-4;
+    const half = PAGE_TURN_BEATS / 2;
+    expect(pageScrollY(systems, 8, anchor)).toBeCloseTo((230 - anchor) / 2, 9);
+    for (const edge of [8 - half, 8 + half, 16 - half, 16 + half]) {
+      expect(Math.abs(pageScrollY(systems, edge + h, anchor) - pageScrollY(systems, edge - h, anchor))).toBeLessThan(1e-4);
+    }
+    // Monotone with a slope no steeper than an unclamped turn: the clamp adds no kink
+    let maxSlope = 0;
+    for (let vb = 0; vb < 18; vb += 0.001) {
+      const y = pageScrollY(systems, vb, anchor);
+      const next = pageScrollY(systems, vb + h, anchor);
+      expect(next).toBeGreaterThanOrEqual(y - 1e-9);
+      maxSlope = Math.max(maxSlope, (next - y) / h);
+    }
+    expect(maxSlope).toBeLessThan(1.5 * 130 / PAGE_TURN_BEATS + 1e-3);
+    // The derivative is continuous: neighbouring slopes differ by little everywhere
+    let prevSlope = 0;
+    for (let vb = 0; vb < 18; vb += 0.001) {
+      const slope = (pageScrollY(systems, vb + h, anchor) - pageScrollY(systems, vb, anchor)) / h;
+      expect(Math.abs(slope - prevSlope)).toBeLessThan(1);
+      prevSlope = slope;
     }
   });
 
   it('cuts at the barline with reduced motion', () => {
-    expect(pageScrollY(systems, 3.99, true)).toBe(0);
-    expect(pageScrollY(systems, 4, true)).toBe(100);
-    expect(pageScrollY(systems, 7.9, true)).toBe(100);
+    expect(pageScrollY(systems, 3.99, 0, true)).toBe(0);
+    expect(pageScrollY(systems, 4, 0, true)).toBe(100);
+    expect(pageScrollY(systems, 7.9, 0, true)).toBe(100);
+    expect(pageScrollY(systems, 7.9, 150, true)).toBe(0);
+    expect(pageScrollY(systems, 8, 150, true)).toBe(80);
   });
 
-  it('fades a finished line out over the half beat after its break', () => {
+  it('dims a finished line to the played ink over the half beat after its break', () => {
     expect(lineAlpha(systems, 0, 3.9)).toBe(1);
     expect(lineAlpha(systems, 0, 4)).toBe(1);
-    expect(lineAlpha(systems, 0, 4 + PAGE_TURN_BEATS / 4)).toBeCloseTo(0.5, 9);
-    expect(lineAlpha(systems, 0, 4 + PAGE_TURN_BEATS / 2)).toBe(0);
+    expect(lineAlpha(systems, 0, 4 + PAGE_TURN_BEATS / 4)).toBeCloseTo(1 - (1 - PAGE_PLAYED_ALPHA) / 2, 9);
+    expect(lineAlpha(systems, 0, 4 + PAGE_TURN_BEATS / 2)).toBeCloseTo(PAGE_PLAYED_ALPHA, 9);
+    expect(lineAlpha(systems, 0, 99)).toBeCloseTo(0.4, 9);
     expect(lineAlpha(systems, 3, 99)).toBe(1);
+  });
+
+  it('marks the active line with a band that cross-fades with the turn', () => {
+    const half = PAGE_TURN_BEATS / 2;
+    const focus = (vb: number, reduced = false): number[] => systems.map((_, i) => lineFocus(systems, i, vb, reduced));
+    expect(focus(1)).toEqual([1, 0, 0, 0]);
+    expect(focus(12)).toEqual([0, 0, 1, 0]);
+    expect(focus(4 - half)).toEqual([1, 0, 0, 0]);
+    expect(focus(4 + half)).toEqual([0, 1, 0, 0]);
+    const mid = focus(4);
+    expect(mid[0]).toBeCloseTo(0.5, 9);
+    expect(mid[1]).toBeCloseTo(0.5, 9);
+    // The weights sum to 1 and follow the scroll's ease exactly
+    for (let vb = 0; vb < 18; vb += 0.01) {
+      const f = focus(vb);
+      expect(f.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 9);
+      const k = f.findIndex((x) => x > 0 && x < 1);
+      if (k > 0 && f[k - 1] > 0) {
+        const sys = systems[k];
+        const progress = (pageScrollY(systems, vb, 0) - sys.prevY) / (sys.y - sys.prevY);
+        expect(f[k]).toBeCloseTo(progress, 9);
+      }
+    }
+    // A step at the barline with reduced motion
+    expect(focus(3.99, true)).toEqual([1, 0, 0, 0]);
+    expect(focus(4, true)).toEqual([0, 1, 0, 0]);
+  });
+
+  it('anchors the reading line a third of the way down the stage', () => {
+    // 620 px at 70%: the middle staff line (y + 100) lands at 620 / 3 px
+    const a = pageAnchor(620, 0.7);
+    expect((100 + a) * 0.7).toBeCloseTo(620 / 3, 9);
+    expect(a).toBeCloseTo(620 / 3 / 0.7 - 100, 9);
+    // A short stage never anchors above the page top
+    expect(pageAnchor(200, 1)).toBe(0);
+    expect(pageRowsAbove(0)).toBe(2);
+    expect(pageRowsAbove(195)).toBe(4);
   });
 });
 
@@ -321,17 +398,19 @@ describe('MeasureBuffer page view (ADR 0110)', () => {
     expect(renderMeasure).toHaveBeenCalledTimes(rendered);
   });
 
-  it('keeps the active line and the one before it, evicting the rest', () => {
+  it('keeps the active line and the rows above it, evicting the rest', () => {
     const s = settingsFor('page');
     const { buffer } = makePageBuffer();
     buffer.setPageWidth(pageWidth);
-    buffer.ensureRows(0, 6, s);
+    buffer.ensureRows(0, 8, s);
     const systems = buffer.getSystems().slice();
-    const vb = systems[4].startBeat + 0.5;
-    buffer.evictRowsBefore(vb);
-    expect(buffer.getSystems()[0]).toBe(systems[3]);
-    expect(buffer.getMeasures()[0].data.index).toBe(systems[3].firstIndex);
-    // Memory stays bounded: rows ahead of the line playing, plus the departing one
+    const vb = systems[6].startBeat + 0.5;
+    buffer.evictRowsBefore(vb, 4);
+    expect(buffer.getSystems()[0]).toBe(systems[2]);
+    expect(buffer.getMeasures()[0].data.index).toBe(systems[2].firstIndex);
+    buffer.evictRowsBefore(vb, 1);
+    expect(buffer.getSystems()[0]).toBe(systems[5]);
+    // Memory stays bounded: rows ahead of the line playing, plus those kept above
     buffer.ensureRows(vb, 6, s);
     expect(buffer.getSystems().length).toBeLessThanOrEqual(1 + 1 + 6 + 1);
   });

@@ -1,10 +1,13 @@
 import {
   MeasureData,
+  PAGE_ANCHOR,
   PAGE_LEFT_MARGIN,
   PAGE_MIN_STAFF_DISTANCE,
+  PAGE_PLAYED_ALPHA,
   PAGE_RIGHT_MARGIN,
   PAGE_SYSTEM_GAP,
   PAGE_TURN_BEATS,
+  STAVE_TOP_LINE_Y,
 } from '../notation/types';
 import { beatX, justifyMeasure } from '../notation/spacing';
 
@@ -94,34 +97,87 @@ function smoothstep(t: number): number {
 }
 
 /**
- * The page's scroll at `vb`, the y shown at the stage top (ADR 0110). It is the active
- * line's y, except across a break, where it eases from the previous line's y over
- * PAGE_TURN_BEATS centred on the break. With reduced motion it cuts at the barline.
- * A pure function of the beat, so the page is wherever the audio clock says.
+ * Index of the line the page is turning to at `vb` when `a` is the line playing, or -1
+ * outside turns: a turn spans PAGE_TURN_BEATS centred on the break, so half a beat before
+ * the next break the turn to it has begun.
  */
-export function pageScrollY(systems: readonly PageSystem[], vb: number, reducedMotion = false): number {
-  const a = findSystem(systems, vb);
-  if (a < 0) return 0;
-  const active = systems[a];
-  if (reducedMotion) return active.y;
+function turningTo(systems: readonly PageSystem[], a: number, vb: number): number {
   const half = PAGE_TURN_BEATS / 2;
-  // Half a beat before the next break, the turn to the next line has begun
   const next = systems[a + 1];
-  const turning = next !== undefined && vb > next.startBeat - half ? next : vb < active.startBeat + half && a > 0 ? active : null;
-  if (turning === null) return active.y;
-  const t = (vb - (turning.startBeat - half)) / PAGE_TURN_BEATS;
-  return turning.prevY + (turning.y - turning.prevY) * smoothstep(t);
+  if (next !== undefined && vb > next.startBeat - half) return a + 1;
+  if (a > 0 && vb < systems[a].startBeat + half) return a;
+  return -1;
+}
+
+/** Eased progress of the turn to `turning` at `vb`, shared by the scroll and the band. */
+function turnEase(turning: PageSystem, vb: number): number {
+  return smoothstep((vb - (turning.startBeat - PAGE_TURN_BEATS / 2)) / PAGE_TURN_BEATS);
 }
 
 /**
- * Opacity of line `i` at `vb`: 1 until the next line starts, then easing to 0 over the
- * half beat after the break, while the page turn carries it up past the stage top. A
- * finished line is then not drawn, so no tail of it lingers above the active line.
+ * The reading anchor in page units (ADR 0110): how far the page scrolls short of a line's
+ * y, so that the line's middle staff line sits PAGE_ANCHOR of the way down a stage
+ * `stageHeight` px tall at `zoom`.
+ */
+export function pageAnchor(stageHeight: number, zoom: number): number {
+  return Math.max(0, (stageHeight * PAGE_ANCHOR) / zoom - STAVE_TOP_LINE_Y - 20);
+}
+
+/**
+ * Lines kept above the one playing so none still on the stage is evicted: those within
+ * the anchor, one more for the line a turn is leaving, and one more for a line's ink
+ * below its staff, which reaches at most 68 units past the next line's y (lineDistance).
+ */
+export function pageRowsAbove(anchor: number): number {
+  return Math.ceil(anchor / PAGE_MIN_STAFF_DISTANCE) + 2;
+}
+
+/**
+ * The page's scroll at `vb`, the y shown at the stage top (ADR 0110). Each line's target
+ * is max(0, y − anchor): the page starts at its top, like a document, and once the
+ * reading line reaches the anchor the page scrolls instead. Across a break the scroll
+ * eases from the previous line's target to the next one's over PAGE_TURN_BEATS centred on
+ * the break; clamping each target rather than the eased curve keeps it C¹ where the clamp
+ * releases. With reduced motion it cuts at the barline. A pure function of the beat, so
+ * the page is wherever the audio clock says.
+ */
+export function pageScrollY(systems: readonly PageSystem[], vb: number, anchor: number, reducedMotion = false): number {
+  const a = findSystem(systems, vb);
+  if (a < 0) return 0;
+  const k = reducedMotion ? -1 : turningTo(systems, a, vb);
+  if (k < 0) return Math.max(0, systems[a].y - anchor);
+  const turning = systems[k];
+  const from = Math.max(0, turning.prevY - anchor);
+  const to = Math.max(0, turning.y - anchor);
+  return from + (to - from) * turnEase(turning, vb);
+}
+
+/**
+ * Opacity of line `i` at `vb`: 1 until the next line starts, then easing to
+ * PAGE_PLAYED_ALPHA over the half beat after the break. Played lines stay on the page,
+ * dimmed, so the bars just played can still be seen above the reading line.
  */
 export function lineAlpha(systems: readonly PageSystem[], i: number, vb: number): number {
   const next = systems[i + 1];
   if (next === undefined || vb <= next.startBeat) return 1;
-  return 1 - smoothstep((vb - next.startBeat) / (PAGE_TURN_BEATS / 2));
+  return 1 - (1 - PAGE_PLAYED_ALPHA) * smoothstep((vb - next.startBeat) / (PAGE_TURN_BEATS / 2));
+}
+
+/**
+ * Weight in [0, 1] of the band marking line `i` as the one playing at `vb`: 1 on the
+ * active line outside turns; across a turn the departing line gets 1 − σ and the arriving
+ * one σ, with the scroll's own ease, so the weights always sum to 1. With reduced motion
+ * the band moves at the barline.
+ */
+export function lineFocus(systems: readonly PageSystem[], i: number, vb: number, reducedMotion = false): number {
+  const a = findSystem(systems, vb);
+  if (a < 0) return 0;
+  const k = reducedMotion ? -1 : turningTo(systems, a, vb);
+  if (k < 0) return i === a ? 1 : 0;
+  const sigma = turnEase(systems[k], vb);
+  if (i === k) return sigma;
+  if (i === k - 1) return 1 - sigma;
+  return 0;
 }
 
 /**

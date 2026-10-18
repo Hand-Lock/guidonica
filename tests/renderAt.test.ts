@@ -316,11 +316,22 @@ describe('Drawing a frame at an explicit beat (ADR 0103 seam 2)', () => {
     scroller.destroy();
   });
 
-  it('hides the page cursor and wash with the playhead off', () => {
+  it('hides the page cursor and wash with the playhead off, keeping the active-line band', () => {
     const settings: AppSettings = { ...structuredClone(DEFAULT_APP_SETTINGS), view: 'page', showPlayhead: false };
-    const { scroller, calls } = makeStage(settings, throwingMetronome, 3);
+    const { scroller, buffer, calls } = makeStage(settings, throwingMetronome, 3);
+    const z = scroller.getZoom();
+    const bands = (): Call[] =>
+      calls.filter((c) => c[0] === 'fillRect' && c[1] === PAGE_LEFT_MARGIN * z && Math.abs((c[4] as number) - 110 * z) < 1e-9);
     scroller.renderAt(2.5);
     expect(calls.some((c) => c[0] === 'translate')).toBe(false);
+    // One band, over the first line's cursor span: 35 units above its staff top
+    expect(bands().length).toBe(1);
+    expect(bands()[0][2] as number).toBeCloseTo((80 - 35) * z, 9);
+    // Mid-turn, the band cross-fades over both lines
+    const second = buffer.getSystems()[1];
+    calls.length = 0;
+    scroller.renderAt(second.startBeat);
+    expect(bands().length).toBe(2);
     scroller.destroy();
   });
 

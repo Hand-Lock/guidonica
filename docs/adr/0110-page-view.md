@@ -1,7 +1,7 @@
 # 0110. Page View: Multi-Line Staves with Vertical Scrolling
 
 - **Status**: Accepted (a third view beside ADR 0109's steady and squishy tapes)
-- **Date**: 2026-10-18
+- **Date**: 2026-10-18 (amended the same day: reading line a third down, played lines dimmed, active-line band)
 - **Author**: Claude & A. C. Lo Cascio
 - **Relates to**: [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md), [0087](0087-rotating-tips.md), [0091](0091-jank-free-beat-and-measure-frames.md), [0103](0103-embeddable-engine-seams.md), [0104](0104-engine-entry-point.md), [0109](0109-squishy-view.md)
 
@@ -109,10 +109,12 @@ $$x(v_b) = 16 + \text{header} + \sum_{\text{bars before}} W' + \text{beatX}(\tex
 times zoom. On the justified knots `beatX` is ADR 0109's monotone Hermite, so every note is
 under the cursor on its click (`tests/renderAt.test.ts`).
 
-The scroll $Y(v_b)$ (`pageScrollY`) is the active line's `y`, except across a break at beat
-$b$, where it eases from the previous line's `y` with a smoothstep centred on the break:
+The scroll $Y(v_b)$ (`pageScrollY`) is the y shown at the stage top. Each line has a target
+$\mathcal{T}(y) = \max(0,\ y - A)$, where $A$ is the reading anchor below. Outside turns
+$Y = \mathcal{T}(y)$ of the active line; across a break at beat $b$ it eases from the previous
+line's target with a smoothstep centred on the break:
 
-$$Y = y_{\text{prev}} + (y - y_{\text{prev}})\,\sigma\!\Big(\frac{v_b - (b - T/2)}{T}\Big),\qquad \sigma(t) = 3t^2 - 2t^3,\quad T = \texttt{PAGE\_TURN\_BEATS} = 1.$$
+$$Y = \mathcal{T}(y_{\text{prev}}) + \big(\mathcal{T}(y) - \mathcal{T}(y_{\text{prev}})\big)\,\sigma\!\Big(\frac{v_b - (b - T/2)}{T}\Big),\qquad \sigma(t) = 3t^2 - 2t^3,\quad T = \texttt{PAGE\_TURN\_BEATS} = 1.$$
 
 $\sigma$ has zero slope at both ends, so the motion is C¹ and never jerks. The step happens
 while the eye is already jumping lines. Each line stores `prevY`, so the curve never reads an
@@ -120,19 +122,49 @@ evicted line. With `prefers-reduced-motion` the page cuts at the barline instead
 (`scroller.setReducedMotion`, default false so `renderAt` stays deterministic). `findSystem`
 finds the active line by binary search.
 
-The active line's canvas top sits at the stage top. A finished line fades out over the half
-beat after its break (`lineAlpha`, $1 - \sigma(2(v_b - b)/T)$, applied with `globalAlpha`)
-while the turn carries it up, so no tail of its low notes lingers above the active line. A
-cached 24-unit top fade (`PAGE_FADE_HEIGHT`) softens the stage edge. The lines below are
-the read-ahead: about nine on a 390 × 844 phone.
+**The reading line sits a third of the way down the stage** (amended 2026-10-18). Seeing
+the bars just played helps, but read-ahead matters more for sight-reading, so the anchor is a
+third rather than the centre, which would give half the stage to music already played. The
+anchor places the active line's middle staff line (canvas y 100) at $H/3$:
+
+$$A = \max\Big(0,\ \frac{H \cdot \texttt{PAGE\_ANCHOR}}{\text{zoom}} - 80 - 20\Big),\qquad \texttt{PAGE\_ANCHOR} = 1/3$$
+
+(`pageAnchor`). Line ys are absolute from the first line ($y = 0$), so **the page starts at
+its top, like a document**: while $y \le A$ the target is 0, the page holds still, and on
+each turn the reading line moves down, as an eye does on print. Once it reaches the anchor
+the page scrolls instead. The clamp is applied to each line's target, not to the eased
+curve: $\max(0, \cdot)$ of the blend would have a slope jump in the middle of the turn where
+the clamp releases, while a blend of clamped targets is still $\sigma$ between two
+constants, C¹ with zero slope at both ends. After a view switch, a reset or a background-tab
+skip the page starts again at its top.
+
+Played lines stay on the page, dimmed: a finished line eases from full ink to
+`PAGE_PLAYED_ALPHA` = 0.4 over the half beat after its break (`lineAlpha`,
+$1 - 0.6\,\sigma(2(v_b - b)/T)$, applied with `globalAlpha`). Lines to come stay at full ink,
+since they are what is read. A cached 24-unit top fade (`PAGE_FADE_HEIGHT`) softens the
+stage edge only. On a 390 × 844 phone at 70% the stage shows about two or three played
+lines above the reading line and six to come below it.
 
 ### 7. Assists
 
-With the playhead on, the page draws the cursor and a light wash over the part of the current
-line already played, so the eye finds its place at a glance. The cursor is a red line
-spanning the staff with the playhead's triangles and glow; the glow gradient is cached and
-placed with `translate`. With the playhead off neither is drawn, so the exercise still trains
-an internal pulse, and only the line turns show where the music is.
+**A light band marks the active line, with the playhead on or off** (amended 2026-10-18).
+It is a neutral slate tint, `rgba(staffRgb, bandAlpha)` with `bandAlpha` 0.07 in light and
+0.10 in dark (`CANVAS_PALETTE`), from the left margin to the line's closing barline over the
+cursor's vertical span (35 units above the staff top to 75 below). It is neutral, not red,
+so it never reads as an error; red stays the cursor's and the played wash's colour. The band
+is drawn under each line's ink with `globalAlpha` set to its weight (`lineFocus`), so nothing
+is allocated per frame. Its weight is 1 on the active line; across a turn the departing line
+gets $1 - \sigma$ and the arriving one $\sigma$, from the same helper as the scroll, so the
+two never disagree and the weights sum to 1. Under reduced motion it moves at the barline.
+It moves with the page, so it never jumps. With the dimmed lines above it, the reading line
+is clear at a glance even before it reaches the anchor.
+
+With the playhead on, the page also draws the cursor and a light wash over the part of the
+current line already played. The cursor is a red line spanning the staff with the playhead's
+triangles and glow; the glow gradient is cached and placed with `translate`. With the
+playhead off neither is drawn. **The playhead stays optional**: forcing it on in the page
+view would remove the internal-pulse exercise there. The band says which line is playing,
+not where in it.
 
 ### 8. Buffer (`buffer.ts`)
 
@@ -146,8 +178,11 @@ each renders, and the bars after them wait in `open` at their natural width.
   fit. Each render counts toward `maxMeasures`, so idle callbacks still render one bar each
   (ADR 0091). It stops once complete lines reach `rowsBelow` past the active one;
   `coversRows` asks the same question. `ensureAhead` delegates to it in page view.
-- `evictRowsBefore(vb)` keeps the active line and the departing one before it, and
-  releases the rest's canvases, as `evictFirst` does.
+- `evictRowsBefore(vb, rowsAbove)` keeps the active line and `rowsAbove` played lines
+  before it, and releases the rest's canvases, as `evictFirst` does. The scroller passes
+  `pageRowsAbove(A)` = $\lceil A/100 \rceil + 2$: the lines within the anchor at the least
+  staff distance, one for the line a turn is leaving, and one because a line's ink reaches
+  at most 68 units past the next line's `y` ($\text{inkTop} \le 80$ in `lineDistance`).
 - `setPageWidth(w)` marks the layout dirty when the width changes by more than half a unit.
   The next `ensureRows` re-breaks every kept bar from the first one, keeping the first
   line's `y`, and renders them again (`relayoutPage`). `rerender` does the same, since ink
@@ -158,9 +193,10 @@ each renders, and the bars after them wait in `open` at their natural width.
 ### 9. Scroller (`scroller.ts`)
 
 `draw()` branches to `drawPage()` in page view. `drawPage` fills the background, ensures
-`ceil(H / (100·zoom)) + 1` rows (scheduling idle renders for one more), evicts, and draws
-each line on the stage at $(y - Y)\cdot\text{zoom}$: its staff lines (`drawStaffLines` now
-takes a y), header, bars and closing barline. It then draws the wash and cursor, then the top
+`ceil(H / (100·zoom)) + 1` rows (scheduling idle renders for one more), which the initial
+phase needs while the page is at its top, evicts, and draws each line on the stage at
+$(y - Y)\cdot\text{zoom}$: its band, then its staff lines (`drawStaffLines` now takes a y),
+header, bars and closing barline at the line's alpha. It then draws the wash and cursor, then the top
 fade. Header canvases are cached per clef, meter, meter signs and theme, and released with
 the pinned clef on a zoom or DPR change. `renderEmptyFrame` draws empty lines while the font
 loads. `updateDimensions` pushes `W_viewport/zoom` to the buffer.
@@ -180,16 +216,18 @@ staff would be too small to read at arm's length. In landscape the height binds 
 
 ### 11. Engine and copy
 
-`src/engine.ts` exports `justifyMeasure`, `pageScrollY` and `PageSystem`; the constants flow
+`src/engine.ts` exports `justifyMeasure`, `pageScrollY`, `pageAnchor` and `PageSystem`; the constants flow
 through `types`. Locales gain `viewPage` and `landscapePage`, and the `views` and `viewsKey`
 tips name the page view.
 
 ## Consequences
 
-- **Portrait gets a real reading layout**: about nine lines on a phone, read ahead like
-  print, with no rotation needed.
-- **Memory is bounded by the stage area**, not its width: the active line, the departing one
-  and the rows that fill the stage plus one. A three-hour session holds the same few lines.
+- **Portrait gets a real reading layout**: on a phone, about two played lines above the
+  reading line and six to come, read ahead like print, with no rotation needed. In landscape
+  (844 × 390) the anchor leaves room for about one played line, which is enough.
+- **Memory is bounded by the stage area**, not its width: the active line, the played lines
+  above it up to the anchor plus two, and the rows that fill the stage plus one. A
+  three-hour session holds the same few lines.
 - **Line widths move with the music.** A dense bar can take a line alone; at the default
   zoom the typical line holds two bars.
 - **Relayout re-renders every kept bar.** A rotation, zoom or label change rasterizes about

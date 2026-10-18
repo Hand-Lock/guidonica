@@ -30,7 +30,7 @@ import { MeasureBuffer } from './buffer';
 import { MeasureRenderer } from '../notation/renderer';
 import { isMusicFontReady } from '../notation/fonts';
 import { FrameRateMonitor } from '../utils/frameRate';
-import { PageSystem, cursorOffsetX, findSystem, lineAlpha, pageScrollY } from './page';
+import { PageSystem, cursorOffsetX, findSystem, lineAlpha, lineFocus, pageAnchor, pageRowsAbove, pageScrollY } from './page';
 
 /**
  * Measures past the right edge are rendered in idle time, between frames, up to this
@@ -98,6 +98,7 @@ export class ScrollerView {
   // Page view (ADR 0110): line headers cached per clef, meter, signs and theme at this zoom
   private systemHeaders: SystemHeader[] = [];
   private washStyle = '';
+  private bandStyle = '';
   private cursorGradient: CanvasGradient | null = null;
   private pageFadeGradient: CanvasGradient | null = null;
   private reducedMotion = false;
@@ -528,8 +529,8 @@ export class ScrollerView {
 
   /**
    * The page view's frame (ADR 0110): lines at (y − Y(vb))·zoom down the stage, each with
-   * its staff, header, bars and closing barline; then the played wash and the cursor when
-   * the playhead is on, and the top fade the departing line leaves under. Lines are
+   * the active-line band, its staff, header, bars and closing barline, played lines dimmed;
+   * then the played wash and the cursor when the playhead is on, and the top fade. Lines are
    * rendered as the stage needs them and, beyond it, in idle time (ADR 0091).
    */
   private drawPage(vb: number, settings: AppSettings, live: boolean): void {
@@ -542,6 +543,7 @@ export class ScrollerView {
     if (this.gradientPalette !== palette) {
       this.invalidateGradients();
       this.washStyle = `rgba(${palette.playheadRgb}, 0.05)`;
+      this.bandStyle = `rgba(${palette.staffRgb}, ${palette.bandAlpha})`;
     }
     this.gradientPalette = palette;
 
@@ -553,11 +555,12 @@ export class ScrollerView {
     const rows = this.pageRowsBelow();
     this.buffer.ensureRows(vb, rows, settings);
     if (live && isMusicFontReady() && !this.buffer.coversRows(vb, rows + 1)) this.scheduleIdleRender();
-    this.buffer.evictRowsBefore(vb);
+    const anchor = pageAnchor(h, zoom);
+    this.buffer.evictRowsBefore(vb, pageRowsAbove(anchor));
 
     const systems = this.buffer.getSystems();
     const measures = this.buffer.getMeasures();
-    const scrollY = pageScrollY(systems, vb, this.reducedMotion);
+    const scrollY = pageScrollY(systems, vb, anchor, this.reducedMotion);
     const active = findSystem(systems, vb);
     let pos = 0;
     let activePos = 0;
@@ -566,11 +569,9 @@ export class ScrollerView {
       const top = (system.y - scrollY) * zoom;
       if (top > h) break;
       if (i === active) activePos = pos;
-      const alpha = lineAlpha(systems, i, vb);
-      if (alpha > 0 && top + MEASURE_CANVAS_HEIGHT * zoom >= 0) {
-        ctx.globalAlpha = alpha;
-        this.drawSystem(ctx, system, measures, pos, top, settings, theme, palette);
-        ctx.globalAlpha = 1;
+      if (top + MEASURE_CANVAS_HEIGHT * zoom >= 0) {
+        const focus = lineFocus(systems, i, vb, this.reducedMotion);
+        this.drawSystem(ctx, system, measures, pos, top, settings, theme, palette, lineAlpha(systems, i, vb), focus);
       }
       pos += system.count;
     }
@@ -582,7 +583,7 @@ export class ScrollerView {
       this.drawPageCursor(ctx, (PAGE_LEFT_MARGIN + system.header) * zoom, x, top + STAVE_TOP_LINE_Y * zoom, palette);
     }
 
-    // The departing line eases out under a fade at the stage top
+    // Played lines scroll out under a fade at the stage top
     const fade = PAGE_FADE_HEIGHT * zoom;
     if (!this.pageFadeGradient) {
       this.pageFadeGradient = ctx.createLinearGradient(0, 0, 0, fade);
@@ -595,7 +596,10 @@ export class ScrollerView {
     ctx.restore();
   }
 
-  /** One page line at screen y `top` (its canvases' top): staff, header, bars and closing barline. */
+  /**
+   * One page line at screen y `top` (its canvases' top): the active-line band at weight
+   * `focus`, then at opacity `alpha` its staff, header, bars and closing barline.
+   */
   private drawSystem(
     ctx: CanvasRenderingContext2D,
     system: PageSystem,
@@ -604,7 +608,9 @@ export class ScrollerView {
     top: number,
     settings: AppSettings,
     theme: ResolvedTheme,
-    palette: CanvasPalette
+    palette: CanvasPalette,
+    alpha: number,
+    focus: number
   ): void {
     const zoom = this.zoom;
     const left = PAGE_LEFT_MARGIN * zoom;
@@ -613,6 +619,14 @@ export class ScrollerView {
     let end = x;
     for (let i = first; i < last; i++) end += measures[i].width;
     const staffTop = top + STAVE_TOP_LINE_Y * zoom;
+
+    // The band marks the line playing over the cursor's span, with the playhead on or off
+    if (focus > 0) {
+      ctx.globalAlpha = focus;
+      ctx.fillStyle = this.bandStyle;
+      ctx.fillRect(left, staffTop - CURSOR_ABOVE * zoom, end - left, (CURSOR_ABOVE + CURSOR_BELOW) * zoom);
+    }
+    ctx.globalAlpha = alpha;
     this.drawStaffLines(ctx, left, end, palette, staffTop);
 
     const firstBar = measures[first];
@@ -641,6 +655,7 @@ export class ScrollerView {
     const lineSpacing = Math.round(10 * zoom);
     ctx.fillStyle = palette.staff;
     ctx.fillRect(Math.round(end) - 1, Math.round(staffTop), 1, 4 * lineSpacing + 1);
+    ctx.globalAlpha = 1;
   }
 
   /** A page line header from the cache, rendered on first use at this zoom. */

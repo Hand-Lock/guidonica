@@ -506,6 +506,9 @@ export interface CanvasPalette {
   background: string;
   backgroundRgb: string;
   staff: string;
+  staffRgb: string;
+  /** Opacity of the page view's active-line band, a tint of `staff` (ADR 0110). */
+  bandAlpha: number;
   ink: string;
   tuplet: string;
   solfege: string;
@@ -518,6 +521,8 @@ export const CANVAS_PALETTE: Record<ResolvedTheme, CanvasPalette> = {
     background: '#ffffff',
     backgroundRgb: '255, 255, 255',
     staff: '#64748b',
+    staffRgb: '100, 116, 139',
+    bandAlpha: 0.07,
     ink: '#000000',
     tuplet: '#334155',
     solfege: '#007a62',
@@ -528,6 +533,8 @@ export const CANVAS_PALETTE: Record<ResolvedTheme, CanvasPalette> = {
     background: '#0f172a',
     backgroundRgb: '15, 23, 42',
     staff: '#64748b',
+    staffRgb: '100, 116, 139',
+    bandAlpha: 0.1,
     ink: '#f8fafc',
     tuplet: '#cbd5e1',
     solfege: '#00ffcc',
@@ -785,7 +792,9 @@ export const PAGE_SYSTEM_GAP = 12; // Least clearance between one line's ink and
 export const PAGE_TURN_BEATS = 1; // The page steps up a line over this many beats, centred on the break
 export const PAGE_LEFT_MARGIN = 16; // Where each line's staff begins
 export const PAGE_RIGHT_MARGIN = NOTE_START_OFFSET + 4; // Room past the closing barline for the cursor's run-out
-export const PAGE_FADE_HEIGHT = 24; // Top fade the departing line leaves under
+export const PAGE_FADE_HEIGHT = 24; // Top fade at the stage edge
+export const PAGE_ANCHOR = 1 / 3; // The reading line's middle staff line sits this far down the stage
+export const PAGE_PLAYED_ALPHA = 0.4; // Ink of the lines already played, above the reading line
 export const PAGE_TARGET_BARS = 2; // Auto zoom fits this many typical bars across a line
 export const PAGE_TARGET_LINES = 4; // ... and at least this many lines down the stage
 export const PAGE_MIN_AUTO_ZOOM = 0.6;

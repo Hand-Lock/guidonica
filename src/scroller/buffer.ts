@@ -340,12 +340,12 @@ export class MeasureBuffer {
   }
 
   /**
-   * Evicts the page lines above the one before the line playing at `vb`: that departing
-   * line is still easing off the stage top (ADR 0110). Their canvases are released.
+   * Evicts the page lines more than `rowsAbove` above the line playing at `vb`: the played
+   * lines kept above the reading line (ADR 0110). Their canvases are released.
    */
-  public evictRowsBefore(vb: number): void {
+  public evictRowsBefore(vb: number, rowsAbove: number): void {
     const a = findSystem(this.systems, vb);
-    const keepFrom = a - 1;
+    const keepFrom = a - rowsAbove;
     if (keepFrom <= 0) return;
     let bars = 0;
     for (let i = 0; i < keepFrom; i++) bars += this.systems[i].count;
