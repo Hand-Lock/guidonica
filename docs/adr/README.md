@@ -114,7 +114,7 @@ This directory documents the core architectural decisions, implementation method
 | [0106](0106-keyboard-detection.md) | Keyboard Detection: Shortcuts Only Where Keys Exist | Accepted | 2026-10-16 |
 | [0107](0107-nightly-icon.md) | Nightly Icon & Accent: A Night-Blue Tile and a Violet UI | Accepted | 2026-10-16 |
 | [0108](0108-no-consecutive-bar-rests.md) | No Back-to-Back Bar Rests | Accepted | 2026-10-16 |
-| [0109](0109-squishy-view.md) | Squishy View: Per-Bar Width & Eased Scroll Speed | Accepted | 2026-10-18 |
+| [0109](0109-squishy-view.md) | Squishy View: Engraved Note Spacing & Continuous Scroll Speed | Accepted | 2026-10-18 |
 
 ---
 

@@ -5,7 +5,6 @@ import { MeasureRenderer, tieAnchorRightX } from '../src/notation/renderer';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import { AppSettings, MeasureData, NOTE_START_OFFSET, TIME_SIGNATURES } from '../src/notation/types';
 import en from '../src/i18n/locales/en';
-import { spacingWidth } from '../src/notation/spacing';
 
 const SIMPLE_BEATS: Record<string, number> = {
   w: 4, hd: 3, h: 2, qd: 1.5, q: 1, '8d': 0.75, '8': 0.5, '16d': 0.375, '16': 0.25, '32': 0.125,
@@ -115,7 +114,7 @@ describe('Cross-barline tie rendering', () => {
     }
   });
 
-  it('joins a barline tie seamlessly on squishy ramps too (ADR 0109)', () => {
+  it('joins a barline tie seamlessly on a squishy knotted bar too (ADR 0109)', () => {
     const renderer = new MeasureRenderer();
     const calls: Array<{ note: StaveNote | undefined; firstX: number; lastX: number }> = [];
     const original = StaveTie.prototype.renderTie;
@@ -127,9 +126,14 @@ describe('Cross-barline tie rendering', () => {
       original.call(this, params);
     });
 
-    // A narrow bar easing in from and out to wider neighbours
-    const spacing = { beatWidth: 60, entryBeatWidth: 90, exitBeatWidth: 130 };
-    const width = spacingWidth(spacing, '4/4');
+    // A squishy bar: a curved spacing through knots at beats 0, 2 and the barline
+    const knots = {
+      offsets: Float64Array.of(0, 2, 4),
+      xs: Float64Array.of(NOTE_START_OFFSET, NOTE_START_OFFSET + 120, NOTE_START_OFFSET + 200),
+      slopes: Float64Array.of(70, 50, 40),
+    };
+    const width = 200;
+    const spacing = { beatWidth: width / 4, knots };
     for (const duration of ['q', '8', '16', 'qd']) {
       const beatOffset = 4 - SIMPLE_BEATS[duration];
       const keys = ['g/4'];
@@ -144,7 +148,7 @@ describe('Cross-barline tie rendering', () => {
       if (!outNote) continue;
       expect(calls[0].firstX).toBeCloseTo(outNote.getTieRightX(), 9);
       expect(calls[0].firstX).toBeCloseTo(tieAnchorRightX(beatOffset, duration, spacing, '4/4'), 9);
-      // Inside the exit ramp the note sits left of where the linear body would put it
+      // The curve puts the note away from where the mean beat width would
       expect(tieAnchorRightX(beatOffset, duration, spacing, '4/4')).not.toBeCloseTo(
         tieAnchorRightX(beatOffset, duration, spacing.beatWidth),
         3

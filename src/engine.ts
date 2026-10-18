@@ -13,11 +13,11 @@ export type { Random } from './notation/random';
 export { MeasureRenderer } from './notation/renderer';
 export { MUSIC_FONT_FAMILY, isMusicFontReady, waitForMusicFonts } from './notation/fonts';
 export {
+  SPACING_EXPONENT,
   beatX,
+  noteSpace,
+  shortestBeats,
   spaceMeasure,
-  spacingWidth,
-  squishyBeatWidth,
-  tupletCell,
   typicalBarWidth,
 } from './notation/spacing';
 export type { BeatSpacing } from './notation/spacing';

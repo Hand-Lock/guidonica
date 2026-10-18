@@ -18,7 +18,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - Going to guidonica.it/reset clears your saved settings and the offline copy, so Guidonica starts again as on your first visit (ADR 0105).
 - Nightly builds have their own icon, a night-blue tile with a crescent moon, and a violet accent throughout the app, so they can't be mistaken for the release (ADR 0107).
-- Squishy view: each bar is only as wide as its rhythm needs, and the staff eases its speed to match. Swipe the staff sideways, press V, or pick it in Display. (ADR 0109)
+- Squishy view: notes are spaced like printed music, long notes taking less room than their length, so more of the staff fits on small screens; the staff's speed follows the notes smoothly. Swipe the staff sideways, press V, or pick it in Display. (ADR 0109)
 
 ### Changed
 
@@ -33,7 +33,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - `/reset` also works on the dev and preview servers, and on guidonica.it/nightly/reset for the nightly channel (ADR 0105).
 - The README ADR table lists ADRs 0106, 0107 and 0108.
-- The engine entry point exports the bar spacing functions (`beatX`, `spaceMeasure`, `typicalBarWidth` and helpers), and `MeasureBuffer` evicts by pixels with `evictLeftOf` (ADR 0109).
+- The engine entry point exports the engraved spacing functions (`beatX`, `noteSpace`, `shortestBeats`, `spaceMeasure`, `typicalBarWidth`, `SPACING_EXPONENT`) and the `SpacingKnots` type, and `MeasureBuffer` evicts by pixels with `evictLeftOf` (ADR 0109).
 - The small LEDs on checked chips glow through a `--led-on-halo` token instead of a literal Olo colour (ADR 0107).
 
 ## [2026.10.4] - 2026-10-15

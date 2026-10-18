@@ -4,7 +4,7 @@ import { MusicGenerator } from '../src/notation/generator';
 import { MeasureRenderer } from '../src/notation/renderer';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import { AppSettings, MeasureData, RenderedMeasure, computeBeatWidth, getBeatsPerMeasure } from '../src/notation/types';
-import { beatX } from '../src/notation/spacing';
+import { beatX, noteSpace } from '../src/notation/spacing';
 import { mulberry32 } from '../src/notation/random';
 import en from '../src/i18n/locales/en';
 import { noteLabels } from '../src/i18n';
@@ -121,15 +121,14 @@ describe('MeasureBuffer views (ADR 0109)', () => {
     }
   });
 
-  it('lays steady bars out linearly and squishy bars no wider, with matching ramps', () => {
+  it('lays steady bars out linearly and squishy bars no wider, agreeing on each barline slope', () => {
     const steady = makeBuffer();
     const s = busy('steady');
     steady.buffer.ensureAhead(0, 24, s);
     for (const m of steady.buffer.getMeasures()) {
       expect(m.data.beatWidth).toBe(linear(s));
       expect(m.data.width).toBe(m.data.beatsPerMeasure * linear(s));
-      expect(m.data.entryBeatWidth).toBeUndefined();
-      expect(m.data.exitBeatWidth).toBeUndefined();
+      expect(m.data.knots).toBeUndefined();
     }
 
     const squishy = makeBuffer();
@@ -142,10 +141,8 @@ describe('MeasureBuffer views (ADR 0109)', () => {
       expect(d.width).toBeLessThanOrEqual(d.beatsPerMeasure * linear(q) + 1e-9);
       if (i > 0) {
         const prev = bars[i - 1];
-        // Each barline joins at one speed: the wider side's body width
-        const left = prev.exitBeatWidth ?? prev.beatWidth;
-        const right = d.entryBeatWidth ?? d.beatWidth;
-        expect(left).toBe(right);
+        // Each barline joins at one speed: both bars compute the same slope there
+        expect(prev.knots?.slopes[prev.notes.length]).toBe(d.knots?.slopes[0]);
       }
     });
   });
@@ -190,7 +187,10 @@ describe('MeasureBuffer views (ADR 0109)', () => {
     buffer.ensureAhead(0, 4, q, 1);
     expect(buffer.getMeasures()[0].data.index).toBe(0);
     expect(buffer.getMeasures()[0].data.startBeat).toBe(0);
-    expect(buffer.getMeasures()[0].data.entryBeatWidth).toBeUndefined();
+    // No laid-out predecessor: the first bar's entry slope is its first note's own secant
+    const first = buffer.getMeasures()[0].data;
+    const n = first.notes[0];
+    expect(first.knots?.slopes[0]).toBeCloseTo(noteSpace(n.beatDuration, q, q.timeSignature) / n.beatDuration, 12);
   });
 
   it('evicts bars whose right edge has left the stage, by pixels', () => {

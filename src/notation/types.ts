@@ -589,8 +589,8 @@ export type ZoomMode = 'auto' | 'manual';
 
 /**
  * How bars are spaced on the tape (ADR 0109): `steady` gives every bar the width of the
- * session's densest value (SPEC §3 metric linearity), `squishy` sizes each bar by its own
- * rhythm and eases the scroll speed between bars. Ordered for cycling.
+ * session's densest value (SPEC §3 metric linearity), `squishy` spaces each note by its own
+ * duration as engravers do, with a continuous scroll speed. Ordered for cycling.
  */
 export const VIEW_MODES = ['steady', 'squishy'] as const;
 export type ViewMode = (typeof VIEW_MODES)[number];
@@ -697,6 +697,17 @@ export interface NoteData {
   beatDuration: number; // Duration measured in metric beats
 }
 
+/**
+ * A squishy bar's spacing curve (ADR 0109): knot i sits at `offsets[i]` metric beats (each
+ * note onset, then the barline at B) and x `xs[i]` (measure units), with tape velocity
+ * `slopes[i]` px per beat. Built once at layout; beatX interpolates it with a monotone cubic.
+ */
+export interface SpacingKnots {
+  offsets: Float64Array;
+  xs: Float64Array;
+  slopes: Float64Array;
+}
+
 export interface MeasureData {
   index: number; // Sequential measure index: 0, 1, 2...
   notes: NoteData[];
@@ -704,13 +715,11 @@ export interface MeasureData {
   timeSignature: TimeSignature;
   beatsPerMeasure: number; // Count of metric beats (e.g., 4 for 4/4, 12 for 12/8)
   beatValue: number; // Denominator (e.g. 4 for 4/4, 8 for 6/8)
-  beatWidth: number; // Metric beat width (px): the session's in steady, the bar's own body width in squishy
+  beatWidth: number; // Metric beat width (px): the session's in steady, the bar's mean (width / beats) in squishy
   width: number; // Measure pixel width
   startBeat: number; // Global start beat offset from beginning of piece
-  /** Squishy only (ADR 0109): the wider previous bar's beat width, eased down over the first felt beat. */
-  entryBeatWidth?: number;
-  /** Squishy only (ADR 0109): the wider next bar's beat width, eased up to over the last felt beat. */
-  exitBeatWidth?: number;
+  /** Squishy only (ADR 0109): the bar's engraved spacing curve, read through beatX. */
+  knots?: SpacingKnots;
   /**
    * Tie arriving at notes[0] from the previous bar's last note. Self-contained (the
    * previous note's layout, not a reference to that measure), so re-rendering and
@@ -721,8 +730,7 @@ export interface MeasureData {
     duration: string; // Previous note's VexFlow duration
     beatWidth: number; // Previous bar's beat width (px)
     measureWidth: number; // Previous bar's width (px)
-    entryBeatWidth?: number; // Previous bar's squishy ramps (ADR 0109)
-    exitBeatWidth?: number;
+    knots?: SpacingKnots; // Previous bar's squishy knots, shared by reference (ADR 0109)
   };
 }
 

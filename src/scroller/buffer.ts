@@ -30,7 +30,7 @@ export class MeasureBuffer {
   private nextMeasureIndex: number = 0;
   private nextMeasureStartBeat: number = 0;
   /**
-   * The next bar to render, generated one bar early: a bar's squishy exit ramp depends on
+   * The next bar to render, generated one bar early: a bar's squishy exit slope depends on
    * the bar after it (ADR 0109). The generator is still called once per bar, in order.
    */
   private pending: MeasureData | null = null;
@@ -75,7 +75,7 @@ export class MeasureBuffer {
    * given visual settings (theme, solfège). The musical content (the notes) and the
    * generator state are untouched, so the notes under the playhead never change. A new
    * view lays the kept bars out again first; the first kept bar has no laid-out
-   * predecessor, so it gets no entry ramp and its incoming tie keeps the old spacing
+   * predecessor, so its entry slope is one-sided and its incoming tie keeps the old spacing
    * until it scrolls off (ADR 0109).
    */
   public rerender(settings: AppSettings): void {

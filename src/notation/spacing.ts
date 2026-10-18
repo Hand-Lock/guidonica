@@ -5,169 +5,168 @@ import {
   MeasureData,
   NOTE_START_OFFSET,
   NoteData,
-  SubdivisionOptions,
+  SpacingKnots,
   TUPLET_NAMES,
   TUPLET_VALUES,
   TimeSignature,
-  TupletName,
-  TupletOptions,
-  TupletValue,
   ViewMode,
   computeBeatWidth,
-  DEFAULT_TUPLET_OPTIONS,
+  supportedTuplets,
+  tupletShape,
+  tupletSpan,
 } from './types';
-import { MusicGenerator } from './generator';
+import { MusicGenerator, rhythmGrammar } from './generator';
+import { noteSpan } from './ties';
 import { mulberry32 } from './random';
 
 /**
- * Horizontal spacing of one bar (ADR 0109): its body beat width and, in the squishy view,
- * the wider neighbours' beat widths it eases from and to. Without ramps it is the linear
- * layout of SPEC §3.
+ * Horizontal spacing of one bar (ADR 0109): its mean beat width and, in the squishy view,
+ * the knots of its engraved spacing curve. Without knots it is the linear layout of SPEC §3.
  */
 export interface BeatSpacing {
   beatWidth: number;
-  entryBeatWidth?: number;
-  exitBeatWidth?: number;
+  knots?: SpacingKnots;
 }
+
+/**
+ * Engraved spacing exponent (ADR 0109): a note of duration d gets s_min·(d / v_min)^0.5,
+ * so each doubling of duration adds ×√2 of space, as in printed music (Gould, Ross).
+ */
+export const SPACING_EXPONENT = 0.5;
 
 /**
  * X of `offset` metric beats into a bar, in measure units (the left barline is x = 0).
- * Without ramps it is NOTE_START_OFFSET + offset·beatWidth, the steady layout. With an entry
- * ramp the velocity falls linearly from entryBeatWidth to beatWidth over the first felt beat
- * (r = beatGroup metric beats); with an exit ramp it rises to exitBeatWidth over the last:
+ * Without knots it is NOTE_START_OFFSET + offset·beatWidth, the steady layout. With knots
+ * it is the monotone cubic Hermite through (offsets[i], xs[i]) with slopes[i]:
  *
- *   X(o) = 26 + w·o + (e − w)·E(o) + (x − w)·F(o)
- *   E(o) = o − o²/2r for o ≤ r, else r/2
- *   F(o) = 0 for o ≤ B − r, else (o − B + r)²/2r
+ *   X(o) = h00(t)·x_k + h10(t)·h·m_k + h01(t)·x_{k+1} + h11(t)·h·m_{k+1},  t = (o − o_k)/h
  *
- * Offsets outside the bar extend its end velocities, so the map is total and increasing.
+ * Offsets outside the bar extend its end slopes, so the map is total and strictly
+ * increasing. It allocates nothing: the scroller calls it every frame.
  */
-export function beatX(spacing: BeatSpacing, ts: TimeSignature, offset: number): number {
-  const w = spacing.beatWidth;
-  const e = spacing.entryBeatWidth;
-  const x = spacing.exitBeatWidth;
-  if (e === undefined && x === undefined) return NOTE_START_OFFSET + offset * w;
-  const { beatsPerMeasure: bar, beatGroup: r } = METER[ts];
-  if (offset <= 0) return NOTE_START_OFFSET + offset * (e ?? w);
-  if (offset >= bar) return NOTE_START_OFFSET + spacingWidth(spacing, ts) + (offset - bar) * (x ?? w);
-  let pos = NOTE_START_OFFSET + w * offset;
-  if (e !== undefined) pos += (e - w) * (offset <= r ? offset - (offset * offset) / (2 * r) : r / 2);
-  if (x !== undefined) {
-    const t = offset - (bar - r);
-    if (t > 0) pos += ((x - w) * t * t) / (2 * r);
+export function beatX(spacing: BeatSpacing, _ts: TimeSignature, offset: number): number {
+  const knots = spacing.knots;
+  if (knots === undefined) return NOTE_START_OFFSET + offset * spacing.beatWidth;
+  const { offsets, xs, slopes } = knots;
+  const n = offsets.length - 1;
+  if (offset <= offsets[0]) return xs[0] + (offset - offsets[0]) * slopes[0];
+  if (offset >= offsets[n]) return xs[n] + (offset - offsets[n]) * slopes[n];
+  let lo = 0;
+  let hi = n;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (offsets[mid] <= offset) lo = mid;
+    else hi = mid;
   }
-  return pos;
+  const h = offsets[hi] - offsets[lo];
+  const t = (offset - offsets[lo]) / h;
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return (
+    (2 * t3 - 3 * t2 + 1) * xs[lo] +
+    (t3 - 2 * t2 + t) * h * slopes[lo] +
+    (3 * t2 - 2 * t3) * xs[hi] +
+    (t3 - t2) * h * slopes[hi]
+  );
 }
 
-/** Width of a bar with this spacing: w·B, plus half a felt beat of each ramp's extra speed. */
-export function spacingWidth(spacing: BeatSpacing, ts: TimeSignature): number {
-  const { beatsPerMeasure: bar, beatGroup: r } = METER[ts];
-  const w = spacing.beatWidth;
-  let width = bar * w;
-  if (spacing.entryBeatWidth !== undefined) width += ((spacing.entryBeatWidth - w) * r) / 2;
-  if (spacing.exitBeatWidth !== undefined) width += ((spacing.exitBeatWidth - w) * r) / 2;
-  return width;
-}
-
-const NO_SUBDIVISIONS: SubdivisionOptions = {
-  whole: false,
-  half: false,
-  quarter: false,
-  eighth: false,
-  sixteenth: false,
-  thirtySecond: false,
-  dotted: false,
-};
-
-/** Base value of a written duration; the breve rides on the whole, a dot on its base. */
-const BASE_VALUE: Record<string, keyof SubdivisionOptions> = {
-  b: 'whole',
-  w: 'whole',
-  h: 'half',
-  q: 'quarter',
-  '8': 'eighth',
-  '16': 'sixteenth',
-  '32': 'thirtySecond',
-};
-
-const TUPLET_VALUE_WHOLES: Record<TupletValue, number> = { '1/4': 1 / 4, '1/8': 1 / 8, '1/16': 1 / 16 };
-
-/** computeBeatWidth with a single option on, per meter: a handful of entries, never more. */
-const singleWidths = new Map<string, number>();
-
-function valueWidth(ts: TimeSignature, duration: string): number {
-  const key = `${ts}|${duration}`;
-  const cached = singleWidths.get(key);
-  if (cached !== undefined) return cached;
-  const value = BASE_VALUE[duration.endsWith('d') ? duration.slice(0, -1) : duration];
-  const subdivisions = value ? { ...NO_SUBDIVISIONS, [value]: true } : NO_SUBDIVISIONS;
-  const width = computeBeatWidth(subdivisions, ts);
-  singleWidths.set(key, width);
-  return width;
-}
-
-function cellWidth(ts: TimeSignature, name: TupletName, value: TupletValue): number {
-  const key = `${ts}|${name}:${value}`;
-  const cached = singleWidths.get(key);
-  if (cached !== undefined) return cached;
-  const tuplets = structuredClone(DEFAULT_TUPLET_OPTIONS) as TupletOptions;
-  tuplets[name][value] = true;
-  const width = computeBeatWidth(NO_SUBDIVISIONS, ts, tuplets);
-  singleWidths.set(key, width);
-  return width;
-}
+type RhythmSettings = Pick<AppSettings, 'subdivisions' | 'tuplets'>;
 
 /**
- * The tuplet cell a group was written from: n notes in the time of `inTimeOf` units, the
- * group lasting `beats` metric beats, so one unit is beats / inTimeOf metric beats, i.e.
- * that over beatValue of a whole. Null when no cell matches.
+ * The shortest duration a configuration can write, in metric beats: over the values of its
+ * rhythm grammar (the quarter, or the beat unit, when that grammar needs it) and one member
+ * of each supported tuplet cell, a group's span over its note count.
  */
-export function tupletCell(
-  ts: TimeSignature,
-  numNotes: number,
-  inTimeOf: number,
-  beats: number
-): { name: TupletName; value: TupletValue } | null {
-  const name = TUPLET_NAMES[numNotes - 2];
-  if (name === undefined || inTimeOf <= 0) return null;
-  const wholes = beats / inTimeOf / METER[ts].beatValue;
-  const value = TUPLET_VALUES.find((v) => Math.abs(TUPLET_VALUE_WHOLES[v] - wholes) < 1e-9);
-  return value === undefined ? null : { name, value };
-}
-
-/**
- * Body beat width of a bar in the squishy view: the widest per-beat need among its notes.
- * A note needs the linear width of its own value alone (computeBeatWidth with only that
- * value on), a tuplet member that of its cell alone; a note longer than a beat spreads one
- * beat's room over its length. computeBeatWidth is monotone over enabled options, so the
- * result never exceeds the session's linear width; it is capped there all the same.
- */
-export function squishyBeatWidth(data: MeasureData, settings: AppSettings): number {
-  const ts = data.timeSignature;
-  const linear = computeBeatWidth(settings.subdivisions, ts, settings.tuplets);
-  const notes = data.notes;
-  let width = 0;
-  for (let i = 0; i < notes.length; ) {
-    const note = notes[i];
-    if (note.isTuplet && note.tupletGroup !== undefined) {
-      let beats = 0;
-      let j = i;
-      for (; j < notes.length && notes[j].isTuplet && notes[j].tupletGroup === note.tupletGroup; j++) {
-        beats += notes[j].beatDuration;
+export function shortestBeats(settings: RhythmSettings, ts: TimeSignature): number {
+  const grammar = rhythmGrammar(ts, settings.subdivisions, settings.tuplets);
+  let shortest = Infinity;
+  for (const value of grammar.values) {
+    const span = noteSpan(ts, value);
+    if (span !== null) shortest = Math.min(shortest, span);
+  }
+  const tuplets = settings.tuplets && supportedTuplets(ts, settings.tuplets);
+  if (tuplets) {
+    for (const name of TUPLET_NAMES) {
+      for (const value of TUPLET_VALUES) {
+        if (tuplets[name][value]) shortest = Math.min(shortest, tupletSpan(ts, name, value) / tupletShape(ts, name, value).notes);
       }
-      width = Math.max(width, groupWidth(ts, note, beats, linear));
-      i = j;
-    } else {
-      width = Math.max(width, valueWidth(ts, note.duration) / Math.max(1, note.beatDuration));
-      i++;
     }
   }
-  return width > 0 ? Math.min(width, linear) : linear;
+  return Number.isFinite(shortest) ? shortest : 1;
 }
 
-function groupWidth(ts: TimeSignature, first: NoteData, beats: number, linear: number): number {
-  const cell = tupletCell(ts, first.tupletNumNotes ?? 0, first.tupletNotesOccupied ?? 0, beats);
-  return cell ? cellWidth(ts, cell.name, cell.value) : linear;
+/** A session's spacing constants: linear beat width, shortest duration and its space. */
+interface SpacingBase {
+  linear: number;
+  shortest: number;
+  base: number;
+}
+
+let baseKey: string | null = null;
+let lastBase: SpacingBase = { linear: 0, shortest: 1, base: 0 };
+
+function spacingBase(settings: RhythmSettings, ts: TimeSignature): SpacingBase {
+  const key = JSON.stringify([ts, settings.subdivisions, settings.tuplets]);
+  if (key === baseKey) return lastBase;
+  const linear = computeBeatWidth(settings.subdivisions, ts, settings.tuplets);
+  const shortest = shortestBeats(settings, ts);
+  baseKey = key;
+  lastBase = { linear, shortest, base: linear * Math.min(shortest, 1) };
+  return lastBase;
+}
+
+/**
+ * Space of a note lasting `d` metric beats, s_min·(d / v_min)^0.5, capped at the linear
+ * layout's linear·d. The cap only binds below v_min (a rest piece shorter than any written
+ * value), so no note is ever wider per beat than in the steady view.
+ */
+function space(d: number, b: SpacingBase): number {
+  return Math.min(b.base * Math.pow(d / b.shortest, SPACING_EXPONENT), b.linear * d);
+}
+
+/** Engraved space (px) of a note lasting `beats` metric beats in this session (ADR 0109). */
+export function noteSpace(beats: number, settings: RhythmSettings, ts: TimeSignature): number {
+  return space(beats, spacingBase(settings, ts));
+}
+
+/** A note's secant: its space per metric beat. */
+function secant(note: NoteData, b: SpacingBase): number {
+  return space(note.beatDuration, b) / note.beatDuration;
+}
+
+/** Fritsch–Butland slope at a knot between secants a and b: their harmonic mean. */
+function harmonic(a: number, b: number): number {
+  return (2 * a * b) / (a + b);
+}
+
+/**
+ * The squishy knots of a bar: one per note onset plus the barline at B, each note spaced by
+ * its own duration. Interior slopes are Fritsch–Butland; a barline's slope comes from the
+ * neighbouring bar's raw notes, so both bars compute the same one and the speed is
+ * continuous. Without a neighbour the end slope is the one-sided secant.
+ */
+function squishyKnots(data: MeasureData, before: MeasureData | null, after: MeasureData | null, b: SpacingBase) {
+  const notes = data.notes;
+  const n = notes.length;
+  const offsets = new Float64Array(n + 1);
+  const xs = new Float64Array(n + 1);
+  const slopes = new Float64Array(n + 1);
+  let x = NOTE_START_OFFSET;
+  for (let i = 0; i < n; i++) {
+    offsets[i] = notes[i].beatOffset;
+    xs[i] = x;
+    x += space(notes[i].beatDuration, b);
+  }
+  offsets[n] = data.beatsPerMeasure;
+  xs[n] = x;
+  for (let i = 1; i < n; i++) slopes[i] = harmonic(secant(notes[i - 1], b), secant(notes[i], b));
+  const first = secant(notes[0], b);
+  const last = secant(notes[n - 1], b);
+  const prevNotes = before?.notes;
+  const nextNotes = after?.notes;
+  slopes[0] = prevNotes?.length ? harmonic(secant(prevNotes[prevNotes.length - 1], b), first) : first;
+  slopes[n] = nextNotes?.length ? harmonic(last, secant(nextNotes[0], b)) : last;
+  return { knots: { offsets, xs, slopes }, width: x - NOTE_START_OFFSET };
 }
 
 /** Whether `b` is the bar right after `a` on the tape. */
@@ -176,11 +175,11 @@ function follows(a: MeasureData, b: MeasureData): boolean {
 }
 
 /**
- * Lays a generated bar out for `view`: a new MeasureData with its beat width, width and,
- * in squishy, the ramps from a wider `prev` and to a wider `next`. `prev` is the previous
- * bar as laid out, `next` the following bar as generated (only its notes are read); either
- * is ignored unless it is the adjacent bar. An incoming tie takes `prev`'s spacing, so both
- * halves still draw the same curve. The notes are shared, never copied or changed.
+ * Lays a generated bar out for `view`: a new MeasureData with its beat width, width and, in
+ * squishy, its engraved knots. `prev` is the previous bar as laid out, `next` the following
+ * bar as generated (only its notes are read); either is ignored unless it is the adjacent
+ * bar. An incoming tie shares `prev`'s knots, so both halves still draw the same curve. The
+ * notes are shared, never copied or changed.
  */
 export function spaceMeasure(
   data: MeasureData,
@@ -192,16 +191,14 @@ export function spaceMeasure(
   const ts = data.timeSignature;
   const before = prev && follows(prev, data) ? prev : null;
   const after = next && follows(data, next) ? next : null;
-  const { entryBeatWidth: _entry, exitBeatWidth: _exit, tieIn, ...rest } = data;
+  const { knots: _knots, tieIn, ...rest } = data;
   const spaced: MeasureData = rest;
 
-  if (view === 'squishy') {
-    const w = squishyBeatWidth(data, settings);
-    spaced.beatWidth = w;
-    if (before && before.beatWidth > w) spaced.entryBeatWidth = before.beatWidth;
-    const nextWidth = after ? squishyBeatWidth(after, settings) : 0;
-    if (nextWidth > w) spaced.exitBeatWidth = nextWidth;
-    spaced.width = spacingWidth(spaced, ts);
+  if (view === 'squishy' && data.notes.length > 0) {
+    const { knots, width } = squishyKnots(data, before, after, spacingBase(settings, ts));
+    spaced.knots = knots;
+    spaced.width = width;
+    spaced.beatWidth = width / data.beatsPerMeasure;
   } else {
     spaced.beatWidth = computeBeatWidth(settings.subdivisions, ts, settings.tuplets);
     spaced.width = data.beatsPerMeasure * spaced.beatWidth;
@@ -214,8 +211,7 @@ export function spaceMeasure(
           duration: tieIn.duration,
           beatWidth: before.beatWidth,
           measureWidth: before.width,
-          ...(before.entryBeatWidth !== undefined && { entryBeatWidth: before.entryBeatWidth }),
-          ...(before.exitBeatWidth !== undefined && { exitBeatWidth: before.exitBeatWidth }),
+          ...(before.knots && { knots: before.knots }),
         }
       : tieIn;
   }
@@ -231,9 +227,9 @@ let typicalWidth = 0;
 
 /**
  * The squishy view's typical bar width for the session's rhythm: the median width of
- * SAMPLE_BARS bars from a seeded generator, ramps included. Pitch settings are fixed to
- * the defaults, so the answer depends on the rhythm options alone; it is memoised for the
- * last rhythm asked about. The app's auto zoom fits this bar (ADR 0109).
+ * SAMPLE_BARS bars from a seeded generator. Pitch settings are fixed to the defaults, so
+ * the answer depends on the rhythm options alone; it is memoised for the last rhythm asked
+ * about. The app's auto zoom fits this bar (ADR 0109).
  */
 export function typicalBarWidth(settings: AppSettings): number {
   const { timeSignature, subdivisions, tuplets, rests, ties } = settings;

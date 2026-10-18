@@ -375,12 +375,13 @@ describe('In-App Notation Zoom Pipeline', () => {
       expect(squishy).toBeLessThanOrEqual(DEFAULT_ZOOM);
     });
 
-    it('matches steady when the densest value is in most bars', () => {
-      // A bar is as wide as its densest note, and nearly every bar holds a sixteenth
+    it.each([390, 844])('zooms in further than steady with sixteenths and triplets in most bars (%i px)', (viewport) => {
+      // Engraved spacing: quarters and halves beside the sixteenths take less than their length
       const settings = structuredClone(DEFAULT_APP_SETTINGS);
       settings.subdivisions.sixteenth = true;
-      const steady = computeOptimalZoom(390, settings.subdivisions, '4/4', settings.tuplets);
-      expect(fitZoom(390, typicalBarWidth(settings))).toBe(steady);
+      settings.tuplets.triplet['1/8'] = true;
+      const steady = computeOptimalZoom(viewport, settings.subdivisions, '4/4', settings.tuplets);
+      expect(fitZoom(viewport, typicalBarWidth(settings))).toBeGreaterThan(steady);
     });
   });
 });

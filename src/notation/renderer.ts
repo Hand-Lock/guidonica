@@ -74,7 +74,7 @@ function tieHeadOffset(duration: string): number {
 /**
  * X where a tie leaves a sounding note placed at `beatOffset` in a bar spaced by `spacing`
  * (a plain beat width is the linear layout). Both halves of a cross-barline tie use this,
- * so they compute the identical curve; a squishy bar's ramps need its meter (ADR 0109).
+ * so they compute the identical curve; a squishy bar is placed by its knots (ADR 0109).
  */
 export function tieAnchorRightX(beatOffset: number, duration: string, beatWidth: number): number;
 export function tieAnchorRightX(beatOffset: number, duration: string, spacing: BeatSpacing, ts: TimeSignature): number;

@@ -265,7 +265,7 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 - **Automatic Sight-Reading Forereading**: Sizing algorithms calculate the exact scale required to keep at least one full measure visible ahead of the playhead on any screen width (mobile, tablet, or desktop ultrawide). Auto zoom is orientation-aware: a phone in landscape gets a larger staff than the same phone in portrait ([ADR 0055](docs/adr/0055-orientation-aware-auto-zoom-and-landscape-tip.md)).
 - **Quantized Steps**: Zoom moves in steps of 10 points between 30% and 150%, so staff lines align cleanly with screen pixels.
 - **Manual Controls & Floating Pill**: An on-canvas liquid glass pill (`-`, `100%`, `+`), keyboard shortcuts and pinch-to-zoom. Tap the percentage, or press <kbd>0</kbd>, to return to auto zoom.
-- **Squishy view**: swipe the staff sideways, press <kbd>V</kbd>, or pick it in Settings → Display → View, and each bar is only as wide as its rhythm needs. The scroll speed eases over one beat into each bar's width, notes still cross the playhead on the click, and auto zoom fits the typical bar ([ADR 0109](docs/adr/0109-squishy-view.md)).
+- **Squishy view**: swipe the staff sideways, press <kbd>V</kbd>, or pick it in Settings → Display → View, and notes are spaced like printed music: each note takes room by its own duration, long notes less than their length, so more of the staff fits on a phone. The scroll speed follows the notes smoothly, notes still cross the playhead on the click, and auto zoom fits the typical bar ([ADR 0109](docs/adr/0109-squishy-view.md)).
 
 ### 13. Unassisted Sight-Reading Mode (Toggleable Playhead)
 - A stationary red playhead cursor with top and bottom guide triangles marks the exact instant of downbeat arrival.
@@ -542,7 +542,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0106](docs/adr/0106-keyboard-detection.md) | Keyboard Detection: Shortcuts Only Where Keys Exist | Accepted |
 | [0107](docs/adr/0107-nightly-icon.md) | Nightly Icon & Accent: A Night-Blue Tile and a Violet UI | Accepted |
 | [0108](docs/adr/0108-no-consecutive-bar-rests.md) | No Back-to-Back Bar Rests | Accepted |
-| [0109](docs/adr/0109-squishy-view.md) | Squishy View: Per-Bar Width & Eased Scroll Speed | Accepted |
+| [0109](docs/adr/0109-squishy-view.md) | Squishy View: Engraved Note Spacing & Continuous Scroll Speed | Accepted |
 
 ---
 
