@@ -39,6 +39,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - The engine entry point exports the page layout (`justifyMeasure`, `pageAnchor`, `pageScrollY` and the `PageSystem` type). `MeasureBuffer` gains `setPageWidth`, `getSystems`, `ensureRows`, `coversRows` and `evictRowsBefore`, and `ScrollerView` gains `setReducedMotion` and `getViewportHeight`. `AppSettings.view` is required, and `CanvasPalette` gains `staffRgb` and `bandAlpha` (ADR 0110).
 - The small LEDs on checked chips glow through a `--led-on-halo` token instead of a literal Olo colour (ADR 0107).
 - The page view drops the tape's right-edge fade, which dimmed each line's closing barline, and the Keyboard shortcuts sheet lists Shift + V for the previous view (ADR 0110).
+- Pre-release tidy-up: the README, SPEC, AGENTS.md, the design manifesto, the run-guidonica skill and the ADR amendment notes describe the squishy and page views.
 
 ## [2026.10.4] - 2026-10-15
 

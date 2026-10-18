@@ -1,6 +1,6 @@
 # 0097. Stage-First Shell: Top Bar, Transport Dock, Tabbed Inspector and ⋯ Menu
 
-- **Status**: Accepted; amended by [0099](0099-ios-landscape-text-size-and-focus-fade.md)
+- **Status**: Accepted; amended by [0099](0099-ios-landscape-text-size-and-focus-fade.md), [0109](0109-squishy-view.md)
 - **Date**: 2026-10-07
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0045](0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md) (layout and material mapping), [0053](0053-header-level-button.md) (where the Level button and theme toggle live), [0054](0054-responsive-header-fit-audit.md) (the responsive contract), [0082](0082-visible-social-links.md) (the footer links)

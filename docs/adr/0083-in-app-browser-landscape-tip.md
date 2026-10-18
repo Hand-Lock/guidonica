@@ -1,6 +1,6 @@
 # 0083. In-App Browser Landscape Tip
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0110](0110-page-view.md)
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md)

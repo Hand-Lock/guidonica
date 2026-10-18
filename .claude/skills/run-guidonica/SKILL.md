@@ -150,7 +150,7 @@ pnpm preview    # serves dist/ after pnpm build, with the service worker active
 
 ```bash
 pnpm typecheck
-pnpm test       # vitest + happy-dom: 39 files, 1038 tests pass
+pnpm test       # vitest + happy-dom: 48 files, 1196 tests pass
 ```
 
 ## Gotchas
@@ -161,6 +161,7 @@ pnpm test       # vitest + happy-dom: 39 files, 1038 tests pass
 - **A rotating tip shows at the top of the stage on every returning visit** (ADR 0087). The driver turns tips off by default; pass `--tips` to see one. Each shown tip advances `guidonica_tip_count_v1`, so a reload within one run (`eval:location.reload()` then `wait:`) shows the next one.
 - **About, What's new, shortcuts and the theme toggle are inside the ⋯ menu** (ADR 0097). `click:#btn-about-toggle` alone times out because the item is hidden; run `click:#btn-menu-toggle` first.
 - **The Settings drawer is already open on wide screens.** At 961 px and wider it opens by default whenever the staff still fits, so `click:#btn-drawer-toggle` at the default 1280x900 *closes* it. Use `--size 390x844` to screenshot it opening.
+- **Views (ADRs 0109, 0110).** `press:KeyV` cycles steady → squishy → page, so `press:KeyV press:KeyV` opens the page view; `eval:document.documentElement.dataset.view` reads the current one. Each switch shows the view pill at the top of the stage for 1.4 s, so `wait:1600` before `shot:`. The driver emulates no touch, so the swipe, the portrait landscape tip with its Page view button and the touch `views` tip can't be shown.
 - **The count-in delays the first notes.** Playback starts with a 4-beat count-in, so shots taken earlier than about 5 s after Play show a stationary staff.
 - **The `AudioContext` needs a user gesture.** Start playback with `click:` or `press:`, never `eval:`.
 - **The About dialog body scrolls.** Run `scroll:` on the section before `shot:`, or it may be out of view at phone size.

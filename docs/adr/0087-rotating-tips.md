@@ -1,6 +1,6 @@
 # 0087. Rotating Tips
 
-- **Status**: Accepted
+- **Status**: Accepted; amended by [0106](0106-keyboard-detection.md), [0109](0109-squishy-view.md), [0110](0110-page-view.md)
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md)
@@ -47,6 +47,8 @@ Guidonica needs a way to point these out that does not interrupt practice, never
    | `clefs` | Settings → Staff | always |
    | `notes` | Settings → Melody | all seven notes are on |
    | `pinch` | none | coarse pointer |
+   | `views` | Settings → Display | coarse pointer and the steady view (ADRs 0109, 0110) |
+   | `viewsKey` | Settings → Display | a physical keyboard is likely, no coarse pointer, and the steady view (ADRs 0109, 0110) |
    | `tuplets` | Settings → Rhythm | no tuplet cell is on |
    | `share` | Settings → Practice | always |
    | `restsTies` | Settings → Rhythm | rests or ties are off |

@@ -60,7 +60,7 @@ This directory documents the core architectural decisions, implementation method
 | [0052](0052-intro-preview-signature-check.md) | Signature Check for the Intro Level Previews | Accepted; amended by 0070, 0071 | 2026-10-03 |
 | [0053](0053-header-level-button.md) | Header Level Button with a Live Difficulty Meter | Accepted; amended by 0054, 0073, 0097 | 2026-10-03 |
 | [0054](0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055, 0076, 0090, 0097 | 2026-10-03 |
-| [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056, 0083, 0087 | 2026-10-03 |
+| [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056, 0083, 0087, 0110 | 2026-10-03 |
 | [0056](0056-notch-safe-notation-stage.md) | Notch-Safe Notation Stage | Accepted | 2026-10-03 |
 | [0057](0057-canvas-bounded-beams-and-tuplet-numbers.md) | Canvas-Bounded Beams & Tuplet Numbers | Accepted | 2026-10-03 |
 | [0058](0058-music-font-audit-and-bravura-subset.md) | Music Font Audit: Keep Bravura, Ship a Renamed Subset | Accepted | 2026-10-03 |
@@ -88,11 +88,11 @@ This directory documents the core architectural decisions, implementation method
 | [0080](0080-social-profiles-verification.md) | Social Profiles: rel="me" Verification and Bluesky Domain Handle | Accepted; amended by 0082, 0084 | 2026-10-06 |
 | [0081](0081-release-announcements-bluesky-mastodon.md) | Release Announcements on Bluesky and Mastodon | Accepted | 2026-10-06 |
 | [0082](0082-visible-social-links.md) | Visible Bluesky and Mastodon Links | Accepted; amended by 0084, 0097, 0101, 0102 | 2026-10-06 |
-| [0083](0083-in-app-browser-landscape-tip.md) | In-App Browser Landscape Tip | Accepted | 2026-10-06 |
+| [0083](0083-in-app-browser-landscape-tip.md) | In-App Browser Landscape Tip | Accepted; amended by 0110 | 2026-10-06 |
 | [0084](0084-instagram-link.md) | Instagram Link | Accepted; amended by 0101, 0102 | 2026-10-06 |
 | [0085](0085-shareable-exercise-links.md) | Shareable Exercise Links | Accepted | 2026-10-06 |
 | [0086](0086-language-landing-pages.md) | Language Landing Pages | Accepted | 2026-10-06 |
-| [0087](0087-rotating-tips.md) | Rotating Tips | Accepted; amended by 0106 | 2026-10-06 |
+| [0087](0087-rotating-tips.md) | Rotating Tips | Accepted; amended by 0106, 0109, 0110 | 2026-10-06 |
 | [0088](0088-pre-release-audit-2026-10-06.md) | Pre-release Audit 2026-10-06: Second History Rewrite, Privacy Policy | Accepted | 2026-10-06 |
 | [0089](0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted; followed by 0091, 0098 | 2026-10-06 |
 | [0090](0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted; amended by 0093 | 2026-10-06 |
@@ -102,7 +102,7 @@ This directory documents the core architectural decisions, implementation method
 | [0094](0094-drone-tuning.md) | Drone Tuning: Baroque, Classical and Renaissance Pitch | Accepted | 2026-10-06 |
 | [0095](0095-output-soft-clipper.md) | Output Headroom: a Zero-Latency Soft Clipper | Accepted | 2026-10-06 |
 | [0096](0096-cross-engine-support-gecko-webkit.md) | Cross-Engine Support: Gecko and WebKit, Chromium Untouched | Accepted | 2026-10-07 |
-| [0097](0097-stage-first-shell.md) | Stage-First Shell: Top Bar, Transport Dock, Tabbed Inspector and ⋯ Menu | Accepted; amended by 0099 | 2026-10-07 |
+| [0097](0097-stage-first-shell.md) | Stage-First Shell: Top Bar, Transport Dock, Tabbed Inspector and ⋯ Menu | Accepted; amended by 0099, 0109 | 2026-10-07 |
 | [0098](0098-low-power-frame-rate-notice.md) | Low Power Mode Frame-Rate Notice | Accepted | 2026-10-12 |
 | [0099](0099-ios-landscape-text-size-and-focus-fade.md) | iOS Landscape: Text Autosizing Off, Focus-Mode Fade on a Glass Strip | Accepted | 2026-10-12 |
 | [0100](0100-no-double-tap-zoom.md) | No Double-Tap Zoom: `touch-action: manipulation` on the Root | Accepted | 2026-10-12 |

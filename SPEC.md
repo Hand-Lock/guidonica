@@ -1,22 +1,22 @@
 # Guidonica: Product Specification
 
 ## 1. Executive Summary & Pedagogical Purpose
-**Guidonica** is a high-performance, client-only web application designed for deliberate sight-reading and solfège practice. Named in homage to **Guido d'Arezzo** and the historic **Manus Guidonica** (Guidonian Hand)—the world's first spatial visual-mnemonic sight-singing method—Guidonica transforms musical notation reading into an infinite-scrolling flow state: procedurally generated sheet music continuously moves across a stationary playhead in lockstep with a synthesized audio metronome.
+**Guidonica** is a high-performance, client-only web application designed for deliberate sight-reading and solfège practice. Named in homage to **Guido d'Arezzo** and the historic **Manus Guidonica** (Guidonian Hand)—the world's first spatial visual-mnemonic sight-singing method—Guidonica transforms musical notation reading into an infinite-scrolling flow state: procedurally generated sheet music continuously moves in lockstep with a synthesized audio metronome, across a stationary playhead on a scrolling tape or under a cursor along page lines that scroll up.
 
 ### Pedagogical Philosophy
 - **No Evaluation Friction**: The software acts as an unyielding, rhythmic pacing tool. It deliberately omits microphone pitch detection, scoring, or gamified leaderboards. The musician self-monitors their vocalized solfège (rhythmic syllables or pitched singing) against the audible pulse and oncoming notation.
-- **Anticipatory Reading**: Traditional static sight-reading suffers from "page-turn panic" and erratic eye movements. Continuous horizontal scrolling trains the musician's eye to read ahead of the playhead, recognizing upcoming interval patterns, melodic shapes, and rhythmic groupings before vocalizing them.
+- **Anticipatory Reading**: Traditional static sight-reading suffers from "page-turn panic" and erratic eye movements. Continuous scrolling, horizontal on the tape or line by line on the page, trains the musician's eye to read ahead of the playhead, recognizing upcoming interval patterns, melodic shapes, and rhythmic groupings before vocalizing them.
 - **Progressive Difficulty**: Users can isolate individual musical variables—clef, meter, rhythmic subdivisions, and melodic intervals—to target specific cognitive bottlenecks.
 - **The Ergodic Principle (State-Space Completeness)**: Pedagogically, true sight-reading proficiency requires encountering every possible permutation of rhythmic figures and melodic intervals within the chosen scope. If software artificially favors cliches or suppresses valid figures (e.g., omitting quarter-eighth pairs in 6/8 or quarter-half pairs in 3/4), the musician develops cognitive blind spots. Guidonica treats the user's active settings as a bounded musical universe $\Omega$: given infinite time, the generator is mathematically guaranteed to generate every valid musical phrase in that universe ("the infinite monkey theorem" for sight-reading).
 
 ### The Suckless Engineering Axioms
 Guidonica rejects modern web bloat in favor of mathematical simplicity, client-side sovereignty, and mechanical sympathy:
-1. **Zero Framework Bloat (Vanilla TypeScript)**: Direct DOM APIs and native canvas contexts; no React/Vue/Svelte virtual DOM overhead (~130 kB gzipped JS, VexFlow included; each non-English language a lazy ~5.7 kB chunk).
-2. **Single Authoritative Hardware Clock (`AudioContext.currentTime`)**: Synchronizes audio synthesis and the visual scroller to eliminate visual-auditory drift mathematically. A short `setInterval` only wakes the audio scheduler to queue clicks ahead; every click time and tape offset is computed from `currentTime`.
+1. **Zero Framework Bloat (Vanilla TypeScript)**: Direct DOM APIs and native canvas contexts; no React/Vue/Svelte virtual DOM overhead (~142 kB gzipped JS, VexFlow included; each non-English language a lazy ~6.9 kB chunk).
+2. **Single Authoritative Hardware Clock (`AudioContext.currentTime`)**: Synchronizes audio synthesis and the visual scroller to eliminate visual-auditory drift mathematically. A short `setInterval` only wakes the audio scheduler to queue clicks ahead; every click time, tape offset and page scroll is computed from `currentTime`.
 3. **GPU Measure Blitting Pipeline**: Offscreen VexFlow measure caching rendered once; the 60/120 FPS animation loop purely executes `ctx.drawImage()`, keeping CPU usage < 1%.
-4. **Bounded Ring-Buffer Memory Discipline**: Only the measures covering the viewport plus 6 beats of lookahead are kept in memory; expired canvases are immediately dereferenced for leak-free infinite sessions.
+4. **Bounded Ring-Buffer Memory Discipline**: Only the measures covering the viewport plus 6 beats of lookahead are kept in memory (in the page view, the lines filling the stage plus one, and a few played lines above); expired canvases are immediately dereferenced for leak-free infinite sessions.
 5. **Sample-Free Audio Synthesis**: Metronome clicks synthesized live via Web Audio oscillators; 0 bytes of audio sample files over the wire.
-6. **Pure CSS3 Liquid Glass UI**: 100% vector and CSS3-powered Frutiger Aero / Aqua styling; zero CSS framework runtimes (~8.3 kB gzipped CSS).
+6. **Pure CSS3 Liquid Glass UI**: 100% vector and CSS3-powered Frutiger Aero / Aqua styling; zero CSS framework runtimes (~10.2 kB gzipped CSS).
 7. **Ergodic State-Space Completeness**: Procedural algorithms never artificially censor or prune mathematically and grammatically valid permutations of the user's active settings ($P(\omega) > 0, \forall \omega \in \Omega$). All rhythm partitioning and pitch walks are strictly ergodic.
 
 ---
@@ -74,7 +74,9 @@ The user must have full control over the generation engine prior to and during a
 
 ## 3. Kinetic & Visual Mechanics (The Scroller)
 
-### Layout & Orientation
+Guidonica has three views of the same music, cycled in Settings → Display → View, by a sideways swipe on the staff, or with `V`. This section first describes the **steady** view, the default: a tape of strict metric linearity. The squishy (ADR 0109) and page (ADR 0110) views follow under *Views*.
+
+### Layout & Orientation (Steady View)
 - **Stationary Staff Lines**: The five staff lines span horizontally across the display and do not move.
 - **Pinned Clef & Time Signature**: The active clef and time signature are permanently displayed at the left margin (there is no key signature: the app is diatonic in C), establishing reference coordinates without scrolling out of view.
 - **Fixed Vertical Playhead**: A crisp vertical guide line (cursor) is positioned at a fixed horizontal coordinate (22% of the viewport width from the left edge). It can be hidden with the playhead switch or the `P` key for unassisted reading (ADR 0037).
@@ -101,7 +103,7 @@ The **page** view, third in the same cycle, sets the music in lines for reading 
 To maintain a stable 60 FPS / 120 FPS on all hardware without CPU throttling:
 - **Offscreen Measure Caching**: Measures are procedurally generated in chunks ahead of the viewport. Each measure is formatted and rendered once onto an offscreen canvas surface using VexFlow.
 - **Fast Blitting**: The main display canvas does not execute complex VexFlow layout or glyph calculations during animation frames. It only blits visible offscreen measure canvases using `CanvasRenderingContext2D.drawImage()`. Measures beyond the right edge are rendered in idle time between frames, one per idle callback; a frame renders one synchronously only when the stage plus one beat would otherwise be uncovered (ADR 0091).
-- **Ring Buffer**: Measures that scroll offscreen past the left margin are discarded. New measures are generated and appended on the right until the buffer reaches the right edge of the viewport plus 6 beats of lookahead, a distance measured in beats so it holds at every zoom and meter. The lookahead is counted in tape pixels at the linear beat width, which no squishy beat exceeds, and the buffer holds the next bar's notes one bar early for the barline's speed (ADR 0109).
+- **Ring Buffer**: On the tape views, measures that scroll offscreen past the left margin are discarded. New measures are generated and appended on the right until the buffer reaches the right edge of the viewport plus 6 beats of lookahead, a distance measured in beats so it holds at every zoom and meter. The lookahead is counted in tape pixels at the linear beat width, which no squishy beat exceeds, and the buffer holds the next bar's notes one bar early for the barline's speed (ADR 0109). The page view keeps the lines that fill the stage below the reading line plus one, renders them one bar per idle callback, and evicts the played lines above it beyond the few still shown (ADR 0110).
 
 ---
 
@@ -227,13 +229,16 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 - Clean typography for status and settings.
 
 ### Control Panel
-- **Header**: logo (opens About), Level button, Start/Pause, Reset, BPM slider + number input with the Italian tempo marking, beat lights, theme cycle button (wide screens), fullscreen (where supported) and the settings button.
-- **Settings drawer**, in four sections:
+The stage-first shell of ADR 0097:
+- **Top bar**: logo, Level button, summary chips for the clef, meter and drone (each opens its tab; ADR 0097), fullscreen (where supported), Settings, and the ⋯ menu: exercise link, About, What's new, Keyboard shortcuts, the theme and the project links.
+- **Transport dock** at the bottom, within thumb reach: Reset, Start/Pause, the BPM number and slider with the Italian tempo marking, beat lights and mute.
+- **Settings inspector**: a side panel on wide screens and a sheet over the staff elsewhere, in five tabs:
   - **Staff**: clef (8), ledger lines above and below (0–3) with the live range hint, time signature with the Half-note beat switch, C and ¢ signs (in 4/4 and 2/2), pulse (beat or division, in compound and half-note meters).
   - **Rhythm**: note values (w, h, q, 8, 16, 32), dotted, tuplet matrix (with Clear all), rests, ties.
   - **Melody**: notes (C … B), intervals (unison … 9+).
-  - **Practice**: language, labels (None / Syllables / Letters), assists (count-in, playhead, tips), click sound, volume, drone (note, sound, tuning, volume), theme, exercise link.
-- **Stage**: the zoom pill (−, %, +; tapping the % returns to auto zoom) and the playhead.
+  - **Sound**: click sound with count-in, volume, drone (note, sound, tuning, volume).
+  - **Display**: language, labels (None / Syllables / Letters), view (Steady / Squishy / Page; ADRs 0109, 0110), assists (playhead, tips), theme.
+- **Stage**: the zoom pill (−, %, +; tapping the % returns to auto zoom), the playhead or page cursor, the view pill shown after a view change, and the stage notices (tips, landscape tip, Low Power Mode).
 - Live visual indicator for the active beat / count-in.
 
 ### Onboarding & Level Presets
@@ -280,17 +285,17 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 - **Auto-pause**: playback pauses when the page is hidden (tab switch, minimize, lock screen) and resumes cleanly on Start (see ADR 0035).
 - **Wake lock**: the screen stays on during playback where `navigator.wakeLock` is supported.
 - **Fullscreen**: a header button enters fullscreen where the Fullscreen API exists; it is hidden elsewhere, e.g. on iPhone Safari (see ADR 0033).
-- **Landscape tip**: on a small touch screen in portrait, a dismissible tip suggests rotating the device. In the portrait-locked in-app browsers of Instagram, Facebook and Threads, it suggests opening the page in the browser instead (see ADR 0055, 0083).
+- **Landscape tip**: on a small touch screen in portrait, a dismissible tip suggests rotating the device. In the portrait-locked in-app browsers of Instagram, Facebook and Threads, it suggests opening the page in the browser instead. Either way, its Page view button switches to the page view, made for portrait, where the tip is hidden (see ADR 0055, 0083, 0110).
 
 ### Keyboard Controls
 - `Space`: Toggle Play / Pause.
 - `R` or `Escape`: Reset session to start (`Escape` first closes an open tuplet menu).
-- `P`: Show / hide the playhead.
+- `P`: Show / hide the playhead, or the page view's cursor.
 - `ArrowUp` / `ArrowDown`: Increment / decrement tempo by 5 BPM.
 - `Shift + ArrowUp` / `Shift + ArrowDown`: Increment / decrement tempo by 1 BPM.
 - `+` / `=`: Zoom in (+10%).
 - `-` / `_`: Zoom out (-10%).
 - `0`: Auto-fit zoom to screen (Auto Zoom).
 - `D`: Turn the drone off, or back on to the last note used since the page loaded (C if none; ADR 0094).
-- `V` / `Shift + V`: Next / previous staff view (ADR 0109).
-- Shortcuts are ignored while a dialog (About, What's new, the level intro) is open.
+- `V` / `Shift + V`: Next / previous staff view: steady, squishy, page (ADRs 0109, 0110).
+- Shortcuts are ignored while a dialog (About, What's new, Keyboard shortcuts, the level intro) is open.

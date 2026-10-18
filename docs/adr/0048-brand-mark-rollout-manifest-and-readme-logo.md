@@ -1,6 +1,6 @@
 # 0048. Brand Mark Rollout: Web App Manifest & README Logo
 
-- **Status**: Accepted; amended by [0063](0063-offline-service-worker.md) (extends [0046](0046-guidonian-hand-brand-mark.md) and [0047](0047-guidonian-hand-v2.md))
+- **Status**: Accepted; amended by [0063](0063-offline-service-worker.md), [0107](0107-nightly-icon.md) (extends [0046](0046-guidonian-hand-brand-mark.md) and [0047](0047-guidonian-hand-v2.md))
 - **Date**: 2026-10-03
 - **Author**: Claude & A. C. Lo Cascio
 

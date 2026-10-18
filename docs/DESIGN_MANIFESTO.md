@@ -82,7 +82,7 @@ Every element lives in one simulated lighting environment: the light source is f
 |------|----------|-----------------|----------|
 | 1 | **Gel** | Saturated vertical gradient, `::before` specular gloss cap on the top half, coloured glow | Play/Pause hero, lit LEDs, slider beads, tuplet counter, checked tuplet cells |
 | 2 | **Acrylic** | `linear-gradient(180deg, #fff, #f1f5f9)` (dark: `#1e293b → #162033`), 1px bevel border, 1px top specular. **No half-split gloss.** | Secondary and icon buttons, chips, selects, keycaps, inspector tabs, summary chips |
-| 3 | **Glass** | Translucent fill plus `backdrop-filter: blur(16px) saturate(170–180%)`, 1px top specular, soft drop shadow. **No hard 50% sheen line.** | Top bar, transport dock, settings inspector and its sheets, ⋯ menu, zoom pill, modals, share toast, stage notices (landscape tip, rotating tips) |
+| 3 | **Glass** | Translucent fill plus `backdrop-filter: blur(16px) saturate(170–180%)`, 1px top specular, soft drop shadow. **No hard 50% sheen line.** | Top bar, transport dock, settings inspector and its sheets, ⋯ menu, zoom pill, view pill, modals, share toast, stage notices (landscape tip, rotating tips) |
 | 4 | **Well** | Recessed fill, `inset` shadow, hairline border | BPM readout, LED capsule, slider tracks, inputs, tuplets disclosure |
 
 **Tactile depress**: pressed buttons move down by `translateY(1px)` and swap their outer shadow for an inset cavity shadow.
@@ -112,10 +112,16 @@ The text on a gel must always reach ≥ 4.5:1 against the gel's mid-body colour.
 #### Canvas palette (single source of truth)
 The notation canvas cannot read CSS variables cheaply, so its colours live in one exported constant, `CANVAS_PALETTE` (`src/notation/types.ts`). Both the scroller (stationary staff, playhead) and the renderer (VexFlow ink, ledger lines, tuplets, solfège) use it:
 
-| | background | staff + ledger | ink | solfège | playhead |
-|---|---|---|---|---|---|
-| Light | `#ffffff` | `#64748b` | `#000000` | `#007a62` | `#e11d48` |
-| Dark | `#0f172a` | `#64748b` | `#f8fafc` | `#00ffcc` | `#f43f5e` |
+| | background | staff + ledger | ink | solfège | playhead | `bandAlpha` |
+|---|---|---|---|---|---|---|
+| Light | `#ffffff` | `#64748b` | `#000000` | `#007a62` | `#e11d48` | 0.07 |
+| Dark | `#0f172a` | `#64748b` | `#f8fafc` | `#00ffcc` | `#f43f5e` | 0.1 |
+
+The page view (ADR 0110) draws from the same palette, with no new colours:
+- **Active-line band**: the staff colour at `bandAlpha` (`staffRgb`), a neutral tint across the line playing, shown with the playhead on or off.
+- **Played lines**: the lines above the reading line fade to 40% ink (`PAGE_PLAYED_ALPHA`, through `globalAlpha`).
+- **Cursor**: the playhead's glow, line and pointers, moving along the line, over a wash of the playhead colour at 0.05 across the part already played. Both hide with the playhead.
+- **Top fade**: a 24-unit gradient from the background colour to transparent at the stage top (`PAGE_FADE_HEIGHT`). The tape's right-edge fade is off in page view, since lines end inside the stage.
 
 `--canvas-bg` and `--playhead-color` in CSS must equal these values; `tests/canvasPalette.test.ts` enforces it. Staff lines and ledger lines always share one colour.
 
@@ -190,7 +196,7 @@ The settings are grouped in an ARIA tablist (ADR 0097):
 | **Rhythm** | note values, dotted, tuplets, rests, ties |
 | **Melody** | notes, intervals |
 | **Sound** | click with count-in, volume, drone note, sound, tuning and volume |
-| **Display** | language, note names, assists (playhead, tips), theme |
+| **Display** | language, note names, view (steady, squishy, page), assists (playhead, tips), theme |
 
 - Each tab is an acrylic button, 44px tall, with a 16-unit stroked icon over a short label. Labels wrap with `hyphens: auto` and are never ellipsized.
 - The selected tab takes the checked-chip look: Olo tint, accent border, accent text. It is the tablist's only tab stop, and the arrow, Home and End keys move the selection (`src/utils/tabs.ts`).
@@ -198,6 +204,7 @@ The settings are grouped in an ARIA tablist (ADR 0097):
 - Tuplets is an in-flow disclosure (a well) inside the Rhythm panel at every size.
 - Meta actions (exercise link, About, What's new, keyboard shortcuts, theme cycle, links) live in the **⋯ menu**, not in the inspector.
 - New settings must join one of these tabs, never float free.
+- The View control is a select in the Display tab. A swipe on the staff, <kbd>V</kbd> or the landscape tip's Page view button also changes the view; then a glass **view pill** at the top centre of the stage names the view, with one dot per view and the current one in the accent, and fades after about 1.4 s. It animates only opacity and transform; under reduced motion it fades without moving (ADR 0109).
 
 #### G. Glass Sheets
 - These are the settings inspector and its sheets, the ⋯ menu, the share toast and the About, What's new, Keyboard shortcuts and level intro dialogs.

@@ -79,18 +79,19 @@ Guidonica is constructed upon an uncompromising **suckless, ultra-lightweight, a
    - Written exclusively in **Vanilla TypeScript** driving native DOM APIs, HTML5 Canvas, and the Web Audio API directly.
    - Zero React, Vue, Svelte, or Angular. Zero Virtual DOM reconciliation overhead.
    - Zero external state management libraries (no Redux, MobX, Zustand, or Pinia).
-   - Entire shipped JavaScript is **~135 kB gzipped**: ~42 kB of application code (including the English dictionary) plus ~93 kB of VexFlow's font-free `vexflow/core` build. Each other language is one lazy **~6.6 kB** chunk ([ADR 0059](docs/adr/0059-localization-and-national-note-naming.md)). The music font is a separate **19.6 kB** Bravura subset ([ADR 0058](docs/adr/0058-music-font-audit-and-bravura-subset.md)) instead of the ~600 kB of base64 fonts the full VexFlow entry inlines.
+   - Entire shipped JavaScript is **~142 kB gzipped**: ~49 kB of application code (including the English dictionary) plus ~93 kB of VexFlow's font-free `vexflow/core` build. Each other language is one lazy **~6.9 kB** chunk ([ADR 0059](docs/adr/0059-localization-and-national-note-naming.md)). The music font is a separate **19.6 kB** Bravura subset ([ADR 0058](docs/adr/0058-music-font-audit-and-bravura-subset.md)) instead of the ~600 kB of base64 fonts the full VexFlow entry inlines.
 2. **Single Authoritative Hardware Clock (`AudioContext.currentTime`)**:
    - Visual scroller movement and synthesized audio pulse scheduling are mathematically locked to the hardware audio clock (`AudioContext.currentTime`).
-   - Every click time and every tape offset is computed from `currentTime`. A 25 ms `setInterval` only wakes the audio scheduler to queue clicks 100 ms ahead; it never measures time. There are no visual timers or delta-time accumulators.
+   - Every click time, every tape offset and every page scroll is computed from `currentTime`. A 25 ms `setInterval` only wakes the audio scheduler to queue clicks 100 ms ahead; it never measures time. There are no visual timers or delta-time accumulators.
    - Noteheads cross the playhead mark at the exact physical microsecond the speaker driver clicks—visual-auditory drift is mathematically impossible.
 3. **Hardware-Accelerated Measure Blitting Pipeline**:
    - VexFlow renders each measure **once** onto an offscreen `HTMLCanvasElement`.
    - The 60/120 FPS animation loop (`requestAnimationFrame`) exclusively executes GPU-accelerated bit-block transfers (`ctx.drawImage()`).
    - Zero per-frame layout recalculations, zero font parsing per frame, sub-millisecond per-frame CPU execution (< 1% CPU utilization).
 4. **Bounded Ring-Buffer & Zero-Leak Memory Discipline**:
-   - The buffer holds only the measures that cover the viewport plus **6 beats of lookahead**, a few measures at any zoom.
+   - On the tape views the buffer holds only the measures that cover the viewport plus **6 beats of lookahead**, a few measures at any zoom.
    - Measures that scroll past the left edge of the viewport are immediately evicted from the ring-buffer and their offscreen canvases dereferenced.
+   - The page view keeps the lines that fill the stage plus one below the reading line, and evicts the played lines above it beyond the few still shown ([ADR 0110](docs/adr/0110-page-view.md)).
    - An infinite 3-hour practice session maintains the exact same memory footprint (~30–45 MB total process memory) as a 5-second quick test.
 5. **Synthesized Hardware Audio (0-Byte Sample Downloads)**:
    - Metronome pulses and woodblock timbres are synthesized live on the audio hardware using Web Audio `OscillatorNode` (sine/triangle) and exponential `GainNode` envelopes.
@@ -101,7 +102,7 @@ Guidonica is constructed upon an uncompromising **suckless, ultra-lightweight, a
 7. **Pure CSS3 Liquid Glass UI (Zero CSS Frameworks)**:
    - The entire Frutiger Aero / Aqua / Liquid Glass visual design is constructed with 100% pure, hardware-composited CSS3 (`backdrop-filter`, multi-stop linear/radial gradients, beveled glass borders, tactile inset/drop shadows).
    - Zero Tailwind runtime, zero CSS-in-JS runtimes, zero heavy sprite textures.
-   - Entire stylesheet is only **~9.5 kB gzipped** (`46 kB` minified). The text fonts (Alegreya, Alegreya Sans, Ubuntu Mono) are self-hosted Latin subsets, so the page makes no third-party requests ([ADR 0060](docs/adr/0060-self-hosted-text-fonts-and-privacy-note.md)).
+   - Entire stylesheet is only **~10.2 kB gzipped** (`50 kB` minified). The text fonts (Alegreya, Alegreya Sans, Ubuntu Mono) are self-hosted Latin subsets, so the page makes no third-party requests ([ADR 0060](docs/adr/0060-self-hosted-text-fonts-and-privacy-note.md)).
 8. **Native Device & Lifecycle Resilience**:
    - Integrates modern Web APIs including Screen Wake Lock (`navigator.wakeLock`), Page Visibility lifecycle auto-pause, dynamic iOS `AVAudioSession` category switching (`playback` mode to bypass physical silent switches), Fullscreen API, and a hand-written offline service worker.
 
@@ -172,7 +173,7 @@ The staff fills the screen. Start, tempo, the beat lights and mute sit in a dock
 | **Rhythm** | Note values (quarter, eighth, half, whole, 16th, 32nd), dotted, tuplets, rests, ties |
 | **Melody** | Notes (C … B), intervals (unison … 9+) |
 | **Sound** | Click sound with count-in, volume, drone (note, sound, tuning, volume) |
-| **Display** | Language, note names, assists (playhead, tips), theme |
+| **Display** | Language, note names, view (steady, squishy, page), assists (playhead, tips), theme |
 
 ### 3. Complete Setticlavio Clef System (8 Clefs)
 Guidonica supports the full historic **Setticlavio** (seven clefs) traditional vocal and instrumental clef system, featuring both historical positions of the baritone clef. The ranges below are the widest, with 3 ledger lines above and below:
@@ -262,11 +263,11 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 - A smooth linear gradient fade protects the stationary header from scrolling note glyphs, creating a seamless visual entry point.
 
 ### 12. Device-Adaptive Zoom & Sight-Reading Forereading
-- **Automatic Sight-Reading Forereading**: Sizing algorithms calculate the exact scale required to keep at least one full measure visible ahead of the playhead on any screen width (mobile, tablet, or desktop ultrawide). Auto zoom is orientation-aware: a phone in landscape gets a larger staff than the same phone in portrait ([ADR 0055](docs/adr/0055-orientation-aware-auto-zoom-and-landscape-tip.md)).
+- **Automatic Sight-Reading Forereading**: Sizing algorithms calculate the exact scale required to keep at least one full measure visible ahead of the playhead on any screen width (mobile, tablet, or desktop ultrawide). Auto zoom is orientation-aware: a phone in landscape gets a larger staff than the same phone in portrait ([ADR 0055](docs/adr/0055-orientation-aware-auto-zoom-and-landscape-tip.md)). Each view fits its own: steady one full bar ahead, squishy the typical engraved bar, page two typical bars per line and at least four lines down the stage, up to 100%.
 - **Quantized Steps**: Zoom moves in steps of 10 points between 30% and 150%, so staff lines align cleanly with screen pixels.
 - **Manual Controls & Floating Pill**: An on-canvas liquid glass pill (`-`, `100%`, `+`), keyboard shortcuts and pinch-to-zoom. Tap the percentage, or press <kbd>0</kbd>, to return to auto zoom.
 - **Squishy view**: swipe the staff sideways, press <kbd>V</kbd>, or pick it in Settings → Display → View, and notes are spaced like printed music: each note takes room by its own duration, long notes less than their length, so more of the staff fits on a phone. The scroll speed follows the notes smoothly, notes still cross the playhead on the click, and auto zoom fits the typical bar ([ADR 0109](docs/adr/0109-squishy-view.md)).
-- **Page view**: the third view sets the music in lines, like a printed page, for reading in portrait. A cursor follows the clicks along the line, and at each line break the page eases up one line, so the lines below are always there to read ahead. Every line starts with a clef, lines are justified to the page width and spaced by their notes ([ADR 0110](docs/adr/0110-page-view.md)).
+- **Page view**: the third view sets the music in lines, like a printed page, for reading in portrait. A cursor follows the clicks along the line, and at each line break the page eases up one line, so the lines below are always there to read ahead. Every line starts with a clef, lines are justified to the page width and spaced by their notes. The line playing sits a third of the way down, marked by a light band, with the lines just played dimmed above it ([ADR 0110](docs/adr/0110-page-view.md)).
 
 ### 13. Unassisted Sight-Reading Mode (Toggleable Playhead)
 - A stationary red playhead cursor with top and bottom guide triangles marks the exact instant of downbeat arrival.
@@ -279,11 +280,11 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 
 ### 15. Shareable Exercise Links
 - **⋯ menu → Exercise link** copies (or shares, on phones) a link to the current exercise ([ADR 0085](docs/adr/0085-shareable-exercise-links.md)).
-- The link's `#x=1&…` fragment carries clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels and count-in. Language, theme, sound, volume, zoom and the playhead stay with each user.
+- The link's `#x=1&…` fragment carries clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels and count-in. Language, theme, sound, volume, zoom, the playhead and the view stay with each user.
 - Opening a link skips the intro and loads the exercise. Each student still reads **different** music under the same rules, because the generator is never seeded.
 
 ### 16. Tips & What's New
-- **Rotating tips**: from the second visit on, one short tip per visit points to a feature the user's settings and device don't use yet (levels, labels, keyboard, pinch zoom, clefs, notes, tuplets, exercise links, installing, What's new…). One in four suggests following Guidonica or supporting it on Ko-fi. Start or the close button hides it, and the **Tips** chip in Settings → Display → Assists turns them off ([ADR 0087](docs/adr/0087-rotating-tips.md)).
+- **Rotating tips**: from the second visit on, one short tip per visit points to a feature the user's settings and device don't use yet (levels, labels, keyboard, pinch zoom, views, clefs, notes, tuplets, exercise links, installing, What's new…). One in four suggests following Guidonica or supporting it on Ko-fi. Start or the close button hides it, and the **Tips** chip in Settings → Display → Assists turns them off ([ADR 0087](docs/adr/0087-rotating-tips.md)).
 - **What's new**: after an update, a returning user sees what changed since their last visit, in their language. About shows the running version and the full history ([ADR 0078](docs/adr/0078-release-channels-calver-changelog-whats-new.md)).
 
 ### 17. Native Device & Lifecycle Resilience
@@ -294,7 +295,7 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 - **iOS AudioSession Silent Mode Bypass**: Uses the W3C WebKit `navigator.audioSession` API to engage `playback` mode during practice (enabling audio through the speaker even if the iPhone physical mute switch is toggled), dropping cleanly back to `ambient` on pause.
 - **Works Offline**: After the first visit, a hand-written, dependency-free service worker serves the app from its cache, so practice continues with no connection; online, every reload still fetches the newest version ([ADR 0063](docs/adr/0063-offline-service-worker.md)).
 - **Installable**: A web app manifest with standard and maskable icons lets Guidonica be added to the home screen or installed as a desktop app, where it opens in its own window ([ADR 0048](docs/adr/0048-brand-mark-rollout-manifest-and-readme-logo.md)).
-- **Landscape Tip**: On a small touch screen in portrait, a dismissible tip suggests rotating the device. Inside Instagram, Facebook or Threads, whose in-app browsers are locked to portrait, it suggests opening the page in the browser instead ([ADRs 0055](docs/adr/0055-orientation-aware-auto-zoom-and-landscape-tip.md), [0083](docs/adr/0083-in-app-browser-landscape-tip.md)).
+- **Landscape Tip**: On a small touch screen in portrait, a dismissible tip suggests rotating the device. Inside Instagram, Facebook or Threads, whose in-app browsers are locked to portrait, it suggests opening the page in the browser instead. Either way, its **Page view** button switches to the view made for portrait, where the tip no longer shows ([ADRs 0055](docs/adr/0055-orientation-aware-auto-zoom-and-landscape-tip.md), [0083](docs/adr/0083-in-app-browser-landscape-tip.md), [0110](docs/adr/0110-page-view.md)).
 - **Fullscreen API**: Clean toggle to enter immersive full-window notation mode, with capability detection that hides the button on unsupported devices (e.g., iPhone Safari).
 
 ### 18. Aero-Guidonica Skeuomorphic Design System
@@ -317,7 +318,7 @@ Constructed strictly following the [Aero-Guidonica Design Manifesto](docs/DESIGN
 | :--- | :--- | :--- |
 | <kbd>Space</kbd> | **Start / Pause** | Toggle playback or resume seamlessly from the current position |
 | <kbd>R</kbd> or <kbd>Esc</kbd> | **Reset** | Rewind tape to measure 0 and re-seed the procedural generator |
-| <kbd>P</kbd> | **Toggle Playhead** | Show or hide the stationary red playhead cursor (Unassisted Mode) |
+| <kbd>P</kbd> | **Toggle Playhead** | Show or hide the stationary red playhead cursor, or the page view's cursor (Unassisted Mode) |
 | <kbd>↑</kbd> (Up) | **Tempo +5 BPM** | Increase tempo by 5 BPM |
 | <kbd>↓</kbd> (Down) | **Tempo -5 BPM** | Decrease tempo by 5 BPM |
 | <kbd>Shift</kbd> + <kbd>↑</kbd> | **Tempo +1 BPM** | Precision increase tempo by 1 BPM |
@@ -401,9 +402,9 @@ Guidonica ships on two channels (ADR 0078):
 | Channel | URL | Contents |
 | :--- | :--- | :--- |
 | **Release** | [guidonica.it](https://guidonica.it) | The latest tagged release, chosen on purpose. |
-| **Nightly** | [guidonica.it/nightly/](https://guidonica.it/nightly/) | The latest commit on `main`, for testing. Its settings and offline cache are kept apart from the release's. |
+| **Nightly** | [guidonica.it/nightly/](https://guidonica.it/nightly/) | The latest commit on `main`, for testing. Its settings and offline cache are kept apart from the release's, and it has its own night-blue icon and a violet accent ([ADR 0107](docs/adr/0107-nightly-icon.md)). |
 
-Versions use calendar versioning, `YEAR.MONTH.MICRO` (for example `2026.10.0`). Every change is recorded in [`CHANGELOG.md`](CHANGELOG.md) when it is made. After an update, returning users see what changed in a "What's new" dialog, in their language; About shows the running version and the full history. Each release also has a [GitHub Release](https://github.com/Hand-Lock/guidonica/releases), and is announced on [Bluesky](https://bsky.app/profile/guidonica.it) and [Mastodon](https://mastodon.social/@guidonica).
+Versions use calendar versioning, `YEAR.MONTH.MICRO` (for example `2026.10.0`). Every change is recorded in [`CHANGELOG.md`](CHANGELOG.md) when it is made. After an update, returning users see what changed in a "What's new" dialog, in their language; About shows the running version and the full history. To start over as on a first visit, open [guidonica.it/reset](https://guidonica.it/reset) (or `/nightly/reset`), which clears the saved settings and the offline copy ([ADR 0105](docs/adr/0105-reset-page.md)). Each release also has a [GitHub Release](https://github.com/Hand-Lock/guidonica/releases), and is announced on [Bluesky](https://bsky.app/profile/guidonica.it) and [Mastodon](https://mastodon.social/@guidonica).
 
 ---
 
@@ -482,14 +483,14 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0045](docs/adr/0045-aero-guidonica-2-material-hierarchy-and-responsive-redesign.md) | Aero-Guidonica 2: Material Hierarchy & Responsive Redesign | Accepted; amended by 0054, 0097 |
 | [0046](docs/adr/0046-guidonian-hand-brand-mark.md) | Guidonian Hand Brand Mark, Favicon & App Icon | Superseded in part by 0047 |
 | [0047](docs/adr/0047-guidonian-hand-v2.md) | Guidonian Hand v2: Anatomical Proportions, Volume Shading & 3D Thread | Accepted |
-| [0048](docs/adr/0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted; amended by 0063 |
+| [0048](docs/adr/0048-brand-mark-rollout-manifest-and-readme-logo.md) | Brand Mark Rollout: Web App Manifest & README Logo | Accepted; amended by 0063, 0107 |
 | [0049](docs/adr/0049-level-presets-onboarding-intro.md) | Level Presets & Onboarding Intro ("What's your level?") | Accepted; amended by 0053, 0059, 0070, 0071 |
 | [0050](docs/adr/0050-intro-notation-previews.md) | Procedural Notation Previews in the Onboarding Intro | Accepted; amended by 0051, 0052, 0071 |
 | [0051](docs/adr/0051-intro-preview-representation-presets.md) | Representation Presets for the Intro Level Previews | Accepted; amended by 0052, 0070 |
 | [0052](docs/adr/0052-intro-preview-signature-check.md) | Signature Check for the Intro Level Previews | Accepted; amended by 0070, 0071 |
 | [0053](docs/adr/0053-header-level-button.md) | Header Level Button with a Live Difficulty Meter | Accepted; amended by 0054, 0073, 0097 |
 | [0054](docs/adr/0054-responsive-header-fit-audit.md) | Responsive Header Fit Audit | Accepted; amended by 0055, 0076, 0090, 0097 |
-| [0055](docs/adr/0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056, 0083, 0087 |
+| [0055](docs/adr/0055-orientation-aware-auto-zoom-and-landscape-tip.md) | Orientation-Aware Auto Zoom & Portrait Landscape Tip | Accepted; amended by 0056, 0083, 0087, 0110 |
 | [0056](docs/adr/0056-notch-safe-notation-stage.md) | Notch-Safe Notation Stage | Accepted |
 | [0057](docs/adr/0057-canvas-bounded-beams-and-tuplet-numbers.md) | Canvas-Bounded Beams & Tuplet Numbers | Accepted |
 | [0058](docs/adr/0058-music-font-audit-and-bravura-subset.md) | Music Font Audit: Keep Bravura, Ship a Renamed Subset | Accepted |
@@ -517,11 +518,11 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0080](docs/adr/0080-social-profiles-verification.md) | Social Profiles: rel="me" Verification and Bluesky Domain Handle | Accepted; amended by 0082, 0084 |
 | [0081](docs/adr/0081-release-announcements-bluesky-mastodon.md) | Release Announcements on Bluesky and Mastodon | Accepted |
 | [0082](docs/adr/0082-visible-social-links.md) | Visible Bluesky and Mastodon Links | Accepted; amended by 0084, 0097, 0101, 0102 |
-| [0083](docs/adr/0083-in-app-browser-landscape-tip.md) | In-App Browser Landscape Tip | Accepted |
+| [0083](docs/adr/0083-in-app-browser-landscape-tip.md) | In-App Browser Landscape Tip | Accepted; amended by 0110 |
 | [0084](docs/adr/0084-instagram-link.md) | Instagram Link | Accepted; amended by 0101, 0102 |
 | [0085](docs/adr/0085-shareable-exercise-links.md) | Shareable Exercise Links | Accepted |
 | [0086](docs/adr/0086-language-landing-pages.md) | Language Landing Pages | Accepted |
-| [0087](docs/adr/0087-rotating-tips.md) | Rotating Tips | Accepted |
+| [0087](docs/adr/0087-rotating-tips.md) | Rotating Tips | Accepted; amended by 0106, 0109, 0110 |
 | [0088](docs/adr/0088-pre-release-audit-2026-10-06.md) | Pre-release Audit 2026-10-06: Second History Rewrite, Privacy Policy | Accepted |
 | [0089](docs/adr/0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted; followed by 0091, 0098 |
 | [0090](docs/adr/0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted; amended by 0093 |
@@ -531,7 +532,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0094](docs/adr/0094-drone-tuning.md) | Drone Tuning: Baroque, Classical and Renaissance Pitch | Accepted |
 | [0095](docs/adr/0095-output-soft-clipper.md) | Output Headroom: a Zero-Latency Soft Clipper | Accepted |
 | [0096](docs/adr/0096-cross-engine-support-gecko-webkit.md) | Cross-Engine Support: Gecko and WebKit, Chromium Untouched | Accepted |
-| [0097](docs/adr/0097-stage-first-shell.md) | Stage-First Shell: Top Bar, Transport Dock, Tabbed Inspector and ⋯ Menu | Accepted; amended by 0099 |
+| [0097](docs/adr/0097-stage-first-shell.md) | Stage-First Shell: Top Bar, Transport Dock, Tabbed Inspector and ⋯ Menu | Accepted; amended by 0099, 0109 |
 | [0098](docs/adr/0098-low-power-frame-rate-notice.md) | Low Power Mode Frame-Rate Notice | Accepted |
 | [0099](docs/adr/0099-ios-landscape-text-size-and-focus-fade.md) | iOS Landscape: Text Autosizing Off, Focus-Mode Fade on a Glass Strip | Accepted |
 | [0100](docs/adr/0100-no-double-tap-zoom.md) | No Double-Tap Zoom: `touch-action: manipulation` on the Root | Accepted |
