@@ -150,7 +150,7 @@ describe('Page line breaking and justification (ADR 0110)', () => {
     let last = -Infinity;
     for (const d of line) {
       for (let t = 0; t <= d.beatsPerMeasure; t += 0.125) {
-        const x = beatX(d, d.timeSignature, t) + (d === b ? a.width : 0);
+        const x = beatX(d, t) + (d === b ? a.width : 0);
         expect(x).toBeGreaterThanOrEqual(last - 1e-9);
         last = x;
       }

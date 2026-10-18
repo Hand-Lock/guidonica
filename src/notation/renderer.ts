@@ -110,7 +110,7 @@ export function tieAnchorRightX(
   const x =
     typeof spacing === 'number' || ts === undefined
       ? NOTE_START_OFFSET + beatOffset * (typeof spacing === 'number' ? spacing : spacing.beatWidth)
-      : beatX(spacing, ts, beatOffset);
+      : beatX(spacing, beatOffset);
   return x + tieHeadOffset(duration);
 }
 
@@ -586,7 +586,7 @@ export class MeasureRenderer {
       const isBarRest = noteData.isRest && noteData.beatDuration === data.beatsPerMeasure;
       const targetLinearX = isBarRest
         ? (data.width - staveNotes[i].getGlyphWidth()) / 2
-        : beatX(data, ts, noteData.beatOffset);
+        : beatX(data, noteData.beatOffset);
       staveNotes[i].getTickContext().setX(targetLinearX - stavePadding);
     }
 

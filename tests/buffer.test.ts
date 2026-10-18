@@ -201,7 +201,7 @@ describe('MeasureBuffer views (ADR 0109)', () => {
     const third = bars[2];
     // Playhead one beat into the third bar, and less room behind it than that beat's x
     const beat = third.startBeat + 1;
-    const behind = beatX(third, third.timeSignature, 1);
+    const behind = beatX(third, 1);
     buffer.evictLeftOf(beat, behind - 1);
     expect(buffer.getMeasures()[0].data.index).toBe(third.index);
     buffer.evictLeftOf(beat, 1e9);

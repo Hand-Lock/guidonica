@@ -196,7 +196,7 @@ export function cursorOffsetX(
   for (let i = first; i <= last; i++) {
     const d = bars[i].data;
     if (i === last || vb < d.startBeat + d.beatsPerMeasure) {
-      return x + beatX(d, d.timeSignature, vb - d.startBeat);
+      return x + beatX(d, vb - d.startBeat);
     }
     x += d.width;
   }

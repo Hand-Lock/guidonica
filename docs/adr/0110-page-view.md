@@ -217,12 +217,17 @@ staff would be too small to read at arm's length. In landscape the height binds 
 ### 11. Engine and copy
 
 `src/engine.ts` exports `justifyMeasure`, `pageScrollY`, `pageAnchor` and `PageSystem`; the constants flow
-through `types`. Locales gain `viewPage` and `landscapePage`, and the `views` and `viewsKey`
+through `types`. `MeasureBuffer` gains `setPageWidth`, `getSystems`, `ensureRows`, `coversRows` and
+`evictRowsBefore`, and `ScrollerView` gains `setReducedMotion` and `getViewportHeight`. An embedder
+draws a page through `ScrollerView`, which owns the cursor, the dimming and the band;
+`cursorOffsetX`, `lineAlpha`, `lineFocus`, `findSystem` and `pageRowsAbove` stay internal.
+`AppSettings.view` is a required field, and `CanvasPalette` gains the required `staffRgb` and
+`bandAlpha`, so an embedder that builds either by hand adds them. Locales gain `viewPage` and `landscapePage`, and the `views` and `viewsKey`
 tips name the page view.
 
 ## Consequences
 
-- **Portrait gets a real reading layout**: on a phone, about two played lines above the
+- **Portrait gets a real reading layout**: on a phone, two or three played lines above the
   reading line and six to come, read ahead like print, with no rotation needed. In landscape
   (844 × 390) the anchor leaves room for about one played line, which is enough.
 - **Memory is bounded by the stage area**, not its width: the active line, the played lines
@@ -238,3 +243,17 @@ tips name the page view.
 - **Ties across a line break** draw as two halves with the incoming arc's start estimated from
   the bar's natural predecessor, not the justified one at the end of the line above. The arc
   is clipped after the clef, so the difference is invisible.
+
+## Tests
+
+`tests/page.test.ts` (bars at `PAGE_DENSITY` of their squishy width; greedy breaking that never
+overflows except a lone bar; closed lines filled exactly with continuous speed at each inner
+barline; a lone overwide bar compressed; line starts and ties across a break; line distance from
+the ink; the line playing at a beat; a scroll curve still between turns and C¹ across each break,
+starting at the page top; reduced-motion cuts; played-line dimming; the active-line band; the
+anchor a third down; and, in `MeasureBuffer`, the same music as the tape views, tiled justified
+lines with stacked ys, the cursor on each onset, rows rendered one bar per step, eviction above
+the active line, re-breaking for a new width, switching to and from the tape, and reset).
+`renderAt.test.ts` (cursor and wash hidden with the playhead off, band kept), `zoom.test.ts` (two
+bars across a phone line, 100% cap on a desktop), `orientation.test.ts` (the notice's Page view
+button, hidden in page view), `storage.test.ts`, `tips.test.ts`.

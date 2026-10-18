@@ -46,7 +46,7 @@ export const SPACING_EXPONENT = 0.5;
  * Offsets outside the bar extend its end slopes, so the map is total and strictly
  * increasing. It allocates nothing: the scroller calls it every frame.
  */
-export function beatX(spacing: BeatSpacing, _ts: TimeSignature, offset: number): number {
+export function beatX(spacing: BeatSpacing, offset: number): number {
   const knots = spacing.knots;
   if (knots === undefined) return NOTE_START_OFFSET + offset * spacing.beatWidth;
   const { offsets, xs, slopes } = knots;

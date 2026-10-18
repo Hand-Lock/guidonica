@@ -109,7 +109,7 @@ describe('squishy engraved spacing (ADR 0109)', () => {
   it('keeps the steady layout linear, bit for bit', () => {
     for (const w of [37.5, 60, 91.25]) {
       for (const o of [0, 0.25, 1, 2.75, 4]) {
-        expect(beatX({ beatWidth: w }, '4/4', o)).toBe(NOTE_START_OFFSET + o * w);
+        expect(beatX({ beatWidth: w }, o)).toBe(NOTE_START_OFFSET + o * w);
       }
     }
     const s = busy();
@@ -173,11 +173,11 @@ describe('squishy engraved spacing (ADR 0109)', () => {
       for (const d of bars) {
         let x = NOTE_START_OFFSET;
         for (const n of d.notes) {
-          expect(beatX(d, ts, n.beatOffset)).toBeCloseTo(x, 9);
+          expect(beatX(d, n.beatOffset)).toBeCloseTo(x, 9);
           x += noteSpace(n.beatDuration, s, ts);
         }
         expect(d.width).toBeCloseTo(x - NOTE_START_OFFSET, 9);
-        expect(beatX(d, ts, d.beatsPerMeasure)).toBeCloseTo(NOTE_START_OFFSET + d.width, 9);
+        expect(beatX(d, d.beatsPerMeasure)).toBeCloseTo(NOTE_START_OFFSET + d.width, 9);
         expect(d.beatWidth).toBeCloseTo(d.width / d.beatsPerMeasure, 12);
       }
     }
@@ -189,7 +189,7 @@ describe('squishy engraved spacing (ADR 0109)', () => {
       for (const d of bars) {
         const ends = [...d.notes.slice(1).map((n) => n.beatOffset), d.beatsPerMeasure];
         d.notes.forEach((n, i) => {
-          const px = beatX(d, ts, ends[i]) - beatX(d, ts, n.beatOffset);
+          const px = beatX(d, ends[i]) - beatX(d, n.beatOffset);
           const key = Math.round(n.beatDuration * 1e6);
           const known = seen.get(key);
           if (known === undefined) seen.set(key, px);
@@ -221,11 +221,11 @@ describe('squishy engraved spacing (ADR 0109)', () => {
       for (let i = 1; i < bars.length; i++) {
         const a = bars[i - 1];
         const b = bars[i];
-        expect(beatX(a, ts, B) - NOTE_START_OFFSET).toBeCloseTo(a.width, 9);
+        expect(beatX(a, B) - NOTE_START_OFFSET).toBeCloseTo(a.width, 9);
         // The two bars agree on the barline slope exactly
         expect(a.knots?.slopes[a.notes.length]).toBe(b.knots?.slopes[0]);
-        const out = (beatX(a, ts, B) - beatX(a, ts, B - h)) / h;
-        const into = (beatX(b, ts, h) - beatX(b, ts, 0)) / h;
+        const out = (beatX(a, B) - beatX(a, B - h)) / h;
+        const into = (beatX(b, h) - beatX(b, 0)) / h;
         expect(Math.abs(out - into) / out).toBeLessThan(1e-3);
       }
     }
@@ -237,8 +237,8 @@ describe('squishy engraved spacing (ADR 0109)', () => {
       for (const d of bars) {
         for (const n of d.notes.slice(1)) {
           const o = n.beatOffset;
-          const left = (beatX(d, ts, o) - beatX(d, ts, o - h)) / h;
-          const right = (beatX(d, ts, o + h) - beatX(d, ts, o)) / h;
+          const left = (beatX(d, o) - beatX(d, o - h)) / h;
+          const right = (beatX(d, o + h) - beatX(d, o)) / h;
           expect(Math.abs(left - right) / left).toBeLessThan(1e-3);
         }
       }
@@ -250,7 +250,7 @@ describe('squishy engraved spacing (ADR 0109)', () => {
       for (const d of bars) {
         let last = -Infinity;
         for (let o = -1; o <= d.beatsPerMeasure + 1; o += 1 / 96) {
-          const x = beatX(d, ts, o);
+          const x = beatX(d, o);
           expect(x).toBeGreaterThan(last);
           last = x;
         }

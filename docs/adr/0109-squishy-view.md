@@ -135,7 +135,7 @@ curve. In steady it is `computeBeatWidth` and `beats × beatWidth`, as before, w
 
 ### 5. Renderer and scroller
 
-The renderer places each note at `beatX(data, ts, beatOffset)`; bar rests stay centred on
+The renderer places each note at `beatX(data, beatOffset)`; bar rests stay centred on
 `data.width`. `tieAnchorRightX(offset, duration, spacing, ts)` takes a bar's spacing; the
 number overload (a linear beat width) stays.
 

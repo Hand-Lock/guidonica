@@ -1701,6 +1701,11 @@ select:focus-visible {
   pointer-events: none;
 }
 
+/* Page lines end at a barline inside the stage; nothing arrives from the edge (ADR 0110) */
+:root[data-view="page"] .canvas-wrapper::after {
+  display: none;
+}
+
 .canvas-zoom-pill {
   position: absolute;
   right: calc(14px + env(safe-area-inset-right));

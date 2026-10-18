@@ -429,7 +429,7 @@ export class ScrollerView {
     while (k > 0 && measures[k].data.startBeat > visualBeat) k--;
     if (k >= 0) {
       const anchor = measures[k].data;
-      const anchorX = this.playheadX - beatX(anchor, anchor.timeSignature, visualBeat - anchor.startBeat) * zoom;
+      const anchorX = this.playheadX - beatX(anchor, visualBeat - anchor.startBeat) * zoom;
       // Walk back to the leftmost bar on the stage, then blit left to right
       let first = k;
       let x = anchorX;

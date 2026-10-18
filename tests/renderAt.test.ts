@@ -220,7 +220,7 @@ describe('Drawing a frame at an explicit beat (ADR 0103 seam 2)', () => {
       // The tape point for this beat sits on the playhead, whatever the bar's spacing
       const x = xs.get(`m${d.index}`);
       expect(x).toBeDefined();
-      expect((x ?? 0) + beatX(d, d.timeSignature, beat - d.startBeat) * z).toBeCloseTo(playheadX, 6);
+      expect((x ?? 0) + beatX(d, beat - d.startBeat) * z).toBeCloseTo(playheadX, 6);
       // Consecutive bars touch, and the drawn tape reaches the right edge
       const drawn = measures.filter((m) => xs.has(`m${m.data.index}`));
       for (let i = 1; i < drawn.length; i++) {
@@ -254,7 +254,7 @@ describe('Drawing a frame at an explicit beat (ADR 0103 seam 2)', () => {
     }
     const d = buffer.getMeasures().find((m) => m.data.startBeat <= beat && beat < m.data.startBeat + 4)?.data;
     const blit = calls.find((c) => c[0] === 'drawImage' && String(c[1]).startsWith(`m${d?.index}@`));
-    expect(d && (blit?.[6] as number) + beatX(d, '4/4', beat - d.startBeat)).toBeCloseTo(playheadX, 6);
+    expect(d && (blit?.[6] as number) + beatX(d, beat - d.startBeat)).toBeCloseTo(playheadX, 6);
     scroller.destroy();
   });
 
@@ -296,7 +296,7 @@ describe('Drawing a frame at an explicit beat (ADR 0103 seam 2)', () => {
           // The bar's blit x plus beatX into it: the cursor sits on the notehead's x
           const blit = calls.find((c) => c[0] === 'drawImage' && String(c[1]).startsWith(`m${d.index}@`));
           expect(blit).toBeDefined();
-          const noteX = (blit?.[6] as number) + beatX(d, d.timeSignature, note.beatOffset) * z;
+          const noteX = (blit?.[6] as number) + beatX(d, note.beatOffset) * z;
           const cursor = calls.find((c) => c[0] === 'translate');
           expect(cursor?.[1] as number).toBeCloseTo(Math.round(noteX) + 0.5, 6);
           const offset = (PAGE_LEFT_MARGIN + system.header) * z;

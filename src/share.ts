@@ -28,8 +28,8 @@ import {
 
 /**
  * What a link carries: the settings a level preset sets, plus clef, meter, pulse, the
- * drone note and its tuning. Language, theme, sounds, volumes, zoom and the playhead stay
- * with each user.
+ * drone note and its tuning. Language, theme, sounds, volumes, zoom, the playhead and the
+ * view stay with each user.
  */
 export type Exercise = Pick<
   AppSettings,

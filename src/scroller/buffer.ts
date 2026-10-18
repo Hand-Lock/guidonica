@@ -353,7 +353,10 @@ export class MeasureBuffer {
     this.evictFirst(bars);
   }
 
-  /** Global beat where the next measure to render would start: the buffer covers up to here. */
+  /**
+   * Global beat where the next measure to generate would start. In page view this counts
+   * the bars waiting in the queued and open lines, which are not rendered yet.
+   */
   public getEndBeat(): number {
     return this.nextMeasureStartBeat;
   }
@@ -369,7 +372,7 @@ export class MeasureBuffer {
       const data = measures[i].data;
       if (data.startBeat <= beat) {
         if (beat >= data.startBeat + data.beatsPerMeasure && i === measures.length - 1) break;
-        return ahead + data.width - (beatX(data, data.timeSignature, beat - data.startBeat) - NOTE_START_OFFSET);
+        return ahead + data.width - (beatX(data, beat - data.startBeat) - NOTE_START_OFFSET);
       }
       ahead += data.width;
     }
@@ -467,7 +470,7 @@ export class MeasureBuffer {
     if (k <= 0) return;
     const anchor = measures[k].data;
     // Distance from `beat` back to the right edge of measures[i - 1]
-    let behind = beatX(anchor, anchor.timeSignature, beat - anchor.startBeat);
+    let behind = beatX(anchor, beat - anchor.startBeat);
     let keep = k;
     while (keep > 0 && behind <= pixelsBehind) {
       const prev = measures[keep - 1].data;

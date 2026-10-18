@@ -33,10 +33,12 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 ### Internal
 
 - `/reset` also works on the dev and preview servers, and on guidonica.it/nightly/reset for the nightly channel (ADR 0105).
-- The README ADR table lists ADRs 0106, 0107 and 0108.
+- The README ADR table lists ADRs 0105 to 0110.
 - The 32nd-only generator test allows the bar rest an all-silent bar is spelled as, which made it fail at random in CI (ADR 0108).
-- The engine entry point exports the engraved spacing functions (`beatX`, `noteSpace`, `shortestBeats`, `spaceMeasure`, `typicalBarWidth`, `SPACING_EXPONENT`) and the `SpacingKnots` type, and `MeasureBuffer` evicts by pixels with `evictLeftOf` (ADR 0109).
+- The engine entry point exports the engraved spacing functions (`beatX`, `noteSpace`, `shortestBeats`, `spaceMeasure`, `typicalBarWidth`, `SPACING_EXPONENT`) and the `BeatSpacing` and `SpacingKnots` types, and `MeasureBuffer` evicts by pixels with `evictLeftOf` (ADR 0109). `beatX` takes the spacing and the offset only.
+- The engine entry point exports the page layout (`justifyMeasure`, `pageAnchor`, `pageScrollY` and the `PageSystem` type). `MeasureBuffer` gains `setPageWidth`, `getSystems`, `ensureRows`, `coversRows` and `evictRowsBefore`, and `ScrollerView` gains `setReducedMotion` and `getViewportHeight`. `AppSettings.view` is required, and `CanvasPalette` gains `staffRgb` and `bandAlpha` (ADR 0110).
 - The small LEDs on checked chips glow through a `--led-on-halo` token instead of a literal Olo colour (ADR 0107).
+- The page view drops the tape's right-edge fade, which dimmed each line's closing barline, and the Keyboard shortcuts sheet lists Shift + V for the previous view (ADR 0110).
 
 ## [2026.10.4] - 2026-10-15
 
