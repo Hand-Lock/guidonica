@@ -2,6 +2,24 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.5] - 2026-10-18
+
+### Added
+
+- Ouvrir guidonica.it/reset efface vos réglages enregistrés et la copie hors ligne, pour que Guidonica reparte comme à votre première visite (ADR 0105).
+- Les versions nightly ont leur propre icône, une tuile bleu nuit avec un croissant de lune, et un accent violet dans toute l'application, pour qu'on ne puisse pas les confondre avec la version stable (ADR 0107).
+- Vue Élastique : les notes sont espacées comme dans la musique imprimée, les notes longues prenant moins de place que leur durée, pour qu'une plus grande partie de la portée tienne sur les petits écrans ; la vitesse de la portée suit les notes en douceur. Faites glisser la portée sur le côté, appuyez sur V ou choisissez-la dans Affichage. (ADR 0109)
+- Vue Page : la musique est mise en lignes, comme une page imprimée, pour lire sur un téléphone tenu à la verticale. Un curseur suit les clics le long de chaque ligne et, en fin de ligne, la page remonte en douceur vers la suivante, pour que les lignes du dessous soient toujours là à lire d'avance. La ligne jouée se trouve au tiers de la hauteur, avec les lignes tout juste jouées atténuées au-dessus et une bande claire qui la signale. Choisissez-la comme les autres vues, ou touchez Vue Page dans l'avis « Mieux en paysage ». (ADR 0110)
+
+### Changed
+
+- L'élément Raccourcis clavier du menu ⋯ est masqué sur les appareils tactiles tant qu'un clavier physique n'a pas été utilisé (ADR 0106).
+- Les silences ne remplissent jamais deux mesures de suite, et un exercice ne commence jamais par une mesure vide (ADR 0108).
+
+### Fixed
+
+- Sur les téléphones, Nouveautés, « À propos » et les autres fenêtres ne défilent ni ne rebondissent plus en entier ; seul leur contenu défile.
+
 ## [2026.10.4] - 2026-10-15
 
 ### Added

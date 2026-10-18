@@ -14,6 +14,10 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ## [Unreleased]
 
+## [2026.10.5] - 2026-10-18
+
+> Two new ways to read: the squishy view spaces notes like printed music, so more fits on small screens, and the page view sets the music in lines for reading on a phone held upright.
+
 ### Added
 
 - Going to guidonica.it/reset clears your saved settings and the offline copy, so Guidonica starts again as on your first visit (ADR 0105).
@@ -203,7 +207,8 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - First public release.
 
-[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.4...HEAD
+[Unreleased]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.5...HEAD
+[2026.10.5]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.4...v2026.10.5
 [2026.10.4]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.3...v2026.10.4
 [2026.10.3]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.2...v2026.10.3
 [2026.10.2]: https://github.com/Hand-Lock/guidonica/compare/v2026.10.1...v2026.10.2

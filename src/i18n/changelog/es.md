@@ -2,6 +2,24 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.5] - 2026-10-18
+
+### Added
+
+- Abrir guidonica.it/reset borra tus ajustes guardados y la copia sin conexión, para que Guidonica empiece de nuevo como en tu primera visita (ADR 0105).
+- Las versiones nightly tienen su propio icono, un mosaico azul noche con una luna creciente, y un acento violeta en toda la app, para que no se confundan con la versión estable (ADR 0107).
+- Vista Elástica: las notas se espacian como en la música impresa, y las notas largas ocupan menos espacio que su duración, para que en las pantallas pequeñas quepa más pentagrama; la velocidad del pentagrama sigue a las notas con suavidad. Desliza el pentagrama hacia un lado, pulsa V o elígela en Vista. (ADR 0109)
+- Vista Página: la música se compone en líneas, como una página impresa, para leer con el teléfono en vertical. Un cursor sigue los clics a lo largo de cada línea y, al final de una línea, la página sube suavemente a la siguiente, para que las líneas de abajo estén siempre ahí para leer por adelantado. La línea que suena está a un tercio desde arriba, con las líneas recién tocadas atenuadas encima y una franja clara que la marca. Elígela como las otras vistas, o toca Vista Página en el aviso «Mejor en horizontal». (ADR 0110)
+
+### Changed
+
+- La opción Atajos de teclado del menú ⋯ se oculta en los dispositivos táctiles hasta que se usa un teclado físico (ADR 0106).
+- Los silencios nunca llenan dos compases seguidos, y un ejercicio nunca empieza con un compás vacío (ADR 0108).
+
+### Fixed
+
+- En los teléfonos, Novedades, «Acerca de» y los demás diálogos ya no se desplazan ni rebotan enteros; solo se desplaza su contenido.
+
 ## [2026.10.4] - 2026-10-15
 
 ### Added

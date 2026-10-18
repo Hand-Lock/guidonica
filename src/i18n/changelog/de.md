@@ -2,6 +2,24 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.5] - 2026-10-18
+
+### Added
+
+- Der Aufruf von guidonica.it/reset löscht Ihre gespeicherten Einstellungen und die Offline-Kopie, sodass Guidonica wie bei Ihrem ersten Besuch neu startet (ADR 0105).
+- Nightly-Builds haben ein eigenes Symbol, eine nachtblaue Kachel mit einer Mondsichel, und einen violetten Akzent in der ganzen App, damit man sie nicht mit der stabilen Version verwechseln kann (ADR 0107).
+- Ansicht Elastisch: Die Noten sind wie im Notendruck gesetzt, lange Noten nehmen weniger Platz ein als ihre Dauer, sodass auf kleinen Bildschirmen mehr vom Notensystem Platz hat; die Geschwindigkeit des Notensystems folgt den Noten fließend. Wischen Sie das Notensystem seitwärts, drücken Sie V oder wählen Sie sie unter Anzeige. (ADR 0109)
+- Seitenansicht: Die Musik ist in Zeilen gesetzt, wie eine gedruckte Seite, zum Lesen auf einem hochkant gehaltenen Telefon. Ein Cursor folgt den Klicks entlang jeder Zeile, und am Zeilenende gleitet die Seite sanft zur nächsten hinauf, sodass die Zeilen darunter immer zum Vorauslesen bereitstehen. Die erklingende Zeile steht ein Drittel unterhalb des oberen Rands, die gerade gespielten Zeilen darüber sind abgeblendet, und ein heller Streifen hebt sie hervor. Wählen Sie sie wie die anderen Ansichten, oder tippen Sie im Hinweis „Am besten im Querformat“ auf Seitenansicht. (ADR 0110)
+
+### Changed
+
+- Der Eintrag Tastenkürzel im ⋯-Menü ist auf Touch-Geräten ausgeblendet, bis eine physische Tastatur benutzt wird (ADR 0106).
+- Pausen füllen nie zwei Takte hintereinander, und eine Übung beginnt nie mit einem leeren Takt (ADR 0108).
+
+### Fixed
+
+- Auf Telefonen scrollen und federn Neuigkeiten, „Über Guidonica“ und die anderen Dialoge nicht mehr als Ganzes; nur ihr Inhalt scrollt.
+
 ## [2026.10.4] - 2026-10-15
 
 ### Added

@@ -2,6 +2,24 @@
 <!-- Released versions of CHANGELOG.md, translated at release time (ADR 0078). Keep the English
      headings and the same sections and bullet count; omit Internal. -->
 
+## [2026.10.5] - 2026-10-18
+
+### Added
+
+- Aprire guidonica.it/reset cancella le impostazioni salvate e la copia offline, così Guidonica riparte come alla prima visita (ADR 0105).
+- Le versioni nightly hanno un'icona tutta loro, una tessera blu notte con una falce di luna, e un accento viola in tutta l'app, così non si possono confondere con la versione stabile (ADR 0107).
+- Vista Elastica: le note sono spaziate come nella musica stampata, con le note lunghe che occupano meno spazio della loro durata, così sugli schermi piccoli entra più pentagramma; la velocità del pentagramma segue le note con fluidità. Scorri il pentagramma di lato, premi V o sceglila in Aspetto. (ADR 0109)
+- Vista Pagina: la musica è impaginata in righe, come una pagina stampata, per leggere con il telefono in verticale. Un cursore segue i clic lungo ogni riga e, alla fine di una riga, la pagina sale dolcemente alla successiva, così le righe sotto sono sempre lì da leggere in anticipo. La riga che suona sta a un terzo dall'alto, con le righe appena suonate attenuate sopra di essa e una fascia chiara che la evidenzia. Sceglila come le altre viste, o tocca Vista Pagina nell'avviso «Meglio in orizzontale». (ADR 0110)
+
+### Changed
+
+- La voce Scorciatoie da tastiera nel menu ⋯ è nascosta sui dispositivi touch finché non usi una tastiera fisica (ADR 0106).
+- Le pause non riempiono mai due battute di fila, e un esercizio non comincia mai con una battuta vuota (ADR 0108).
+
+### Fixed
+
+- Sui telefoni, Novità, «Informazioni» e le altre finestre non scorrono e non rimbalzano più per intero; scorre solo il loro contenuto.
+
 ## [2026.10.4] - 2026-10-15
 
 ### Added
