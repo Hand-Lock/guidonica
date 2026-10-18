@@ -587,6 +587,14 @@ export function subscribeSystemTheme(callback: (isDark: boolean) => void): () =>
 
 export type ZoomMode = 'auto' | 'manual';
 
+/**
+ * How bars are spaced on the tape (ADR 0109): `steady` gives every bar the width of the
+ * session's densest value (SPEC §3 metric linearity), `squishy` sizes each bar by its own
+ * rhythm and eases the scroll speed between bars. Ordered for cycling.
+ */
+export const VIEW_MODES = ['steady', 'squishy'] as const;
+export type ViewMode = (typeof VIEW_MODES)[number];
+
 export interface AppSettings {
   tempo: number; // MIN_TEMPO-MAX_TEMPO BPM
   timeSignature: TimeSignature;
@@ -613,6 +621,7 @@ export interface AppSettings {
   droneVolume: number; // 0.0 to 1.0, independent of the click volume
   zoom: number; // 0.3 to 1.5 (default 1.0)
   zoomMode: ZoomMode;
+  view: ViewMode; // Bar spacing on the tape (ADR 0109)
   showPlayhead: boolean; // default true: stationary red playhead cursor line
   showTips: boolean; // default true: one rotating tip per visit (ADR 0087)
 }
@@ -667,6 +676,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   referencePitch: 440,
   zoom: DEFAULT_ZOOM,
   zoomMode: 'auto',
+  view: 'steady',
   showPlayhead: true,
   showTips: true,
 };
@@ -694,9 +704,13 @@ export interface MeasureData {
   timeSignature: TimeSignature;
   beatsPerMeasure: number; // Count of metric beats (e.g., 4 for 4/4, 12 for 12/8)
   beatValue: number; // Denominator (e.g. 4 for 4/4, 8 for 6/8)
-  beatWidth: number; // Metric beat width (px) dynamically sized for active subdivisions
+  beatWidth: number; // Metric beat width (px): the session's in steady, the bar's own body width in squishy
   width: number; // Measure pixel width
   startBeat: number; // Global start beat offset from beginning of piece
+  /** Squishy only (ADR 0109): the wider previous bar's beat width, eased down over the first felt beat. */
+  entryBeatWidth?: number;
+  /** Squishy only (ADR 0109): the wider next bar's beat width, eased up to over the last felt beat. */
+  exitBeatWidth?: number;
   /**
    * Tie arriving at notes[0] from the previous bar's last note. Self-contained (the
    * previous note's layout, not a reference to that measure), so re-rendering and
@@ -707,6 +721,8 @@ export interface MeasureData {
     duration: string; // Previous note's VexFlow duration
     beatWidth: number; // Previous bar's beat width (px)
     measureWidth: number; // Previous bar's width (px)
+    entryBeatWidth?: number; // Previous bar's squishy ramps (ADR 0109)
+    exitBeatWidth?: number;
   };
 }
 
@@ -843,9 +859,15 @@ export function computeOptimalZoom(
   tuplets?: TupletOptions
 ): number {
   const beatWidth = computeBeatWidth(subdivisions, timeSignature, tuplets);
-  const beatsPerMeasure = getBeatsPerMeasure(timeSignature);
-  const measureWidth = beatsPerMeasure * beatWidth;
+  return fitZoom(viewportWidth, getBeatsPerMeasure(timeSignature) * beatWidth);
+}
 
+/**
+ * The zoom at which one bar `measureWidth` px wide fits beside the pinned header, in 10%
+ * steps, capped at 100% and clamped to the zoom range. The squishy view fits its typical
+ * bar with it (ADR 0109).
+ */
+export function fitZoom(viewportWidth: number, measureWidth: number): number {
   // Space occupied by stationary pinned header solid mask before scaling
   const headerMargin = PINNED_HEADER_MASK_WIDTH; // 135
 

@@ -12,6 +12,8 @@ export type TipId =
   | 'labels'
   | 'keys'
   | 'pinch'
+  | 'views'
+  | 'viewsKey'
   | 'clefs'
   | 'notes'
   | 'tuplets'
@@ -68,6 +70,17 @@ export const FEATURE_TIPS: readonly Tip[] = [
     when: (c) => Object.values(c.settings.pitchClasses).every(Boolean),
   },
   { id: 'pinch', when: (c) => c.touch },
+  // Swiping changes the view on touch screens, V elsewhere (ADR 0109)
+  {
+    id: 'views',
+    action: { kind: 'settings', section: 'display' },
+    when: (c) => c.touch && c.settings.view === 'steady',
+  },
+  {
+    id: 'viewsKey',
+    action: { kind: 'settings', section: 'display' },
+    when: (c) => c.keyboard && !c.touch && c.settings.view === 'steady',
+  },
   {
     id: 'tuplets',
     action: { kind: 'settings', section: 'rhythm' },

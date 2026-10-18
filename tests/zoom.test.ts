@@ -14,8 +14,11 @@ import {
   ZOOM_STEP,
   computeBeatWidth,
   computeOptimalZoom,
+  fitZoom,
   TIME_SIGNATURES,
 } from '../src/notation/types';
+import { typicalBarWidth } from '../src/notation/spacing';
+import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import type { MeasureData } from '../src/notation/types';
 import { MeasureRenderer } from '../src/notation/renderer';
 
@@ -350,6 +353,34 @@ describe('In-App Notation Zoom Pipeline', () => {
       const tinyWidth = 100;
       const optimalTiny = computeOptimalZoom(tinyWidth, sixteenthSubdivs, '4/4');
       expect(optimalTiny).toBe(MIN_ZOOM);
+    });
+  });
+
+  describe('Squishy auto zoom (ADR 0109)', () => {
+    it('fits a bar width the same way the steady fit does', () => {
+      const sixteenths = { ...DEFAULT_APP_SETTINGS.subdivisions, sixteenth: true };
+      const beat = computeBeatWidth(sixteenths, '4/4');
+      expect(fitZoom(375, 4 * beat)).toBe(computeOptimalZoom(375, sixteenths, '4/4'));
+      expect(fitZoom(10_000, 100)).toBe(DEFAULT_ZOOM);
+      expect(fitZoom(10, 10_000)).toBe(MIN_ZOOM);
+    });
+
+    it('zooms in further than steady when the densest value is rare', () => {
+      // Septuplet sixteenths over the default rhythm: most bars hold none of them
+      const settings = structuredClone(DEFAULT_APP_SETTINGS);
+      settings.tuplets.septuplet['1/16'] = true;
+      const steady = computeOptimalZoom(390, settings.subdivisions, '4/4', settings.tuplets);
+      const squishy = fitZoom(390, typicalBarWidth(settings));
+      expect(squishy).toBeGreaterThan(steady);
+      expect(squishy).toBeLessThanOrEqual(DEFAULT_ZOOM);
+    });
+
+    it('matches steady when the densest value is in most bars', () => {
+      // A bar is as wide as its densest note, and nearly every bar holds a sixteenth
+      const settings = structuredClone(DEFAULT_APP_SETTINGS);
+      settings.subdivisions.sixteenth = true;
+      const steady = computeOptimalZoom(390, settings.subdivisions, '4/4', settings.tuplets);
+      expect(fitZoom(390, typicalBarWidth(settings))).toBe(steady);
     });
   });
 });

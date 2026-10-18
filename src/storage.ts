@@ -23,6 +23,8 @@ import {
   ThemeMode,
   TimeSignature,
   TupletOptions,
+  VIEW_MODES,
+  ViewMode,
   ZoomMode,
   clampTempo,
   parsePulse,
@@ -188,6 +190,7 @@ export function loadStoredSettings(): AppSettings {
       referencePitch: REFERENCE_PITCHES.find((hz) => hz === parsed.referencePitch) ?? d.referencePitch,
       zoom,
       zoomMode,
+      view: pickEnum<ViewMode>(parsed.view, VIEW_MODES, d.view),
       showPlayhead: pickBool(parsed.showPlayhead, d.showPlayhead),
       showTips: pickBool(parsed.showTips, d.showTips),
     };

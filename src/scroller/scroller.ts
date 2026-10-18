@@ -8,18 +8,19 @@ import {
   MEASURE_CANVAS_HEIGHT,
   MIN_PLAYHEAD_X,
   MIN_ZOOM,
-  NOTE_START_OFFSET,
   PINNED_HEADER_FADE_WIDTH,
   PINNED_HEADER_MASK_WIDTH,
   PINNED_HEADER_OFFSET_X,
   PINNED_HEADER_TOTAL_MARGIN,
   PINNED_HEADER_WIDTH,
+  RenderedMeasure,
   ResolvedTheme,
   STAVE_TOP_LINE_Y,
   TimeSignature,
   computeBeatWidth,
   resolveTheme,
 } from '../notation/types';
+import { beatX } from '../notation/spacing';
 import { MetronomeEngine } from '../audio/metronome';
 import { MeasureBuffer } from './buffer';
 import { MeasureRenderer } from '../notation/renderer';
@@ -310,7 +311,7 @@ export class ScrollerView {
 
   /**
    * Draws the frame the live loop would draw at `visualBeat`, with the same pixel math
-   * (playheadX - NOTE_START_OFFSET·zoom + (startBeat - beat)·beatWidth·zoom), so a caller
+   * (the tape point of the beat on the playhead, ADR 0109), so a caller
    * can draw frame n at t = n / fps (ADR 0103). It never reads the metronome, never
    * schedules idle work and never fires onFrame: each call renders synchronously whatever
    * the stage needs. Beats must not decrease between calls, because measures behind the
@@ -351,36 +352,34 @@ export class ScrollerView {
     );
 
     // 4. Update ring buffer: the stage must be covered now, the lookahead beyond it is
-    //    rendered between frames (ADR 0091); then evict offscreen measures
+    //    rendered between frames (ADR 0091); then evict measures left of the stage
     const edgeBeats = this.beatsToRightEdge(activeBeatWidth);
     this.buffer.ensureAhead(visualBeat, edgeBeats + FRAME_LOOKAHEAD_BEATS, settings);
-    if (live && isMusicFontReady() && this.buffer.getEndBeat() < visualBeat + edgeBeats + IDLE_LOOKAHEAD_BEATS) {
+    if (live && isMusicFontReady() && !this.buffer.covers(visualBeat, edgeBeats + IDLE_LOOKAHEAD_BEATS, settings)) {
       this.scheduleIdleRender();
     }
+    this.buffer.evictLeftOf(visualBeat, this.playheadX / zoom);
 
-    const minVisibleBeat = visualBeat - this.playheadX / (activeBeatWidth * zoom) - 2;
-    this.buffer.evictBefore(minVisibleBeat);
-
-    // 5. Blit visible measures from ring-buffer with subpixel floating-point positioning
+    // 5. Blit visible measures with subpixel floating-point positioning. The bar under the
+    //    playhead is placed so the tape point of `visualBeat` sits on it, and its neighbours
+    //    follow edge to edge (ADR 0109). Steady bars have beatX = 26 + offset·beatWidth, so
+    //    this is the linear playheadX - 26·zoom + (startBeat - beat)·beatWidth·zoom.
     const measures = this.buffer.getMeasures();
-    for (let i = 0; i < measures.length; i++) {
-      const m = measures[i];
-      // Subpixel screen X: noteheads cross playhead at their exact fractional beat time
-      const measureScreenX =
-        this.playheadX - NOTE_START_OFFSET * zoom + (m.data.startBeat - visualBeat) * (m.data.beatWidth * zoom);
-
-      if (measureScreenX + m.width >= 0 && measureScreenX <= w) {
-        ctx.drawImage(
-          m.canvas,
-          0,
-          0,
-          m.canvas.width,
-          m.canvas.height,
-          measureScreenX,
-          this.measureDrawY,
-          m.width,
-          m.height
-        );
+    let k = measures.length - 1;
+    while (k > 0 && measures[k].data.startBeat > visualBeat) k--;
+    if (k >= 0) {
+      const anchor = measures[k].data;
+      const anchorX = this.playheadX - beatX(anchor, anchor.timeSignature, visualBeat - anchor.startBeat) * zoom;
+      // Walk back to the leftmost bar on the stage, then blit left to right
+      let first = k;
+      let x = anchorX;
+      while (first > 0 && x >= 0) {
+        first--;
+        x -= measures[first].data.width * zoom;
+      }
+      for (let i = first; i < measures.length && x <= w; i++) {
+        this.blit(ctx, measures[i], x);
+        x += measures[i].data.width * zoom;
       }
     }
 
@@ -395,6 +394,12 @@ export class ScrollerView {
     ctx.restore();
 
     if (live) this.frameCallback?.();
+  }
+
+  /** Draws one measure's cached canvas with its left barline at screen x, if it is on the stage. */
+  private blit(ctx: CanvasRenderingContext2D, m: RenderedMeasure, x: number): void {
+    if (x + m.width < 0 || x > this.viewportWidth) return;
+    ctx.drawImage(m.canvas, 0, 0, m.canvas.width, m.canvas.height, x, this.measureDrawY, m.width, m.height);
   }
 
   private drawStaffLines(

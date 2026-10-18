@@ -29,11 +29,14 @@ import {
   TupletName,
   TupletOptions,
   TupletValue,
+  VIEW_MODES,
+  ViewMode,
   ZOOM_STEP,
   ZoomMode,
   beatAccent,
   clampTempo,
   computeOptimalZoom,
+  fitZoom,
   getBeatsPerMeasure,
   isCompound,
   hasMeterSign,
@@ -50,6 +53,7 @@ import { globalState, SessionState } from './state';
 import { MetronomeEngine } from './audio/metronome';
 import { INTERVAL_KEYS, MusicGenerator, effectiveIntervals, pitchSteps } from './notation/generator';
 import { MeasureRenderer } from './notation/renderer';
+import { typicalBarWidth } from './notation/spacing';
 import { releasePreview, renderClefIcon, renderLevelPreview, renderMeterIcon } from './notation/preview';
 import { MeasureBuffer } from './scroller/buffer';
 import { ScrollerView } from './scroller/scroller';
@@ -71,6 +75,11 @@ import {
   pitchClassNames,
   t,
 } from './i18n';
+
+/** A sideways swipe longer than this (CSS px) changes the view (ADR 0109). */
+const SWIPE_MIN_PX = 48;
+/** How long the view pill stays on screen, fades included (ADR 0109). */
+const VIEW_PILL_MS = 1400;
 
 /** Tooltip of each interval chip, to which a dormant chip appends why (ADR 0070). */
 const INTERVAL_TITLE_KEYS = {
@@ -214,6 +223,10 @@ class GuidonicaApp {
   /** The tip on screen this visit (ADR 0087); null once hidden. */
   private currentTip: Tip | null = null;
   private selectSolfegeMode: HTMLSelectElement;
+  private selectView: HTMLSelectElement | null;
+  private viewPill: HTMLElement | null;
+  /** The pill's running fade (ADR 0109), cancelled when another switch restarts it. */
+  private viewPillAnimation: Animation | null = null;
   private selectLanguage: HTMLSelectElement | null;
   private selectSoundProfile: HTMLSelectElement;
   private selectTheme: HTMLSelectElement;
@@ -346,6 +359,8 @@ class GuidonicaApp {
     this.toggleTips = document.getElementById('toggle-tips') as HTMLInputElement;
     this.tipNotice = document.getElementById('tip-notice');
     this.selectSolfegeMode = document.getElementById('select-solfege-mode') as HTMLSelectElement;
+    this.selectView = document.getElementById('select-view') as HTMLSelectElement | null;
+    this.viewPill = document.getElementById('view-pill');
     this.selectLanguage = document.getElementById('select-language') as HTMLSelectElement | null;
     this.selectSoundProfile = document.getElementById('select-sound-profile') as HTMLSelectElement;
     this.selectTheme = document.getElementById('select-theme') as HTMLSelectElement;
@@ -529,6 +544,7 @@ class GuidonicaApp {
 
     // Sound & Display overlays
     this.selectSolfegeMode.value = settings.solfegeLabelMode;
+    if (this.selectView) this.selectView.value = settings.view;
     if (this.selectLanguage) this.selectLanguage.value = getLanguage();
     this.selectSoundProfile.value = settings.soundProfile;
     this.volumeSlider.value = String(settings.volume);
@@ -584,6 +600,8 @@ class GuidonicaApp {
   private getEffectiveAutoZoom(): number {
     const viewportWidth = this.scroller ? this.scroller.getViewportWidth() : window.innerWidth;
     const settings = globalState.settings;
+    // Squishy bars vary: fit the session's typical one, not the densest (ADR 0109)
+    if (settings.view === 'squishy') return fitZoom(viewportWidth, typicalBarWidth(settings));
     return computeOptimalZoom(
       viewportWidth,
       settings.subdivisions,
@@ -891,6 +909,13 @@ class GuidonicaApp {
       this.rerenderBuffer();
     });
 
+    // Staff view (ADR 0109)
+    this.selectView?.addEventListener('change', (e) => {
+      const mode = (e.target as HTMLSelectElement).value;
+      const view = VIEW_MODES.find((v) => v === mode);
+      if (view) this.setView(view, false);
+    });
+
     // UI language & note naming (ADR 0059)
     this.selectLanguage?.addEventListener('change', (e) => {
       const lang = (e.target as HTMLSelectElement).value;
@@ -997,6 +1022,7 @@ class GuidonicaApp {
     const canvas = document.getElementById('scroller-canvas') as HTMLCanvasElement;
     if (canvas) {
       this.bindCanvasPinchZoom(canvas);
+      this.bindCanvasSwipe(canvas);
       canvas.addEventListener('pointerdown', () => {
         if (dockedLayout?.matches !== true && this.controlsDrawer.classList.contains('open')) {
           this.setDrawerOpen(false);
@@ -1962,6 +1988,9 @@ class GuidonicaApp {
       } else if (e.code === 'KeyD' && !e.repeat) {
         e.preventDefault();
         this.applyDroneNote(globalState.settings.droneNote === 'off' ? this.lastDroneNote : 'off');
+      } else if (e.code === 'KeyV' && !e.repeat) {
+        e.preventDefault();
+        this.cycleView(e.shiftKey ? -1 : 1);
       }
     });
   }
@@ -2008,6 +2037,98 @@ class GuidonicaApp {
 
     canvas.addEventListener('touchend', endPinch);
     canvas.addEventListener('touchcancel', endPinch);
+  }
+
+  /**
+   * Sideways swipe on the stage changes the view (ADR 0109): one touch or pen pointer moving
+   * more than SWIPE_MIN_PX, at least twice as far across as down. Left is the next view,
+   * right the previous. A second finger makes it a pinch, which never switches.
+   */
+  private bindCanvasSwipe(canvas: HTMLCanvasElement): void {
+    const starts = new Map<number, { x: number; y: number }>();
+    let multiTouch = false;
+
+    canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+      if (e.pointerType === 'mouse') return;
+      starts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (starts.size > 1) multiTouch = true;
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // A pointer that is already gone cannot be captured; its pointerup never comes
+      }
+    });
+
+    const end = (e: PointerEvent, commit: boolean): void => {
+      const start = starts.get(e.pointerId);
+      if (!start) return;
+      starts.delete(e.pointerId);
+      const pinched = multiTouch;
+      if (starts.size === 0) multiTouch = false;
+      if (!commit || pinched) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (Math.abs(dx) > SWIPE_MIN_PX && Math.abs(dx) > 2 * Math.abs(dy)) {
+        this.cycleView(dx < 0 ? 1 : -1);
+      }
+    };
+    canvas.addEventListener('pointerup', (e: PointerEvent) => end(e, true));
+    canvas.addEventListener('pointercancel', (e: PointerEvent) => end(e, false));
+  }
+
+  /** The view `step` places along VIEW_MODES from the current one, wrapping around. */
+  private cycleView(step: 1 | -1): void {
+    const i = VIEW_MODES.indexOf(globalState.settings.view);
+    const n = VIEW_MODES.length;
+    this.setView(VIEW_MODES[(((i + step) % n) + n) % n], true);
+  }
+
+  /**
+   * Switches the staff view (ADR 0109): the kept bars are laid out again, so the notes under
+   * the playhead stay put, playing or paused. Auto zoom refits for the view's bar width.
+   */
+  private setView(view: ViewMode, showPill: boolean): void {
+    if (view !== globalState.settings.view) {
+      globalState.updateSettings({ view });
+      const zoom = globalState.settings.zoom;
+      if (globalState.settings.zoomMode === 'auto') this.syncAutoZoom();
+      // applyZoom re-renders when the zoom changed; otherwise lay the bars out here
+      if (globalState.settings.zoom === zoom) this.rerenderBuffer();
+    }
+    if (this.selectView) this.selectView.value = view;
+    if (showPill) this.showViewPill(view);
+  }
+
+  /** Shows the view's name and page dots over the stage, then fades them out. */
+  private showViewPill(view: ViewMode): void {
+    const pill = this.viewPill;
+    if (!pill) return;
+    const name = pill.querySelector('.view-pill-name');
+    const dots = pill.querySelector('.view-pill-dots');
+    if (name) name.textContent = view === 'squishy' ? t().viewSquishy : t().viewSteady;
+    if (dots) {
+      dots.replaceChildren(
+        ...VIEW_MODES.map((v) => {
+          const dot = document.createElement('span');
+          if (v === view) dot.className = 'current';
+          return dot;
+        })
+      );
+    }
+    if (typeof pill.animate !== 'function') return;
+    this.viewPillAnimation?.cancel();
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+    const hidden = still ? 'translate(-50%, 0)' : 'translate(-50%, -6px) scale(0.96)';
+    const shown = 'translate(-50%, 0) scale(1)';
+    this.viewPillAnimation = pill.animate(
+      [
+        { opacity: 0, transform: hidden },
+        { opacity: 1, transform: shown, offset: 0.12 },
+        { opacity: 1, transform: shown, offset: 0.8 },
+        { opacity: 0, transform: shown },
+      ],
+      { duration: VIEW_PILL_MS, easing: 'ease-out' }
+    );
   }
 
   private setTempo(bpm: number): void {

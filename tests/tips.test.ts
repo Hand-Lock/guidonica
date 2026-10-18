@@ -33,7 +33,8 @@ describe('rotating tips (ADR 0087)', () => {
   it('shows every feature tip once per cycle, in order, when all are eligible', () => {
     const ctx = openContext();
     const features = ids(0, 40, ctx).filter((_, n) => (n + 1) % 4 !== 0);
-    const cycle = FEATURE_TIPS.map((t) => t.id);
+    // The view tips split by device: swiping on touch screens, V on keyboards alone
+    const cycle = FEATURE_TIPS.map((t) => t.id).filter((id) => id !== 'viewsKey');
     expect(features.slice(0, cycle.length)).toEqual(cycle);
     expect(features.slice(cycle.length, cycle.length * 2)).toEqual(cycle.slice(0, features.length - cycle.length));
   });
@@ -88,5 +89,18 @@ describe('rotating tips (ADR 0087)', () => {
     const ctx = openContext();
     expect(pickTip(-3, ctx).id).toBe(FEATURE_TIPS[0].id);
     expect(pickTip(Number.NaN, ctx).id).toBe(FEATURE_TIPS[0].id);
+  });
+
+  it('teaches the swipe on touch screens and V on keyboards, until the view changed (ADR 0109)', () => {
+    const tip = (id: TipId) => FEATURE_TIPS.find((t) => t.id === id);
+    const ctx = openContext();
+    expect(tip('views')?.when?.(ctx)).toBe(true);
+    expect(tip('viewsKey')?.when?.(ctx)).toBe(false);
+    ctx.touch = false;
+    expect(tip('views')?.when?.(ctx)).toBe(false);
+    expect(tip('viewsKey')?.when?.(ctx)).toBe(true);
+    ctx.settings.view = 'squishy';
+    expect(tip('viewsKey')?.when?.(ctx)).toBe(false);
+    expect(tip('views')?.action).toEqual({ kind: 'settings', section: 'display' });
   });
 });

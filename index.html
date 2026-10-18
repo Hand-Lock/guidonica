@@ -623,6 +623,13 @@
                 </select>
               </div>
               <div class="control-group">
+                <label for="select-view" data-i18n="view">View</label>
+                <select id="select-view" aria-label="Staff view" data-i18n-aria-label="viewAria">
+                  <option value="steady" selected data-i18n="viewSteady">Steady</option>
+                  <option value="squishy" data-i18n="viewSquishy">Squishy</option>
+                </select>
+              </div>
+              <div class="control-group">
                 <span class="group-label" data-i18n="assists">Assists</span>
                 <div class="checkbox-grid">
                   <label class="checkbox-item" title="Toggle stationary red playhead visibility (Shortcut: P)" data-i18n-title="playheadTitle">
@@ -654,6 +661,10 @@
           <button id="btn-pill-zoom-out" class="btn-pill-action" type="button" aria-label="Zoom out" title="Zoom out (−10%)" data-i18n-aria-label="zoomOut" data-i18n-title="zoomOutTitle">−</button>
           <button id="btn-pill-zoom-reset" class="btn-pill-label" type="button" aria-label="Auto-fit zoom to screen" title="Reset zoom to auto-fit" data-i18n-aria-label="zoomResetAria" data-i18n-title="zoomResetTitle"><span id="pill-zoom-text">100%</span></button>
           <button id="btn-pill-zoom-in" class="btn-pill-action" type="button" aria-label="Zoom in" title="Zoom in (+10%)" data-i18n-aria-label="zoomIn" data-i18n-title="zoomInTitle">+</button>
+        </div>
+        <div id="view-pill" class="view-pill" role="status" aria-live="polite">
+          <span id="view-pill-name" class="view-pill-name"></span>
+          <span id="view-pill-dots" class="view-pill-dots" aria-hidden="true"></span>
         </div>
         <aside id="power-notice" class="stage-notice power-notice" role="status" hidden>
           <svg class="icon" aria-hidden="true"><use href="#i-battery"/></svg>
@@ -901,6 +912,7 @@
               <div class="shortcut-row"><dt><kbd>+</kbd> / <kbd>-</kbd></dt><dd data-i18n="keyZoom">Zoom</dd></div>
               <div class="shortcut-row"><dt><kbd>0</kbd></dt><dd data-i18n="keyAutoZoom">Auto Zoom</dd></div>
               <div class="shortcut-row"><dt><kbd>D</kbd></dt><dd data-i18n="keyDrone">Drone</dd></div>
+              <div class="shortcut-row"><dt><kbd>V</kbd></dt><dd data-i18n="keyView">Change view</dd></div>
               <div class="shortcut-row"><dt><kbd>?</kbd></dt><dd data-i18n="keyHelp">Keyboard shortcuts</dd></div>
             </dl>
           </div>

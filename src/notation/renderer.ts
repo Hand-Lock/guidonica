@@ -14,6 +14,7 @@ import {
   Tuplet,
   Voice,
 } from 'vexflow/core';
+import { BeatSpacing, beatX } from './spacing';
 import './fonts'; // registers the music font and points VexFlow at it (ADR 0058)
 import {
   CANVAS_PALETTE,
@@ -71,11 +72,23 @@ function tieHeadOffset(duration: string): number {
 }
 
 /**
- * X where a tie leaves a sounding note placed at `beatOffset` on the linear layout.
- * Both halves of a cross-barline tie use this, so they compute the identical curve.
+ * X where a tie leaves a sounding note placed at `beatOffset` in a bar spaced by `spacing`
+ * (a plain beat width is the linear layout). Both halves of a cross-barline tie use this,
+ * so they compute the identical curve; a squishy bar's ramps need its meter (ADR 0109).
  */
-export function tieAnchorRightX(beatOffset: number, duration: string, beatWidth: number): number {
-  return NOTE_START_OFFSET + beatOffset * beatWidth + tieHeadOffset(duration);
+export function tieAnchorRightX(beatOffset: number, duration: string, beatWidth: number): number;
+export function tieAnchorRightX(beatOffset: number, duration: string, spacing: BeatSpacing, ts: TimeSignature): number;
+export function tieAnchorRightX(
+  beatOffset: number,
+  duration: string,
+  spacing: number | BeatSpacing,
+  ts?: TimeSignature
+): number {
+  const x =
+    typeof spacing === 'number' || ts === undefined
+      ? NOTE_START_OFFSET + beatOffset * (typeof spacing === 'number' ? spacing : spacing.beatWidth)
+      : beatX(spacing, ts, beatOffset);
+  return x + tieHeadOffset(duration);
 }
 
 /** X where a tie arrives at a bar's first note (beat 0 of the linear layout). */
@@ -490,7 +503,7 @@ export class MeasureRenderer {
     // to the tickContext X coordinate. We subtract this internal stave padding so that
     // note.getAbsoluteX() lands precisely at targetLinearX.
     const stavePadding = (stave.getNoteStartX ? stave.getNoteStartX() : 0) + Metrics.get('Stave.padding', 0);
-    const beatWidth = data.beatWidth;
+    const ts = data.timeSignature;
 
     for (let i = 0; i < staveNotes.length; i++) {
       const noteData = data.notes[i];
@@ -498,7 +511,7 @@ export class MeasureRenderer {
       const isBarRest = noteData.isRest && noteData.beatDuration === data.beatsPerMeasure;
       const targetLinearX = isBarRest
         ? (data.width - staveNotes[i].getGlyphWidth()) / 2
-        : NOTE_START_OFFSET + noteData.beatOffset * beatWidth;
+        : beatX(data, ts, noteData.beatOffset);
       staveNotes[i].getTickContext().setX(targetLinearX - stavePadding);
     }
 
@@ -556,15 +569,15 @@ export class MeasureRenderer {
     if (lastData.tieStart && !lastData.isRest) {
       const note = staveNotes[lastIndex];
       this.drawBarlineTie(ctx, note, noteColor, {
-        firstX: tieAnchorRightX(lastData.beatOffset, lastData.duration, beatWidth),
+        firstX: tieAnchorRightX(lastData.beatOffset, lastData.duration, data, ts),
         lastX: data.width + TIE_ANCHOR_LEFT_X,
       });
     }
     const firstData = data.notes[0];
     if (data.tieIn && firstData.tieEnd && !firstData.isRest) {
-      const { beatOffset, duration, beatWidth: prevBeatWidth, measureWidth } = data.tieIn;
+      const { beatOffset, duration, measureWidth } = data.tieIn;
       this.drawBarlineTie(ctx, staveNotes[0], noteColor, {
-        firstX: tieAnchorRightX(beatOffset, duration, prevBeatWidth) - measureWidth,
+        firstX: tieAnchorRightX(beatOffset, duration, data.tieIn, ts) - measureWidth,
         lastX: TIE_ANCHOR_LEFT_X,
       });
     }

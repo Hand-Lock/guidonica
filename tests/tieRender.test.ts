@@ -5,6 +5,7 @@ import { MeasureRenderer, tieAnchorRightX } from '../src/notation/renderer';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
 import { AppSettings, MeasureData, NOTE_START_OFFSET, TIME_SIGNATURES } from '../src/notation/types';
 import en from '../src/i18n/locales/en';
+import { spacingWidth } from '../src/notation/spacing';
 
 const SIMPLE_BEATS: Record<string, number> = {
   w: 4, hd: 3, h: 2, qd: 1.5, q: 1, '8d': 0.75, '8': 0.5, '16d': 0.375, '16': 0.25, '32': 0.125,
@@ -110,6 +111,56 @@ describe('Cross-barline tie rendering', () => {
       expect(calls[0].firstX).toBeCloseTo(outNote.getTieRightX() - 440, 9);
       expect(calls[0].lastX).toBeCloseTo(inNote.getTieLeftX(), 9);
       expect(outLastX - 440).toBeCloseTo(calls[0].lastX, 9);
+      expect(inNote.getTieLeftX()).toBeCloseTo(NOTE_START_OFFSET, 9);
+    }
+  });
+
+  it('joins a barline tie seamlessly on squishy ramps too (ADR 0109)', () => {
+    const renderer = new MeasureRenderer();
+    const calls: Array<{ note: StaveNote | undefined; firstX: number; lastX: number }> = [];
+    const original = StaveTie.prototype.renderTie;
+    vi.spyOn(StaveTie.prototype, 'renderTie').mockImplementation(function (
+      this: StaveTie,
+      params: Parameters<StaveTie['renderTie']>[0]
+    ) {
+      calls.push({ note: this.getNotes().firstNote as StaveNote | undefined, firstX: params.firstX, lastX: params.lastX });
+      original.call(this, params);
+    });
+
+    // A narrow bar easing in from and out to wider neighbours
+    const spacing = { beatWidth: 60, entryBeatWidth: 90, exitBeatWidth: 130 };
+    const width = spacingWidth(spacing, '4/4');
+    for (const duration of ['q', '8', '16', 'qd']) {
+      const beatOffset = 4 - SIMPLE_BEATS[duration];
+      const keys = ['g/4'];
+      const out = measure(
+        [{ keys, duration, isRest: false, tieStart: true, beatOffset, beatDuration: SIMPLE_BEATS[duration] }],
+        { ...spacing, width }
+      );
+      calls.length = 0;
+      renderer.renderMeasure(out, 'light', null);
+      const outNote = calls[0]?.note;
+      expect(outNote).toBeDefined();
+      if (!outNote) continue;
+      expect(calls[0].firstX).toBeCloseTo(outNote.getTieRightX(), 9);
+      expect(calls[0].firstX).toBeCloseTo(tieAnchorRightX(beatOffset, duration, spacing, '4/4'), 9);
+      // Inside the exit ramp the note sits left of where the linear body would put it
+      expect(tieAnchorRightX(beatOffset, duration, spacing, '4/4')).not.toBeCloseTo(
+        tieAnchorRightX(beatOffset, duration, spacing.beatWidth),
+        3
+      );
+      const outLastX = calls[0].lastX;
+
+      const incoming = measure(
+        [{ keys, duration: 'q', isRest: false, tieEnd: true, beatOffset: 0, beatDuration: 1 }, { keys, duration: 'hd', isRest: false, beatOffset: 1, beatDuration: 3 }],
+        { beatWidth: 130, width: 520, tieIn: { beatOffset, duration, ...spacing, measureWidth: width } }
+      );
+      calls.length = 0;
+      renderer.renderMeasure(incoming, 'light', null);
+      const inNote = calls[0]?.note;
+      if (!inNote) continue;
+      expect(calls[0].firstX).toBeCloseTo(outNote.getTieRightX() - width, 9);
+      expect(outLastX - width).toBeCloseTo(calls[0].lastX, 9);
       expect(inNote.getTieLeftX()).toBeCloseTo(NOTE_START_OFFSET, 9);
     }
   });

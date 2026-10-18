@@ -322,6 +322,16 @@ describe('storage module', () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ pitchClasses: 'cde' }));
     expect(loadStoredSettings().pitchClasses).toEqual(ALL);
   });
+
+  it('validates the staff view: steady by default, unknown values fall back (ADR 0109)', () => {
+    expect(loadStoredSettings().view).toBe('steady');
+    saveStoredSettings({ ...DEFAULT_APP_SETTINGS, view: 'squishy' });
+    expect(loadStoredSettings().view).toBe('squishy');
+    for (const view of ['wobbly', 3, null]) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ view }));
+      expect(loadStoredSettings().view).toBe('steady');
+    }
+  });
 });
 
 describe('rotating tips storage (ADR 0087)', () => {

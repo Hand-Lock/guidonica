@@ -89,11 +89,18 @@ Unlike traditional engraved sheet music—where measure widths flex dynamically 
   $$v = \frac{\text{BPM}}{60} \times W_{\text{beat}} \quad (\text{pixels per second})$$
 - Note heads cross the playhead line at the exact microsecond the metronome pulse sounds. This maintains an unwavering visual-auditory link.
 
+### Views: Steady & Squishy (ADR 0109)
+Metric linearity is the **steady** view, the default. The **squishy** view (Settings → Display → View, a sideways swipe on the staff, or `V`) gives each bar its own body beat width, the widest need among its notes:
+$$w = \min\Big(W_{\text{beat}},\ \max_i \frac{W(n_i)}{\max(1, d_i)}\Big)$$
+where $W(n)$ is the linear beat width with only that note's value (or tuplet cell) enabled and $d_i$ its length in metric beats. Where a narrower bar meets a wider one, its speed eases over one felt beat ($r$ = 1, 3 or 2 metric beats in simple, compound and half-note meters) from or to the wider body width, so the speed is continuous at every barline:
+$$X(o) = 26 + w\,o + (e - w)\,E(o) + (x - w)\,F(o), \qquad \text{width} = wB + (e - w)\tfrac{r}{2} + (x - w)\tfrac{r}{2}$$
+with $E(o) = o - o^2/2r$ up to $r$ (then $r/2$) and $F(o) = (o - B + r)^2/2r$ over the last $r$ beats. The bar under the playhead is placed so the tape point of the current beat sits on it, so notes still cross the playhead on their clicks; only the distance a beat covers changes. Squishy auto zoom fits the median width of 32 seeded sample bars. The music generated is the same in both views.
+
 ### Rendering Architecture: The Measure Blitting Pipeline
 To maintain a stable 60 FPS / 120 FPS on all hardware without CPU throttling:
 - **Offscreen Measure Caching**: Measures are procedurally generated in chunks ahead of the viewport. Each measure is formatted and rendered once onto an offscreen canvas surface using VexFlow.
 - **Fast Blitting**: The main display canvas does not execute complex VexFlow layout or glyph calculations during animation frames. It only blits visible offscreen measure canvases using `CanvasRenderingContext2D.drawImage()`. Measures beyond the right edge are rendered in idle time between frames, one per idle callback; a frame renders one synchronously only when the stage plus one beat would otherwise be uncovered (ADR 0091).
-- **Ring Buffer**: Measures that scroll offscreen past the left margin are discarded. New measures are generated and appended on the right until the buffer reaches the right edge of the viewport plus 6 beats of lookahead, a distance measured in beats so it holds at every zoom and meter.
+- **Ring Buffer**: Measures that scroll offscreen past the left margin are discarded. New measures are generated and appended on the right until the buffer reaches the right edge of the viewport plus 6 beats of lookahead, a distance measured in beats so it holds at every zoom and meter. The lookahead is counted in tape pixels at the linear beat width, which no squishy beat exceeds, and the buffer holds the next bar's notes one bar early for its eased speed (ADR 0109).
 
 ---
 
@@ -284,4 +291,5 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 - `-` / `_`: Zoom out (-10%).
 - `0`: Auto-fit zoom to screen (Auto Zoom).
 - `D`: Turn the drone off, or back on to the last note used since the page loaded (C if none; ADR 0094).
+- `V` / `Shift + V`: Next / previous staff view (ADR 0109).
 - Shortcuts are ignored while a dialog (About, What's new, the level intro) is open.

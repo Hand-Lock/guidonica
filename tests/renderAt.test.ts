@@ -3,6 +3,7 @@ import { FixedViewport, ScrollerView } from '../src/scroller/scroller';
 import { MeasureBuffer } from '../src/scroller/buffer';
 import { MusicGenerator } from '../src/notation/generator';
 import { mulberry32 } from '../src/notation/random';
+import { beatX } from '../src/notation/spacing';
 import type { MetronomeEngine } from '../src/audio/metronome';
 import type { MeasureRenderer } from '../src/notation/renderer';
 import { DEFAULT_APP_SETTINGS } from '../src/storage';
@@ -74,7 +75,8 @@ function makeStage(
     renderMeasure: (data: MeasureData): RenderedMeasure => {
       const measureCanvas = document.createElement('canvas');
       labels.set(measureCanvas, `m${data.index}@${data.startBeat}:${JSON.stringify(data.notes)}`);
-      return { data, canvas: measureCanvas, width: data.width, height: 1 };
+      // CSS width at the zoom, as the real renderer returns it
+      return { data, canvas: measureCanvas, width: data.width * (settings.zoom || 1), height: 1 };
     },
     setDpr: (dpr: number) => {
       dprs.push(dpr);
@@ -187,6 +189,64 @@ describe('Drawing a frame at an explicit beat (ADR 0103 seam 2)', () => {
     scroller.renderAt(target.startBeat);
     const blit = calls.find((c) => c[0] === 'drawImage' && String(c[1]).startsWith(`m${target.index}@`));
     expect(blit?.[6]).toBeCloseTo(playheadX - NOTE_START_OFFSET * scroller.getZoom(), 9);
+    scroller.destroy();
+  });
+
+  it.each(CASES)('keeps the squishy tape on the playhead at every beat, bars edge to edge ($timeSignature, zoom $zoom)', ({ timeSignature, zoom }) => {
+    const settings: AppSettings = { ...structuredClone(DEFAULT_APP_SETTINGS), timeSignature, zoom, view: 'squishy' };
+    settings.subdivisions.sixteenth = true;
+    settings.tuplets.triplet['1/8'] = timeSignature !== '6/8';
+    const { scroller, buffer, calls, playheadX } = makeStage(settings, throwingMetronome, 17);
+    const z = scroller.getZoom();
+    const width = scroller.getViewportWidth();
+    for (const beat of beatSequence()) {
+      calls.length = 0;
+      scroller.renderAt(beat);
+      const blits = calls.filter((c) => c[0] === 'drawImage' && String(c[1]).startsWith('m'));
+      const xs = new Map(blits.map((c) => [String(c[1]).split('@')[0], c[6] as number]));
+      const measures = buffer.getMeasures();
+      const here = measures.find((m) => m.data.startBeat <= beat && beat < m.data.startBeat + m.data.beatsPerMeasure);
+      expect(here).toBeDefined();
+      if (!here) continue;
+      const d = here.data;
+      // The tape point for this beat sits on the playhead, whatever the bar's spacing
+      const x = xs.get(`m${d.index}`);
+      expect(x).toBeDefined();
+      expect((x ?? 0) + beatX(d, d.timeSignature, beat - d.startBeat) * z).toBeCloseTo(playheadX, 6);
+      // Consecutive bars touch, and the drawn tape reaches the right edge
+      const drawn = measures.filter((m) => xs.has(`m${m.data.index}`));
+      for (let i = 1; i < drawn.length; i++) {
+        const left = xs.get(`m${drawn[i - 1].data.index}`) ?? 0;
+        expect(xs.get(`m${drawn[i].data.index}`)).toBeCloseTo(left + drawn[i - 1].data.width * z, 6);
+      }
+      const last = drawn[drawn.length - 1];
+      expect((xs.get(`m${last.data.index}`) ?? 0) + last.data.width * z).toBeGreaterThanOrEqual(width);
+      // Nothing kept lies wholly left of the stage
+      const first = measures[0];
+      const firstX = xs.get(`m${first.data.index}`);
+      expect(firstX === undefined ? -Infinity : firstX + first.data.width * z).toBeGreaterThanOrEqual(0);
+    }
+    expect(requestIdle).not.toHaveBeenCalled();
+    scroller.destroy();
+  });
+
+  it('keeps the note under the playhead when the view switches mid-bar', () => {
+    const settings: AppSettings = { ...structuredClone(DEFAULT_APP_SETTINGS), zoom: 1 };
+    settings.subdivisions.sixteenth = true;
+    const { scroller, buffer, calls, playheadX } = makeStage(settings, throwingMetronome, 23);
+    const beat = 9.5;
+    scroller.renderAt(beat);
+    const before = new Map(buffer.getMeasures().map((m) => [m.data.index, m.data.notes]));
+    settings.view = 'squishy';
+    buffer.rerender(settings);
+    calls.length = 0;
+    scroller.renderAt(beat);
+    for (const m of buffer.getMeasures()) {
+      if (before.has(m.data.index)) expect(m.data.notes).toBe(before.get(m.data.index));
+    }
+    const d = buffer.getMeasures().find((m) => m.data.startBeat <= beat && beat < m.data.startBeat + 4)?.data;
+    const blit = calls.find((c) => c[0] === 'drawImage' && String(c[1]).startsWith(`m${d?.index}@`));
+    expect(d && (blit?.[6] as number) + beatX(d, '4/4', beat - d.startBeat)).toBeCloseTo(playheadX, 6);
     scroller.destroy();
   });
 
