@@ -109,13 +109,14 @@ This directory documents the core architectural decisions, implementation method
 | [0101](0101-tiktok-link.md) | TikTok Link | Accepted; amended by 0102 | 2026-10-13 |
 | [0102](0102-youtube-link.md) | YouTube Link | Accepted | 2026-10-13 |
 | [0103](0103-embeddable-engine-seams.md) | Embeddable Engine Seams: Seeded Generation, Explicit-Time Drawing, Offline Audio, Sized Rendering | Accepted; amended by 0104 | 2026-10-15 |
-| [0104](0104-engine-entry-point.md) | Engine Entry Point | Accepted | 2026-10-15 |
+| [0104](0104-engine-entry-point.md) | Engine Entry Point | Accepted; extended by 0111 | 2026-10-15 |
 | [0105](0105-reset-page.md) | Reset Page: `/reset` Restores a First Visit | Accepted | 2026-10-15 |
 | [0106](0106-keyboard-detection.md) | Keyboard Detection: Shortcuts Only Where Keys Exist | Accepted | 2026-10-16 |
 | [0107](0107-nightly-icon.md) | Nightly Icon & Accent: A Night-Blue Tile and a Violet UI | Accepted | 2026-10-16 |
 | [0108](0108-no-consecutive-bar-rests.md) | No Back-to-Back Bar Rests | Accepted | 2026-10-16 |
 | [0109](0109-squishy-view.md) | Squishy View: Engraved Note Spacing & Continuous Scroll Speed | Accepted | 2026-10-18 |
 | [0110](0110-page-view.md) | Page View: Multi-Line Staves with Vertical Scrolling | Accepted | 2026-10-18 |
+| [0111](0111-notation-rule-seams.md) | Notation Rule Seams | Accepted | 2026-10-19 |
 
 ---
 

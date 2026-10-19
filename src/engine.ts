@@ -9,6 +9,11 @@ export { MusicGenerator } from './notation/generator';
 export { mulberry32 } from './notation/random';
 export type { Random } from './notation/random';
 
+// What a setting allows (ADR 0111)
+export { enabledValues, pitchPool } from './notation/generator';
+export { noteSpan, placementOf } from './notation/ties';
+export type { PlacementKind } from './notation/ties';
+
 // Notation
 export { MeasureRenderer } from './notation/renderer';
 export { MUSIC_FONT_FAMILY, isMusicFontReady, waitForMusicFonts } from './notation/fonts';

@@ -78,7 +78,7 @@ guidonica/
 │       ├── README.md       # ADR index and registration log
 │       └── 0001-*.md       # Specific architectural & subsystem records
 └── src/
-    ├── engine.ts           # Engine entry point `guidonica/engine`: re-exports only, no app modules or build constants (ADR 0104)
+    ├── engine.ts           # Engine entry point `guidonica/engine`: re-exports only, no app modules or build constants (ADRs 0104, 0111)
     ├── main.ts             # Application bootstrapper, UI event wiring (bar, dock, inspector, ⋯ menu) & locale bootstrap
     ├── sw.ts               # Offline service worker, compiled to dist/sw.js by vite.config.ts (ADR 0063)
     ├── state.ts            # Typed session state and parameter interfaces

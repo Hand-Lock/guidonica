@@ -11,10 +11,16 @@ import {
   MusicGenerator,
   NoteNames,
   ScrollerView,
+  enabledValues,
   labelResolver,
   mulberry32,
+  noteSpan,
+  pitchPool,
+  placementOf,
 } from '../src/engine';
 import { DEFAULT_APP_SETTINGS as STORAGE_DEFAULTS } from '../src/storage';
+import * as generator from '../src/notation/generator';
+import * as ties from '../src/notation/ties';
 import en from '../src/i18n/locales/en';
 import itMessages from '../src/i18n/locales/it';
 import fr from '../src/i18n/locales/fr';
@@ -205,5 +211,42 @@ describe('Engine round trip (ADR 0104)', () => {
     // German letters: B is H, so an English label would fail here
     for (const label of first.labels) expect(de.noteNames.letters).toContain(label);
     expect(frame(42)).toEqual(first);
+  });
+});
+
+describe('Notation rule seams (ADR 0111)', () => {
+  it('exports the generator’s own functions, not copies', () => {
+    expect(enabledValues).toBe(generator.enabledValues);
+    expect(pitchPool).toBe(generator.pitchPool);
+    expect(noteSpan).toBe(ties.noteSpan);
+    expect(placementOf).toBe(ties.placementOf);
+  });
+
+  it('every note of a seeded bar uses an allowed value, pitch and placement', () => {
+    const settings: AppSettings = { ...structuredClone(DEFAULT_APP_SETTINGS), rests: true, ties: true };
+    const values = enabledValues(settings.subdivisions);
+    const pool = pitchPool(settings.clef, settings.ledgerLines, settings.pitchClasses);
+    const gen = new MusicGenerator(mulberry32(7));
+    for (let i = 0; i < 32; i++) {
+      const bar = gen.generateMeasure(i, settings, i * 4);
+      for (const note of bar.notes) {
+        if (note.isTuplet) continue;
+        expect(noteSpan(settings.timeSignature, note.duration)).toBeCloseTo(note.beatDuration, 9);
+        if (note.isRest) continue;
+        expect(values).toContain(note.duration);
+        expect(pool).toContain(note.keys[0]);
+        expect(placementOf(settings.timeSignature, note.beatOffset, note.beatDuration)).not.toBeNull();
+      }
+    }
+  });
+
+  it('spans and placements follow the meter', () => {
+    expect(noteSpan('4/4', 'q')).toBe(1);
+    expect(noteSpan('6/8', 'q')).toBe(2);
+    expect(noteSpan('6/8', 'qd')).toBe(3);
+    expect(placementOf('4/4', 0, 1)).toBe('canonical');
+    expect(placementOf('4/4', 1, 2)).toBe('tolerated');
+    expect(placementOf('4/4', 1.5, 1)).toBeNull();
+    expect(placementOf('4/4', 3.5, 1)).toBeNull();
   });
 });

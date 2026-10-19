@@ -14,6 +14,10 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 ## [Unreleased]
 
+### Internal
+
+- `guidonica/engine` exports what a setting allows: `enabledValues`, `pitchPool`, `noteSpan` and `placementOf`, so an embedder can check notes it writes against the generator's own rules (ADR 0111).
+
 ## [2026.10.5] - 2026-10-18
 
 > Two new ways to read: the squishy view spaces notes like printed music, so more fits on small screens, and the page view sets the music in lines for reading on a phone held upright.
