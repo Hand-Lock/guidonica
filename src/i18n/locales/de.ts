@@ -184,6 +184,11 @@ const de: Messages = {
   themeAuto: 'Automatisch (System)',
   themeLight: 'Hell',
   themeDark: 'Dunkel',
+  contrast: 'Kontrast',
+  contrastAria: 'Kontrast der Notation und der Bedienelemente',
+  contrastAuto: 'Automatisch (System)',
+  contrastStandard: 'Standard',
+  contrastHigh: 'Hoch',
 
   // Exercise link (ADR 0085)
   shareGroup: 'Teilen',

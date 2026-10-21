@@ -89,7 +89,7 @@ guidonica/
     ├── summary.ts          # Top-bar exercise summary chips: clef, meter, drone (ADR 0097)
     ├── tips.ts             # Rotating tips: feature & community tip tables, pickTip rotation (ADR 0087)
     ├── presets.ts          # Level presets, preview representations & signatures (ADR 0049, 0051, 0052)
-    ├── style.css           # All styles: light and dark themes, Olo accent, Liquid Glass materials
+    ├── style.css           # All styles: light and dark themes, high contrast (ADR 0113), Olo accent, Liquid Glass materials
     ├── fonts/              # Self-hosted text fonts + OFL/UFL licences (ADR 0060; never hand-edit)
     ├── i18n/
     │   ├── index.ts        # Locale runtime: lazy chunks, t(), applyDom, note names & octave formats (ADR 0059)

@@ -49,6 +49,7 @@
         try {
           var raw = localStorage.getItem('guidonica_settings_v1') || localStorage.getItem('solfege_scroller_settings_v2') || localStorage.getItem('solfege_scroller_settings_v1');
           var theme = 'auto';
+          var contrast = 'auto';
           var langs = ['en', 'it', 'fr', 'de', 'es'];
           var lang = null;
           // Set on the /it/, /fr/, /de/ and /es/ landing pages (ADR 0086)
@@ -58,6 +59,7 @@
             if (parsed.theme === 'dark' || parsed.theme === 'light' || parsed.theme === 'auto') {
               theme = parsed.theme;
             }
+            if (parsed.contrast === 'standard' || parsed.contrast === 'high') contrast = parsed.contrast;
             if (langs.indexOf(parsed.language) >= 0) lang = parsed.language;
           }
           // Mirrors detectLanguage() in src/i18n; the page stays hidden until the locale lands
@@ -74,6 +76,11 @@
             ? window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
             : theme === 'dark';
           document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+          // Mirrors resolveContrast() in src/notation/types (ADR 0113)
+          var isHigh = contrast === 'auto'
+            ? window.matchMedia && window.matchMedia('(prefers-contrast: more), (forced-colors: active)').matches
+            : contrast === 'high';
+          if (isHigh) document.documentElement.setAttribute('data-contrast', 'high');
         } catch (e) {
           var isDarkSys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
           document.documentElement.setAttribute('data-theme', isDarkSys ? 'dark' : 'light');
@@ -653,6 +660,14 @@
                   <option value="auto" selected data-i18n="themeAuto">Auto (OS)</option>
                   <option value="light" data-i18n="themeLight">Light</option>
                   <option value="dark" data-i18n="themeDark">Dark</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label for="select-contrast" data-i18n="contrast">Contrast</label>
+                <select id="select-contrast" aria-label="Contrast of the notation and controls" data-i18n-aria-label="contrastAria">
+                  <option value="auto" selected data-i18n="contrastAuto">Auto (OS)</option>
+                  <option value="standard" data-i18n="contrastStandard">Standard</option>
+                  <option value="high" data-i18n="contrastHigh">High</option>
                 </select>
               </div>
             </section>

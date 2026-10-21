@@ -16,11 +16,13 @@ import { ENGINES, PW_CLI, PW_DIR, PW_ENTRY, browserCache, findBrowser } from './
 
 const LANGS = ['en', 'it', 'fr', 'de', 'es'];
 const THEMES = ['light', 'dark', 'auto'];
+const CONTRASTS = ['auto', 'standard', 'high'];
+const OS_CONTRASTS = ['more', 'forced'];
 const STEP_KINDS = ['click', 'press', 'wait', 'scroll', 'text', 'eval', 'shot'];
 
 const USAGE = `usage: driver.mjs --setup [${ENGINES.join('|')} ...]
        driver.mjs [--browser ${ENGINES.join('|')}] [--url URL] [--lang ${LANGS.join('|')}] [--theme ${THEMES.join('|')}]
-                  [--size WxH] [--dpr N] [--intro] [--tips] [--seen VERSION] [--fps N] [--out DIR] <step>...
+                  [--contrast ${CONTRASTS.join('|')}] [--os-contrast ${OS_CONTRASTS.join('|')}] [--size WxH] [--dpr N] [--intro] [--tips] [--seen VERSION] [--fps N] [--out DIR] <step>...
 steps: click:<sel> press:<Key> wait:<ms> scroll:<sel> text:<sel> eval:<js> shot:<name>`;
 
 function fail(message) {
@@ -53,7 +55,7 @@ function setup(engines) {
 }
 
 function parseArgs(argv) {
-  const opts = { browser: 'chromium', url: 'http://localhost:3000', lang: null, theme: null, width: 1280, height: 900, dpr: 2, intro: false, tips: false, seen: null, fps: null, out: join(tmpdir(), 'guidonica-shots') };
+  const opts = { browser: 'chromium', url: 'http://localhost:3000', lang: null, theme: null, contrast: null, osContrast: null, width: 1280, height: 900, dpr: 2, intro: false, tips: false, seen: null, fps: null, out: join(tmpdir(), 'guidonica-shots') };
   const steps = [];
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -62,6 +64,8 @@ function parseArgs(argv) {
     else if (arg === '--url') opts.url = value();
     else if (arg === '--lang') opts.lang = value();
     else if (arg === '--theme') opts.theme = value();
+    else if (arg === '--contrast') opts.contrast = value();
+    else if (arg === '--os-contrast') opts.osContrast = value();
     else if (arg === '--size') {
       const m = /^(\d+)x(\d+)$/.exec(value()) ?? fail('--size must be WxH, e.g. 390x844');
       opts.width = Number(m[1]);
@@ -83,6 +87,8 @@ function parseArgs(argv) {
   if (!ENGINES.includes(opts.browser)) fail(`--browser must be one of ${ENGINES.join(', ')}`);
   if (opts.lang !== null && !LANGS.includes(opts.lang)) fail(`--lang must be one of ${LANGS.join(', ')}`);
   if (opts.theme !== null && !THEMES.includes(opts.theme)) fail(`--theme must be one of ${THEMES.join(', ')}`);
+  if (opts.contrast !== null && !CONTRASTS.includes(opts.contrast)) fail(`--contrast must be one of ${CONTRASTS.join(', ')}`);
+  if (opts.osContrast !== null && !OS_CONTRASTS.includes(opts.osContrast)) fail(`--os-contrast must be one of ${OS_CONTRASTS.join(', ')}`);
   if (!(opts.dpr > 0)) fail('--dpr must be a positive number');
   if (opts.fps !== null && !(opts.fps > 0)) fail('--fps must be a positive number');
   if (steps.length === 0) fail(`no steps given\n${USAGE}`);
@@ -105,6 +111,9 @@ async function run(opts, steps) {
     deviceScaleFactor: opts.dpr,
     colorScheme: opts.theme === 'dark' ? 'dark' : 'light',
     locale: opts.lang ?? 'en-US',
+    // The OS Increase contrast or forced colors (ADR 0113); forced colors is Chromium-only
+    ...(opts.osContrast === 'more' ? { contrast: 'more' } : {}),
+    ...(opts.osContrast === 'forced' ? { forcedColors: 'active' } : {}),
   });
   const page = await context.newPage();
   const errors = [];
@@ -117,7 +126,7 @@ async function run(opts, steps) {
   // one far ahead, which the app treats as a rollback, so "What's new" stays closed.
   // Rotating tips (ADR 0087) are off unless --tips, so they never cover a screenshot.
   if (!opts.intro) {
-    await page.addInitScript(({ lang, theme, seen, tips }) => {
+    await page.addInitScript(({ lang, theme, contrast, seen, tips }) => {
       for (const prefix of ['guidonica_', 'guidonica_nightly_']) {
         localStorage.setItem(`${prefix}onboarded_v1`, '1');
         localStorage.setItem(`${prefix}seen_version`, seen ?? '9999.0.0');
@@ -127,10 +136,11 @@ async function run(opts, steps) {
         } catch {}
         if (lang !== null) settings.language = lang;
         if (theme !== null) settings.theme = theme;
+        if (contrast !== null) settings.contrast = contrast;
         settings.showTips = tips;
         localStorage.setItem(`${prefix}settings_v1`, JSON.stringify(settings));
       }
-    }, { lang: opts.lang, theme: opts.theme, seen: opts.seen, tips: opts.tips });
+    }, { lang: opts.lang, theme: opts.theme, contrast: opts.contrast, seen: opts.seen, tips: opts.tips });
   }
 
   // --fps caps requestAnimationFrame like Low Power Mode or battery saver (ADR 0098): a

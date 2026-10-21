@@ -4,7 +4,9 @@
 
 import {
   AppSettings,
+  CanvasTheme,
   Clef,
+  ContrastMode,
   DEFAULT_TUPLET_OPTIONS,
   DEFAULT_ZOOM,
   DRONE_NOTES,
@@ -34,6 +36,7 @@ import {
   ZOOM_STEP,
   ZoomMode,
   beatAccent,
+  canvasTheme,
   clampTempo,
   computeOptimalZoom,
   fitPageZoom,
@@ -44,7 +47,9 @@ import {
   isGrouped,
   isHalfNoteMeter,
   isTupletSupported,
+  resolveContrast,
   resolveTheme,
+  subscribeSystemContrast,
   subscribeSystemTheme,
   tempoMarking,
   tupletShape,
@@ -234,6 +239,7 @@ class GuidonicaApp {
   private selectLanguage: HTMLSelectElement | null;
   private selectSoundProfile: HTMLSelectElement;
   private selectTheme: HTMLSelectElement;
+  private selectContrast: HTMLSelectElement;
   private volumeSlider: HTMLInputElement;
   private btnVolumeMute: HTMLButtonElement;
   private selectDroneNote: HTMLSelectElement;
@@ -369,6 +375,7 @@ class GuidonicaApp {
     this.selectLanguage = document.getElementById('select-language') as HTMLSelectElement | null;
     this.selectSoundProfile = document.getElementById('select-sound-profile') as HTMLSelectElement;
     this.selectTheme = document.getElementById('select-theme') as HTMLSelectElement;
+    this.selectContrast = document.getElementById('select-contrast') as HTMLSelectElement;
     this.volumeSlider = document.getElementById('volume-slider') as HTMLInputElement;
     this.btnVolumeMute = document.getElementById('btn-volume-mute') as HTMLButtonElement;
     this.selectDroneNote = document.getElementById('select-drone-note') as HTMLSelectElement;
@@ -530,6 +537,7 @@ class GuidonicaApp {
     const resolved = resolveTheme(settings.theme);
     document.documentElement.setAttribute('data-theme', resolved);
     this.updateThemeUI(settings.theme, resolved);
+    this.syncContrast(settings.contrast);
 
     // Tempo
     this.tempoSlider.value = String(settings.tempo);
@@ -703,7 +711,33 @@ class GuidonicaApp {
     document.documentElement.setAttribute('data-theme', resolved);
     this.updateThemeUI(nextTheme, resolved);
     globalState.updateSettings({ theme: nextTheme });
+    this.rerenderCanvases();
+  }
+
+  /** Marks the page high contrast when `mode` resolves to it, and syncs the select (ADR 0113). */
+  private syncContrast(mode: ContrastMode): void {
+    const root = document.documentElement;
+    if (resolveContrast(mode)) root.setAttribute('data-contrast', 'high');
+    else root.removeAttribute('data-contrast');
+    if (this.selectContrast) this.selectContrast.value = mode;
+  }
+
+  /** The notation palette key for the current theme and contrast (ADR 0113). */
+  private canvasTheme(): CanvasTheme {
+    const { theme, contrast } = globalState.settings;
+    return canvasTheme(theme, contrast);
+  }
+
+  private applyContrast(mode: ContrastMode): void {
+    this.syncContrast(mode);
+    globalState.updateSettings({ contrast: mode });
+    this.rerenderCanvases();
+  }
+
+  /** Repaints every notation canvas in the current palette: the staff and an open intro's previews. */
+  private rerenderCanvases(): void {
     this.rerenderBuffer();
+    if (this.modalIntro?.open && this.introPreviewClef !== null) this.renderIntroPreviews();
   }
 
   private async initFonts(): Promise<void> {
@@ -791,7 +825,18 @@ class GuidonicaApp {
         const resolved: ResolvedTheme = isDark ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', resolved);
         this.updateThemeUI('auto', resolved);
-        this.rerenderBuffer();
+        this.rerenderCanvases();
+      }
+    });
+
+    // Contrast select, and the OS Increase contrast or forced colors under Auto (ADR 0113)
+    this.selectContrast.addEventListener('change', () => {
+      this.applyContrast(this.selectContrast.value as ContrastMode);
+    });
+    subscribeSystemContrast(() => {
+      if (globalState.settings.contrast === 'auto') {
+        this.syncContrast('auto');
+        this.rerenderCanvases();
       }
     });
 
@@ -1805,7 +1850,7 @@ class GuidonicaApp {
   /** Fresh examples of every level in the chosen clef and meter, plus the clef and meter icons. */
   private renderIntroPreviews(): void {
     this.renderIntroLevelPreviews();
-    const theme = globalState.settings.theme;
+    const theme = this.canvasTheme();
     for (const [clef, canvas] of this.introClefIcons) {
       renderClefIcon(canvas, clef, theme);
     }
@@ -1813,7 +1858,7 @@ class GuidonicaApp {
   }
 
   private renderIntroMeterIcons(): void {
-    const theme = globalState.settings.theme;
+    const theme = this.canvasTheme();
     for (const [ts, canvas] of this.introMeterIcons) {
       renderMeterIcon(canvas, withHalfNoteBeat(ts, this.introHalfNote), theme);
     }

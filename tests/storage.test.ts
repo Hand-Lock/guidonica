@@ -173,6 +173,15 @@ describe('storage module', () => {
     expect(primaryLoaded.tempo).toBe(130);
   });
 
+  it('defaults contrast to auto, round-trips high and rejects junk (ADR 0113)', () => {
+    window.localStorage.clear();
+    expect(loadStoredSettings().contrast).toBe('auto');
+    saveStoredSettings({ ...DEFAULT_APP_SETTINGS, contrast: 'high' });
+    expect(loadStoredSettings().contrast).toBe('high');
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ contrast: 'neon' }));
+    expect(loadStoredSettings().contrast).toBe('auto');
+  });
+
   it('correctly resolves explicit and auto themes', () => {
     expect(resolveTheme('light')).toBe('light');
     expect(resolveTheme('dark')).toBe('dark');

@@ -184,6 +184,11 @@ const it: Messages = {
   themeAuto: 'Automatico (sistema)',
   themeLight: 'Chiaro',
   themeDark: 'Scuro',
+  contrast: 'Contrasto',
+  contrastAria: 'Contrasto della notazione e dei comandi',
+  contrastAuto: 'Automatico (sistema)',
+  contrastStandard: 'Standard',
+  contrastHigh: 'Alto',
 
   // Exercise link (ADR 0085)
   shareGroup: 'Condividi',

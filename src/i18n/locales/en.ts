@@ -203,6 +203,11 @@ const en = {
   themeAuto: 'Auto (OS)',
   themeLight: 'Light',
   themeDark: 'Dark',
+  contrast: 'Contrast',
+  contrastAria: 'Contrast of the notation and controls',
+  contrastAuto: 'Auto (OS)',
+  contrastStandard: 'Standard',
+  contrastHigh: 'High',
 
   // Exercise link (ADR 0085)
   shareGroup: 'Share',

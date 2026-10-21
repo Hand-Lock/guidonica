@@ -226,6 +226,7 @@ Rhythm is sampled left to right over a **32nd grid**: 8 units per quarter metric
 ### Visual Aesthetic
 - Minimalist, distraction-free aesthetic matching the suckless ethos.
 - Theme Auto (default, follows the operating system), Light or Dark, with clean music notation and a distinct accent color for the playhead and active UI states.
+- Contrast Auto (default, follows `prefers-contrast: more` and `forced-colors: active`), Standard or High. High combines with Light or Dark: black or white notation at ≥ 7:1, thicker staff lines, opaque panels with full-contrast borders and no glows (ADR 0113).
 - Clean typography for status and settings.
 
 ### Control Panel
@@ -237,7 +238,7 @@ The stage-first shell of ADR 0097:
   - **Rhythm**: note values (w, h, q, 8, 16, 32), dotted, tuplet matrix (with Clear all), rests, ties.
   - **Melody**: notes (C … B), intervals (unison … 9+).
   - **Sound**: click sound with count-in, volume, drone (note, sound, tuning, volume).
-  - **Display**: language, labels (None / Syllables / Letters), view (Steady / Squishy / Page; ADRs 0109, 0110), assists (playhead, labels after playing, tips), theme.
+  - **Display**: language, labels (None / Syllables / Letters), view (Steady / Squishy / Page; ADRs 0109, 0110), assists (playhead, labels after playing, tips), theme, contrast.
     Labels after playing hides each note's label until the playhead or page cursor passes its onset, so the singer can look back and check; it needs a Labels table and, like the other assists, stays with each user (ADR 0112).
 - **Stage**: the zoom pill (−, %, +; tapping the % returns to auto zoom), the playhead or page cursor, the view pill shown after a view change, and the stage notices (tips, landscape tip, Low Power Mode).
 - Live visual indicator for the active beat / count-in.
@@ -272,7 +273,7 @@ The stage-first shell of ADR 0097:
 
 ### Shareable Exercise Links
 - ⋯ menu → Exercise link copies (or, on phones, shares) a link whose `#x=1&…` fragment carries the exercise: clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels, count-in, drone note and drone tuning (see ADR 0085, 0092, 0094).
-- Language, theme, sound, volume, zoom and the playhead stay with each user. Opening a link skips the intro and loads the exercise; every student still reads different music, because the generator is never seeded.
+- Language, theme, contrast, sound, volume, zoom and the playhead stay with each user. Opening a link skips the intro and loads the exercise; every student still reads different music, because the generator is never seeded.
 
 ### Language Landing Pages
 - guidonica.it/it/, /fr/, /de/ and /es/ serve the same app with translated titles, descriptions and social cards, linked by `hreflang` and listed in the sitemap (see ADR 0086). Each page opens in its language unless the user already chose one.

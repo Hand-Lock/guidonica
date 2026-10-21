@@ -2,6 +2,7 @@ import {
   AppSettings,
   CANVAS_PALETTE,
   CanvasPalette,
+  CanvasTheme,
   Clef,
   DEFAULT_ZOOM,
   MAX_ZOOM,
@@ -18,11 +19,10 @@ import {
   PINNED_HEADER_TOTAL_MARGIN,
   PINNED_HEADER_WIDTH,
   RenderedMeasure,
-  ResolvedTheme,
   STAVE_TOP_LINE_Y,
   TimeSignature,
+  canvasTheme,
   computeBeatWidth,
-  resolveTheme,
 } from '../notation/types';
 import { beatX } from '../notation/spacing';
 import { MetronomeEngine } from '../audio/metronome';
@@ -53,7 +53,7 @@ interface SystemHeader {
   clef: Clef;
   timeSignature: TimeSignature | null;
   meterSigns: boolean;
-  theme: ResolvedTheme;
+  theme: CanvasTheme;
 }
 
 /** A stage size fixed by the caller instead of read from the window (ADR 0103). */
@@ -88,7 +88,7 @@ export class ScrollerView {
   private cachedClef: Clef | null = null;
   private cachedTimeSignature: TimeSignature | null = null;
   private cachedMeterSigns = false;
-  private cachedClefTheme: string | null = null;
+  private cachedClefTheme: CanvasTheme | null = null;
 
   // Gradients cached per geometry and palette: no per-frame allocations (ADR 0091)
   private playheadGradient: CanvasGradient | null = null;
@@ -391,8 +391,8 @@ export class ScrollerView {
     const zoom = this.zoom;
     const w = this.viewportWidth;
     const h = this.viewportHeight;
-    const resolvedTheme = resolveTheme(settings.theme);
-    const palette = CANVAS_PALETTE[resolvedTheme];
+    const theme = canvasTheme(settings.theme, settings.contrast);
+    const palette = CANVAS_PALETTE[theme];
 
     ctx.save();
     ctx.scale(dpr, dpr);
@@ -444,7 +444,7 @@ export class ScrollerView {
     }
 
     // 6. Draw pinned clef & time signature at the left margin with clean gradient fade
-    this.drawPinnedClef(ctx, settings.clef, settings.timeSignature, settings.meterSigns, h, resolvedTheme);
+    this.drawPinnedClef(ctx, settings.clef, settings.timeSignature, settings.meterSigns, h, theme);
 
     // 7. Draw fixed playhead guide line in high-contrast red accent (when enabled)
     if (settings.showPlayhead !== false) {
@@ -498,7 +498,7 @@ export class ScrollerView {
     topY: number = this.staveTopY
   ): void {
     ctx.strokeStyle = palette.staff;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = palette.staffWidth;
     ctx.beginPath();
 
     const lineSpacing = Math.round(10 * this.zoom);
@@ -525,7 +525,7 @@ export class ScrollerView {
     const dpr = this.dpr;
     const w = this.viewportWidth;
     const h = this.viewportHeight;
-    const palette = CANVAS_PALETTE[resolveTheme(settings.theme)];
+    const palette = CANVAS_PALETTE[canvasTheme(settings.theme, settings.contrast)];
 
     ctx.save();
     ctx.scale(dpr, dpr);
@@ -566,7 +566,7 @@ export class ScrollerView {
     const zoom = this.zoom;
     const w = this.viewportWidth;
     const h = this.viewportHeight;
-    const theme = resolveTheme(settings.theme);
+    const theme = canvasTheme(settings.theme, settings.contrast);
     const palette = CANVAS_PALETTE[theme];
     if (this.gradientPalette !== palette) {
       this.invalidateGradients();
@@ -636,7 +636,7 @@ export class ScrollerView {
     first: number,
     top: number,
     settings: AppSettings,
-    theme: ResolvedTheme,
+    theme: CanvasTheme,
     palette: CanvasPalette,
     alpha: number,
     focus: number,
@@ -684,8 +684,9 @@ export class ScrollerView {
 
     // The closing barline: inside a line each bar's left barline closes the one before
     const lineSpacing = Math.round(10 * zoom);
+    const barWidth = Math.round(palette.staffWidth);
     ctx.fillStyle = palette.staff;
-    ctx.fillRect(Math.round(end) - 1, Math.round(staffTop), 1, 4 * lineSpacing + 1);
+    ctx.fillRect(Math.round(end) - barWidth, Math.round(staffTop), barWidth, 4 * lineSpacing + 1);
     ctx.globalAlpha = 1;
   }
 
@@ -694,7 +695,7 @@ export class ScrollerView {
     clef: Clef,
     timeSignature: TimeSignature | null,
     meterSigns: boolean,
-    theme: ResolvedTheme
+    theme: CanvasTheme
   ): SystemHeader {
     for (const header of this.systemHeaders) {
       if (header.clef === clef && header.timeSignature === timeSignature && header.meterSigns === meterSigns && header.theme === theme) {
@@ -770,7 +771,7 @@ export class ScrollerView {
     timeSignature: TimeSignature,
     meterSigns: boolean,
     height: number,
-    theme: ResolvedTheme
+    theme: CanvasTheme
   ): void {
     if (!isMusicFontReady()) {
       return;

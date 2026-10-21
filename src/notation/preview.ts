@@ -4,16 +4,17 @@ import { noteLabels } from '../i18n';
 import { PreviewWindow, previewWindow } from '../presets';
 import {
   AppSettings,
-  CANVAS_PALETTE,
+  CanvasPalette,
+  CanvasTheme,
   Clef,
   MeasureData,
   NOTE_START_OFFSET,
   RenderedMeasure,
   STAVE_TOP_LINE_Y,
-  ThemeMode,
   TimeSignature,
+  canvasPalette,
+  canvasTheme,
   computeBeatWidth,
-  resolveTheme,
 } from './types';
 
 /**
@@ -87,10 +88,10 @@ function drawStaff(
   toX: number,
   topY: number,
   scale: number,
-  color: string
+  palette: CanvasPalette
 ): void {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = Math.max(1 / currentDpr(), scale);
+  ctx.strokeStyle = palette.staff;
+  ctx.lineWidth = Math.max(1 / currentDpr(), scale * palette.staffWidth);
   ctx.beginPath();
   for (let line = 0; line < 5; line++) {
     const y = topY + line * 10 * scale;
@@ -147,18 +148,19 @@ export function renderLevelPreview(
   const height = (STRIP_CROP_BOTTOM - STRIP_CROP_TOP) * STRIP_SCALE;
   const ctx = prepare(target, STRIP_WIDTH, height, STRIP_SCALE);
   if (!ctx) return;
-  const palette = CANVAS_PALETTE[resolveTheme(settings.theme)];
+  const theme = canvasTheme(settings.theme, settings.contrast);
+  const palette = canvasPalette(theme);
   const offsetY = -STRIP_CROP_TOP * STRIP_SCALE;
 
-  drawStaff(ctx, 0, STRIP_WIDTH, offsetY + STAVE_TOP_LINE_Y * STRIP_SCALE, STRIP_SCALE, palette.staff);
+  drawStaff(ctx, 0, STRIP_WIDTH, offsetY + STAVE_TOP_LINE_Y * STRIP_SCALE, STRIP_SCALE, palette);
 
-  const header = renderer.renderPinnedClef(settings.clef, settings.timeSignature, settings.theme, settings.meterSigns);
+  const header = renderer.renderPinnedClef(settings.clef, settings.timeSignature, theme, settings.meterSigns);
   ctx.drawImage(header, 0, offsetY, header.width / currentDpr(), header.height / currentDpr());
   releasePreview(header);
 
   let x = STRIP_START_X;
   measures.forEach((data, i) => {
-    const measure: RenderedMeasure = renderer.renderMeasure(data, settings.theme, noteLabels(settings.solfegeLabelMode));
+    const measure: RenderedMeasure = renderer.renderMeasure(data, theme, noteLabels(settings.solfegeLabelMode));
     ctx.save();
     if (i === 0) {
       // The opening bar starts right after the header, which needs no barline
@@ -179,17 +181,17 @@ function renderIcon(
   clef: Clef | null,
   timeSignature: TimeSignature | null,
   cropX: number,
-  theme: ThemeMode
+  theme: CanvasTheme
 ): void {
   const width = ICON_WIDTH * ICON_SCALE;
   const height = (ICON_CROP_BOTTOM - ICON_CROP_TOP) * ICON_SCALE;
   const ctx = prepare(target, width, height, ICON_SCALE);
   if (!ctx) return;
-  const palette = CANVAS_PALETTE[resolveTheme(theme)];
+  const palette = canvasPalette(theme);
   const offsetX = -cropX * ICON_SCALE;
   const offsetY = -ICON_CROP_TOP * ICON_SCALE;
 
-  drawStaff(ctx, 0, width, offsetY + STAVE_TOP_LINE_Y * ICON_SCALE, ICON_SCALE, palette.staff);
+  drawStaff(ctx, 0, width, offsetY + STAVE_TOP_LINE_Y * ICON_SCALE, ICON_SCALE, palette);
 
   const header = renderer.renderPinnedClef(clef, timeSignature, theme);
   ctx.drawImage(header, offsetX, offsetY, header.width / currentDpr(), header.height / currentDpr());
@@ -197,11 +199,11 @@ function renderIcon(
 }
 
 /** Draws `clef` alone on a short staff fragment, so alto and tenor C clefs read apart. */
-export function renderClefIcon(target: HTMLCanvasElement, clef: Clef, theme: ThemeMode): void {
+export function renderClefIcon(target: HTMLCanvasElement, clef: Clef, theme: CanvasTheme): void {
   renderIcon(target, clef, null, CLEF_ICON_CROP_X, theme);
 }
 
 /** Draws the time signature `ts` alone on a short staff fragment (ADR 0071). */
-export function renderMeterIcon(target: HTMLCanvasElement, ts: TimeSignature, theme: ThemeMode): void {
+export function renderMeterIcon(target: HTMLCanvasElement, ts: TimeSignature, theme: CanvasTheme): void {
   renderIcon(target, null, ts, METER_ICON_CROP_X, theme);
 }

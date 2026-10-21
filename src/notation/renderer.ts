@@ -17,7 +17,7 @@ import {
 import { BeatSpacing, beatX } from './spacing';
 import { isMusicFontReady } from './fonts'; // registers the music font and points VexFlow at it (ADR 0058)
 import {
-  CANVAS_PALETTE,
+  CanvasTheme,
   Clef,
   DEFAULT_ZOOM,
   InkExtent,
@@ -37,8 +37,8 @@ import {
   STAVE_TOP_LINE_Y,
   ThemeMode,
   TimeSignature,
+  canvasPalette,
   isGrouped,
-  resolveTheme,
   timeSignatureSpec,
 } from './types';
 
@@ -232,9 +232,9 @@ const LABEL_BOX_PAD = 1;
 const LABEL_BOX_HEIGHT = SOLFEGE_FONT_PX + 4;
 
 /** Fills each label centered on its placement, in the context's current transform. */
-function fillLabels(ctx: CanvasRenderingContext2D, placements: readonly LabelPlacement[], theme: ThemeMode): void {
+function fillLabels(ctx: CanvasRenderingContext2D, placements: readonly LabelPlacement[], theme: ThemeMode | CanvasTheme): void {
   ctx.save();
-  ctx.fillStyle = CANVAS_PALETTE[resolveTheme(theme)].solfege;
+  ctx.fillStyle = canvasPalette(theme).solfege;
   ctx.font = SOLFEGE_FONT;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -359,7 +359,7 @@ export class MeasureRenderer {
    */
   public renderMeasure(
     data: MeasureData,
-    theme: ThemeMode = 'auto',
+    theme: ThemeMode | CanvasTheme = 'auto',
     labels: readonly string[] | null = null,
     labelsAfterPlaying = false
   ): RenderedMeasure {
@@ -409,7 +409,7 @@ export class MeasureRenderer {
     data: MeasureData,
     noteCanvas: HTMLCanvasElement,
     placements: readonly LabelPlacement[],
-    theme: ThemeMode
+    theme: ThemeMode | CanvasTheme
   ): LabelLayer {
     const canvas = document.createElement('canvas');
     canvas.width = noteCanvas.width;
@@ -441,7 +441,7 @@ export class MeasureRenderer {
    */
   public renderMeasureSvg(
     data: MeasureData,
-    theme: ThemeMode = 'auto',
+    theme: ThemeMode | CanvasTheme = 'auto',
     labels: readonly string[] | null = null
   ): RenderedMeasureSvg {
     const zoom = this.zoom;
@@ -451,7 +451,7 @@ export class MeasureRenderer {
     let ink = drawn.ink;
 
     if (labels) {
-      const color = CANVAS_PALETTE[resolveTheme(theme)].solfege;
+      const color = canvasPalette(theme).solfege;
       const placements = labelPlacements(data, drawn, labels);
       ink = withLabels(ink, placements);
       for (const { text, x, y } of placements) {
@@ -481,8 +481,8 @@ export class MeasureRenderer {
   }
 
   /** Lays out and draws a measure through any VexFlow backend; labels are left to the caller. */
-  private drawMeasure(ctx: RenderContext, data: MeasureData, theme: ThemeMode): DrawnMeasure {
-    const palette = CANVAS_PALETTE[resolveTheme(theme)];
+  private drawMeasure(ctx: RenderContext, data: MeasureData, theme: ThemeMode | CanvasTheme): DrawnMeasure {
+    const palette = canvasPalette(theme);
     const noteColor = palette.ink;
     const staffColor = palette.staff;
     const tupletColor = palette.tuplet;
@@ -722,7 +722,7 @@ export class MeasureRenderer {
   public renderPinnedClef(
     clef: Clef | null,
     timeSignature: TimeSignature | null,
-    theme: ThemeMode,
+    theme: ThemeMode | CanvasTheme,
     meterSigns = false
   ): HTMLCanvasElement {
     const dpr = this.dpr;
@@ -743,7 +743,7 @@ export class MeasureRenderer {
   public renderPinnedClefSvg(
     clef: Clef | null,
     timeSignature: TimeSignature | null,
-    theme: ThemeMode,
+    theme: ThemeMode | CanvasTheme,
     meterSigns = false
   ): SVGSVGElement {
     const ctx = measureSvgContext(PINNED_HEADER_WIDTH, this.zoom);
@@ -776,7 +776,7 @@ export class MeasureRenderer {
   public renderSystemHeader(
     clef: Clef,
     timeSignature: TimeSignature | null,
-    theme: ThemeMode,
+    theme: ThemeMode | CanvasTheme,
     meterSigns = false
   ): { canvas: HTMLCanvasElement; width: number } {
     const dpr = this.dpr;
@@ -796,10 +796,10 @@ export class MeasureRenderer {
     ctx: RenderContext,
     clef: Clef | null,
     timeSignature: TimeSignature | null,
-    theme: ThemeMode,
+    theme: ThemeMode | CanvasTheme,
     meterSigns: boolean
   ): void {
-    const headerColor = CANVAS_PALETTE[resolveTheme(theme)].ink;
+    const headerColor = canvasPalette(theme).ink;
     ctx.setFillStyle(headerColor);
     ctx.setStrokeStyle(headerColor);
 

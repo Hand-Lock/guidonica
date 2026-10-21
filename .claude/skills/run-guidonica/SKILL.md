@@ -105,6 +105,8 @@ dev-server log is in `$TMPDIR/guidonica-dev.log`.
 | `--browser chromium\|firefox\|webkit` | `chromium` | engine to launch (Blink, Gecko, WebKit) |
 | `--lang en\|it\|fr\|de\|es` | browser-detected | `language` in `guidonica_settings_v1`, plus the context locale |
 | `--theme light\|dark\|auto` | app default (auto) | `theme` in `guidonica_settings_v1`; `dark` also emulates `prefers-color-scheme: dark` |
+| `--contrast auto\|standard\|high` | app default (auto) | `contrast` in `guidonica_settings_v1` (ADR 0113) |
+| `--os-contrast more\|forced` | off | emulates the OS Increase contrast (`prefers-contrast: more`) or Windows forced colors (`forced-colors: active`, Chromium only) |
 | `--size WxH` | `1280x900` | viewport; below 961 px wide the layout is the phone one |
 | `--dpr N` | `2` | device scale factor |
 | `--intro` | off | keeps the onboarding dialog; nothing is seeded in localStorage |

@@ -186,6 +186,11 @@ const fr: Messages = {
   themeAuto: 'Auto (système)',
   themeLight: 'Clair',
   themeDark: 'Sombre',
+  contrast: 'Contraste',
+  contrastAria: 'Contraste de la notation et des commandes',
+  contrastAuto: 'Auto (système)',
+  contrastStandard: 'Standard',
+  contrastHigh: 'Élevé',
 
   // Exercise link (ADR 0085)
   shareGroup: 'Partager',

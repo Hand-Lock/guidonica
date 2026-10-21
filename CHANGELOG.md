@@ -17,6 +17,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 ### Added
 
 - Labels after playing (Settings → Display → Assists) hides each note label until the playhead reaches the note, so you can look back and check what you sang, most useful in the page view. (ADR 0112)
+- High contrast option under Settings → Display, following your system's Increase contrast setting by default. (ADR 0113)
 
 ### Fixed
 
@@ -26,6 +27,8 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - `guidonica/engine` exports what a setting allows: `enabledValues`, `pitchPool`, `noteSpan` and `placementOf`, so an embedder can check notes it writes against the generator's own rules (ADR 0111).
 - A rendered measure can carry its labels on a separate `labelLayer` with one box per label, and `LabelPlacement` gives each label's beat (ADR 0112).
+- `guidonica/engine` exports `ContrastMode`, `CanvasTheme`, `canvasTheme` and `canvasPalette`; renderer methods also accept `'light-high'` and `'dark-high'` (ADR 0113).
+- The run-guidonica driver takes `--contrast` and `--os-contrast more|forced` (ADR 0113).
 
 ## [2026.10.5] - 2026-10-18
 

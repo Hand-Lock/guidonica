@@ -39,7 +39,7 @@ describe('Settings inspector tabs (ADR 0097)', () => {
       rhythm: ['btn-tuplets-toggle', 'tuplets-popover'],
       melody: [],
       sound: ['toggle-count-in', 'select-sound-profile', 'volume-slider', 'select-drone-note', 'select-drone-sound', 'select-drone-tuning', 'drone-volume-slider'],
-      display: ['select-language', 'select-solfege-mode', 'toggle-playhead', 'toggle-tips', 'select-theme'],
+      display: ['select-language', 'select-solfege-mode', 'toggle-playhead', 'toggle-tips', 'select-theme', 'select-contrast'],
     };
     for (const [tab, ids] of Object.entries(inPanel)) {
       for (const id of ids) expect(document.getElementById(id)?.closest('[role="tabpanel"]')?.id, id).toBe(`panel-${tab}`);

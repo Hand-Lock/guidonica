@@ -280,6 +280,163 @@
   --led-on-halo: 0 0 6px #a99cff;
 }
 
+/* High contrast (ADR 0113): the documented exception to the glass materials. Opaque
+   surfaces, full-contrast ink and borders, flat fills and no glows; set on <html> when the
+   Contrast setting resolves to high. After the nightly blocks, so it wins at equal
+   specificity; the dark block restates every light override, or the light value would win in
+   dark mode. --canvas-bg and --playhead-color match CANVAS_PALETTE's light-high and dark-high. */
+[data-contrast='high'] {
+  --bg: #ffffff;
+  --bg-gradient: none;
+  --canvas-bg: #ffffff;
+  --staff-color: #000000;
+  --playhead-color: #b0002a;
+
+  --text: #000000;
+  --text-muted: #1f2937;
+  --emboss: 0 0 transparent;
+
+  --accent: #00513f;
+  --accent-strong: #003d30;
+  --accent-tint: rgba(0, 81, 63, 0.12);
+  --focus-ring: 0 0 0 2px #ffffff, 0 0 0 5px #000000;
+  --danger: #b0002a;
+
+  --glass-bg: #ffffff;
+  --glass-solid: #ffffff;
+  --glass-edge: #000000;
+  --glass-spec: transparent;
+  --glass-shadow: 0 0 transparent;
+  --glass-blur: none;
+
+  --acrylic-bg: #ffffff;
+  --acrylic-hover: #e5e7eb;
+  --acrylic-border: #000000;
+  --acrylic-shadow: 0 0 transparent;
+
+  --well-bg: #ffffff;
+  --card-bg: #ffffff;
+  --well-border: #000000;
+  --well-shadow: 0 0 transparent;
+
+  --gel-spec: 0 0 transparent;
+  --gel-gloss: none;
+  --gel-bg: #00513f;
+  --gel-hover: #003d30;
+  --gel-border: #000000;
+  --gel-ink: #ffffff;
+  --gel-ink-shadow: 0 0 transparent;
+  --gel-glow: 0 0 transparent;
+  --amber-bg: #fcd34d;
+  --amber-hover: #fde68a;
+  --amber-border: #000000;
+  --amber-ink: #000000;
+  --amber-glow: 0 0 transparent;
+
+  --track-bg: #ffffff;
+  --track-shadow: inset 0 0 0 1px #000000;
+  --bead: #00513f;
+  --bead-border: #000000;
+  --bead-shadow: 0 0 0 1px #ffffff;
+  --led-off: #ffffff;
+  --led-off-shadow: inset 0 0 0 1px #000000;
+  --led-on: #00513f;
+  --led-on-glow: 0 0 0 1px #000000;
+  --led-on-halo: 0 0 transparent;
+  --led-down: #b0002a;
+  --led-down-glow: 0 0 0 1px #000000;
+  --led-mid: #c2410c;
+  --led-mid-glow: 0 0 0 1px #000000;
+}
+
+[data-contrast='high'][data-theme='dark'] {
+  --bg: #000000;
+  --bg-gradient: none;
+  --canvas-bg: #000000;
+  --staff-color: #ffffff;
+  --playhead-color: #ff6b85;
+
+  --text: #ffffff;
+  --text-muted: #e5e7eb;
+  --emboss: 0 0 transparent;
+
+  --accent: #00ffcc;
+  --accent-strong: #7fffe6;
+  --accent-tint: rgba(0, 255, 204, 0.16);
+  --focus-ring: 0 0 0 2px #000000, 0 0 0 5px #ffffff;
+  --danger: #ff6b85;
+
+  --glass-bg: #000000;
+  --glass-solid: #000000;
+  --glass-edge: #ffffff;
+  --glass-spec: transparent;
+  --glass-shadow: 0 0 transparent;
+  --glass-blur: none;
+
+  --acrylic-bg: #000000;
+  --acrylic-hover: #1f2937;
+  --acrylic-border: #ffffff;
+  --acrylic-shadow: 0 0 transparent;
+
+  --well-bg: #000000;
+  --card-bg: #000000;
+  --well-border: #ffffff;
+  --well-shadow: 0 0 transparent;
+
+  --gel-spec: 0 0 transparent;
+  --gel-gloss: none;
+  --gel-bg: #00ffcc;
+  --gel-hover: #7fffe6;
+  --gel-border: #ffffff;
+  --gel-ink: #000000;
+  --gel-ink-shadow: 0 0 transparent;
+  --gel-glow: 0 0 transparent;
+  --amber-bg: #fcd34d;
+  --amber-hover: #fde68a;
+  --amber-border: #ffffff;
+  --amber-ink: #000000;
+  --amber-glow: 0 0 transparent;
+
+  --track-bg: #000000;
+  --track-shadow: inset 0 0 0 1px #ffffff;
+  --bead: #00ffcc;
+  --bead-border: #ffffff;
+  --bead-shadow: 0 0 0 1px #000000;
+  --led-off: #000000;
+  --led-off-shadow: inset 0 0 0 1px #ffffff;
+  --led-on: #00ffcc;
+  --led-on-glow: 0 0 0 1px #ffffff;
+  --led-on-halo: 0 0 transparent;
+  --led-down: #ff6b85;
+  --led-down-glow: 0 0 0 1px #ffffff;
+  --led-mid: #fb923c;
+  --led-mid-glow: 0 0 0 1px #ffffff;
+}
+
+/* Nightly in high contrast (ADR 0107, 0113): a deep or pale violet accent, so it still can't
+   pass for the release. The dark block restates every light override. */
+[data-channel='nightly'][data-contrast='high'] {
+  --accent: #3a2a9c;
+  --accent-strong: #2a1d7a;
+  --accent-tint: rgba(58, 42, 156, 0.12);
+  --gel-bg: #3a2a9c;
+  --gel-hover: #2a1d7a;
+  --gel-ink: #ffffff;
+  --bead: #3a2a9c;
+  --led-on: #3a2a9c;
+}
+
+[data-channel='nightly'][data-contrast='high'][data-theme='dark'] {
+  --accent: #c7bfff;
+  --accent-strong: #e0dbff;
+  --accent-tint: rgba(199, 191, 255, 0.16);
+  --gel-bg: #c7bfff;
+  --gel-hover: #e0dbff;
+  --gel-ink: #000000;
+  --bead: #c7bfff;
+  --led-on: #c7bfff;
+}
+
 /* ==========================================================================
    Base
    ========================================================================== */
@@ -1902,7 +2059,7 @@ select:focus-visible {
 
 #app[data-playback='playing'] .app-bar:not(:focus-within),
 #app[data-playback='playing'] .canvas-zoom-pill:not(:focus-within) {
-  opacity: 0.4;
+  opacity: var(--focus-dim, 0.4);
 }
 
 @media (hover: hover) {
@@ -2740,7 +2897,7 @@ dialog.intro-dialog {
   /* Focus mode: the contents dim from the hand onwards, the glass stays lit */
   #app[data-playback='playing'] .app-bar:not(:focus-within) {
     opacity: 1;
-    --bar-fade: 0.4;
+    --bar-fade: var(--focus-dim, 0.4);
   }
 
   @media (hover: hover) {
@@ -2956,6 +3113,121 @@ dialog.intro-dialog {
     .playback-controls .btn-primary .btn-label {
       display: none;
     }
+  }
+}
+
+/* ==========================================================================
+   High contrast (ADR 0113): what the tokens can't reach
+   ========================================================================== */
+
+/* Thicker edges on glass panels, buttons, selects, chips and wells */
+[data-contrast='high'] :is(
+  .app-bar,
+  .transport-dock,
+  .inspector-panel,
+  .view-pill,
+  .canvas-zoom-pill,
+  .stage-notice,
+  .share-toast,
+  .app-menu,
+  dialog.about-dialog,
+  .tuplets-popover,
+  .summary-chip,
+  .btn,
+  .btn-icon-only,
+  .btn-mute,
+  .btn-pill-action,
+  .btn-close,
+  select,
+  .checkbox-item span,
+  .tempo-readout,
+  .beat-indicator-container,
+  .intro-option,
+  .intro-language,
+  .tuplet-cell-label input
+) {
+  border-width: 2px;
+}
+
+/* Opaque bar and dock, without the glass sheen over them */
+[data-contrast='high'] :is(.app-bar, .transport-dock)::before {
+  background: var(--glass-bg);
+}
+
+/* Focus mode steps the bar and zoom pill back less, so their text keeps ≥ 7:1 */
+[data-contrast='high'] #app {
+  --focus-dim: 0.75;
+}
+
+[data-contrast='high'] .btn-primary.playing {
+  text-shadow: none;
+}
+
+[data-contrast='high'] dialog::backdrop {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Forced colors (Windows contrast themes): the system colours paint the chrome, except the
+   LEDs, slider beads and tracks, whose gradients and shadows it would erase. */
+@media (forced-colors: active) {
+  .beat-dot,
+  .beat-dot::after,
+  .checkbox-item span::before,
+  input[type='range'] {
+    forced-color-adjust: none;
+  }
+
+  .beat-dot,
+  .checkbox-item span::before {
+    background: Canvas;
+    box-shadow: inset 0 0 0 1px CanvasText;
+  }
+
+  .beat-dot::after,
+  .beat-dot.downbeat::after,
+  .beat-dot.secondary::after,
+  .checkbox-item input:checked + span::before {
+    background: Highlight;
+    box-shadow: 0 0 0 1px CanvasText;
+  }
+
+  input[type='range']::-webkit-slider-runnable-track {
+    background: Canvas;
+    box-shadow: inset 0 0 0 1px CanvasText;
+  }
+
+  input[type='range']::-moz-range-track {
+    background: Canvas;
+    box-shadow: inset 0 0 0 1px CanvasText;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    background: Highlight;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+
+  input[type='range']::-moz-range-thumb {
+    background: Highlight;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+
+  input[type='range']:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid CanvasText;
+    outline-offset: 2px;
+  }
+
+  input[type='range']:focus-visible::-moz-range-thumb {
+    outline: 2px solid CanvasText;
+    outline-offset: 2px;
+  }
+
+  /* Selected states that were only an accent colour */
+  .inspector-tab[aria-selected='true'],
+  .checkbox-item input:checked + span {
+    border-color: Highlight;
   }
 }
 

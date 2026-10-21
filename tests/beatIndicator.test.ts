@@ -78,8 +78,8 @@ describe('Metronome Traffic Lights & Count-In Indicator', () => {
     expect(styleCss).toMatch(/\.beat-dot\.active::after\s*\{[^}]*transform:\s*scale\(1\.28\);/);
     expect(styleCss).toMatch(/\.beat-dot\.active\.downbeat::after\s*\{[^}]*transform:\s*scale\(1\.42\);/);
     expect(styleCss).toMatch(/--led-mid:\s*radial-gradient/);
-    // Light and dark themes both define the orange glow
-    expect(styleCss.match(/--led-mid-glow:/g)?.length).toBe(2);
+    // Light and dark themes both define the orange glow, and so do their high-contrast blocks (ADR 0113)
+    expect(styleCss.match(/--led-mid-glow:/g)?.length).toBe(4);
   });
 
   it('changes only compositor properties on a beat (ADR 0091)', () => {

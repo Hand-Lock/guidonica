@@ -184,6 +184,11 @@ const es: Messages = {
   themeAuto: 'Automático (sistema)',
   themeLight: 'Claro',
   themeDark: 'Oscuro',
+  contrast: 'Contraste',
+  contrastAria: 'Contraste de la notación y los controles',
+  contrastAuto: 'Automático (sistema)',
+  contrastStandard: 'Estándar',
+  contrastHigh: 'Alto',
 
   // Exercise link (ADR 0085)
   shareGroup: 'Compartir',

@@ -42,6 +42,11 @@ describe('MeasureBuffer.rerender', () => {
     for (const call of renderMeasure.mock.calls) {
       expect((call as unknown[]).slice(1)).toEqual(['dark', en.noteNames.letters, true]);
     }
+
+    // High contrast picks the dark-high palette (ADR 0113)
+    renderMeasure.mockClear();
+    buffer.rerender({ ...settings, theme: 'dark', contrast: 'high' });
+    for (const call of renderMeasure.mock.calls) expect((call as unknown[])[1]).toBe('dark-high');
     // Same MeasureData objects: the music under the playhead is unchanged
     expect(buffer.getMeasures().map((m) => m.data)).toEqual(before);
     buffer.getMeasures().forEach((m, i) => expect(m.data).toBe(before[i]));

@@ -89,7 +89,9 @@ describe('Stage-first shell (ADR 0097)', () => {
     expect(short).toMatch(/#app::before \{[^}]*grid-row: 2;[^}]*grid-column: 1 \/ -1;[^}]*backdrop-filter/);
     expect(short).toMatch(/\.app-bar::before,\s*\.transport-dock::before \{\s*content: none;/);
     expect(short).toMatch(/\.app-bar \{[^}]*[^-]mask-image: linear-gradient\(90deg, #000, rgb\(0 0 0 \/ var\(--bar-fade\)\) 120px\);/);
-    expect(short).toMatch(/#app\[data-playback='playing'\] \.app-bar:not\(:focus-within\) \{\s*opacity: 1;\s*--bar-fade: 0\.4;/);
+    expect(short).toMatch(/#app\[data-playback='playing'\] \.app-bar:not\(:focus-within\) \{\s*opacity: 1;\s*--bar-fade: var\(--focus-dim, 0\.4\);/);
+    // High contrast dims less, so the bar's text keeps 7:1 (ADR 0113)
+    expect(styleCss).toMatch(/\[data-contrast='high'\] #app \{\s*--focus-dim: 0\.75;/);
     expect(short).toMatch(/#app\.menu-open \.app-bar \{\s*-webkit-mask-image: none;\s*mask-image: none;/);
     expect(styleCss).toMatch(/@property --bar-fade \{\s*syntax: '<number>';\s*inherits: false;\s*initial-value: 1;/);
   });

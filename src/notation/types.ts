@@ -496,6 +496,13 @@ export function parsePulse(value: unknown): PulseMode | null {
 export type ThemeMode = 'auto' | 'light' | 'dark';
 export type ResolvedTheme = 'light' | 'dark';
 
+/** Accessibility contrast (ADR 0113): `auto` follows the OS Increase contrast and forced colors. */
+export const CONTRAST_MODES = ['auto', 'standard', 'high'] as const;
+export type ContrastMode = (typeof CONTRAST_MODES)[number];
+
+/** A canvas palette key: a resolved theme in standard or high contrast (ADR 0113). */
+export type CanvasTheme = ResolvedTheme | 'light-high' | 'dark-high';
+
 /**
  * Single source of truth for every colour painted onto the notation canvas.
  * Staff lines (scroller) and VexFlow ledger lines/barlines (renderer) share
@@ -507,6 +514,8 @@ export interface CanvasPalette {
   backgroundRgb: string;
   staff: string;
   staffRgb: string;
+  /** Staff line thickness in CSS pixels, thicker in high contrast (ADR 0113). */
+  staffWidth: number;
   /** Opacity of the page view's active-line band, a tint of `staff` (ADR 0110). */
   bandAlpha: number;
   ink: string;
@@ -516,12 +525,13 @@ export interface CanvasPalette {
   playheadRgb: string;
 }
 
-export const CANVAS_PALETTE: Record<ResolvedTheme, CanvasPalette> = {
+export const CANVAS_PALETTE: Record<CanvasTheme, CanvasPalette> = {
   light: {
     background: '#ffffff',
     backgroundRgb: '255, 255, 255',
     staff: '#64748b',
     staffRgb: '100, 116, 139',
+    staffWidth: 1,
     bandAlpha: 0.07,
     ink: '#000000',
     tuplet: '#334155',
@@ -534,12 +544,41 @@ export const CANVAS_PALETTE: Record<ResolvedTheme, CanvasPalette> = {
     backgroundRgb: '15, 23, 42',
     staff: '#64748b',
     staffRgb: '100, 116, 139',
+    staffWidth: 1,
     bandAlpha: 0.1,
     ink: '#f8fafc',
     tuplet: '#cbd5e1',
     solfege: '#00ffcc',
     playhead: '#f43f5e',
     playheadRgb: '244, 63, 94',
+  },
+  // High contrast (ADR 0113): pure black or white ink and staff, labels a distinct colour
+  // still ≥ 7:1, a deeper or brighter playhead and a stronger active-line band
+  'light-high': {
+    background: '#ffffff',
+    backgroundRgb: '255, 255, 255',
+    staff: '#000000',
+    staffRgb: '0, 0, 0',
+    staffWidth: 1.5,
+    bandAlpha: 0.12,
+    ink: '#000000',
+    tuplet: '#000000',
+    solfege: '#00513f',
+    playhead: '#b0002a',
+    playheadRgb: '176, 0, 42',
+  },
+  'dark-high': {
+    background: '#000000',
+    backgroundRgb: '0, 0, 0',
+    staff: '#ffffff',
+    staffRgb: '255, 255, 255',
+    staffWidth: 1.5,
+    bandAlpha: 0.18,
+    ink: '#ffffff',
+    tuplet: '#ffffff',
+    solfege: '#00ffcc',
+    playhead: '#ff6b85',
+    playheadRgb: '255, 107, 133',
   },
 };
 
@@ -572,10 +611,52 @@ export function resolveTheme(theme: ThemeMode): ResolvedTheme {
  * Subscribes to OS color scheme preference changes with cross-platform fallback.
  */
 export function subscribeSystemTheme(callback: (isDark: boolean) => void): () => void {
+  return subscribeQuery('(prefers-color-scheme: dark)', callback);
+}
+
+/** The OS asks for more contrast: macOS/iOS Increase contrast, or Windows forced colors (ADR 0113). */
+const HIGH_CONTRAST_QUERY = '(prefers-contrast: more), (forced-colors: active)';
+let contrastQuery: MediaQueryList | null = null;
+
+/** Whether the OS asks for more contrast; polled per frame like isSystemDark (ADR 0091, 0113). */
+export function isSystemHighContrast(): boolean {
+  if (typeof window === 'undefined' || !window.matchMedia) {
+    return false;
+  }
+  contrastQuery ??= window.matchMedia(HIGH_CONTRAST_QUERY);
+  return contrastQuery.matches;
+}
+
+/** Whether a ContrastMode resolves to high contrast now. */
+export function resolveContrast(mode: ContrastMode): boolean {
+  return mode === 'high' || (mode === 'auto' && isSystemHighContrast());
+}
+
+/** Subscribes to the OS contrast preference, Increase contrast or forced colors (ADR 0113). */
+export function subscribeSystemContrast(callback: (isHigh: boolean) => void): () => void {
+  return subscribeQuery(HIGH_CONTRAST_QUERY, callback);
+}
+
+/**
+ * The canvas palette key for a theme and contrast (ADR 0113). `contrast` defaults to
+ * standard, so callers that predate it keep their palette.
+ */
+export function canvasTheme(theme: ThemeMode, contrast: ContrastMode = 'standard'): CanvasTheme {
+  const resolved = resolveTheme(theme);
+  return resolveContrast(contrast) ? `${resolved}-high` : resolved;
+}
+
+/** The palette of a theme mode or a canvas theme: 'auto' resolves against the OS (ADR 0113). */
+export function canvasPalette(theme: ThemeMode | CanvasTheme): CanvasPalette {
+  return CANVAS_PALETTE[theme === 'auto' ? resolveTheme(theme) : theme];
+}
+
+/** Calls back with `.matches` whenever a media query flips, with the Safari < 14 fallback. */
+function subscribeQuery(query: string, callback: (matches: boolean) => void): () => void {
   if (typeof window === 'undefined' || !window.matchMedia) {
     return () => {};
   }
-  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const mq = window.matchMedia(query);
   const handler = (e: MediaQueryListEvent | MediaQueryList): void => {
     callback(e.matches);
   };
@@ -622,6 +703,7 @@ export interface AppSettings {
   meterSigns: boolean; // Write 4/4 as C and 2/2 as ¢ (ADR 0093)
   countIn: boolean;
   theme: ThemeMode;
+  contrast: ContrastMode; // Standard or high contrast, or the OS preference (ADR 0113)
   volume: number; // 0.0 to 1.0
   isMuted: boolean; // Silences click and drone
   droneNote: DroneNote; // Tonic of the drone, or 'off' (ADR 0092)
@@ -678,6 +760,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   meterSigns: false,
   countIn: true,
   theme: 'auto',
+  contrast: 'auto',
   volume: 0.8,
   isMuted: false,
   droneNote: 'off',

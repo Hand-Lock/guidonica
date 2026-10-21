@@ -64,12 +64,12 @@ describe('exercise links (ADR 0085)', () => {
 
   it('carries no personal preferences', () => {
     const settings: AppSettings = {
-      ...base(), language: 'de', theme: 'dark', volume: 0.1, zoom: 0.5, showTips: false,
+      ...base(), language: 'de', theme: 'dark', contrast: 'high', volume: 0.1, zoom: 0.5, showTips: false,
       droneSound: 'pad', droneVolume: 0.2, meterSigns: true,
     };
     const hash = encodeExercise(settings);
     expect(hash).toBe(encodeExercise(base()));
-    for (const word of ['language', 'theme', 'volume', 'zoom', 'mute', 'playhead', 'sound', 'tip']) {
+    for (const word of ['language', 'theme', 'contrast', 'volume', 'zoom', 'mute', 'playhead', 'sound', 'tip']) {
       expect(hash).not.toContain(word);
     }
   });

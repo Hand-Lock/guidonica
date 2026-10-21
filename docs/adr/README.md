@@ -118,6 +118,7 @@ This directory documents the core architectural decisions, implementation method
 | [0110](0110-page-view.md) | Page View: Multi-Line Staves with Vertical Scrolling | Accepted | 2026-10-18 |
 | [0111](0111-notation-rule-seams.md) | Notation Rule Seams | Accepted | 2026-10-19 |
 | [0112](0112-labels-after-playing.md) | Labels After Playing | Accepted | 2026-10-21 |
+| [0113](0113-high-contrast.md) | High Contrast | Accepted | 2026-10-21 |
 
 ---
 

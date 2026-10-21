@@ -258,7 +258,7 @@ When introducing any future UI element, every developer and AI agent **MUST** ve
    - The page declares `viewport-fit=cover`.
    - The bar, dock, sheets and zoom pill pad with `env(safe-area-inset-*)`.
 8. **Reduced motion**: `@media (prefers-reduced-motion: reduce)` disables every animation and transition.
-9. **Accessibility**: every control has a visible `:focus-visible` ring. Icon-only buttons carry `aria-label`. Toggle buttons expose `aria-pressed` or `aria-expanded`.
+9. **Accessibility**: every control has a visible `:focus-visible` ring. Icon-only buttons carry `aria-label`. Toggle buttons expose `aria-pressed` or `aria-expanded`. **High contrast** (Settings → Display → Contrast, Auto following the OS) is the one documented exception to the glass materials: opaque panels, no blur, gradients or glows, 2px full-contrast borders, black or white text and notation at ≥ 7:1, in light and dark; under Windows forced colors the system palette paints the chrome (ADR 0113).
 
 ---
 

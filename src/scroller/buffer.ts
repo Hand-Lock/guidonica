@@ -6,6 +6,7 @@ import {
   RenderedMeasure,
   SolfegeLabelMode,
   ViewMode,
+  canvasTheme,
   computeBeatWidth,
   getBeatsPerMeasure,
 } from '../notation/types';
@@ -171,7 +172,7 @@ export class MeasureBuffer {
   private render(data: MeasureData, settings: AppSettings): RenderedMeasure {
     return this.renderer.renderMeasure(
       data,
-      settings.theme,
+      canvasTheme(settings.theme, settings.contrast),
       this.labels(settings.solfegeLabelMode),
       settings.labelsAfterPlaying ?? false
     );

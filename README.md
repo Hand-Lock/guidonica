@@ -173,7 +173,7 @@ The staff fills the screen. Start, tempo, the beat lights and mute sit in a dock
 | **Rhythm** | Note values (quarter, eighth, half, whole, 16th, 32nd), dotted, tuplets, rests, ties |
 | **Melody** | Notes (C … B), intervals (unison … 9+) |
 | **Sound** | Click sound with count-in, volume, drone (note, sound, tuning, volume) |
-| **Display** | Language, note names, view (steady, squishy, page), assists (playhead, labels after playing, tips), theme |
+| **Display** | Language, note names, view (steady, squishy, page), assists (playhead, labels after playing, tips), theme, contrast |
 
 ### 3. Complete Setticlavio Clef System (8 Clefs)
 Guidonica supports the full historic **Setticlavio** (seven clefs) traditional vocal and instrumental clef system, featuring both historical positions of the baritone clef. The ranges below are the widest, with 3 ledger lines above and below:
@@ -282,7 +282,7 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 
 ### 15. Shareable Exercise Links
 - **⋯ menu → Exercise link** copies (or shares, on phones) a link to the current exercise ([ADR 0085](docs/adr/0085-shareable-exercise-links.md)).
-- The link's `#x=1&…` fragment carries clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels and count-in. Language, theme, sound, volume, zoom, the assists and the view stay with each user.
+- The link's `#x=1&…` fragment carries clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels and count-in. Language, theme, contrast, sound, volume, zoom, the assists and the view stay with each user.
 - Opening a link skips the intro and loads the exercise. Each student still reads **different** music under the same rules, because the generator is never seeded.
 
 ### 16. Tips & What's New
@@ -311,6 +311,7 @@ Constructed strictly following the [Aero-Guidonica Design Manifesto](docs/DESIGN
 - **Guidonian Hand Brand Mark**: The logo, favicon, iOS touch icon, Android/Chrome install icons (web app manifest, including a maskable variant) and the flat header glyph (`currentColor` hand, `--accent` thread) are all generated from one deterministic, zero-dependency vector model by `scripts/build-icons.mjs` ([ADRs 0046–0048](docs/adr/0048-brand-mark-rollout-manifest-and-readme-logo.md)).
 - **Handcrafted Vector Music Icons**: Custom inlined SVG glyphs for quarter, eighth, half, whole, sixteenth, thirty-second, dotted, rest, tie, and playhead icons.
 - **Theme**: **Auto** (follows the operating system's `prefers-color-scheme`), **Light** or **Dark**, in Settings → Display. The Theme item of the ⋯ menu cycles through the three.
+- **Contrast**: **Auto** (follows the system's Increase contrast setting or Windows contrast themes), **Standard** or **High**, in Settings → Display. High draws black or white notation on thicker staff lines and turns the glass into opaque panels with bold borders, in light and dark ([ADR 0113](docs/adr/0113-high-contrast.md)).
 
 ---
 
@@ -550,6 +551,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0110](docs/adr/0110-page-view.md) | Page View: Multi-Line Staves with Vertical Scrolling | Accepted |
 | [0111](docs/adr/0111-notation-rule-seams.md) | Notation Rule Seams | Accepted |
 | [0112](docs/adr/0112-labels-after-playing.md) | Labels After Playing | Accepted |
+| [0113](docs/adr/0113-high-contrast.md) | High Contrast | Accepted |
 
 ---
 

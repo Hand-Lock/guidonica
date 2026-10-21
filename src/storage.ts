@@ -1,6 +1,7 @@
 import {
   AppSettings,
   CLEFS,
+  CONTRAST_MODES,
   Clef,
   DEFAULT_APP_SETTINGS,
   DRONE_NOTES,
@@ -182,6 +183,7 @@ export function loadStoredSettings(): AppSettings {
       meterSigns: pickBool(parsed.meterSigns, d.meterSigns),
       countIn: pickBool(parsed.countIn, d.countIn),
       theme,
+      contrast: pickEnum(parsed.contrast, CONTRAST_MODES, d.contrast),
       volume: pickNumber(parsed.volume, 0, 1, d.volume),
       isMuted: pickBool(parsed.isMuted, d.isMuted),
       droneNote: pickEnum<DroneNote>(parsed.droneNote, DRONE_NOTES, d.droneNote),
