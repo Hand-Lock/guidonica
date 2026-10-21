@@ -181,9 +181,45 @@ export function lineFocus(systems: readonly PageSystem[], i: number, vb: number,
 }
 
 /**
+ * Steepest start slope of the line-end segment, as a multiple of its secant δ: with the end
+ * slope δ, a cubic Hermite whose start slope is at most 2√2·δ stays monotone (Fritsch–Carlson).
+ */
+const LINE_END_SLOPE_LIMIT = 2 * Math.SQRT2;
+
+/**
+ * X of `offset` beats into a line's last bar, in measure units, with the cursor's last-note
+ * segment ending at the closing barline (x = width) rather than at the end knot, where the
+ * next bar's first note would sit: the cubic Hermite on [o_L, B] from (xs[n−1], slopes[n−1])
+ * to (width, δ), δ = (width − xs[n−1]) / (B − o_L). The start slope keeps the speed C¹ at the
+ * last onset; it is clamped to 2√2·δ only for a lone bar compressed far below its width.
+ * Before the last onset it is beatX. It allocates nothing: the scroller calls it every frame.
+ */
+function lineEndX(d: MeasureData, offset: number): number {
+  const knots = d.knots;
+  const n = knots ? knots.offsets.length - 1 : 0;
+  if (knots === undefined || n < 1) return Math.min(beatX(d, offset), d.width);
+  const { offsets, xs, slopes } = knots;
+  const start = offsets[n - 1];
+  if (offset <= start) return beatX(d, offset);
+  const x0 = xs[n - 1];
+  const x1 = d.width;
+  if (x1 <= x0) return x0;
+  const h = offsets[n] - start;
+  const t = (offset - start) / h;
+  if (t >= 1) return x1;
+  const delta = (x1 - x0) / h;
+  const m0 = Math.min(slopes[n - 1], LINE_END_SLOPE_LIMIT * delta);
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return (2 * t3 - 3 * t2 + 1) * x0 + (t3 - 2 * t2 + t) * h * m0 + (3 * t2 - 2 * t3) * x1 + (t3 - t2) * h * delta;
+}
+
+/**
  * The cursor's x on its line, in page units: the line's left margin, its header, the
  * widths of the bars before the one playing and beatX into that bar. `bars` holds the
- * line's justified bars from position `first`.
+ * line's justified bars from position `first`. On the line's last bar the cursor's
+ * last-note segment ends at the closing barline (lineEndX), which it reaches on the next
+ * line's downbeat: there is no next note on the line to run on to.
  */
 export function cursorOffsetX(
   system: PageSystem,
@@ -192,11 +228,13 @@ export function cursorOffsetX(
   vb: number
 ): number {
   let x = PAGE_LEFT_MARGIN + system.header;
-  const last = Math.min(bars.length, first + system.count) - 1;
+  const end = first + system.count - 1;
+  const last = Math.min(bars.length - 1, end);
   for (let i = first; i <= last; i++) {
     const d = bars[i].data;
     if (i === last || vb < d.startBeat + d.beatsPerMeasure) {
-      return x + beatX(d, vb - d.startBeat);
+      const offset = vb - d.startBeat;
+      return x + (i === end ? lineEndX(d, offset) : beatX(d, offset));
     }
     x += d.width;
   }

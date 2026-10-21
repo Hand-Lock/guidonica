@@ -1,7 +1,7 @@
 # 0110. Page View: Multi-Line Staves with Vertical Scrolling
 
 - **Status**: Accepted (a third view beside ADR 0109's steady and squishy tapes)
-- **Date**: 2026-10-18 (amended the same day: reading line a third down, played lines dimmed, active-line band)
+- **Date**: 2026-10-18 (amended the same day: reading line a third down, played lines dimmed, active-line band; amended 2026-10-21: the cursor stops at a line's closing barline)
 - **Author**: Claude & A. C. Lo Cascio
 - **Relates to**: [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md), [0087](0087-rotating-tips.md), [0091](0091-jank-free-beat-and-measure-frames.md), [0103](0103-embeddable-engine-seams.md), [0104](0104-engine-entry-point.md), [0109](0109-squishy-view.md)
 
@@ -56,9 +56,11 @@ bar can be laid out again in any view. `typicalBarWidth(settings, view)` is memo
 
 ### 3. Lines: greedy breaking and justification (`scroller/page.ts`)
 
-A line's bars share `lineAvailable(W_page, header) = W_page − 16 − header − (26 + 4)` units:
+A line's bars share `lineAvailable(W_page, header) = W_page − 16 − header − 16` units:
 the page width in units ($W_{\text{viewport}}/\text{zoom}$), less the left margin, the
-clef header, and a right margin that leaves the cursor its run-out past the last note.
+clef header, and a right margin equal to the left one, as in print. Until 2026-10-21 the right
+margin was $26 + 4$, room for the cursor's run-out past the closing barline; the cursor now
+stops at the barline (§6), so nothing is left to make room for.
 
 Bars are packed greedily: a bar joins the open line while `fitsLine(used, w, available)`,
 i.e. $\text{used} + w \le \text{available}$ (the first bar always joins). A line is closed
@@ -108,6 +110,32 @@ $$x(v_b) = 16 + \text{header} + \sum_{\text{bars before}} W' + \text{beatX}(\tex
 
 times zoom. On the justified knots `beatX` is ADR 0109's monotone Hermite, so every note is
 under the cursor on its click (`tests/renderAt.test.ts`).
+
+**On a line's last bar the cursor stops at the closing barline** (amended 2026-10-21). A
+bar's end knot $x_n = 26 + W'$ is where the *next* bar's first note sits, 26 units past the
+barline at $W'$. Inside a line that is right: the cursor crosses the barline and reaches the
+next note on its click. At a line end there is no next note on the line, so the cursor ran
+past the barline into the right margin during the last note, and the played wash overshot the
+band the same way, while the eye already reads the barline crossing as the break. Past the
+last onset $o_L$ of the line's final bar, `lineEndX` replaces beatX with the cubic Hermite on
+$[o_L, B]$ from $(x_L, m_L) = (x_{n-1}, m_{n-1})$ to $(W', \delta)$:
+
+$$\delta = \frac{W' - x_L}{h},\quad h = B - o_L,\quad m_0 = \min(m_L,\ 2\sqrt2\,\delta),$$
+
+$$X(t) = h_{00}(t)\,x_L + h_{10}(t)\,h\,m_0 + h_{01}(t)\,W' + h_{11}(t)\,h\,\delta,\qquad t = \frac{o - o_L}{h}.$$
+
+So the cursor reaches the closing barline exactly on the next line's downbeat, where the turn
+is already halfway. Keeping the start slope $m_L$ makes the speed C¹ at the last onset, and the
+last note is still under the cursor on its click. With the end slope equal to the secant,
+$\beta = 1$, the Hermite is monotone when $\alpha = m_L/\delta \le 2\sqrt2$ (inside
+Fritsch–Carlson's radius-3 circle). For a last note of space $s$ after a note at least as long,
+$\alpha \le js/(js - 26)$, and the worst case over note pairs, $s$ at its least
+`PAGE_MIN_NOTE_SPACE` = 44, needs $j \ge 0.914$; lines only stretch ($j \ge 1$), so only a lone
+bar compressed below its width can reach the clamp, which keeps it monotone at a small slope
+step. When $W' \le x_L$ (a lone bar compressed far enough that its last note sits past the
+barline) the cursor holds at $x_L$. Only the line's real final bar takes this segment, not the
+last bar of a line still being rendered. A bar without knots (never on a page) caps beatX at
+$W'$. It is a pure function of the beat and allocates nothing.
 
 The scroll $Y(v_b)$ (`pageScrollY`) is the y shown at the stage top. Each line has a target
 $\mathcal{T}(y) = \max(0,\ y - A)$, where $A$ is the reading anchor below. Outside turns
@@ -252,7 +280,7 @@ barline; a lone overwide bar compressed; line starts and ties across a break; li
 the ink; the line playing at a beat; a scroll curve still between turns and C¹ across each break,
 starting at the page top; reduced-motion cuts; played-line dimming; the active-line band; the
 anchor a third down; and, in `MeasureBuffer`, the same music as the tape views, tiled justified
-lines with stacked ys, the cursor on each onset, rows rendered one bar per step, eviction above
+lines with stacked ys, the cursor on each onset, the cursor stopping at each closing barline (never past it, monotone, C¹ at the last onset, monotone on a compressed lone bar too), rows rendered one bar per step, eviction above
 the active line, re-breaking for a new width, switching to and from the tape, and reset).
 `renderAt.test.ts` (cursor and wash hidden with the playhead off, band kept), `zoom.test.ts` (two
 bars across a phone line, 100% cap on a desktop), `orientation.test.ts` (the notice's Page view

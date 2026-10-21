@@ -18,6 +18,10 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 
 - Labels after playing (Settings → Display → Assists) hides each note label until the playhead reaches the note, so you can look back and check what you sang, most useful in the page view. (ADR 0112)
 
+### Fixed
+
+- In the page view the cursor now stops at the end of the line instead of running past the closing barline before the next line. (ADR 0110)
+
 ### Internal
 
 - `guidonica/engine` exports what a setting allows: `enabledValues`, `pitchPool`, `noteSpan` and `placementOf`, so an embedder can check notes it writes against the generator's own rules (ADR 0111).

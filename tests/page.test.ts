@@ -162,6 +162,23 @@ describe('Page line breaking and justification (ADR 0110)', () => {
     expect(d.width).toBeCloseTo(bars[0].width / 2, 9);
   });
 
+  it.each([0.9, 0.5, 0.1])('keeps the cursor monotone up to the end of a lone bar compressed to %f', (j) => {
+    const [d] = closeLine([bars[0]], bars[0].width * j);
+    const line: PageSystem = { ...system(d.startBeat, 0, 0), endBeat: d.startBeat + d.beatsPerMeasure };
+    const at = (vb: number): number => cursorOffsetX(line, [{ data: d }], 0, vb);
+    const lastNote = PAGE_LEFT_MARGIN + HEADER + (d.knots?.xs[d.notes.length - 1] ?? NaN);
+    // The barline, or the last note when compressed so far that it sits past the barline
+    const end = Math.max(PAGE_LEFT_MARGIN + HEADER + d.width, lastNote);
+    let prev = -Infinity;
+    for (let vb = d.startBeat; vb <= line.endBeat; vb += 1 / 256) {
+      const x = at(vb);
+      expect(x).toBeGreaterThanOrEqual(prev - 1e-9);
+      expect(x).toBeLessThanOrEqual(end + 1e-9);
+      prev = x;
+    }
+    expect(at(line.endBeat)).toBeCloseTo(end, 9);
+  });
+
   it('marks only a line start, and takes a tie into a bar from the justified bar before it', () => {
     const [a, b] = closeLine(bars.slice(0, 2), 520);
     expect(a.lineStart).toBe(true);
@@ -381,6 +398,43 @@ describe('MeasureBuffer page view (ADR 0110)', () => {
       }
       pos += sys.count;
     }
+  });
+
+  it.each([false, true])('stops the cursor at each line closing barline, C¹ and monotone (busy %s)', (busy) => {
+    const s = settingsFor('page', busy);
+    const { buffer } = makePageBuffer(busy ? 11 : 7);
+    buffer.setPageWidth(pageWidth);
+    buffer.ensureRows(0, 6, s);
+    const bars = buffer.getMeasures();
+    let pos = 0;
+    let checked = 0;
+    for (const sys of buffer.getSystems()) {
+      if (pos + sys.count > bars.length) break;
+      let barline = PAGE_LEFT_MARGIN + sys.header;
+      for (let i = pos; i < pos + sys.count; i++) barline += bars[i].data.width;
+      const d = bars[pos + sys.count - 1].data;
+      const at = (vb: number): number => cursorOffsetX(sys, bars, pos, vb);
+      // Never past the barline, and non-decreasing, across the whole last bar
+      let prev = -Infinity;
+      for (let vb = d.startBeat; vb < sys.endBeat; vb += 1 / 256) {
+        const x = at(vb);
+        expect(x).toBeLessThanOrEqual(barline + 1e-9);
+        expect(x).toBeGreaterThanOrEqual(prev - 1e-9);
+        prev = x;
+      }
+      // It reaches the barline on the next line's downbeat
+      expect(at(sys.endBeat - 1e-9)).toBeCloseTo(barline, 5);
+      expect(at(sys.endBeat)).toBeCloseTo(barline, 9);
+      // C¹ at the last onset: the line-end segment keeps the speed the cursor arrives with
+      const onset = d.startBeat + d.notes[d.notes.length - 1].beatOffset;
+      const h = 1e-6;
+      const left = (at(onset) - at(onset - h)) / h;
+      const right = (at(onset + h) - at(onset)) / h;
+      expect(right).toBeCloseTo(left, 2);
+      checked++;
+      pos += sys.count;
+    }
+    expect(checked).toBeGreaterThan(3);
   });
 
   it('renders one bar per step under a measure limit and stops once the rows are covered', () => {
