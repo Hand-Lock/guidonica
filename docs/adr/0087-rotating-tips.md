@@ -1,6 +1,6 @@
 # 0087. Rotating Tips
 
-- **Status**: Accepted; amended by [0106](0106-keyboard-detection.md), [0109](0109-squishy-view.md), [0110](0110-page-view.md)
+- **Status**: Accepted; amended by [0106](0106-keyboard-detection.md), [0109](0109-squishy-view.md), [0110](0110-page-view.md), [0112](0112-labels-after-playing.md)
 - **Date**: 2026-10-06
 - **Author**: Claude & A. C. Lo Cascio
 - **Amends**: [0055](0055-orientation-aware-auto-zoom-and-landscape-tip.md)
@@ -43,6 +43,7 @@ Guidonica needs a way to point these out that does not interrupt practice, never
    |---|---|---|
    | `levels` | open the level intro | always |
    | `labels` | Settings → Practice | labels are off |
+   | `labelsAfter` | Settings → Display | labels are on and Labels after playing is off (ADR 0112) |
    | `keys` | none | a physical keyboard is likely (ADR 0106) |
    | `clefs` | Settings → Staff | always |
    | `notes` | Settings → Melody | all seven notes are on |

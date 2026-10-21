@@ -34,17 +34,42 @@ describe('MeasureBuffer.rerender', () => {
     const resetSpy = vi.spyOn(generator, 'resetPitch');
     renderMeasure.mockClear();
 
-    buffer.rerender({ ...settings, theme: 'dark', solfegeLabelMode: 'letters' });
+    buffer.rerender({ ...settings, theme: 'dark', solfegeLabelMode: 'letters', labelsAfterPlaying: true });
 
     expect(generateSpy).not.toHaveBeenCalled();
     expect(resetSpy).not.toHaveBeenCalled();
     expect(renderMeasure).toHaveBeenCalledTimes(before.length);
     for (const call of renderMeasure.mock.calls) {
-      expect((call as unknown[]).slice(1)).toEqual(['dark', en.noteNames.letters]);
+      expect((call as unknown[]).slice(1)).toEqual(['dark', en.noteNames.letters, true]);
     }
     // Same MeasureData objects: the music under the playhead is unchanged
     expect(buffer.getMeasures().map((m) => m.data)).toEqual(before);
     buffer.getMeasures().forEach((m, i) => expect(m.data).toBe(before[i]));
+  });
+});
+
+describe('MeasureBuffer label layers (ADR 0112)', () => {
+  it('releases a bar\'s label canvas with its note canvas on eviction', () => {
+    const layers: HTMLCanvasElement[] = [];
+    const renderMeasure = vi.fn((data: MeasureData): RenderedMeasure => {
+      const layer = document.createElement('canvas');
+      layer.width = 40;
+      layer.height = 20;
+      layers.push(layer);
+      return { data, canvas: document.createElement('canvas'), width: data.width, height: 1, labelLayer: { canvas: layer, labels: [] } };
+    });
+    const buffer = new MeasureBuffer(new MusicGenerator(), { renderMeasure } as unknown as MeasureRenderer, noteLabels);
+    const settings: AppSettings = { ...structuredClone(DEFAULT_APP_SETTINGS), solfegeLabelMode: 'syllables', labelsAfterPlaying: true };
+    const beats = getBeatsPerMeasure(settings.timeSignature);
+    buffer.ensureAhead(0, 3 * beats, settings);
+    expect((renderMeasure.mock.calls[0] as unknown[])[3]).toBe(true);
+    const first = layers[0];
+    buffer.evictBefore(beats + 0.5);
+    expect(first.width).toBe(0);
+    expect(first.height).toBe(0);
+    expect(layers[1].width).toBe(40);
+    buffer.reset();
+    for (const layer of layers) expect(layer.width).toBe(0);
   });
 });
 

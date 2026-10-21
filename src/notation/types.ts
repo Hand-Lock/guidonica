@@ -632,6 +632,7 @@ export interface AppSettings {
   zoomMode: ZoomMode;
   view: ViewMode; // Staff layout: tape spacing or page lines (ADR 0109, 0110)
   showPlayhead: boolean; // default true: stationary red playhead cursor line
+  labelsAfterPlaying: boolean; // Each note label stays hidden until its onset is played (ADR 0112)
   showTips: boolean; // default true: one rotating tip per visit (ADR 0087)
 }
 
@@ -687,6 +688,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   zoomMode: 'auto',
   view: 'steady',
   showPlayhead: true,
+  labelsAfterPlaying: false,
   showTips: true,
 };
 
@@ -751,6 +753,23 @@ export interface InkExtent {
   bottom: number;
 }
 
+/** One label's box on a label layer, in measure units; `beat` is its note's beatOffset (ADR 0112). */
+export interface LabelBox {
+  beat: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** A bar's note labels on their own canvas, revealed as each note is played (ADR 0112). */
+export interface LabelLayer {
+  /** Same size and transform as the note canvas. */
+  canvas: HTMLCanvasElement;
+  /** In note order, so the beats ascend. */
+  labels: readonly LabelBox[];
+}
+
 export interface RenderedMeasure {
   data: MeasureData;
   canvas: HTMLCanvasElement;
@@ -758,6 +777,8 @@ export interface RenderedMeasure {
   height: number;
   /** The bar's ink, staff included; the page view spaces its lines by it (ADR 0110). */
   ink?: InkExtent;
+  /** Labels after playing only: the labels, kept off the note canvas (ADR 0112). */
+  labelLayer?: LabelLayer;
 }
 
 /** A measure drawn as detached SVG: viewBox in measure units, width/height in CSS px (ADR 0103). */

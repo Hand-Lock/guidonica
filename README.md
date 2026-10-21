@@ -173,7 +173,7 @@ The staff fills the screen. Start, tempo, the beat lights and mute sit in a dock
 | **Rhythm** | Note values (quarter, eighth, half, whole, 16th, 32nd), dotted, tuplets, rests, ties |
 | **Melody** | Notes (C … B), intervals (unison … 9+) |
 | **Sound** | Click sound with count-in, volume, drone (note, sound, tuning, volume) |
-| **Display** | Language, note names, view (steady, squishy, page), assists (playhead, tips), theme |
+| **Display** | Language, note names, view (steady, squishy, page), assists (playhead, labels after playing, tips), theme |
 
 ### 3. Complete Setticlavio Clef System (8 Clefs)
 Guidonica supports the full historic **Setticlavio** (seven clefs) traditional vocal and instrumental clef system, featuring both historical positions of the baritone clef. The ranges below are the widest, with 3 ledger lines above and below:
@@ -232,6 +232,8 @@ Labels are **None**, **Syllables** or **Letters**, spelled by the interface lang
 
 Each label is anchored to its notehead, 15 px away on the side opposite the stem, so it clears ledger lines, beams and tuplet numbers ([ADR 0041](docs/adr/0041-solfege-labels-notehead-anchored.md)).
 
+**Labels after playing** (Display → Assists) hides each label until the playhead or the page cursor reaches its note: sing from the notes alone, then look back and check. The labels are rasterized once on a layer of their own and revealed by blits, so frames stay blits only ([ADR 0112](docs/adr/0112-labels-after-playing.md)).
+
 ### 8. Tempo & Italian Markings
 - **30–240 BPM**, set by slider, number input or the arrow keys.
 - The classical Italian marking updates live: Grave, Largo, Larghetto, Adagio, Andante, Moderato, Allegro, Vivace, Presto, Prestissimo. Like "BPM", it stays untranslated.
@@ -280,7 +282,7 @@ Each label is anchored to its notehead, 15 px away on the side opposite the stem
 
 ### 15. Shareable Exercise Links
 - **⋯ menu → Exercise link** copies (or shares, on phones) a link to the current exercise ([ADR 0085](docs/adr/0085-shareable-exercise-links.md)).
-- The link's `#x=1&…` fragment carries clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels and count-in. Language, theme, sound, volume, zoom, the playhead and the view stay with each user.
+- The link's `#x=1&…` fragment carries clef, ledger lines, time signature, pulse, tempo, note values, dotted, tuplets, rests, ties, intervals, notes, labels and count-in. Language, theme, sound, volume, zoom, the assists and the view stay with each user.
 - Opening a link skips the intro and loads the exercise. Each student still reads **different** music under the same rules, because the generator is never seeded.
 
 ### 16. Tips & What's New
@@ -522,7 +524,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0084](docs/adr/0084-instagram-link.md) | Instagram Link | Accepted; amended by 0101, 0102 |
 | [0085](docs/adr/0085-shareable-exercise-links.md) | Shareable Exercise Links | Accepted |
 | [0086](docs/adr/0086-language-landing-pages.md) | Language Landing Pages | Accepted |
-| [0087](docs/adr/0087-rotating-tips.md) | Rotating Tips | Accepted; amended by 0106, 0109, 0110 |
+| [0087](docs/adr/0087-rotating-tips.md) | Rotating Tips | Accepted; amended by 0106, 0109, 0110, 0112 |
 | [0088](docs/adr/0088-pre-release-audit-2026-10-06.md) | Pre-release Audit 2026-10-06: Second History Rewrite, Privacy Policy | Accepted |
 | [0089](docs/adr/0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted; followed by 0091, 0098 |
 | [0090](docs/adr/0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted; amended by 0093 |
@@ -547,6 +549,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0109](docs/adr/0109-squishy-view.md) | Squishy View: Engraved Note Spacing & Continuous Scroll Speed | Accepted |
 | [0110](docs/adr/0110-page-view.md) | Page View: Multi-Line Staves with Vertical Scrolling | Accepted |
 | [0111](docs/adr/0111-notation-rule-seams.md) | Notation Rule Seams | Accepted |
+| [0112](docs/adr/0112-labels-after-playing.md) | Labels After Playing | Accepted |
 
 ---
 

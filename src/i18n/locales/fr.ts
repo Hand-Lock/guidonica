@@ -150,6 +150,9 @@ const fr: Messages = {
   countIn: 'Décompte',
   playhead: 'Tête de lecture',
   playheadTitle: `Afficher ou masquer la tête de lecture rouge fixe (raccourci${NB}: P)`,
+  labelsAfter: 'Noms après lecture',
+  labelsAfterTitle: "Masque le nom de chaque note jusqu'à ce que la tête de lecture l'atteigne, puis regardez en arrière pour vérifier ce que vous avez chanté",
+  labelsAfterDormant: "Choisissez d'abord Syllabes ou Lettres dans Noms des notes",
   tipsToggle: 'Astuces',
   tipsTitle: 'Une courte astuce sur Guidonica à chaque ouverture',
   click: 'Clic',
@@ -218,6 +221,7 @@ const fr: Messages = {
   tips: {
     levels: { title: 'Niveaux prédéfinis', body: "Le bouton de niveau dans l'en-tête règle d'un clic les notes, les rythmes, les intervalles et le tempo, de Débutant à Virtuose." },
     labels: { title: 'Noms des notes', body: 'Affichez les syllabes ou les lettres sous les notes dans Réglages → Affichage → Noms des notes.' },
+    labelsAfter: { title: 'Vérifiez ce que vous avez chanté', body: `Activez Noms après lecture dans Réglages → Affichage → Aides${NB}: le nom de chaque note apparaît quand vous l'atteignez, pour regarder en arrière et vérifier. Idéal dans la vue Page.` },
     keys: { title: 'Raccourcis clavier', body: 'Espace lance et met en pause, R réinitialise, P masque la tête de lecture, ↑ et ↓ changent le tempo, + et − règlent le zoom, D allume et éteint le bourdon. Appuyez sur ? pour tous les voir.' },
     pinch: { title: 'Zoom à deux doigts', body: 'Pincez la portée avec deux doigts pour zoomer. Touchez le pourcentage pour revenir au zoom automatique.' },
     views: { title: 'Balayez pour changer de vue', body: 'Balayez la portée de côté pour changer de vue. En Élastique, les notes sont espacées comme une partition imprimée, pour voir plus de portée. Page dispose la musique en lignes, pour lire en portrait.' },

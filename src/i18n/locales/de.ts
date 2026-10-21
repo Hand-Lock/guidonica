@@ -148,6 +148,9 @@ const de: Messages = {
   countIn: 'Einzähler',
   playhead: 'Abspielposition',
   playheadTitle: 'Rote feste Abspielposition ein- oder ausblenden (Kürzel: P)',
+  labelsAfter: 'Namen nach dem Spielen',
+  labelsAfterTitle: 'Blendet den Namen jeder Note aus, bis die Abspielposition sie erreicht; dann schau zurück und prüfe, was du gesungen hast',
+  labelsAfterDormant: 'Wähle zuerst Silben oder Buchstaben unter Notennamen',
   tipsToggle: 'Tipps',
   tipsTitle: 'Bei jedem Öffnen ein kurzer Tipp zu Guidonica',
   click: 'Klick',
@@ -216,6 +219,7 @@ const de: Messages = {
   tips: {
     levels: { title: 'Niveau-Vorgaben', body: 'Die Niveau-Schaltfläche in der Kopfzeile stellt Töne, Rhythmen, Intervalle und Tempo mit einem Klick ein, von Anfänger bis Virtuose.' },
     labels: { title: 'Notennamen', body: 'Zeige Silben oder Buchstaben unter den Noten: Einstellungen → Anzeige → Notennamen.' },
+    labelsAfter: { title: 'Prüfe, was du gesungen hast', body: 'Schalte Namen nach dem Spielen unter Einstellungen → Anzeige → Hilfen ein: Der Name jeder Note erscheint, sobald du sie erreichst, so kannst du zurückschauen und prüfen. Am besten in der Ansicht Seite.' },
     keys: { title: 'Tastenkürzel', body: 'Leertaste startet und pausiert, R setzt zurück, P blendet die Abspielposition aus, ↑ und ↓ ändern das Tempo, + und − zoomen, D schaltet den Bordun ein und aus. Mit ? siehst du alle.' },
     pinch: { title: 'Zoomen mit zwei Fingern', body: 'Ziehe das Notensystem mit zwei Fingern auf oder zu. Tippe auf die Prozentzahl, um zum Auto-Zoom zurückzukehren.' },
     views: { title: 'Wischen für eine andere Ansicht', body: 'Wische seitlich über das Notensystem, um die Ansicht zu wechseln. Elastisch setzt die Noten wie gedruckte Noten, so passt mehr vom Notensystem auf den Bildschirm. Seite setzt die Musik in Zeilen, zum Lesen im Hochformat.' },

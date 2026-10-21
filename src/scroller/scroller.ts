@@ -438,7 +438,7 @@ export class ScrollerView {
         x -= measures[first].data.width * zoom;
       }
       for (let i = first; i < measures.length && x <= w; i++) {
-        this.blit(ctx, measures[i], x);
+        this.blit(ctx, measures[i], x, visualBeat);
         x += measures[i].data.width * zoom;
       }
     }
@@ -457,9 +457,37 @@ export class ScrollerView {
   }
 
   /** Draws one measure's cached canvas with its left barline at screen x, if it is on the stage. */
-  private blit(ctx: CanvasRenderingContext2D, m: RenderedMeasure, x: number): void {
+  private blit(ctx: CanvasRenderingContext2D, m: RenderedMeasure, x: number, vb: number): void {
     if (x + m.width < 0 || x > this.viewportWidth) return;
     ctx.drawImage(m.canvas, 0, 0, m.canvas.width, m.canvas.height, x, this.measureDrawY, m.width, m.height);
+    this.blitLabels(ctx, m, x, this.measureDrawY, vb);
+  }
+
+  /**
+   * Labels after playing (ADR 0112): copies the labels whose notes began before `vb` from the
+   * bar's label layer, the bar's canvas top-left at screen (x, y). A fully played bar is one
+   * blit, a partly played one a sub-rect per revealed label; nothing is allocated. The
+   * comparison is strict, so a label never shows at its note's onset beat during a count-in.
+   */
+  private blitLabels(ctx: CanvasRenderingContext2D, m: RenderedMeasure, x: number, y: number, vb: number): void {
+    const layer = m.labelLayer;
+    if (!layer) return;
+    const labels = layer.labels;
+    const played = vb - m.data.startBeat;
+    let n = 0;
+    while (n < labels.length && labels[n].beat < played) n++;
+    if (n === 0) return;
+    const canvas = layer.canvas;
+    if (n === labels.length) {
+      ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, x, y, m.width, m.height);
+      return;
+    }
+    const src = canvas.width / m.data.width;
+    const dst = m.width / m.data.width;
+    for (let i = 0; i < n; i++) {
+      const b = labels[i];
+      ctx.drawImage(canvas, b.x * src, b.y * src, b.w * src, b.h * src, x + b.x * dst, y + b.y * dst, b.w * dst, b.h * dst);
+    }
   }
 
   private drawStaffLines(
@@ -571,7 +599,7 @@ export class ScrollerView {
       if (i === active) activePos = pos;
       if (top + MEASURE_CANVAS_HEIGHT * zoom >= 0) {
         const focus = lineFocus(systems, i, vb, this.reducedMotion);
-        this.drawSystem(ctx, system, measures, pos, top, settings, theme, palette, lineAlpha(systems, i, vb), focus);
+        this.drawSystem(ctx, system, measures, pos, top, settings, theme, palette, lineAlpha(systems, i, vb), focus, vb);
       }
       pos += system.count;
     }
@@ -598,7 +626,8 @@ export class ScrollerView {
 
   /**
    * One page line at screen y `top` (its canvases' top): the active-line band at weight
-   * `focus`, then at opacity `alpha` its staff, header, bars and closing barline.
+   * `focus`, then at opacity `alpha` its staff, header, bars, the labels played by `vb` and
+   * the closing barline.
    */
   private drawSystem(
     ctx: CanvasRenderingContext2D,
@@ -610,7 +639,8 @@ export class ScrollerView {
     theme: ResolvedTheme,
     palette: CanvasPalette,
     alpha: number,
-    focus: number
+    focus: number,
+    vb: number
   ): void {
     const zoom = this.zoom;
     const left = PAGE_LEFT_MARGIN * zoom;
@@ -648,6 +678,7 @@ export class ScrollerView {
     for (let i = first; i < last; i++) {
       const m = measures[i];
       ctx.drawImage(m.canvas, 0, 0, m.canvas.width, m.canvas.height, x, top, m.width, m.height);
+      this.blitLabels(ctx, m, x, top, vb);
       x += m.width;
     }
 

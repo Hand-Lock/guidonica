@@ -92,9 +92,24 @@ function trackingContext(canvas: HTMLCanvasElement, onText: (text: string, x: nu
   }) as unknown as CanvasRenderingContext2D & { current: Matrix };
 }
 
+/** A 4/4 bar of eighth notes on the given keys. */
+function eighths(keys: readonly string[]): MeasureData {
+  return {
+    index: 0,
+    notes: keys.map((k, i) => ({ keys: [k], duration: '8', isRest: false, beatOffset: i * 0.5, beatDuration: 0.5 })),
+    clef: 'treble',
+    timeSignature: '4/4',
+    beatsPerMeasure: 4,
+    beatValue: 4,
+    beatWidth: 110,
+    width: 440,
+    startBeat: 0,
+  };
+}
+
 describe('Solfège labels at devicePixelRatio 2 (drift regression)', () => {
   const originalGetContext = HTMLCanvasElement.prototype.getContext;
-  const labels: Array<{ text: string; deviceX: number; deviceY: number }> = [];
+  const labels: Array<{ text: string; deviceX: number; deviceY: number; canvas: HTMLCanvasElement }> = [];
   const heads: Array<{ deviceCenterX: number; deviceY: number }> = [];
 
   beforeEach(() => {
@@ -106,9 +121,10 @@ describe('Solfège labels at devicePixelRatio 2 (drift regression)', () => {
       if (contextId !== '2d') return null;
       let ctx = contexts.get(this);
       if (!ctx) {
+        const canvas = this;
         ctx = trackingContext(this, (text, x, y, mat) => {
           if (/^[A-Za-z]+$/.test(text)) {
-            labels.push({ text, deviceX: mat[0] * x + mat[2] * y + mat[4], deviceY: mat[1] * x + mat[3] * y + mat[5] });
+            labels.push({ text, deviceX: mat[0] * x + mat[2] * y + mat[4], deviceY: mat[1] * x + mat[3] * y + mat[5], canvas });
           }
         });
         contexts.set(this, ctx);
@@ -140,17 +156,7 @@ describe('Solfège labels at devicePixelRatio 2 (drift regression)', () => {
     const renderer = new MeasureRenderer();
     renderer.setDpr(2);
     const keys = ['c/4', 'e/4', 'g/4', 'b/4', 'd/5', 'f/5', 'a/5', 'c/6'];
-    const data: MeasureData = {
-      index: 0,
-      notes: keys.map((k, i) => ({ keys: [k], duration: '8', isRest: false, beatOffset: i * 0.5, beatDuration: 0.5 })),
-      clef: 'treble',
-      timeSignature: '4/4',
-      beatsPerMeasure: 4,
-      beatValue: 4,
-      beatWidth: 110,
-      width: 440,
-      startBeat: 0,
-    };
+    const data = eighths(keys);
     renderer.renderMeasure(data, 'light', en.noteNames.letters);
 
     expect(labels.map((l) => l.text)).toEqual(['C', 'E', 'G', 'B', 'D', 'F', 'A', 'C']);
@@ -162,5 +168,36 @@ describe('Solfège labels at devicePixelRatio 2 (drift regression)', () => {
       expect(labels[i].deviceX).toBeCloseTo(heads[i].deviceCenterX, 6);
       expect(Math.abs(labels[i].deviceY - heads[i].deviceY)).toBeGreaterThanOrEqual(SOLFEGE_LABEL_OFFSET * scale - 1e-6);
     }
+  });
+  it('puts the labels on a separate layer with ascending beats and the same ink (ADR 0112)', () => {
+    const renderer = new MeasureRenderer();
+    renderer.setDpr(2);
+    const keys = ['c/4', 'e/4', 'g/4', 'b/4', 'd/5', 'f/5', 'a/5', 'c/6'];
+    const always = renderer.renderMeasure(eighths(keys), 'light', en.noteNames.letters);
+    expect(always.labelLayer).toBeUndefined();
+    const alwaysLabels = labels.map(({ deviceX, deviceY }) => ({ deviceX, deviceY }));
+    labels.length = 0;
+
+    const after = renderer.renderMeasure(eighths(keys), 'light', en.noteNames.letters, true);
+    const layer = after.labelLayer;
+    expect(layer).toBeDefined();
+    if (!layer) return;
+    expect(labels.filter((l) => l.canvas === after.canvas)).toHaveLength(0);
+    expect(labels.filter((l) => l.canvas === layer.canvas)).toHaveLength(keys.length);
+    // Same transform as the notes, so each label lands exactly where it would on the note canvas
+    expect(labels.map(({ deviceX, deviceY }) => ({ deviceX, deviceY }))).toEqual(alwaysLabels);
+    expect(layer.canvas.width).toBe(after.canvas.width);
+    expect(layer.canvas.height).toBe(after.canvas.height);
+    expect(layer.labels.map((b) => b.beat)).toEqual(keys.map((_, i) => i * 0.5));
+    for (let i = 0; i < keys.length; i++) {
+      const box = layer.labels[i];
+      // measureText's stub width 10, plus 1 unit each side; 15 units tall, centred on the label
+      expect(box.w).toBeCloseTo(12, 6);
+      expect(box.h).toBeCloseTo(15, 6);
+      expect(box.x + box.w / 2).toBeCloseTo(labels[i].deviceX / 2, 6);
+      expect(box.y + box.h / 2).toBeCloseTo(labels[i].deviceY / 2, 6);
+    }
+    // Hidden labels still count in the ink, so the page's lines never move on a toggle
+    expect(after.ink).toEqual(always.ink);
   });
 });

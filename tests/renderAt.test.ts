@@ -74,11 +74,23 @@ function makeStage(
 
   const dprs: number[] = [];
   const renderer = {
-    renderMeasure: (data: MeasureData): RenderedMeasure => {
+    renderMeasure: (data: MeasureData, _theme: unknown, _labels: unknown, labelsAfterPlaying = false): RenderedMeasure => {
       const measureCanvas = document.createElement('canvas');
       labels.set(measureCanvas, `m${data.index}@${data.startBeat}:${JSON.stringify(data.notes)}`);
       // CSS width at the zoom, as the real renderer returns it
-      return { data, canvas: measureCanvas, width: data.width * (settings.zoom || 1), height: 1 };
+      const rendered: RenderedMeasure = { data, canvas: measureCanvas, width: data.width * (settings.zoom || 1), height: 1 };
+      if (labelsAfterPlaying) {
+        // A label per articulated note, 2 canvas pixels per measure unit (ADR 0112)
+        const layer = document.createElement('canvas');
+        layer.width = data.width * 2;
+        layer.height = 440;
+        labels.set(layer, `l${data.index}`);
+        const boxes = data.notes
+          .filter((n) => !n.isRest && !n.tieEnd)
+          .map((n, i) => ({ beat: n.beatOffset, x: 30 + 20 * i, y: 140, w: 12, h: 15 }));
+        rendered.labelLayer = { canvas: layer, labels: boxes };
+      }
+      return rendered;
     },
     setDpr: (dpr: number) => {
       dprs.push(dpr);
@@ -332,6 +344,62 @@ describe('Drawing a frame at an explicit beat (ADR 0103 seam 2)', () => {
     calls.length = 0;
     scroller.renderAt(second.startBeat);
     expect(bands().length).toBe(2);
+    scroller.destroy();
+  });
+
+  it.each(['steady', 'page'] as const)('reveals each label as its note is played (%s view, ADR 0112)', (view) => {
+    const settings: AppSettings = { ...structuredClone(DEFAULT_APP_SETTINGS), view, labelsAfterPlaying: true, solfegeLabelMode: 'syllables' };
+    settings.subdivisions.sixteenth = true;
+    const { scroller, buffer, calls } = makeStage(settings, throwingMetronome, 29);
+    const z = scroller.getZoom();
+    scroller.renderAt(0);
+    const bar = buffer.getMeasures().find((m) => (m.labelLayer?.labels.length ?? 0) >= 3);
+    expect(bar).toBeDefined();
+    if (!bar?.labelLayer) return;
+    const d = bar.data;
+    const boxes = bar.labelLayer.labels;
+    const layerBlits = (): Call[] => calls.filter((c) => c[0] === 'drawImage' && c[1] === `l${d.index}`);
+    const barX = (): number => (calls.find((c) => c[0] === 'drawImage' && String(c[1]).startsWith(`m${d.index}@`))?.[6] as number);
+    const barY = (): number => (calls.find((c) => c[0] === 'drawImage' && String(c[1]).startsWith(`m${d.index}@`))?.[7] as number);
+
+    // At the first note's onset, nothing yet: the comparison is strict
+    calls.length = 0;
+    scroller.renderAt(d.startBeat + boxes[0].beat);
+    expect(layerBlits()).toEqual([]);
+
+    // Just after it, one sub-rect blit on the same map as the whole-layer blit: the source
+    // at the canvas's own pixels per unit (its width is whole pixels), the destination at zoom
+    calls.length = 0;
+    scroller.renderAt(d.startBeat + boxes[0].beat + 1e-3);
+    const one = layerBlits();
+    expect(one.length).toBe(1);
+    const b = boxes[0];
+    const [, , sx, sy, sw, sh, dx, dy, dw, dh] = one[0] as [string, string, ...number[]];
+    const px = bar.labelLayer.canvas.width / d.width;
+    expect(px).toBeCloseTo(2, 1);
+    expect(sx).toBeCloseTo(b.x * px, 9);
+    expect(sy).toBeCloseTo(b.y * px, 9);
+    expect(sw).toBeCloseTo(b.w * px, 9);
+    expect(sh).toBeCloseTo(b.h * px, 9);
+    expect(dx).toBeCloseTo(barX() + b.x * z, 9);
+    expect(dy).toBeCloseTo(barY() + b.y * z, 9);
+    expect(dw).toBeCloseTo(b.w * z, 9);
+    expect(dh).toBeCloseTo(b.h * z, 9);
+
+    // Past the second onset, two sub-rects while later labels stay hidden
+    calls.length = 0;
+    scroller.renderAt(d.startBeat + boxes[1].beat + 1e-3);
+    expect(layerBlits().length).toBe(2);
+
+    // Once the whole bar is played, the whole layer in one blit, over the note canvas
+    calls.length = 0;
+    const end = d.startBeat + d.beatsPerMeasure;
+    scroller.renderAt(end + 1e-3);
+    const whole = layerBlits();
+    expect(whole.length).toBe(1);
+    expect(whole[0].slice(2, 6)).toEqual([0, 0, bar.labelLayer.canvas.width, 440]);
+    expect(whole[0][6]).toBeCloseTo(barX(), 9);
+    expect(whole[0][8]).toBeCloseTo(bar.width, 9);
     scroller.destroy();
   });
 

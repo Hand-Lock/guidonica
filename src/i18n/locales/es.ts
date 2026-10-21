@@ -148,6 +148,9 @@ const es: Messages = {
   countIn: 'Cuenta previa',
   playhead: 'Cabezal',
   playheadTitle: 'Mostrar u ocultar el cabezal rojo fijo (atajo: P)',
+  labelsAfter: 'Nombres tras tocar',
+  labelsAfterTitle: 'Oculta el nombre de cada nota hasta que el cabezal la alcanza; luego mira atrás para comprobar lo que cantaste',
+  labelsAfterDormant: 'Elige antes Sílabas o Letras en Nombres de notas',
   tipsToggle: 'Consejos',
   tipsTitle: 'Un breve consejo sobre Guidonica cada vez que la abres',
   click: 'Clic',
@@ -216,6 +219,7 @@ const es: Messages = {
   tips: {
     levels: { title: 'Niveles predefinidos', body: 'El botón de nivel de la cabecera ajusta con un clic las notas, los ritmos, los intervalos y el tempo, de Principiante a Virtuoso.' },
     labels: { title: 'Nombres de notas', body: 'Muestra sílabas o letras bajo las notas en Ajustes → Vista → Nombres de notas.' },
+    labelsAfter: { title: 'Comprueba lo que cantaste', body: 'Activa Nombres tras tocar en Ajustes → Vista → Ayudas: el nombre de cada nota aparece al alcanzarla, para mirar atrás y comprobar. Mejor en la vista Página.' },
     keys: { title: 'Atajos de teclado', body: 'Espacio inicia y pausa, R reinicia, P oculta el cabezal, ↑ y ↓ cambian el tempo, + y − ajustan el zoom, D enciende y apaga el bordón. Pulsa ? para verlos todos.' },
     pinch: { title: 'Zoom con dos dedos', body: 'Pellizca el pentagrama con dos dedos para hacer zoom. Toca el porcentaje para volver al zoom automático.' },
     views: { title: 'Desliza para cambiar de vista', body: 'Desliza el pentagrama de lado para cambiar de vista. En Elástica las notas se espacian como en una partitura impresa, así cabe más pentagrama. Página dispone la música en líneas, para leer en vertical.' },

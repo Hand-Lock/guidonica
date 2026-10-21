@@ -148,6 +148,9 @@ const it: Messages = {
   countIn: 'Preconteggio',
   playhead: 'Testina',
   playheadTitle: 'Mostra o nascondi la testina rossa fissa (scorciatoia: P)',
+  labelsAfter: 'Nomi dopo la lettura',
+  labelsAfterTitle: 'Nasconde il nome di ogni nota finché la testina non la raggiunge, poi guarda indietro per controllare cosa hai cantato',
+  labelsAfterDormant: 'Scegli prima Sillabe o Lettere in Nomi delle note',
   tipsToggle: 'Suggerimenti',
   tipsTitle: 'Un breve suggerimento su Guidonica ogni volta che la apri',
   click: 'Clic',
@@ -216,6 +219,7 @@ const it: Messages = {
   tips: {
     levels: { title: 'Livelli predefiniti', body: "Il pulsante del livello nell'intestazione imposta con un clic note, ritmi, intervalli e tempo, da Principiante a Virtuoso." },
     labels: { title: 'Nomi delle note', body: 'Mostra sillabe o lettere sotto le note in Impostazioni → Aspetto → Nomi delle note.' },
+    labelsAfter: { title: 'Controlla cosa hai cantato', body: 'Attiva Nomi dopo la lettura in Impostazioni → Aspetto → Aiuti: il nome di ogni nota compare quando la raggiungi, così puoi guardare indietro e controllare. Rende al meglio nella vista Pagina.' },
     keys: { title: 'Scorciatoie da tastiera', body: 'Spazio avvia e mette in pausa, R azzera, P nasconde la testina, ↑ e ↓ cambiano il tempo, + e − regolano lo zoom, D accende e spegne il bordone. Premi ? per vederle tutte.' },
     pinch: { title: 'Zoom con due dita', body: 'Allarga o stringi il pentagramma con due dita. Tocca la percentuale per tornare allo zoom automatico.' },
     views: { title: 'Scorri per cambiare vista', body: 'Scorri il pentagramma di lato per cambiare vista. Elastica spazia le note come uno spartito stampato, così entra più pentagramma. Pagina dispone la musica su più righe, per leggere in verticale.' },

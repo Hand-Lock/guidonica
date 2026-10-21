@@ -10,6 +10,7 @@ export type SettingsSection = 'staff' | 'rhythm' | 'melody' | 'sound' | 'display
 export type TipId =
   | 'levels'
   | 'labels'
+  | 'labelsAfter'
   | 'keys'
   | 'pinch'
   | 'views'
@@ -61,6 +62,12 @@ export const FEATURE_TIPS: readonly Tip[] = [
     id: 'labels',
     action: { kind: 'settings', section: 'display' },
     when: (c) => c.settings.solfegeLabelMode === 'none',
+  },
+  // Only once labels are on: the option hides them until each note is played (ADR 0112)
+  {
+    id: 'labelsAfter',
+    action: { kind: 'settings', section: 'display' },
+    when: (c) => c.settings.solfegeLabelMode !== 'none' && !c.settings.labelsAfterPlaying,
   },
   { id: 'keys', when: (c) => c.keyboard },
   { id: 'clefs', action: { kind: 'settings', section: 'staff' } },

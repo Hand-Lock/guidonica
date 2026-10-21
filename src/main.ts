@@ -221,6 +221,7 @@ class GuidonicaApp {
   private toggleRests: HTMLInputElement;
   private toggleCountIn: HTMLInputElement;
   private togglePlayhead: HTMLInputElement;
+  private toggleLabelsAfter: HTMLInputElement;
   private toggleTips: HTMLInputElement;
   private tipNotice: HTMLElement | null;
   /** The tip on screen this visit (ADR 0087); null once hidden. */
@@ -359,6 +360,7 @@ class GuidonicaApp {
     this.toggleTies = document.getElementById('toggle-ties') as HTMLInputElement;
     this.toggleCountIn = document.getElementById('toggle-count-in') as HTMLInputElement;
     this.togglePlayhead = document.getElementById('toggle-playhead') as HTMLInputElement;
+    this.toggleLabelsAfter = document.getElementById('toggle-labels-after') as HTMLInputElement;
     this.toggleTips = document.getElementById('toggle-tips') as HTMLInputElement;
     this.tipNotice = document.getElementById('tip-notice');
     this.selectSolfegeMode = document.getElementById('select-solfege-mode') as HTMLSelectElement;
@@ -550,6 +552,8 @@ class GuidonicaApp {
     this.toggleTies.checked = settings.ties;
     this.toggleCountIn.checked = settings.countIn;
     this.togglePlayhead.checked = settings.showPlayhead !== false;
+    this.toggleLabelsAfter.checked = settings.labelsAfterPlaying;
+    this.updateLabelsAfterAvailability();
     this.toggleTips.checked = settings.showTips;
 
     // Sound & Display overlays
@@ -922,6 +926,13 @@ class GuidonicaApp {
       const mode = (e.target as HTMLSelectElement).value as SolfegeLabelMode;
       globalState.updateSettings({ solfegeLabelMode: mode });
       this.updatePitchClassLabels();
+      this.updateLabelsAfterAvailability();
+      this.rerenderBuffer();
+    });
+
+    // Labels after playing (ADR 0112)
+    this.toggleLabelsAfter.addEventListener('change', () => {
+      globalState.updateSettings({ labelsAfterPlaying: this.toggleLabelsAfter.checked });
       this.rerenderBuffer();
     });
 
@@ -1766,6 +1777,7 @@ class GuidonicaApp {
     this.applyTupletAvailability(settings.timeSignature);
     this.updateClefRangeHint();
     this.updatePitchClassLabels();
+    this.updateLabelsAfterAvailability();
     this.translateIntro();
     this.updateVersionInfo();
     this.renderTip();
@@ -2408,6 +2420,16 @@ class GuidonicaApp {
       const hz = Number(option.value) as ReferencePitch;
       option.textContent = `${a} = ${hz} Hz` + (era[hz] ? ` (${era[hz]})` : '');
     }
+  }
+
+  /** Dims Labels after playing while Labels is None; it stays clickable (ADR 0112). */
+  private updateLabelsAfterAvailability(): void {
+    const label = this.toggleLabelsAfter.closest('label');
+    if (!label) return;
+    const isDormant = globalState.settings.solfegeLabelMode === 'none';
+    const m = t();
+    label.classList.toggle('is-dormant', isDormant);
+    label.title = isDormant ? `${m.labelsAfterTitle} · ${m.labelsAfterDormant}` : m.labelsAfterTitle;
   }
 
   /**

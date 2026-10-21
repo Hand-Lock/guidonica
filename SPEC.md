@@ -237,7 +237,8 @@ The stage-first shell of ADR 0097:
   - **Rhythm**: note values (w, h, q, 8, 16, 32), dotted, tuplet matrix (with Clear all), rests, ties.
   - **Melody**: notes (C … B), intervals (unison … 9+).
   - **Sound**: click sound with count-in, volume, drone (note, sound, tuning, volume).
-  - **Display**: language, labels (None / Syllables / Letters), view (Steady / Squishy / Page; ADRs 0109, 0110), assists (playhead, tips), theme.
+  - **Display**: language, labels (None / Syllables / Letters), view (Steady / Squishy / Page; ADRs 0109, 0110), assists (playhead, labels after playing, tips), theme.
+    Labels after playing hides each note's label until the playhead or page cursor passes its onset, so the singer can look back and check; it needs a Labels table and, like the other assists, stays with each user (ADR 0112).
 - **Stage**: the zoom pill (−, %, +; tapping the % returns to auto zoom), the playhead or page cursor, the view pill shown after a view change, and the stage notices (tips, landscape tip, Low Power Mode).
 - Live visual indicator for the active beat / count-in.
 

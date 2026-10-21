@@ -32,6 +32,16 @@ export function labelResolver(names: NoteNames): LabelResolver {
   return (mode) => (mode === 'none' ? null : mode === 'syllables' ? names.syllables : names.letters);
 }
 
+/** Clears a bar's canvases' dimensions to release their backing stores for GC. */
+function release(m: RenderedMeasure): void {
+  m.canvas.width = 0;
+  m.canvas.height = 0;
+  if (m.labelLayer) {
+    m.labelLayer.canvas.width = 0;
+    m.labelLayer.canvas.height = 0;
+  }
+}
+
 /** Ink of a bar whose renderer reports none: the staff alone. */
 const STAFF_INK_TOP = 80;
 const STAFF_INK_BOTTOM = 120;
@@ -95,10 +105,7 @@ export class MeasureBuffer {
    */
   public reset(): void {
     // Drop canvas references for GC
-    for (const m of this.measures) {
-      m.canvas.width = 0;
-      m.canvas.height = 0;
-    }
+    for (const m of this.measures) release(m);
     this.measures = [];
     this.nextMeasureIndex = 0;
     this.nextMeasureStartBeat = 0;
@@ -131,7 +138,6 @@ export class MeasureBuffer {
       this.relayoutPage(settings);
       return;
     }
-    const labels = this.labels(settings.solfegeLabelMode);
     if (this.view === 'page') {
       // Back to the tape: every generated bar, rendered or not, joins it in order
       const bars = this.pageBars();
@@ -140,7 +146,7 @@ export class MeasureBuffer {
       let prev: MeasureData | null = null;
       for (let i = 0; i < bars.length; i++) {
         prev = spaceMeasure(bars[i], prev, i + 1 < bars.length ? bars[i + 1] : this.pending, view, settings);
-        this.measures.push(this.renderer.renderMeasure(prev, settings.theme, labels));
+        this.measures.push(this.render(prev, settings));
       }
       if (prev) this.lastLaidOut = prev;
       return;
@@ -156,10 +162,19 @@ export class MeasureBuffer {
       if (prev) this.lastLaidOut = prev;
     }
     this.measures = this.measures.map((m) => {
-      m.canvas.width = 0;
-      m.canvas.height = 0;
-      return this.renderer.renderMeasure(m.data, settings.theme, labels);
+      release(m);
+      return this.render(m.data, settings);
     });
+  }
+
+  /** Rasterizes a laid-out bar with the settings' theme and labels (ADR 0112). */
+  private render(data: MeasureData, settings: AppSettings): RenderedMeasure {
+    return this.renderer.renderMeasure(
+      data,
+      settings.theme,
+      this.labels(settings.solfegeLabelMode),
+      settings.labelsAfterPlaying ?? false
+    );
   }
 
   /** The kept page bars in order: the rendered lines', the queued line's, then the open ones. */
@@ -172,10 +187,7 @@ export class MeasureBuffer {
 
   /** Releases every rendered bar's canvas and drops the page state; the bars are kept by the caller. */
   private releaseAll(): void {
-    for (const m of this.measures) {
-      m.canvas.width = 0;
-      m.canvas.height = 0;
-    }
+    for (const m of this.measures) release(m);
     this.measures = [];
     this.clearPage();
   }
@@ -261,7 +273,7 @@ export class MeasureBuffer {
     if (!queued) return;
     const data = queued.bars.shift();
     if (data) {
-      const rendered = this.renderer.renderMeasure(data, settings.theme, this.labels(settings.solfegeLabelMode));
+      const rendered = this.render(data, settings);
       this.measures.push(rendered);
       const ink = rendered.ink ?? { top: STAFF_INK_TOP, bottom: STAFF_INK_BOTTOM };
       queued.system.inkTop = Math.min(queued.system.inkTop, ink.top);
@@ -444,12 +456,7 @@ export class MeasureBuffer {
       const laidOut = spaceMeasure(measureData, this.lastLaidOut, this.pending, view, settings);
       this.lastLaidOut = laidOut;
 
-      const rendered = this.renderer.renderMeasure(
-        laidOut,
-        settings.theme,
-        this.labels(settings.solfegeLabelMode)
-      );
-      this.measures.push(rendered);
+      this.measures.push(this.render(laidOut, settings));
 
       this.nextMeasureIndex++;
       this.nextMeasureStartBeat += measureData.beatsPerMeasure;
@@ -496,12 +503,7 @@ export class MeasureBuffer {
   }
 
   private evictFirst(count: number): void {
-    for (let i = 0; i < count; i++) {
-      // Clear canvas dimensions to release backing store
-      const m = this.measures[i];
-      m.canvas.width = 0;
-      m.canvas.height = 0;
-    }
+    for (let i = 0; i < count; i++) release(this.measures[i]);
     if (count > 0) {
       this.measures.splice(0, count);
     }

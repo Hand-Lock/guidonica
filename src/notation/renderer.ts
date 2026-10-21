@@ -21,6 +21,8 @@ import {
   Clef,
   DEFAULT_ZOOM,
   InkExtent,
+  LabelBox,
+  LabelLayer,
   MAX_ZOOM,
   MEASURE_CANVAS_HEIGHT,
   METER,
@@ -220,6 +222,26 @@ export interface LabelPlacement {
   text: string;
   x: number;
   y: number;
+  /** Its note's beatOffset in the bar (ADR 0112). */
+  beat: number;
+}
+
+/** Label boxes keep this much room on each side of the text, in measure units (ADR 0112). */
+const LABEL_BOX_PAD = 1;
+/** Label box height: the font size plus room for descenders and anti-aliasing (ADR 0112). */
+const LABEL_BOX_HEIGHT = SOLFEGE_FONT_PX + 4;
+
+/** Fills each label centered on its placement, in the context's current transform. */
+function fillLabels(ctx: CanvasRenderingContext2D, placements: readonly LabelPlacement[], theme: ThemeMode): void {
+  ctx.save();
+  ctx.fillStyle = CANVAS_PALETTE[resolveTheme(theme)].solfege;
+  ctx.font = SOLFEGE_FONT;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const { text, x, y } of placements) {
+    ctx.fillText(text, x, y);
+  }
+  ctx.restore();
 }
 
 /** Each sounding, articulated note's label, with its tuplet looked up per note. */
@@ -275,7 +297,7 @@ export function solfegeLabelPlacements(
       }
     }
     y = Math.max(SOLFEGE_CANVAS_MARGIN, Math.min(MEASURE_CANVAS_HEIGHT - SOLFEGE_CANVAS_MARGIN, y));
-    placements.push({ text: label, x: anchor.x, y });
+    placements.push({ text: label, x: anchor.x, y, beat: nData.beatOffset });
   }
   return placements;
 }
@@ -332,11 +354,14 @@ export class MeasureRenderer {
 
   /**
    * Renders a single measure onto an offscreen canvas using VexFlow and GPU blitting principles.
+   * With `labelsAfterPlaying`, the labels go onto a second canvas of the same size, with one
+   * box per label, so the scroller can reveal each as its note is played (ADR 0112).
    */
   public renderMeasure(
     data: MeasureData,
     theme: ThemeMode = 'auto',
-    labels: readonly string[] | null = null
+    labels: readonly string[] | null = null,
+    labelsAfterPlaying = false
   ): RenderedMeasure {
     const dpr = this.dpr;
     const zoom = this.zoom;
@@ -350,25 +375,22 @@ export class MeasureRenderer {
     ctx.scale(dpr * zoom, dpr * zoom);
     const drawn = this.drawMeasure(ctx, data, theme);
     let ink = drawn.ink;
+    let labelLayer: LabelLayer | undefined;
 
     // Draw pedagogical Solfège syllables or note names beside noteheads
     if (labels) {
       const placements = labelPlacements(data, drawn, labels);
+      // The ink counts the labels even while they are hidden, so toggling the option never
+      // moves the page's lines (ADR 0112)
       ink = withLabels(ink, placements);
-      const rawCtx = canvas.getContext('2d');
-      if (rawCtx) {
+      if (labelsAfterPlaying) {
+        labelLayer = this.labelLayer(data, canvas, placements, theme);
+      } else {
+        const rawCtx = canvas.getContext('2d');
         // Keep the context's current transform: it is exactly the one VexFlow drew the notes
         // with (our dpr·zoom), so notehead coordinates map 1:1. Never setTransform here —
         // labels must share whatever matrix the notes used (see ADR 0041, ADR 0042).
-        rawCtx.save();
-        rawCtx.fillStyle = CANVAS_PALETTE[resolveTheme(theme)].solfege;
-        rawCtx.font = SOLFEGE_FONT;
-        rawCtx.textAlign = 'center';
-        rawCtx.textBaseline = 'middle';
-        for (const { text, x, y } of placements) {
-          rawCtx.fillText(text, x, y);
-        }
-        rawCtx.restore();
+        if (rawCtx) fillLabels(rawCtx, placements, theme);
       }
     }
 
@@ -378,7 +400,38 @@ export class MeasureRenderer {
       width: data.width * zoom,
       height: MEASURE_CANVAS_HEIGHT * zoom,
       ink,
+      labelLayer,
     };
+  }
+
+  /** The labels on their own canvas, sized and scaled like the note canvas, with their boxes. */
+  private labelLayer(
+    data: MeasureData,
+    noteCanvas: HTMLCanvasElement,
+    placements: readonly LabelPlacement[],
+    theme: ThemeMode
+  ): LabelLayer {
+    const canvas = document.createElement('canvas');
+    canvas.width = noteCanvas.width;
+    canvas.height = noteCanvas.height;
+    const boxes: LabelBox[] = [];
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.scale(this.dpr * this.zoom, this.dpr * this.zoom);
+      fillLabels(ctx, placements, theme);
+      ctx.save();
+      ctx.font = SOLFEGE_FONT;
+      for (const { text, x, y, beat } of placements) {
+        const half = ctx.measureText(text).width / 2 + LABEL_BOX_PAD;
+        const left = Math.max(0, x - half);
+        const right = Math.min(data.width, x + half);
+        const top = Math.max(0, y - LABEL_BOX_HEIGHT / 2);
+        const bottom = Math.min(MEASURE_CANVAS_HEIGHT, y + LABEL_BOX_HEIGHT / 2);
+        if (right > left && bottom > top) boxes.push({ beat, x: left, y: top, w: right - left, h: bottom - top });
+      }
+      ctx.restore();
+    }
+    return { canvas, labels: boxes };
   }
 
   /**

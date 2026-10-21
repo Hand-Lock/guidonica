@@ -351,6 +351,15 @@ describe('rotating tips storage (ADR 0087)', () => {
     expect(loadStoredSettings().showTips).toBe(true);
   });
 
+  it('keeps labels visible by default and stores Labels after playing (ADR 0112)', () => {
+    expect(DEFAULT_APP_SETTINGS.labelsAfterPlaying).toBe(false);
+    expect(loadStoredSettings().labelsAfterPlaying).toBe(false);
+    saveStoredSettings({ ...DEFAULT_APP_SETTINGS, labelsAfterPlaying: true });
+    expect(loadStoredSettings().labelsAfterPlaying).toBe(true);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ labelsAfterPlaying: 'yes' }));
+    expect(loadStoredSettings().labelsAfterPlaying).toBe(false);
+  });
+
   it('defaults the drone to off, shruti box, 0.6 and validates each field (ADR 0092)', () => {
     expect(loadStoredSettings()).toMatchObject({ droneNote: 'off', droneSound: 'shruti', droneVolume: 0.6 });
     saveStoredSettings({ ...DEFAULT_APP_SETTINGS, droneNote: 'd', droneSound: 'pad', droneVolume: 0.25 });

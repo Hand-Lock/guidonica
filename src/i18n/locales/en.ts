@@ -167,6 +167,9 @@ const en = {
   countIn: 'Count-In',
   playhead: 'Playhead',
   playheadTitle: 'Toggle stationary red playhead visibility (Shortcut: P)',
+  labelsAfter: 'Labels after playing',
+  labelsAfterTitle: "Hide each note's label until the playhead reaches it, then look back to check what you sang",
+  labelsAfterDormant: 'Choose Syllables or Letters in Labels first',
   tipsToggle: 'Tips',
   tipsTitle: 'A short tip about Guidonica each time you open it',
   click: 'Click',
@@ -236,6 +239,7 @@ const en = {
   tips: {
     levels: { title: 'Level presets', body: 'The level button in the header sets notes, rhythms, intervals and tempo in one click, from Beginner to Virtuoso.' },
     labels: { title: 'Note names', body: 'Show syllables or letters under the notes in Settings → Display → Labels.' },
+    labelsAfter: { title: 'Check what you sang', body: "Turn on Labels after playing in Settings → Display → Assists: each note's name appears once you reach it, so you can look back and check. Best in the Page view." },
     keys: { title: 'Keyboard shortcuts', body: 'Space plays and pauses, R resets, P hides the playhead, ↑ and ↓ change the tempo, + and − zoom, D turns the drone on and off. Press ? to see them all.' },
     pinch: { title: 'Pinch to zoom', body: 'Pinch the staff with two fingers to zoom. Tap the percentage to go back to auto zoom.' },
     views: { title: 'Swipe for another view', body: 'Swipe the staff sideways to change view. Squishy spaces notes like printed music, so more of the staff fits. Page sets the music in lines, for reading in portrait.' },

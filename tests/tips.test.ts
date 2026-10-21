@@ -34,8 +34,9 @@ describe('rotating tips (ADR 0087)', () => {
   it('shows every feature tip once per cycle, in order, when all are eligible', () => {
     const ctx = openContext();
     const features = ids(0, 40, ctx).filter((_, n) => (n + 1) % 4 !== 0);
-    // The view tips split by device: swiping on touch screens, V on keyboards alone
-    const cycle = FEATURE_TIPS.map((t) => t.id).filter((id) => id !== 'viewsKey');
+    // The view tips split by device: swiping on touch screens, V on keyboards alone; Labels
+    // after playing waits until labels are on (ADR 0112)
+    const cycle = FEATURE_TIPS.map((t) => t.id).filter((id) => id !== 'viewsKey' && id !== 'labelsAfter');
     expect(features.slice(0, cycle.length)).toEqual(cycle);
     expect(features.slice(cycle.length, cycle.length * 2)).toEqual(cycle.slice(0, features.length - cycle.length));
   });
@@ -59,6 +60,18 @@ describe('rotating tips (ADR 0087)', () => {
     for (const id of ['levels', 'halfNote', 'clefs', 'pinch', 'share', 'whatsNew', 'follow', 'support'] as TipId[]) {
       expect(seen.has(id), id).toBe(true);
     }
+  });
+
+  it('offers Labels after playing once labels are on, until it is on (ADR 0112)', () => {
+    const tip = FEATURE_TIPS.find((t) => t.id === 'labelsAfter');
+    const ctx = openContext();
+    expect(tip?.when?.(ctx)).toBe(false);
+    ctx.settings.solfegeLabelMode = 'letters';
+    expect(tip?.when?.(ctx)).toBe(true);
+    expect(new Set(ids(0, 60, ctx)).has('labelsAfter')).toBe(true);
+    ctx.settings.labelsAfterPlaying = true;
+    expect(tip?.when?.(ctx)).toBe(false);
+    expect(tip?.action).toEqual({ kind: 'settings', section: 'display' });
   });
 
   it('never repeats a feature tip on consecutive feature slots', () => {

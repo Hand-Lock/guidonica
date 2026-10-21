@@ -192,6 +192,7 @@ export function loadStoredSettings(): AppSettings {
       zoomMode,
       view: pickEnum<ViewMode>(parsed.view, VIEW_MODES, d.view),
       showPlayhead: pickBool(parsed.showPlayhead, d.showPlayhead),
+      labelsAfterPlaying: pickBool(parsed.labelsAfterPlaying, d.labelsAfterPlaying),
       showTips: pickBool(parsed.showTips, d.showTips),
     };
   } catch {
