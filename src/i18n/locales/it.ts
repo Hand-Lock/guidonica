@@ -237,6 +237,8 @@ const it: Messages = {
     halfNote: { title: 'Musica antica', body: 'Attiva Movimento di minima in Impostazioni → Pentagramma per leggere 2/2 (alla breve), 3/2 e 4/2, oppure 6/4, 9/4 e 12/4.' },
     pulse: { title: 'Pulsazione', body: 'Nei tempi composti e in quelli in minime, come 6/8 e 2/2, il clic può seguire il movimento o ogni suddivisione: Impostazioni → Pentagramma → Pulsazione.' },
     install: { title: 'Funziona offline', body: 'Dopo una visita Guidonica funziona senza connessione. Aggiungila alla schermata Home o installala dal menu del browser.' },
+    installIos: { title: 'Aggiungi alla schermata Home', body: 'In Safari tocca Condividi, poi Aggiungi alla schermata Home. Guidonica si apre a tutto schermo dalla sua icona e funziona offline.' },
+    installMac: { title: 'Aggiungi al Dock', body: 'In Safari scegli Archivio → Aggiungi al Dock. Guidonica si apre in una finestra tutta sua e funziona offline.' },
     playhead: { title: 'Leggi senza testina', body: 'Disattiva Testina in Impostazioni → Aspetto → Aiuti per leggere senza la linea rossa.' },
     drone: { title: 'Canta su un bordone', body: 'Impostazioni → Suono → Bordone tiene una shruti box o un pad sulla nota che scegli. Su Re la melodia è dorica, su La eolia.' },
     whatsNew: { title: 'Novità', body: 'Ogni versione porta qualcosa di nuovo. Le note di rilascio sono sempre in Informazioni.' },

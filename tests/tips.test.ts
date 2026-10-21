@@ -7,7 +7,7 @@ import en from '../src/i18n/locales/en';
 /** A context in which every feature tip is eligible. */
 function openContext(): TipContext {
   const settings: AppSettings = { ...structuredClone(DEFAULT_APP_SETTINGS), timeSignature: '6/8' };
-  return { settings, touch: true, keyboard: true, standalone: false };
+  return { settings, touch: true, keyboard: true, standalone: false, safari: null };
 }
 
 const ids = (from: number, to: number, ctx: TipContext): TipId[] => {
@@ -35,8 +35,10 @@ describe('rotating tips (ADR 0087)', () => {
     const ctx = openContext();
     const features = ids(0, 40, ctx).filter((_, n) => (n + 1) % 4 !== 0);
     // The view tips split by device: swiping on touch screens, V on keyboards alone; Labels
-    // after playing waits until labels are on (ADR 0112)
-    const cycle = FEATURE_TIPS.map((t) => t.id).filter((id) => id !== 'viewsKey' && id !== 'labelsAfter');
+    // after playing waits until labels are on (ADR 0112); the Safari install steps replace the
+    // generic install tip on Safari only (ADR 0114)
+    const skipped = new Set<TipId>(['viewsKey', 'labelsAfter', 'installIos', 'installMac']);
+    const cycle = FEATURE_TIPS.map((t) => t.id).filter((id) => !skipped.has(id));
     expect(features.slice(0, cycle.length)).toEqual(cycle);
     expect(features.slice(cycle.length, cycle.length * 2)).toEqual(cycle.slice(0, features.length - cycle.length));
   });
@@ -54,7 +56,7 @@ describe('rotating tips (ADR 0087)', () => {
     ctx.keyboard = false;
     ctx.standalone = true;
     const seen = new Set(ids(0, 60, ctx));
-    for (const id of ['labels', 'pulse', 'playhead', 'drone', 'restsTies', 'notes', 'tuplets', 'keys', 'install'] as TipId[]) {
+    for (const id of ['labels', 'pulse', 'playhead', 'drone', 'restsTies', 'notes', 'tuplets', 'keys', 'install', 'installIos', 'installMac'] as TipId[]) {
       expect(seen.has(id), id).toBe(false);
     }
     for (const id of ['levels', 'halfNote', 'clefs', 'pinch', 'share', 'whatsNew', 'follow', 'support'] as TipId[]) {
@@ -119,5 +121,21 @@ describe('rotating tips (ADR 0087)', () => {
     // Both view tips name the page view (ADR 0110)
     expect(en.tips.views.body).toMatch(/Page/);
     expect(en.tips.viewsKey.body).toMatch(/Page/);
+  });
+
+  it('shows exactly one install tip, second in the rotation, until installed (ADR 0114)', () => {
+    const installs: TipId[] = ['install', 'installIos', 'installMac'];
+    const expected: Record<string, TipId> = { none: 'install', ios: 'installIos', mac: 'installMac' };
+    for (const safari of [null, 'ios', 'mac'] as const) {
+      const ctx = { ...openContext(), safari };
+      const eligible = FEATURE_TIPS.filter((t) => installs.includes(t.id) && t.when?.(ctx)).map((t) => t.id);
+      expect(eligible).toEqual([expected[safari ?? 'none']]);
+      expect(pickTip(1, ctx).id).toBe(expected[safari ?? 'none']);
+      expect(FEATURE_TIPS.filter((t) => installs.includes(t.id)).every((t) => !t.action)).toBe(true);
+      const installed = { ...ctx, standalone: true };
+      expect(FEATURE_TIPS.filter((t) => installs.includes(t.id) && t.when?.(installed))).toEqual([]);
+    }
+    expect(en.tips.installIos.body).toMatch(/Add to Home Screen/);
+    expect(en.tips.installMac.body).toMatch(/File → Add to Dock/);
   });
 });

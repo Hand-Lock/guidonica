@@ -239,6 +239,8 @@ const fr: Messages = {
     halfNote: { title: 'Musique ancienne', body: 'Activez Temps à la blanche dans Réglages → Portée pour lire 2/2 (alla breve), 3/2 et 4/2, ou 6/4, 9/4 et 12/4.' },
     pulse: { title: 'Pulsation', body: `En mesure composée ou à la blanche, comme 6/8 et 2/2, le clic peut suivre le temps ou chaque subdivision${NB}: Réglages → Portée → Pulsation.` },
     install: { title: 'Fonctionne hors ligne', body: "Après une visite, Guidonica fonctionne sans connexion. Ajoutez-le à l'écran d'accueil ou installez-le depuis le menu du navigateur." },
+    installIos: { title: "Sur l'écran d'accueil", body: "Dans Safari, touchez Partager, puis Sur l'écran d'accueil. Guidonica s'ouvre en plein écran depuis sa propre icône et fonctionne hors ligne." },
+    installMac: { title: 'Ajouter au Dock', body: "Dans Safari, choisissez Fichier → Ajouter au Dock. Guidonica s'ouvre dans sa propre fenêtre et fonctionne hors ligne." },
     playhead: { title: 'Lire sans tête de lecture', body: 'Désactivez Tête de lecture dans Réglages → Affichage → Aides pour lire sans la ligne rouge.' },
     drone: { title: 'Chanter sur un bourdon', body: 'Réglages → Son → Bourdon tient une shruti box ou une nappe sur la note de votre choix. Sur ré, la mélodie est en dorien, sur la en éolien.' },
     whatsNew: { title: 'Nouveautés', body: 'Chaque version apporte du nouveau. Les notes de version sont toujours dans À propos.' },

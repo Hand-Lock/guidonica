@@ -3,6 +3,7 @@
 // Copyright (C) 2026 A. C. Lo Cascio
 
 import { AppSettings, TUPLET_NAMES, TUPLET_VALUES, isGrouped, isHalfNoteMeter } from './notation/types';
+import type { SafariPlatform } from './utils/safari';
 
 /** The settings inspector's tabs (ADR 0097). */
 export type SettingsSection = 'staff' | 'rhythm' | 'melody' | 'sound' | 'display';
@@ -25,6 +26,8 @@ export type TipId =
   | 'share'
   | 'drone'
   | 'install'
+  | 'installIos'
+  | 'installMac'
   | 'whatsNew'
   | 'follow'
   | 'support';
@@ -43,6 +46,7 @@ export interface TipContext {
   touch: boolean; // coarse pointer: pinch zoom exists
   keyboard: boolean; // a physical keyboard is likely (ADR 0106): shortcuts are usable
   standalone: boolean; // installed (home screen or app window)
+  safari: SafariPlatform | null; // Safari, which has no install prompt (ADR 0114)
 }
 
 export interface Tip {
@@ -58,6 +62,10 @@ const anyTuplet = (s: AppSettings): boolean =>
 /** Feature tips in rotation order. A tip is skipped while it would tell the user nothing new. */
 export const FEATURE_TIPS: readonly Tip[] = [
   { id: 'levels', action: { kind: 'levels' } },
+  // Second, so installing comes early; Safari gets its own menu steps instead (ADR 0114)
+  { id: 'install', when: (c) => !c.standalone && !c.safari },
+  { id: 'installIos', when: (c) => !c.standalone && c.safari === 'ios' },
+  { id: 'installMac', when: (c) => !c.standalone && c.safari === 'mac' },
   {
     id: 'labels',
     action: { kind: 'settings', section: 'display' },
@@ -114,7 +122,6 @@ export const FEATURE_TIPS: readonly Tip[] = [
     action: { kind: 'settings', section: 'staff' },
     when: (c) => isGrouped(c.settings.timeSignature),
   },
-  { id: 'install', when: (c) => !c.standalone },
   {
     id: 'playhead',
     action: { kind: 'settings', section: 'display' },

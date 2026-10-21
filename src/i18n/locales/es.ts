@@ -237,6 +237,8 @@ const es: Messages = {
     halfNote: { title: 'Música antigua', body: 'Activa Pulso de blanca en Ajustes → Pentagrama para leer 2/2 (alla breve), 3/2 y 4/2, o 6/4, 9/4 y 12/4.' },
     pulse: { title: 'Pulso', body: 'En los compases compuestos y en los de pulso de blanca, como 6/8 y 2/2, el clic puede seguir el pulso o cada subdivisión: Ajustes → Pentagrama → Pulso.' },
     install: { title: 'Funciona sin conexión', body: 'Tras una visita, Guidonica funciona sin conexión. Añádela a la pantalla de inicio o instálala desde el menú del navegador.' },
+    installIos: { title: 'Añadir a pantalla de inicio', body: 'En Safari, toca Compartir y luego Añadir a pantalla de inicio. Guidonica se abre a pantalla completa desde su propio icono y funciona sin conexión.' },
+    installMac: { title: 'Añadir al Dock', body: 'En Safari, elige Archivo → Añadir al Dock. Guidonica se abre en su propia ventana y funciona sin conexión.' },
     playhead: { title: 'Leer sin cabezal', body: 'Desactiva Cabezal en Ajustes → Vista → Ayudas para leer sin la línea roja.' },
     drone: { title: 'Canta sobre un bordón', body: 'Ajustes → Sonido → Bordón sostiene una caja shruti o un pad en la nota que elijas. Sobre Re la melodía es dórica, sobre La eólica.' },
     whatsNew: { title: 'Novedades', body: 'Cada versión trae algo nuevo. Las notas de versión están siempre en Acerca de.' },

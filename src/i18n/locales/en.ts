@@ -257,6 +257,8 @@ const en = {
     halfNote: { title: 'Early music', body: 'Turn on Half-note beat in Settings → Staff to read 2/2 (alla breve), 3/2 and 4/2, or 6/4, 9/4 and 12/4.' },
     pulse: { title: 'Pulse', body: 'In compound and half-note meters such as 6/8 and 2/2, the click can follow the beat or each subdivision: Settings → Staff → Pulse.' },
     install: { title: 'Works offline', body: 'After one visit Guidonica works without a connection. Add it to your home screen or install it from the browser menu.' },
+    installIos: { title: 'Add to Home Screen', body: 'In Safari, tap Share, then Add to Home Screen. Guidonica opens full screen from its own icon and works offline.' },
+    installMac: { title: 'Add to the Dock', body: 'In Safari, choose File → Add to Dock. Guidonica opens in its own window and works offline.' },
     playhead: { title: 'Read without the playhead', body: 'Turn off Playhead in Settings → Display → Assists to read without the red line.' },
     drone: { title: 'Sing against a drone', body: 'Settings → Sound → Drone holds a shruti box or pad on the note you choose. Over D the melody is Dorian, over A Aeolian.' },
     whatsNew: { title: "What's new", body: 'Every release brings something new. The release notes are always in About.' },

@@ -22,7 +22,7 @@ const STEP_KINDS = ['click', 'press', 'wait', 'scroll', 'text', 'eval', 'shot'];
 
 const USAGE = `usage: driver.mjs --setup [${ENGINES.join('|')} ...]
        driver.mjs [--browser ${ENGINES.join('|')}] [--url URL] [--lang ${LANGS.join('|')}] [--theme ${THEMES.join('|')}]
-                  [--contrast ${CONTRASTS.join('|')}] [--os-contrast ${OS_CONTRASTS.join('|')}] [--size WxH] [--dpr N] [--intro] [--tips] [--seen VERSION] [--fps N] [--out DIR] <step>...
+                  [--contrast ${CONTRASTS.join('|')}] [--os-contrast ${OS_CONTRASTS.join('|')}] [--size WxH] [--dpr N] [--ua UA] [--intro] [--tips] [--seen VERSION] [--fps N] [--out DIR] <step>...
 steps: click:<sel> press:<Key> wait:<ms> scroll:<sel> text:<sel> eval:<js> shot:<name>`;
 
 function fail(message) {
@@ -55,7 +55,7 @@ function setup(engines) {
 }
 
 function parseArgs(argv) {
-  const opts = { browser: 'chromium', url: 'http://localhost:3000', lang: null, theme: null, contrast: null, osContrast: null, width: 1280, height: 900, dpr: 2, intro: false, tips: false, seen: null, fps: null, out: join(tmpdir(), 'guidonica-shots') };
+  const opts = { browser: 'chromium', url: 'http://localhost:3000', lang: null, theme: null, contrast: null, osContrast: null, width: 1280, height: 900, dpr: 2, ua: null, intro: false, tips: false, seen: null, fps: null, out: join(tmpdir(), 'guidonica-shots') };
   const steps = [];
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -71,6 +71,7 @@ function parseArgs(argv) {
       opts.width = Number(m[1]);
       opts.height = Number(m[2]);
     } else if (arg === '--dpr') opts.dpr = Number(value());
+    else if (arg === '--ua') opts.ua = value();
     else if (arg === '--intro') opts.intro = true;
     else if (arg === '--tips') opts.tips = true;
     else if (arg === '--seen') opts.seen = value();
@@ -111,6 +112,8 @@ async function run(opts, steps) {
     deviceScaleFactor: opts.dpr,
     colorScheme: opts.theme === 'dark' ? 'dark' : 'light',
     locale: opts.lang ?? 'en-US',
+    // A spoofed user agent, e.g. iPhone or Mac Safari for the Safari install tip (ADR 0114)
+    ...(opts.ua !== null ? { userAgent: opts.ua } : {}),
     // The OS Increase contrast or forced colors (ADR 0113); forced colors is Chromium-only
     ...(opts.osContrast === 'more' ? { contrast: 'more' } : {}),
     ...(opts.osContrast === 'forced' ? { forcedColors: 'active' } : {}),

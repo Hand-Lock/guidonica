@@ -237,6 +237,8 @@ const de: Messages = {
     halfNote: { title: 'Alte Musik', body: 'Schalte Halbe als Schlag unter Einstellungen → Notensystem ein, um 2/2 (alla breve), 3/2 und 4/2 oder 6/4, 9/4 und 12/4 zu lesen.' },
     pulse: { title: 'Puls', body: 'In zusammengesetzten Takten und Takten mit Halben als Schlag, etwa 6/8 und 2/2, kann der Klick dem Schlag oder jeder Unterteilung folgen: Einstellungen → Notensystem → Puls.' },
     install: { title: 'Funktioniert offline', body: 'Nach einem Besuch läuft Guidonica auch ohne Verbindung. Lege es auf den Startbildschirm oder installiere es über das Browsermenü.' },
+    installIos: { title: 'Zum Home-Bildschirm', body: 'Tippe in Safari auf Teilen und dann auf Zum Home-Bildschirm. Guidonica öffnet sich über sein eigenes Symbol im Vollbild und funktioniert offline.' },
+    installMac: { title: 'Zum Dock hinzufügen', body: 'Wähle in Safari Ablage → Zum Dock hinzufügen. Guidonica öffnet sich in einem eigenen Fenster und funktioniert offline.' },
     playhead: { title: 'Ohne Abspielposition lesen', body: 'Schalte Abspielposition unter Einstellungen → Anzeige → Hilfen aus, um ohne die rote Linie zu lesen.' },
     drone: { title: 'Gegen einen Bordun singen', body: 'Einstellungen → Klang → Bordun hält eine Shruti-Box oder ein Pad auf dem Ton deiner Wahl. Über D klingt die Melodie dorisch, über A äolisch.' },
     whatsNew: { title: 'Neuigkeiten', body: 'Jede Version bringt Neues. Die Versionshinweise findest du jederzeit unter Info.' },

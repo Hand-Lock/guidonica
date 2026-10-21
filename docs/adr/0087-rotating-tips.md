@@ -54,7 +54,8 @@ Guidonica needs a way to point these out that does not interrupt practice, never
    | `share` | Settings → Practice | always |
    | `restsTies` | Settings → Rhythm | rests or ties are off |
    | `pulse` | Settings → Staff | 6/8, 9/8 or 12/8 |
-   | `install` | none | not running standalone |
+   | `install` | none | not running standalone and not Safari; second in the rotation (ADR 0114) |
+   | `installIos`, `installMac` | none | Safari's Home Screen or Dock steps instead of `install` (ADR 0114) |
    | `playhead` | Settings → Practice | the playhead is shown |
    | `whatsNew` | open "What's new" | always |
 

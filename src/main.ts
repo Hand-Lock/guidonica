@@ -68,6 +68,7 @@ import { ScreenWakeLockController } from './utils/wakeLock';
 import { bindRovingKeys, setRadioSelection } from './utils/radioGroup';
 import { registerServiceWorker } from './utils/serviceWorker';
 import { isPortraitLockedInAppBrowser } from './utils/inAppBrowser';
+import { safariPlatform } from './utils/safari';
 import {
   ENDONYMS,
   Language,
@@ -1466,6 +1467,7 @@ class GuidonicaApp {
       touch: media('(pointer: coarse)'),
       keyboard: this.keyboardLikely,
       standalone: media('(display-mode: standalone)') || (navigator as StandaloneNavigator).standalone === true,
+      safari: safariPlatform(navigator.userAgent, navigator.maxTouchPoints ?? 0),
     };
   }
 

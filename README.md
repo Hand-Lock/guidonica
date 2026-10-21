@@ -525,7 +525,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0084](docs/adr/0084-instagram-link.md) | Instagram Link | Accepted; amended by 0101, 0102 |
 | [0085](docs/adr/0085-shareable-exercise-links.md) | Shareable Exercise Links | Accepted |
 | [0086](docs/adr/0086-language-landing-pages.md) | Language Landing Pages | Accepted |
-| [0087](docs/adr/0087-rotating-tips.md) | Rotating Tips | Accepted; amended by 0106, 0109, 0110, 0112 |
+| [0087](docs/adr/0087-rotating-tips.md) | Rotating Tips | Accepted; amended by 0106, 0109, 0110, 0112, 0114 |
 | [0088](docs/adr/0088-pre-release-audit-2026-10-06.md) | Pre-release Audit 2026-10-06: Second History Rewrite, Privacy Policy | Accepted |
 | [0089](docs/adr/0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted; followed by 0091, 0098 |
 | [0090](docs/adr/0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted; amended by 0093 |
@@ -552,6 +552,7 @@ All core architecture, math formulas, rendering mechanisms, and design decisions
 | [0111](docs/adr/0111-notation-rule-seams.md) | Notation Rule Seams | Accepted |
 | [0112](docs/adr/0112-labels-after-playing.md) | Labels After Playing | Accepted |
 | [0113](docs/adr/0113-high-contrast.md) | High Contrast | Accepted |
+| [0114](docs/adr/0114-safari-install-tip.md) | Safari Install Tip | Accepted |
 
 ---
 

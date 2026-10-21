@@ -92,7 +92,7 @@ This directory documents the core architectural decisions, implementation method
 | [0084](0084-instagram-link.md) | Instagram Link | Accepted; amended by 0101, 0102 | 2026-10-06 |
 | [0085](0085-shareable-exercise-links.md) | Shareable Exercise Links | Accepted | 2026-10-06 |
 | [0086](0086-language-landing-pages.md) | Language Landing Pages | Accepted | 2026-10-06 |
-| [0087](0087-rotating-tips.md) | Rotating Tips | Accepted; amended by 0106, 0109, 0110, 0112 | 2026-10-06 |
+| [0087](0087-rotating-tips.md) | Rotating Tips | Accepted; amended by 0106, 0109, 0110, 0112, 0114 | 2026-10-06 |
 | [0088](0088-pre-release-audit-2026-10-06.md) | Pre-release Audit 2026-10-06: Second History Rewrite, Privacy Policy | Accepted | 2026-10-06 |
 | [0089](0089-frame-locked-audio-clock.md) | Frame-Locked Audio Clock | Accepted; followed by 0091, 0098 | 2026-10-06 |
 | [0090](0090-half-note-beat-meters.md) | Half-Note Beat Meters: 4/2, 3/2, 2/2, 6/4, 9/4, 12/4 | Accepted; amended by 0093 | 2026-10-06 |
@@ -119,6 +119,7 @@ This directory documents the core architectural decisions, implementation method
 | [0111](0111-notation-rule-seams.md) | Notation Rule Seams | Accepted | 2026-10-19 |
 | [0112](0112-labels-after-playing.md) | Labels After Playing | Accepted | 2026-10-21 |
 | [0113](0113-high-contrast.md) | High Contrast | Accepted | 2026-10-21 |
+| [0114](0114-safari-install-tip.md) | Safari Install Tip | Accepted | 2026-10-21 |
 
 ---
 
