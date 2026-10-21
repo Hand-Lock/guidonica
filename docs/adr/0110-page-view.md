@@ -244,8 +244,9 @@ staff would be too small to read at arm's length. In landscape the height binds 
 
 ### 11. Engine and copy
 
-`src/engine.ts` exports `justifyMeasure`, `pageScrollY`, `pageAnchor` and `PageSystem`; the constants flow
-through `types`. `MeasureBuffer` gains `setPageWidth`, `getSystems`, `ensureRows`, `coversRows` and
+`src/engine.ts` exports `justifyMeasure`, `pageScrollY`, `pageAnchor`, `lineEndX` and `PageSystem`; the constants flow
+through `types`. `lineEndX` is exported for embedders that draw their own cursor on a line's last bar,
+so it ends at the closing barline as `ScrollerView`'s does (ADR 0104 §1). `MeasureBuffer` gains `setPageWidth`, `getSystems`, `ensureRows`, `coversRows` and
 `evictRowsBefore`, and `ScrollerView` gains `setReducedMotion` and `getViewportHeight`. An embedder
 draws a page through `ScrollerView`, which owns the cursor, the dimming and the band;
 `cursorOffsetX`, `lineAlpha`, `lineFocus`, `findSystem` and `pageRowsAbove` stay internal.

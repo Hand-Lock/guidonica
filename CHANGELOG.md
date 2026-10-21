@@ -35,6 +35,7 @@ Every change lands under **Unreleased** in the commit that makes it, and goes li
 - `guidonica/engine` exports `ContrastMode`, `CanvasTheme`, `canvasTheme` and `canvasPalette`; renderer methods also accept `'light-high'` and `'dark-high'` (ADR 0113).
 - The run-guidonica driver takes `--contrast` and `--os-contrast more|forced` (ADR 0113).
 - The run-guidonica driver takes `--ua` to spoof a user agent, e.g. iPhone or Mac Safari (ADR 0114).
+- `guidonica/engine` exports `lineEndX`, the cursor's x on a line's last bar ending at the closing barline, for embedders that draw their own cursor (ADR 0110).
 
 ## [2026.10.5] - 2026-10-18
 

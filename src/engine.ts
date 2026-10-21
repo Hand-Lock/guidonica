@@ -33,7 +33,7 @@ export { MeasureBuffer, labelResolver } from './scroller/buffer';
 export type { LabelResolver } from './scroller/buffer';
 export { ScrollerView } from './scroller/scroller';
 export type { FixedViewport } from './scroller/scroller';
-export { pageAnchor, pageScrollY } from './scroller/page';
+export { lineEndX, pageAnchor, pageScrollY } from './scroller/page';
 export type { PageSystem } from './scroller/page';
 
 // Audio

@@ -193,8 +193,9 @@ const LINE_END_SLOPE_LIMIT = 2 * Math.SQRT2;
  * to (width, δ), δ = (width − xs[n−1]) / (B − o_L). The start slope keeps the speed C¹ at the
  * last onset; it is clamped to 2√2·δ only for a lone bar compressed far below its width.
  * Before the last onset it is beatX. It allocates nothing: the scroller calls it every frame.
+ * Exported for embedders that draw their own cursor on a line's last bar.
  */
-function lineEndX(d: MeasureData, offset: number): number {
+export function lineEndX(d: MeasureData, offset: number): number {
   const knots = d.knots;
   const n = knots ? knots.offsets.length - 1 : 0;
   if (knots === undefined || n < 1) return Math.min(beatX(d, offset), d.width);

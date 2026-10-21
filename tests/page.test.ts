@@ -24,6 +24,7 @@ import {
   cursorOffsetX,
   findSystem,
   fitsLine,
+  lineEndX,
   lineAlpha,
   lineAvailable,
   lineDistance,
@@ -177,6 +178,26 @@ describe('Page line breaking and justification (ADR 0110)', () => {
       prev = x;
     }
     expect(at(line.endBeat)).toBeCloseTo(end, 9);
+  });
+
+  it('exports lineEndX: beatX up to the last onset, then monotone to the closing barline', () => {
+    const [, d] = closeLine(bars.slice(0, 2), 520);
+    const lastOnset = d.notes[d.notes.length - 1].beatOffset;
+    expect(d.knots?.xs[d.notes.length - 1] ?? NaN).toBeLessThan(d.width);
+    let prev = -Infinity;
+    for (let t = 0; t <= d.beatsPerMeasure; t += 1 / 64) {
+      const x = lineEndX(d, t);
+      if (t <= lastOnset) expect(x).toBeCloseTo(beatX(d, t), 9);
+      expect(x).toBeGreaterThanOrEqual(prev - 1e-9);
+      expect(x).toBeLessThanOrEqual(d.width + 1e-9);
+      prev = x;
+    }
+    expect(lineEndX(d, d.beatsPerMeasure)).toBeCloseTo(d.width, 9);
+    // Without knots it is beatX, clamped to the barline
+    const steady: MeasureData = { ...d, knots: undefined };
+    for (let t = 0; t <= d.beatsPerMeasure; t += 1 / 8) {
+      expect(lineEndX(steady, t)).toBeCloseTo(Math.min(beatX(steady, t), d.width), 9);
+    }
   });
 
   it('marks only a line start, and takes a tie into a bar from the justified bar before it', () => {
